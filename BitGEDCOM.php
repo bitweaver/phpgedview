@@ -15,14 +15,14 @@
  */
 require_once( LIBERTY_PKG_PATH.'LibertyAttachable.php' );
 
-class BitPage extends LibertyAttachable {
+class BitGEDCOM extends LibertyAttachable {
 	var $mGEDCOMId;
 	var $mPageName;
 
 	function BitGEDCOM( $pGEDCOMId=NULL, $pContentId=NULL ) {
 		LibertyAttachable::LibertyAttachable();
-		$this->registerContentType( BITGEDCOM_CONTENT_TYPE_GUID, array(
-				'content_type_guid' => BITGEDCOM_CONTENT_TYPE_GUID,
+		$this->registerContentType( 'BitGEDCOM', array(
+				'content_type_guid' => 'BitGEDCOM',
 				'content_description' => 'Gedcom Archive',
 				'handler_class' => 'BitGEDCOM',
 				'handler_package' => 'gedcom',
@@ -30,7 +30,7 @@ class BitPage extends LibertyAttachable {
 				'maintainer_url' => 'http://www.bitweaver.org'
 			) );
 		$this->mContentId = $pContentId;
-		$this->mContentTypeGuid = BITGEDCOM_CONTENT_TYPE_GUID;
+		$this->mContentTypeGuid = 'BitGEDCOM';
 	}
 
 	/**
@@ -62,19 +62,16 @@ class BitPage extends LibertyAttachable {
 			`content_id`,
 			tc.`title`,
 			tc.`format_guid`,
-			ged.`name`,
-			ged.`path`,
-			ged.`config`,
-			ged.`privacy`,
+			ged.`g_name` AS `name`,
+			ged.`g_path` AS `path`,
+			ged.`g_config` AS `config`,
+			ged.`g_privacy` AS `privacy`,
 			tc.`last_modified`,
 			tc.`created`,
 			`ip`,
-			`comment`,
-			`version`,
-			`flag`,
-			tp.`content_id`
+			tc.`content_id`
 				FROM `".BIT_DB_PREFIX."pgv_gedcom` ged
-				INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = tp.`content_id`),
+				INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`),
 				`".BIT_DB_PREFIX."users_users` uue,
 				`".BIT_DB_PREFIX."users_users` uuc
 				  WHERE tc.`content_type_guid`=?
@@ -83,7 +80,7 @@ class BitPage extends LibertyAttachable {
 				  ORDER BY ".$this->mDb->convert_sortmode( $sort_mode );
 		$query_cant = "SELECT COUNT(*)
 			FROM `".BIT_DB_PREFIX."pgv_gedcom` ged
-			INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = tp.`content_id`)
+			INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`)
 			WHERE tc.`content_type_guid`=? $mid";
 
 		// If sort mode is versions then offset is 0, maxRecords is -1 (again) and sort_mode is nil

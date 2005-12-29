@@ -12,7 +12,7 @@ $tables = array(
 ",
 
 'pgv_individuals' => "
-	i_id C(255) PRIMARY,
+	i_id C(250) PRIMARY,
 	i_file I4,
 	i_rin C(30),
 	i_name C(255),
@@ -23,7 +23,7 @@ $tables = array(
 ",
 
 'pgv_families' => "
-	f_id C(255) PRIMARY,
+	f_id C(250) PRIMARY,
 	f_file I4,
 	f_husb C(255),
 	f_wife C(255),
@@ -33,21 +33,21 @@ $tables = array(
 ",
 
 'pgv_sources' => "
-	s_id C(255) PRIMARY,
+	s_id C(250) PRIMARY,
 	s_file I4,
 	s_name C(255),
 	s_GEDCOM X
 ",
 
 'pgv_other' => "
-	o_id C(255) PRIMARY,
+	o_id C(250) PRIMARY,
 	o_file I4,
 	o_type C(20),
 	o_GEDCOM X
 ",
 
 'pgv_names' => "
-	n_gid C(255) PRIMARY,
+	n_gid C(250) PRIMARY,
 	n_file I4,
 	n_type C(10),
 	n_letter C(5),

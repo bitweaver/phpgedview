@@ -1,69 +1,95 @@
 <?php
 /**
- * MyGedView page allows a logged in user the abilty
- * to keep bookmarks, see a list of upcoming events, etc.
+ * $Header: /cvsroot/bitweaver/_bit_phpgedview/index.php,v 1.2 2005/12/29 22:03:30 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2005  PGV Development Team
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Copyright (c) 2004 bitweaver.org
+ * All Rights Reserved. See copyright.txt for details and a complete list of authors.
+ * Licensed under the GNU LESSER GENERAL PUBLIC LICENSE. See license.txt for details
  *
  * @package PhpGedView
- * @subpackage Display
- * @version $Id: index.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @subpackage functions
  */
 
-if (isset ($_REQUEST['mod']))
-{
-	require_once 'module.php';
-	exit;
+/**
+ * required setup
+ */
+require_once( '../bit_setup_inc.php' );
+require_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+// $gBitSystem->verifyFeature( 'feature_listGEDCOM' );
+
+// Now check permissions to access this page
+$gBitSystem->verifyPermission( 'bit_p_view_phpgedview' );
+
+if ( empty( $_REQUEST["sort_mode"] ) ) {
+	$sort_mode = 'last_modified_desc';
+} else {
+	$sort_mode = $_REQUEST["sort_mode"];
+}
+$gBitSmarty->assign_by_ref('sort_mode', $sort_mode);
+// If offset is set use it if not then use offset =0
+// use the maxRecords php variable to set the limit
+// if sortMode is not set then use last_modified_desc
+if (!isset($_REQUEST["offset"])) {
+	$offset = 0;
+} else {
+	$offset = $_REQUEST["offset"];
+}
+if (isset($_REQUEST['page'])) {
+	$page = &$_REQUEST['page'];
+	$offset = ($page - 1) * $maxRecords;
+}
+$gBitSmarty->assign_by_ref('offset', $offset);
+if (isset($_REQUEST["find"])) {
+	$find = $_REQUEST["find"];
+// If we leave $_REQUEST["find"] set, it also seems to affect other places
+// like the shoutbox.
+	$_REQUEST["find"] = "";
+} else {
+	$find = '';
+}
+$gBitSmarty->assign_by_ref('find', $find);
+// Get a list of last changes to the Wiki database
+$Content = new BitGEDCOM();
+$sort_mode = preg_replace( '/^user_/', 'creator_user_', $sort_mode );
+$listgedcom = $Content->getList( $offset, $maxRecords, $sort_mode, $find, NULL, TRUE );
+// If there're more records then assign next_offset
+$cant_pages = ceil($listgedcom["cant"] / $maxRecords);
+$gBitSmarty->assign_by_ref('cant_pages', $cant_pages);
+$gBitSmarty->assign_by_ref('pagecount', $listgedcom['cant']);
+$gBitSmarty->assign('actual_page', 1 + ($offset / $maxRecords));
+if ($listgedcom["cant"] > ($offset + $maxRecords)) {
+	$gBitSmarty->assign('next_offset', $offset + $maxRecords);
+} else {
+	$gBitSmarty->assign('next_offset', -1);
+}
+// If offset is > 0 then prev_offset
+if ($offset > 0) {
+	$gBitSmarty->assign('prev_offset', $offset - $maxRecords);
+} else {
+	$gBitSmarty->assign('prev_offset', -1);
 }
 
+$gBitSmarty->assign_by_ref('listgedcom', $listgedcom["data"]);
+//print_r($listgedcom["data"]);
+
+// Display the template
+$gBitSystem->display( 'bitpackage:phpgedview/list_gedcom.tpl');
+
+/*
 require("config.php");
 
 if (!isset($CONFIGURED)) {
 	print "Unable to include the config.php file.  Make sure that . is in your PHP include path in the php.ini file.";
 	exit;
 }
+
 require($PGV_BASE_DIRECTORY.$factsfile["english"]);
 if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
-
-/**
- * Block definition array
- *
- * The following block definition array defines the
- * blocks that can be used to customize the portals
- * their names and the function to call them
- * "name" is the name of the block in the lists
- * "descr" is the name of a $pgv_lang variable to describe this block
- * - eg: "whatever" here means that $pgv_lang["whatever"] describes this block
- * "type" the options are "user" or "gedcom" or undefined
- * - The type determines which lists the block is available in.
- * - Leaving the type undefined allows it to be on both the user and gedcom portal
- * @global $PGV_BLOCKS
- */
-$PGV_BLOCKS = array();
-
-//-- load all of the blocks
-$d = dir("blocks");
-while (false !== ($entry = $d->read())) {
-	if (strstr($entry, ".")==".php") {
-		include_once("blocks/".$entry);
-	}
-}
-$d->close();
 
 if (isset($_SESSION["timediff"])) $time = time()-$_SESSION["timediff"];
 else $time = time();
@@ -295,6 +321,5 @@ if (($command=="gedcom") and (!$gedcom_block_present)) {
 		print "</div>";
 	}
 }
-
-print_footer();
+*/
 ?>
