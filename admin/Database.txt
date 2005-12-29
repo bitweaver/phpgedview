@@ -1,0 +1,176 @@
+DATABASE TABLE LAYOUT
+
+PhpGedView uses a very simple database table layout because it operates
+primarily on the GEDCOM data and only needs the database for search and
+retrieval.  There are only a few tables in the database:
+  pgv_blocks        # Description of each user's Portal page
+  pgv_dates         # Stores decoded date information from GEDCOM records
+  pgv_families      # All the families in the GEDCOM
+  pgv_favorites     # Stores users favorites
+  pgv_individuals   # All the individuals in the GEDCOM
+  pgv_messages      # Messages to and from users
+  pgv_names         # Stores decoded name information from GEDCOM records
+  pgv_news          # Stores news items for the Index and Portal pages
+  pgv_other         # All other level 0 GEDCOM records (i.e., repositories, 
+                    #   media objects, notes, etc.)
+  pgv_placelinks    # Cross-reference between places and individuals and
+                    #   families
+  pgv_places        # Place hierarchy
+  pgv_sources       # All the sources in the GEDCOM
+  pgv_users         # Table for user data (only exists if using default 
+                    #   mysql authentication module)
+
+
+The tables are all very similar.  They each have a field for the GEDCOM ID, 
+a field to tell which GEDCOM file the record was imported from, a few 
+fields for things like quick retrieval of name information, and a field for
+the raw GEDCOM record data.
+
+Following is a more detailed description of each table:
+  pgv_individuals:
+    i_id VARCHAR(255)      # GEDCOM individual ID
+    i_file INT             # ID number of the GEDCOM file the record is from
+    i_rin VARCHAR(30)      # Individual's RIN number
+    i_name VARCHAR(255)    # Person's primary name taken from the first
+                           #   1 NAME line stored in GEDCOM name format
+    i_isdead int(1)        # Alive/dead status of individual
+                           #   -1 = not calculated yet 0 = alive 1 = dead
+    i_GEDCOM TEXT          # Raw GEDCOM record for this individual
+    i_letter VARCHAR(5)    # First letter of the individual's surname
+    i_surname VARCHAR(100) # Person's surname
+
+  pgv_families:
+    f_id VARCHAR(255)      # GEDCOM family ID
+    f_file INT             # ID number of the GEDCOM file the record is from
+    f_husb VARCHAR(255)    # ID of the husband
+    f_wife VARCHAR(255)    # ID of the wife
+    f_chil TEXT            # List of children IDs, semi-colon (;) delimited
+    f_GEDCOM TEXT          # Raw GEDCOM record for this family
+    f_numchil INT          # Number of children in this family
+
+  pgv_sources:
+    s_id VARCHAR(255)      # GEDCOM source ID
+    s_file INT             # ID number of the GEDCOM file the record is from
+    s_name VARCHAR(255)    # Abbreviated title of the source
+    s_GEDCOM TEXT          # Raw GEDCOM record for this source
+
+  pgv_other:
+    o_id VARCHAR(255)      # GEDCOM record ID
+    o_file INT             # ID number of the GEDCOM file the record is from
+    o_type VARCHAR(20)     # Type of GEDCOM record
+                           #    (REPO, ADDR, NOTE, OBJE, etc)
+    o_GEDCOM TEXT          # Raw GEDCOM record for this item
+
+  pgv_names:
+    n_gid VARCHAR(255)     # Individual ID that this name corresponds to
+    n_file INT             # ID number of the GEDCOM file the record is from
+    n_name VARCHAR(255)    # Name in GEDCOM format,
+                           #   with / / around the surname
+    n_letter VARCHAR(5)    # First letter of the surname
+    n_surname VARCHAR(100) # Surname for this name record
+    n_type VARCHAR(10)     # Type of name,
+                           #   P = primary, A = additional, C=calculated
+                           
+  pgv_dates:
+  	d_day                  # The day of month for this date
+  	d_month                # The 3 letter abbreviation for month of year
+  	d_mon                  # Integer 1-12 for the month of year
+  	d_year                 # The year for this date
+  	d_datestamp            # A date stamp of the form YYYYMMDD used for simple 
+  	                       # comparisons
+  	d_fact                 # The fact that this date was associated with
+  	d_gid                  # The gedcom XREF ID where this fact and date were found
+  	d_file                 # The gedcom file id where this fact was found
+  	d_type                 # Used if this date uses an alternate calendar type
+
+  pgv_blocks:
+    b_id INT(11)           # Record ID
+    b_username VARCHAR(100) # User name whom block belongs to
+    b_location VARCHAR(30) # Location of the block.  
+                           #   Main column or right column
+    b_order INT(11)        # Position of the block within the column
+    b_name VARCHAR(255)    # Name of the block
+    b_config TEXT          # Configuration settings for this block
+
+  pgv_favorites:
+    fv_id INT(11)          # Record ID
+    fv_username VARCHAR(30) # User name whom the favorite belongs to
+    fv_gid VARCHAR(10)     # ID of the favorite
+    fv_type VARCHAR(10)    # Type of favorite (currently only INDI)
+    fv_file VARCHAR(100)   # File that this favorite belongs to
+    fv_url VARCHAR(255)    # The URL for this favorite if it is not one of 
+                           # the basic types
+    fv_title VARCHAR(255)  # A title for URL based favorites
+    fv_note TEXT           # Optional descriptive information about this favorite
+
+  pgv_messages:
+    m_id INT(11)           # Record ID
+    m_from VARCHAR(255)    # Name or email address of the sender
+    m_to VARCHAR(30)       # Destination user name
+    m_subject VARCHAR(255) # Subject of the message
+    m_body TEXT            # Body text of the message
+    m_created VARCHAR(255) # Time stamp when the message was created
+            
+  pgv_news:
+    n_id INT(11)           # Unique identifier
+    n_username VARCHAR(100) # User name or GEDCOM the News item belongs to
+    n_date INT(11)         # Time stamp of last update
+    n_title VARCHAR(255)   # Title of the article
+    n_text TEXT            # Body text of the article
+
+  pgv_places:
+    p_id INT(11)           # Unique identifier
+    p_place VARCHAR(150)   # Place name
+    p_level INT(11)        # Level of the place in the hierarchy,
+                           #   0 is the country or state
+    p_parent_id INT(11)    # ID of this item's parent place in the 
+                           #   hierarchy.  A city's parent would be the 
+                           #   county it is in, a county's parent would be 
+                           #   a state or province, and a state or province
+                           #   would have a country as parent.
+    p_file INT             # ID number of the GEDCOM file the record is from
+
+  pgv_placelinks:
+    pl_p_id INT(11)        # Unique identifier
+    pl_gid VARCHAR(30)     # Family or individual ID referencing this place
+    pl_file INT            # ID number of the GEDCOM file the record is from
+
+  pgv_users:
+    u_username VARCHAR(30) # User name
+    u_password VARCHAR(255) # Encrypted password
+    u_fullname VARCHAR(255) # User's full name
+    u_GEDCOMid TEXT        # Serialized array representing the GEDCOM IDs
+                           #   for this user
+    u_rootid TEXT          # Serialized array representing the root IDs 
+                           #   for this user
+    u_canadmin ENUM('Y','N') # Is the user an admin or not
+    u_canedit TEXT         # Serialized array indicating the editing 
+                           #   privileges a user has for each GEDCOM
+    u_email TEXT           # Email addres
+    u_verified VARCHAR(20) # User self verified
+    u_verified_by_admin VARCHAR(20)  # User has been verified by the admin
+    u_language VARCHAR(50) # User's preferred language
+    u_pwrequested VARCHAR(20)   # User requested a new password
+    u_reg_timestamp VARCHAR(50) # Registration timestamp
+    u_reg_hashcode VARCHAR(255) # Self-registration hash key
+    u_theme VARCHAR(50)         # User's preferred theme
+    u_loggedin ENUM('Y','N')    # User's login status
+    u_sessiontime INT(14)       # User's last login time stamp
+    u_contactmethod VARCHAR(20) # User's preferred method of contact
+    u_visibleonline ENUM('Y','N')  # Whether or not the user is visible in
+                                   #   the logged on users block
+    u_editaccount ENUM('Y', 'N')   # Whether or not the user can edit his
+                                   #   own account information
+    u_defaulttab INT(10)           # Default tab on the individual page
+                                   #   for this user
+    u_comment VARCHAR(255)         # Admin's comments on this user
+    u_comment_exp VARCHAR(20)      # Alert date for the admin, for instance 
+                                   #   for temporary accounts.
+    u_sync_gedcom VARCHAR(2)    # If the user has a GEDCOM record ID, then 
+                                #   should some of the data for the user (name,
+                                #   email) be synchronized with the GEDCOM data.
+    u_relationship_privacy VARCHAR(2)  # Should this user use relationship privacy
+    u_max_relation_length INT   # The maximum path that the user is allowed to see
+    u_auto_accept VARCHAR(2)    # Are changes made by this user automatically 
+                                #   accepted into the database
+
