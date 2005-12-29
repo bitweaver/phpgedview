@@ -1,6 +1,16 @@
 <?php
 $tables = array(
 
+'pgv_gedcom' => "
+	g_id I4 PRIMARY,
+	g_content_id I4,
+	g_name C(255),
+	g_path C(255),
+	g_config C(255),
+	g_privacy C(255),
+	g_commonsurnames X
+",
+
 'pgv_individuals' => "
 	i_id C(255) PRIMARY,
 	i_file I4,
