@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: session.php,v 1.2 2005/12/30 17:44:59 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -515,34 +515,7 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
 	check_db();
 }
 
-//-- load the user specific theme
-if ((!empty($pgv_username))&&(!isset($logout))) {
-	$tempuser = getUser($pgv_username);
-	$usertheme = $tempuser["theme"];
-	if ((!empty($_POST["user_theme"]))&&(!empty($_POST["oldusername"]))&&($_POST["oldusername"]==$pgv_username)) $usertheme = $_POST["user_theme"];
-	if ((!empty($usertheme)) && (file_exists($usertheme."theme.php")))  {
-		$THEME_DIR = $usertheme;
-	}
-}
-
-if (isset($_SESSION["theme_dir"]))
-{
-	$THEME_DIR = $_SESSION["theme_dir"];
-	if (!empty($pgv_username))
-	{
-		$tempuser = getUser($pgv_username);
-		if ($tempuser["editaccount"]) unset($_SESSION["theme_dir"]);
-	}
-}
-
-if (empty($THEME_DIR)) $THEME_DIR="standard/";
-if (file_exists($PGV_BASE_DIRECTORY.$THEME_DIR."theme.php")) require_once($PGV_BASE_DIRECTORY.$THEME_DIR."theme.php");
-else {
-	$THEME_DIR = $PGV_BASE_DIRECTORY."themes/standard/";
-	require_once($THEME_DIR."theme.php");
-}
-
-require_once($PGV_BASE_DIRECTORY."hitcount.php"); //--load the hit counter
+// require_once($PGV_BASE_DIRECTORY."hitcount.php"); //--load the hit counter
 
 if ($Languages_Default) {					// If Languages not yet configured
 	$pgv_lang_use["english"] = false;		//   disable English
