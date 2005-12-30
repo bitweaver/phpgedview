@@ -12,7 +12,7 @@
 	{strip}
 	{form legend="GEDCOM Upload" id="GEDCOM Upload"}
 		{forminput}
-			<input type="hidden" name="action" value="$action" />
+			<input type="hidden" name="action" value="{$action}" />
 			<input type="hidden" name="check" value="upload" />
 			Select files from your local computer to upload to your server. All files will be uploaded to the directory:../secindex/
 			<table class="facts_table center $text_dir">
@@ -32,21 +32,21 @@
 				<tr>
 					<td class="descriptionbox">GEDCOM File:</td>
 					<td class="optionbox">
-						{if isset($GEDFILENAME) } $path.$GEDFILENAME
-						{elseif (isset($UPFILE)) } $UPFILE["name"]
+						{if isset($GEDFILENAME) } {$path}.{$GEDFILENAME}
+						{elseif isset($UPFILE) } {$UPFILE}.["name"]
 						{else}
 							<input name="UPFILE" type="file" size="50" />
 						{/if}
 					</td>
 				</tr>
 				<tr>
-					<td colspan="2">( max_upload_size $filesize )</td>
+					<td colspan="2">( max_upload_size {$filesize} )</td>
 				</tr>
 			</table>
 		{/forminput}
 
 		<div class="row submit">
-			<input type="submit" name="refresh" value="{tr}Upload GEDCOM{/tr}" />
+			<input type="submit" name="continue" value="{tr}Upload GEDCOM{/tr}" />
 		</div>
 	{/form}
 	{/strip}
