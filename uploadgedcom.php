@@ -28,15 +28,15 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.2 2005/12/30 00:38:42 lsces Exp $
  */
- // NOTE: No direct access to this script
- //-- Be careful this may not be a good idea... 
- //-- the browser is not necessarily required to send a HTTP_REFERER 
- if (!isset($_SERVER["HTTP_REFERER"])) {
-	header("Location: editgedcoms.php");
-	exit;
-}
+
+/**
+ * required setup
+ */
+require_once( '../bit_setup_inc.php' );
+require_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
  // TODO: Progress bars don't show until </table> or </div>
  // TODO: Upload ZIP support alternative path and name
  
@@ -51,14 +51,11 @@
  // NOTE: $import_existing = See if we are just importing an existing GEDCOM
  // NOTE: $replace_gedcom = When uploading a GEDCOM, user will be asked to replace an existing one. If yes, overwrite
  // NOTE: $bakfile = Name and path of the backupfile, this file is created if a file with the same name exists
-require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+//require "config.php";
+//require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
+//if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
 
-if (!userGedcomAdmin(getUserName())) {
-	header("Location: login.php?url=uploadgedcom.php");
-	exit;
-}
+$gBitSystem->verifyPermission( 'bit_p_admin' );
 
 if (empty($action)) $action = "upload_form";
 if (!isset($path)) $path = "";
@@ -70,7 +67,7 @@ if (!isset($bakfile)) $bakfile = "";
 if (!isset($cleanup_needed)) $cleanup_needed = false;
 if (!isset($ok)) $ok = false;
 if (!isset($startimport)) $startimport = false;
-if (!isset($timelimit)) $timelimit = $TIME_LIMIT;
+if (!isset($timelimit)) $timelimit = $home_blog = $gBitSystem->getPreference("time_limit", 60);
 if (!isset($importtime)) $importtime = 0;
 if (!isset($no_upload)) $no_upload = false;
 if (!isset($override)) $override = false;
@@ -166,10 +163,10 @@ else if ($check == "cancel_upload") {
 	if ($import) $import = false;
 	if ($cleanup_needed) $cleanup_needed = false;
 	$noupload = true;
-	header("Location: editgedcoms.php");
+	header("Location: index.php");
 }
 if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]) {
-	require_once("includes/functions_tools.php");
+//	require_once("includes/functions_tools.php");
 	
 	$filechanged=false;
 	if (file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
@@ -246,150 +243,35 @@ if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]
 }
 
 // NOTE: Change header depending on action
-if ($action == "upload_form") print_header($pgv_lang["upload_gedcom"]);
-else if ($action == "add_form") print_header($pgv_lang["add_gedcom"]);
-else if ($action == "add_new_form") print_header($pgv_lang["add_new_gedcom"]);
-else print_header($pgv_lang["ged_import"]);
+if ($action == "upload_form") $header = "upload_gedcom";
+else if ($action == "add_form") $header = "add_gedcom";
+else if ($action == "add_new_form") $header = "add_new_gedcom";
+else $header = "ged_import";
+$gBitSmarty->assign( 'header', $header );
 
 // NOTE: Print form header
-print "<form enctype=\"multipart/form-data\" method=\"post\" name=\"configform\" action=\"uploadgedcom.php\">";
+//print "<form enctype=\"multipart/form-data\" method=\"post\" name=\"configform\" action=\"uploadgedcom.php\">";
 
+$gBitSmarty->assign( 'startimport', $startimport );
+$text_dir = $gBitSystem->getPreference("text_direction", " ");
+$gBitSmarty->assign( 'text_dir', $text_dir );
+$gBitSmarty->assign( 'action', $action );
 // NOTE: Print table header
-print "<table class=\"facts_table center $TEXT_DIRECTION\">";
+// print "<table class=\"facts_table center $text_dir\">";
 
 // NOTE: Add GEDCOM form
 if ($action == "add_form") {
-	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-	print "<a href=\"javascript: ";
-	if ($import_existing) print $pgv_lang["ged_import"];
-	else print $pgv_lang["add_gedcom"];
-	print "\" onclick=\"expand_layer('add-form');return false\"><img id=\"add-form_img\" src=\"".$PGV_IMAGE_DIR."/";
-	if ($startimport != "true") print $PGV_IMAGES["minus"]["other"];
-	else print $PGV_IMAGES["plus"]["other"];
-	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";
-	print_help_link("add_gedcom_help", "qm","add_gedcom");
-	print "&nbsp;<a href=\"javascript: ";
-	if ($import_existing) print $pgv_lang["ged_import"];
-	else print $pgv_lang["add_gedcom"];
-	print "\" onclick=\"expand_layer('add-form');return false\">";
-	if ($import_existing) print $pgv_lang["ged_import"];
-	else print $pgv_lang["add_gedcom"];
-	print "</a>";
-	print "</td></tr>";
-	print "<tr><td class=\"optionbox\">";
-	print "<div id=\"add-form\" style=\"display: ";
-	if ($startimport != "true") print "block ";
-	else print "none ";
-	print "\">";
-		?>
-		<input type="hidden" name="check" value="add" />
-		<input type="hidden" name="action" value="<?php print $action; ?>" />
-		<input type="hidden" name="import_existing" value="<?php print $import_existing; ?>" />
-		<table class="facts_table">
-			<?php
-			$i = 0;
-			if (!empty($error)) {
-				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-				print "<span class=\"error\">".$error."</span>\n";
-				print "</td></tr>";
-			}
-			?>
-			<tr>
-				<td class="descriptionbox width20 wrap">
-				<?php print_help_link("gedcom_path_help", "qm","gedcom_path");?>
-				<?php print $pgv_lang["gedcom_file"]; ?></td>
-				<td class="optionbox"><input type="text" name="GEDFILENAME" value="<?php if (isset($GEDFILENAME) && strlen($GEDFILENAME) > 4) print $GEDCOMS[$GEDFILENAME]["path"]; ?>" 
-				size="60" dir ="ltr" tabindex="<?php $i++; print $i?>"	<?php if ((!$no_upload && isset($GEDFILENAME)) && (empty($error))) print "disabled "; ?> />
-				</td>
-			</tr>
-		</table>
-		<?php
-	print "</div>";
-	print "</td></tr>";
+	$gBitSmarty->assign( 'error', "" );
 }
 // NOTE: Upload GEDCOM form
 else if ($action == "upload_form") {
-	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-	print "<a href=\"javascript: ".$pgv_lang["upload_gedcom"]."\" onclick=\"expand_layer('upload_gedcom'); return false;\"><img id=\"upload_gedcom_img\" src=\"".$PGV_IMAGE_DIR."/";
-	if ($startimport != "true") print $PGV_IMAGES["minus"]["other"];
-	else print $PGV_IMAGES["plus"]["other"];
-	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";
-	print_help_link("upload_gedcom_help", "qm", "upload_gedcom");
-	print "&nbsp;<a href=\"javascript: ".$pgv_lang["upload_gedcom"]."\" onclick=\"expand_layer('upload_gedcom');return false\">".$pgv_lang["upload_gedcom"]."</a>";
-	print "</td></tr>";
-	print "<tr><td class=\"optionbox wrap\">";
-	print "<div id=\"upload_gedcom\" style=\"display: ";
-	if ($startimport != "true") print "block ";
-	else print "none ";
-	print "\">";
-	?>
-		<input type="hidden" name="action" value="<?php print $action; ?>" />
-		<input type="hidden" name="check" value="upload" />
-		<table class="facts_table">
-		<?php
-		if (!empty($error)) {
-			print "<span class=\"error\">".$error."</span><br />\n";
-			print_text("common_upload_errors");
-			print "<br />\n";
-		}
-		
-		?>
-		<tr>
-			<td class="descriptionbox width20 wrap">
-			<?php print $pgv_lang["gedcom_file"];?></td>
-			<td class="optionbox">
-				<?php
-				if (isset($GEDFILENAME)) print $path.$GEDFILENAME;
-				else if (isset($UPFILE)) print $UPFILE["name"];
-				else {
-					print "<input name=\"UPFILE\" type=\"file\" size=\"60\" />";
-					if (!$filesize = ini_get('upload_max_filesize')) $filesize = "2M";
-					print " ( ".$pgv_lang["max_upload_size"]." $filesize )";
-				}
-				?>
-			</td>
-		</tr>
-		</table>
-		<?php
-	print "</div>";
-	print "</td></tr>";
+	$gBitSmarty->assign( 'error', "" );
+	if (!$filesize = ini_get('upload_max_filesize')) $filesize = "2M";
+	$gBitSmarty->assign( 'filesize', $filesize ); 
 }
 // NOTE: Add new GEDCOM form
 else if ($action == "add_new_form") {
-	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-	print "<a href=\"javascript: ".$pgv_lang["add_new_gedcom"]."\" onclick=\"expand_layer('add_new_gedcom');return false\"><img id=\"add_new_gedcom_img\" src=\"".$PGV_IMAGE_DIR."/";
-	if ($startimport != "true") print $PGV_IMAGES["minus"]["other"];
-	else print $PGV_IMAGES["plus"]["other"];
-	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";
-	print_help_link("add_gedcom_instructions", "qm","add_new_gedcom");
-	print "&nbsp;<a href=\"javascript: ".$pgv_lang["add_new_gedcom"]."\" onclick=\"expand_layer('add_new_gedcom');return false\">".$pgv_lang["add_new_gedcom"]."</a>";
-	print "</td></tr>";
-	print "<tr><td class=\"optionbox\">";
-	print "<div id=\"add-form\" style=\"display: ";
-	if ($startimport != "true") print "block ";
-	else print "none ";
-	print "\">";
-		?>
-		<input type="hidden" name="action" value="<?php print $action; ?>" />
-		<input type="hidden" name="check" value="add_new" />
-		<table class="facts_table">
-		<?php
-		if (!empty($error)) {
-				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-				print "<span class=\"error\">".$error."</span>\n";
-				print "</td></tr>";
-		}
-		?>
-		<tr>
-			<td class="descriptionbox width20 wrap">
-			<?php print $pgv_lang["gedcom_file"];?>
-			</td>
-			<td class="optionbox"><input name="GEDFILENAME" type="text" value="<?php if (isset($GEDFILENAME)) print $path.$GEDFILENAME; ?>" size="60" <?php if (isset($GEDFILENAME) && !$no_upload) print "disabled"; ?> /></td>
-		</tr>
-		</table>
-		<?php
-	print "</div>";
-	print "</td></tr>";
+	$gBitSmarty->assign( 'error', "" );
 }
 if ($verify=="verify_gedcom") {
 	// NOTE: Check if GEDCOM has been imported into DB
@@ -1166,18 +1048,7 @@ if ($startimport == "true") {
 	}
 }
 ?>
-<tr><td class="topbottombar" colspan="2">
 <?php
-	if ($startimport != "true") print "<input type=\"submit\" name=\"continue\" value=\"".$pgv_lang["del_proceed"]."\" />&nbsp;";
-		if ($cleanup_needed && $skip_cleanup != $pgv_lang["skip_cleanup"]) {
-			print_help_link("skip_cleanup_help", "qm", "skip_cleanup");
-			print "<input type=\"submit\" name=\"skip_cleanup\" value=\"".$pgv_lang["skip_cleanup"]."\" />&nbsp;\n";
-		}
-		if ($verify && $startimport != "true") print "<input type=\"button\" name=\"cancel\" value=\"".$pgv_lang["cancel"]."\" onclick=\"document.configform.override.value='no'; document.configform.no_upload.value='cancel_upload'; document.configform.submit(); \" />";
-	?>
-</td></tr>
-</table></form>
-<?php
-
-print_footer();
+// Display the template
+$gBitSystem->display( "bitpackage:phpgedview/gedcom_$action.tpl" );
 ?>
