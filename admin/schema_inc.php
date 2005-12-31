@@ -163,6 +163,21 @@ $gBitInstaller->registerPackageInfo( PHPGEDVIEW_PKG_NAME, array(
 	'dependencies' => 'html',
 ) );
 
+// ### Default Preferences
+$gBitInstaller->registerPreferences( PHPGEDVIEW_PKG_NAME, array(
+	array(PHPGEDVIEW_PKG_NAME,'pgv_session_time','7200'),
+	array(PHPGEDVIEW_PKG_NAME,'calendar_format','gregorian'),
+	array(PHPGEDVIEW_PKG_NAME,'default_pedigree_generations','4'),
+	array(PHPGEDVIEW_PKG_NAME,'max_pedigree_generations','10'),
+	array(PHPGEDVIEW_PKG_NAME,'max_descendancy_generations','15'),
+	array(PHPGEDVIEW_PKG_NAME,'use_RIN','n'),
+	array(PHPGEDVIEW_PKG_NAME,'pedigree_root_id','I1'),
+	array(PHPGEDVIEW_PKG_NAME,'gedcom_prefix_id','I'),
+	array(PHPGEDVIEW_PKG_NAME,'source_prefix_id','S'),
+	array(PHPGEDVIEW_PKG_NAME,'repo_prefix_id','R'),
+	array(PHPGEDVIEW_PKG_NAME,'fam_prefix_id','F'),
+	array(PHPGEDVIEW_PKG_NAME,'media_prefix_id','M'),
+) );
 
 // ### Default UserPermissions
 $gBitInstaller->registerUserPermissions( PHPGEDVIEW_PKG_NAME, array(

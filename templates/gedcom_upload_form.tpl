@@ -32,8 +32,7 @@
 				<tr>
 					<td class="descriptionbox">GEDCOM File:</td>
 					<td class="optionbox">
-						{if isset($GEDFILENAME) } {$path}.{$GEDFILENAME}
-						{elseif isset($UPFILE) } {$UPFILE}.["name"]
+						{if isset($file) } {$file}
 						{else}
 							<input name="UPFILE" type="file" size="50" />
 						{/if}

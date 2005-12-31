@@ -1,6 +1,6 @@
 <?php
 /**
- * $Header: /cvsroot/bitweaver/_bit_phpgedview/index.php,v 1.2 2005/12/29 22:03:30 lsces Exp $
+ * $Header: /cvsroot/bitweaver/_bit_phpgedview/index.php,v 1.3 2005/12/31 12:52:02 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2005  PGV Development Team
@@ -16,7 +16,6 @@
  * required setup
  */
 require_once( '../bit_setup_inc.php' );
-require_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gBitSystem->verifyPackage( 'phpgedview' );
 
@@ -24,6 +23,10 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 // Now check permissions to access this page
 $gBitSystem->verifyPermission( 'bit_p_view_phpgedview' );
+
+require_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+require_once( PHPGEDVIEW_PKG_PATH.'includes/session.php' );
+//vd($_REQUEST);
 
 if ( empty( $_REQUEST["sort_mode"] ) ) {
 	$sort_mode = 'last_modified_desc';

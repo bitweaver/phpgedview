@@ -34,6 +34,100 @@ class BitGEDCOM extends LibertyAttachable {
 	}
 
 	/**
+	 * Check for valid GEDCOMId
+	 * @param find Filter to be applied to the list
+	 */
+	function isValid() {
+		return true;
+	}
+
+	/**
+	 * Get number of GEDCOM archives available
+	 * @param pGEDCOMId Check for a specific id, other wise return count
+	 */
+	function getCount( $pGEDCOMId=NULL ) {
+		$cant = 0;
+		if( $pGEDCOMId ) {
+			if ( $this->isValid() ) $cant = 1;
+		}
+		else
+		{	$query_cant = "SELECT COUNT(*)
+			FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
+			INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`)
+			WHERE tc.`content_type_guid`='BitGEDCOM'";
+			$cant = $this->mDb->getOne( $query_cant );
+		}
+		return $cant;		
+	}
+
+	/**
+	 * Load a GEDCOM archives
+	 */
+	function load() {
+		if( $this->isValid() ) {
+			global $gBitSystem, $gBitUser;
+			$gateSql = NULL;
+			$mid = NULL;
+			if ( @$this->verifyId( $this->mGEDCOMId ) ) {
+				$mid = " WHERE ged.`g_id` = ?";
+				$bindVars = array($this->mImageId);
+			} elseif ( @$this->verifyId( $this->mContentId ) ) {
+				$mid = " WHERE ged.`content_id` = ?";
+				$bindVars = array($this->mContentId);
+			}
+			if( $gBitSystem->isPackageActive( 'gatekeeper' ) ) {
+				$gateSql = ' ,ts.`security_id`, ts.`security_description`, ts.`is_private`, ts.`is_hidden`, ts.`access_question`, ts.`access_answer` ';
+				$mid = " LEFT OUTER JOIN `".BIT_DB_PREFIX."tiki_content_security_map` tcs ON ( tc.`content_id`=tcs.`content_id` )  LEFT OUTER JOIN `".BIT_DB_PREFIX."tiki_security` ts ON ( tcs.`security_id`=ts.`security_id` )
+ 						".$mid;
+			}
+			$sql = "SELECT ged.*, tc.* $gateSql
+						, uue.`login` AS `modifier_user`, uue.`real_name` AS `modifier_real_name`
+						, uuc.`login` AS `creator_user`, uuc.`real_name` AS `creator_real_name`
+					FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged, `".BIT_DB_PREFIX."tiki_content` tc
+						LEFT JOIN `".BIT_DB_PREFIX."users_users` uue ON (uue.`user_id` = tc.`modifier_user_id`)
+						LEFT JOIN `".BIT_DB_PREFIX."users_users` uuc ON (uuc.`user_id` = tc.`user_id`)
+					$mid AND tc.`content_id` = tfi.`content_id`";
+			if( $rs = $this->mDb->query($sql, array($bindVars)) ) {
+				$this->mInfo = $rs->fields;
+
+				$this->mGEDCOMId = $this->mInfo['g_id'];
+				$this->mContentId = $this->mInfo['content_id'];
+
+				$this->mInfo['creator'] = (isset( $rs->fields['creator_real_name'] ) ? $rs->fields['creator_real_name'] : $rs->fields['creator_user'] );
+				$this->mInfo['editor'] = (isset( $rs->fields['modifier_real_name'] ) ? $rs->fields['modifier_real_name'] : $rs->fields['modifier_user'] );
+
+/*				if( $gBitSystem->isPackageActive( 'gatekeeper' ) && !@$this->verifyId( $this->mInfo['security_id'] ) ) {
+					// check to see if this image is in a protected gallery
+					// this burns an extra select but avoids an big and gnarly LEFT JOIN sequence that may be hard to optimize on all DB's
+					$query = "SELECT ts.* FROM `".BIT_DB_PREFIX."tiki_fisheye_gallery_image_map` tfgim
+								INNER JOIN `".BIT_DB_PREFIX."tiki_content_security_map` tsm ON(tfgim.`gallery_content_id`=tsm.`content_id` )
+								INNER JOIN `".BIT_DB_PREFIX."tiki_security` ts ON(tsm.`security_id`=ts.`security_id` )
+							  WHERE tfgim.`item_content_id`=?";
+					$grs = $this->mDb->query($query, array( $this->mContentId ) );
+					if( $grs && $grs->RecordCount() ) {
+						$this->mInfo = array_merge( $this->mInfo, $grs->fields );
+					}
+				}
+*/
+
+				LibertyAttachable::load();
+
+				if (!empty($this->mStorage) && count($this->mStorage) > 0) {
+					reset($this->mStorage);
+					$this->mInfo['gedcom_file'] = current($this->mStorage);
+				} else {
+					$this->mInfo['gedcom_file'] = NULL;
+				}
+			}
+		} else {
+			// We don't have an gedcom_id or a content_id so there is no way to know what to load
+			return NULL;
+		}
+
+		return count($this->mInfo);
+	}
+
+	/**
 	 * Generate list of GEDCOM archives
 	 * @param offset Number of the first record to list
 	 * @param maxRecords Number of records to list
@@ -70,7 +164,7 @@ class BitGEDCOM extends LibertyAttachable {
 			tc.`created`,
 			`ip`,
 			tc.`content_id`
-				FROM `".BIT_DB_PREFIX."pgv_gedcom` ged
+				FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
 				INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`),
 				`".BIT_DB_PREFIX."users_users` uue,
 				`".BIT_DB_PREFIX."users_users` uuc
@@ -79,7 +173,7 @@ class BitGEDCOM extends LibertyAttachable {
 				  AND tc.`user_id`=uuc.`user_id` $mid
 				  ORDER BY ".$this->mDb->convert_sortmode( $sort_mode );
 		$query_cant = "SELECT COUNT(*)
-			FROM `".BIT_DB_PREFIX."pgv_gedcom` ged
+			FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
 			INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`)
 			WHERE tc.`content_type_guid`=? $mid";
 

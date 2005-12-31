@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: functions.php,v 1.2 2005/12/31 12:52:02 lsces Exp $
  */
 
 /**
@@ -93,14 +93,14 @@ function check_db() {
  * @return string path to gedcom.ged_conf.php configuration file
  */
 function get_config_file() {
-	global $GEDCOMS, $GEDCOM, $PGV_BASE_DIRECTORY;
-	if (count($GEDCOMS)==0) {
-		return $PGV_BASE_DIRECTORY."config_gedcom.php";
+	global $GEDCOMS;
+	if ( $GEDCOMS->getCount() == 0) {
+		return PHPGEDVIEW_PKG_PATH."config_gedcom.php";
 	}
 	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) return $GEDCOMS[$GEDCOM]["config"];
 	foreach($GEDCOMS as $GEDCOM=>$gedarray) {
 		$_SESSION["GEDCOM"] = $GEDCOM;
-		return $PGV_BASE_DIRECTORY.$gedarray["config"];
+		return PHPGEDVIEW_PKG_PATH.$gedarray["config"];
 	}
 }
 
@@ -133,25 +133,25 @@ function get_privacy_file_version($privfile) {
  * @return string path to the privacy file
  */
 function get_privacy_file() {
-	global $GEDCOMS, $GEDCOM, $PGV_BASE_DIRECTORY, $REQUIRED_PRIVACY_VERSION;
+	global $GEDCOMS, $GEDCOM, $REQUIRED_PRIVACY_VERSION;
 
 	$privfile = "privacy.php";
 	if (count($GEDCOMS)==0) {
-		$privfile = $PGV_BASE_DIRECTORY."privacy.php";
+		$privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
 	}
 	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) {
 		if ((isset($GEDCOMS[$GEDCOM]["privacy"]))&&(file_exists($GEDCOMS[$GEDCOM]["privacy"]))) $privfile = $GEDCOMS[$GEDCOM]["privacy"];
-		else $privfile = $PGV_BASE_DIRECTORY."privacy.php";
+		else $privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
 	}
 	else {
 		foreach($GEDCOMS as $GEDCOM=>$gedarray) {
 			$_SESSION["GEDCOM"] = $GEDCOM;
-			if ((isset($gedarray["privacy"]))&&(file_exists($gedarray["privacy"]))) $privfile = $PGV_BASE_DIRECTORY.$gedarray["privacy"];
-			else $privfile = $PGV_BASE_DIRECTORY."privacy.php";
+			if ((isset($gedarray["privacy"]))&&(file_exists($gedarray["privacy"]))) $privfile = PHPGEDVIEW_PKG_PATH.$gedarray["privacy"];
+			else $privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
 		}
 	}
 	$privversion = get_privacy_file_version($privfile);
-	if ($privversion<$REQUIRED_PRIVACY_VERSION) $privfile = $PGV_BASE_DIRECTORY."privacy.php";
+	if ($privversion<$REQUIRED_PRIVACY_VERSION) $privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
 
 	return $privfile;
 }
@@ -3363,6 +3363,6 @@ function id_type($id) {
 }
 
 // optional extra file
-if (file_exists($PGV_BASE_DIRECTORY . "functions.extra.php")) require $PGV_BASE_DIRECTORY . "functions.extra.php";
+if (file_exists( PHPGEDVIEW_PKG_PATH . "functions.extra.php")) require PHPGEDVIEW_PKG_PATH . "functions.extra.php";
 
 ?>
