@@ -14,7 +14,7 @@
 		{forminput}
 			<input type="hidden" name="action" value="{$action}" />
 			<input type="hidden" name="check" value="upload" />
-			Select files from your local computer to upload to your server. All files will be uploaded to the directory:../secindex/
+			Select files from your local computer to upload to your server. All files will be uploaded to the storage directory
 			<table class="facts_table center $text_dir">
 				<tr><td class="topbottombar $text_dir" colspan="2">
 				<a href="javascript: upload_gedcom" onclick="expand_layer('upload_gedcom'); return false;"> 

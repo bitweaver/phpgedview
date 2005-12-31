@@ -1,10 +1,10 @@
 	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-	print "<a href=\"javascript: ".$pgv_lang["validate_gedcom"]."\" onclick=\"expand_layer('validate_gedcom');return false\"><img id=\"validate_gedcom_img\" src=\"".$PGV_IMAGE_DIR."/";
+	print "<a href=\"javascript: {tr}Validate GEDCOM{/tr}\" onclick=\"expand_layer('validate_gedcom');return false\"><img id=\"validate_gedcom_img\" src=\"".$PGV_IMAGE_DIR."/";
 	if ($startimport != "true") print $PGV_IMAGES["minus"]["other"];
 	else print $PGV_IMAGES["plus"]["other"];
 	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";
 	print_help_link("validate_gedcom_help", "qm","validate_gedcom");
-	print "&nbsp;<a href=\"javascript: ".$pgv_lang["validate_gedcom"]."\" onclick=\"expand_layer('validate_gedcom');return false\">".$pgv_lang["validate_gedcom"]."</a>";
+	print "&nbsp;<a href=\"javascript: {tr}Validate GEDCOM{/tr}\" onclick=\"expand_layer('validate_gedcom');return false\">".$pgv_lang["validate_gedcom"]."</a>";
 	print "</td></tr>";
 	print "<tr><td class=\"optionbox\">";
 	print "<div id=\"validate_gedcom\" style=\"display: ";
@@ -12,7 +12,7 @@
 	else print "none ";
 	print "\">";
 		print "<table class=\"facts_table\">";
-		print "<tr><td class=\"descriptionbox\" colspan=\"2\">".$pgv_lang["performing_validation"]."<br />";
+		print "<tr><td class=\"descriptionbox\" colspan=\"2\">Performing GEDCOM validation...<br />";
 		if (!empty($error)) print "<span class=\"error\">$error</span>\n";
 		
 		if ($import != true && $skip_cleanup != $pgv_lang["skip_cleanup"]) {
