@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.2 2005/12/29 22:03:30 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.3 2005/12/31 17:32:43 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin wiki">
@@ -16,7 +16,7 @@
 			<div class="navbar">
 				<ul>
 					<li>{biticon ipackage=liberty iname=sort iexplain="sort by"}</li>
-					<li>{smartlink ititle="Page Name" isort="title" offset=$offset}</li> 
+					<li>{smartlink ititle="Gedcom Name" isort="title" offset=$offset}</li> 
 					<li>{smartlink ititle="Last Modified" iorder="desc" idefault=1 isort="last_modified" offset=$offset}</li> 
 					<li>{smartlink ititle="Author" isort="creator_user" offset=$offset}</li> 
 					<li>{smartlink ititle="Last Editor" isort="modifier_user" offset=$offset}</li> 
@@ -36,32 +36,12 @@
 					{else}
 					  {assign var='checkboxes_on' value='n'}
 					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_hits' )}
-						<th>{smartlink ititle="Hits" isort="hits" offset=$offset}</th> 
-						{counter name=cols assign=cols print=false}
-					{/if}
 					{if $gBitSystem->isFeatureActive( 'wiki_list_lastver' )}
 						<th>{smartlink ititle="Last Version" isort="version" offset=$offset}</th> 
 						{counter name=cols assign=cols print=false}
 					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_comment' )}
-						<th>{smartlink ititle="Comment" isort="comment" offset=$offset}</th> 
-						{counter name=cols assign=cols print=false}
-					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_status' )}
-						<th>{smartlink ititle="Status" isort="flag" offset=$offset}</th> 
-						{counter name=cols assign=cols print=false}
-					{/if}
 					{if $gBitSystem->isFeatureActive( 'wiki_list_versions' )}
 						<th>{smartlink ititle="Version" isort="versions" offset=$offset}</th> 
-						{counter name=cols assign=cols print=false}
-					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_links' )}
-						<th>{smartlink ititle="Links" isort="links" offset=$offset}</th> 
-						{counter name=cols assign=cols print=false}
-					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_backlinks' )}
-						<th>{smartlink ititle="Backlinks" isort="backlinks" offset=$offset}</th> 
 						{counter name=cols assign=cols print=false}
 					{/if}
 					{if $gBitSystem->isFeatureActive( 'wiki_list_format_guid' )}
@@ -102,39 +82,14 @@
 						</td>
 					</tr>
 					<tr class="{cycle}">
-						{if $gBitSystem->isFeatureActive( 'wiki_list_hits' )}
-							<td style="text-align:center;">{$listgedcom[changes].hits}</td>
-						{/if}
 						{if $gBitSystem->isFeatureActive( 'wiki_list_lastver' )}
 							<td style="text-align:center;">{$listgedcom[changes].version}</td>
-						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_comment' )}
-							<td>{$listgedcom[changes].comment}</td>
-						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_status' )}
-							<td style="text-align:center;">
-								{if $listgedcom[changes].flag eq 'locked'}
-									{biticon ipackage="wiki" iname="locked" iexplain="locked"}
-								{else}
-									{biticon ipackage="wiki" iname="unlocked" iexplain="unlocked"}
-								{/if}
-							</td>
 						{/if}
 						{if $gBitSystem->isFeatureActive( 'wiki_list_versions' )}
 							{if $gBitSystem->isFeatureActive( 'feature_history' )}
 								<td style="text-align:center;">{smartlink ititle=$listgedcom[changes].version ifile='page_history.php' page_id=$listgedcom[changes].page_id}</td>
 							{else}
 								<td style="text-align:center;">{$listgedcom[changes].version}</td>
-							{/if}
-						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_links' )}
-							<td style="text-align:center;">{$listgedcom[changes].links|default:"0"}</td>
-						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_backlinks' )}
-							{if $gBitSystem->isFeatureActive( 'feature_backlinks' ) && $listgedcom[changes].backlinks > 0}
-								<td style="text-align:center;"><a href="{$smarty.const.WIKI_PKG_URL}backlinks.php?page={$listgedcom[changes].title|escape:"url"}">{$listgedcom[changes].backlinks|default:"0"}</a></td>
-							{else}
-								<td style="text-align:center;">{$listgedcom[changes].backlinks|default:"0"}</td>
 							{/if}
 						{/if}
 						{if $gBitSystem->isFeatureActive( 'wiki_list_format_guid' )}
