@@ -1,148 +1,136 @@
-	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-	print "<a href=\"javascript: {tr}Validate GEDCOM{/tr}\" onclick=\"expand_layer('validate_gedcom');return false\"><img id=\"validate_gedcom_img\" src=\"".$PGV_IMAGE_DIR."/";
-	if ($startimport != "true") print $PGV_IMAGES["minus"]["other"];
-	else print $PGV_IMAGES["plus"]["other"];
-	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";
-	print_help_link("validate_gedcom_help", "qm","validate_gedcom");
-	print "&nbsp;<a href=\"javascript: {tr}Validate GEDCOM{/tr}\" onclick=\"expand_layer('validate_gedcom');return false\">".$pgv_lang["validate_gedcom"]."</a>";
-	print "</td></tr>";
-	print "<tr><td class=\"optionbox\">";
-	print "<div id=\"validate_gedcom\" style=\"display: ";
-	if ($startimport != "true") print "block ";
-	else print "none ";
-	print "\">";
-		print "<table class=\"facts_table\">";
-		print "<tr><td class=\"descriptionbox\" colspan=\"2\">Performing GEDCOM validation...<br />";
-		if (!empty($error)) print "<span class=\"error\">$error</span>\n";
-		
-		if ($import != true && $skip_cleanup != $pgv_lang["skip_cleanup"]) {
-			require_once("includes/functions_tools.php");
-			if ($override == "yes") {
-				copy($bakfile, $GEDCOMS[$GEDFILENAME]["path"]);
-				if (file_exists($bakfile)) unlink($bakfile);
-				$bakfile = false;
-			}
-			$l_headcleanup = false;
-			$l_macfilecleanup = false;
-			$l_lineendingscleanup = false;
-			$l_placecleanup = false;
-			$l_datecleanup=false;
-			$l_isansi = false;
-			$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "r");
-			//-- read the gedcom and test it in 8KB chunks
-			while(!feof($fp)) {
-				$fcontents = fread($fp, 1024*8);
-				if (!$l_headcleanup && need_head_cleanup()) $l_headcleanup = true;
-				if (!$l_macfilecleanup && need_macfile_cleanup()) $l_macfilecleanup = true;
-				if (!$l_lineendingscleanup && need_line_endings_cleanup()) $l_lineendingscleanup = true;
-				if (!$l_placecleanup && ($placesample = need_place_cleanup()) !== false) $l_placecleanup = true;
-				if (!$l_datecleanup && ($datesample = need_date_cleanup()) !== false) $l_datecleanup = true;
-				if (!$l_isansi && is_ansi()) $l_isansi = true;
-			}
-			fclose($fp);
-			
-			if (!isset($cleanup_needed)) $cleanup_needed = false;
-			if (!$l_datecleanup && !$l_isansi  && !$l_headcleanup && !$l_macfilecleanup &&!$l_placecleanup && !$l_lineendingscleanup) {
-				print $pgv_lang["valid_gedcom"];
-				print "</td></tr>";
-				$import = true;
-			}
-			else {
-				$cleanup_needed = true;
-				print "<input type=\"hidden\" name=\"cleanup_needed\" value=\"cleanup_needed\">";
-				if (!file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
-					print "<span class=\"error\">".str_replace("#GEDCOM#", $GEDCOM, $pgv_lang["error_header_write"])."</span>\n";
-					print "</td></tr>";
-				}
-				// NOTE: Check for head cleanu
-				if ($l_headcleanup) {
-					print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-					print_help_link("invalid_header_help", "qm", "invalid_header");
-					print "<span class=\"error\">".$pgv_lang["invalid_header"]."</span>\n";
-					print "</td></tr>";
-				}
-				// NOTE: Check for mac file cleanup
-				if ($l_macfilecleanup) {
-					print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-					print_help_link("macfile_detected_help", "qm", "macfile_detected");
-					print "<span class=\"error\">".$pgv_lang["macfile_detected"]."</span>\n";
-					print "</td></tr>";
-				}
-				// NOTE: Check for line endings cleanup
-				if ($l_lineendingscleanup) {
-					print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-					print_help_link("empty_lines_detected_help", "qm", "empty_lines_detected");
-					print "<span class=\"error\">".$pgv_lang["empty_lines_detected"]."</span>\n";
-					print "</td></tr>";
-				}
-				// NOTE: Check for place cleanup
-				if ($l_placecleanup) {
-					print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-					print "<table class=\"facts_table\">";
-					print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-					print "<span class=\"error\">".$pgv_lang["place_cleanup_detected"]."</span>\n";
-					print "</td></tr>";
-					print "<tr><td class=\"descriptionbox wrap width20\">";
-					print_help_link("cleanup_places_help", "qm", "cleanup_places");
-					print $pgv_lang["cleanup_places"];
-					print "</td><td class=\"optionbox\" colspan=\"2\"><select name=\"cleanup_places\">\n";
-					print "<option value=\"YES\" selected=\"selected\">".$pgv_lang["yes"]."</option>\n<option value=\"NO\">".$pgv_lang["no"]."</option>\n</select>";
-					print "</td></tr>";
-					print "</td></tr><tr><td class=\"optionbox\" colspan=\"2\">".$pgv_lang["example_place"]."<br />".PrintReady(nl2br($placesample[0]));
-					print "</table>\n";
-					print "</td></tr>";
-				}
-				// NOTE: Check for date cleanup
-				if ($l_datecleanup) {
-					print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
-					print "<span class=\"error\">".$pgv_lang["invalid_dates"]."</span>\n";
-					print "<table class=\"facts_table\">";
-					print "<tr><td class=\"descriptionbox width20\">";
-					print_help_link("detected_date_help", "qm");
-					print $pgv_lang["date_format"];
-					
-					print "</td><td class=\"optionbox\" colspan=\"2\">";
-					if (isset($datesample["choose"])){
-						print "<select name=\"datetype\">\n";
-						print "<option value=\"1\">".$pgv_lang["day_before_month"]."</option>\n<option value=\"2\">".$pgv_lang["month_before_day"]."</option>\n</select>";
-					}
-					else print "<input type=\"hidden\" name=\"datetype\" value=\"3\" />";
-					print "</td></tr><tr><td class=\"optionbox\" colspan=\"2\">".$pgv_lang["example_date"]."<br />".$datesample[0];
-					print "</td></tr>";
-					print "</table>\n";
-					print "</td></tr>";
-				}
-				// NOTE: Check for ansi encoding
-				if ($l_isansi) {
-					print "<tr><td class=\"optionbox\" colspan=\"2\">";
-					print "<span class=\"error\">".$pgv_lang["ansi_encoding_detected"]."</span>\n";
-					print "<table class=\"facts_table\">";
-					print "<tr><td class=\"descriptionbox wrap width20\">";
-					print_help_link("detected_ansi2utf_help", "qm", "ansi_to_utf8");
-					print $pgv_lang["ansi_to_utf8"];
-					print "</td><td class=\"optionbox\"><select name=\"utf8convert\">\n";
-					print "<option value=\"YES\" selected=\"selected\">".$pgv_lang["yes"]."</option>\n";
-					print "<option value=\"NO\">".$pgv_lang["no"]."</option>\n</select>";
-					print "</td></tr>";
-					print "</table>\n";
-				}
-			}
-		}
-		else if (!$cleanup_needed) {
-			print $pgv_lang["valid_gedcom"];
-			$import = true;
-		}
-		else $import = true;
-		?>
-		<input type = "hidden" name="GEDFILENAME" value="<?php if (isset($GEDFILENAME)) print $GEDFILENAME; ?>" />
-		<input type = "hidden" name="verify" value="validate_form" />
-		<input type = "hidden" name="bakfile" value="<?php if (isset($bakfile)) print $bakfile; ?>" />
-		<input type = "hidden" name="path" value="<?php if (isset($path)) print $path; ?>" />
-		<input type = "hidden" name="no_upload" value="<?php if (isset($no_upload)) print $no_upload; ?>" />
-		<input type = "hidden" name="override" value="<?php if (isset($override)) print $override; ?>" />
-		<input type = "hidden" name="ok" value="<?php if (isset($ok)) print $ok; ?>" />
-		<?php
-	print "</table>";
-	print "</div>";
-	print "</td></tr>";
+{* $Header$ *}
+<div class="floaticon">{bithelp}</div>
 
+<div class="admin gedcom">
+	<div class="header">
+		<h1>{if $pagetitle ne ''}{$pagetitle}{else}{tr}Step 3 of 4:{/tr} {tr}Upload GEDCOM{/tr}{/if}</h1>
+	</div>
+
+	{formfeedback error=$errors}
+
+	<div class="body">
+	{strip}
+	{form legend="GEDCOM Upload" id="GEDCOM Upload"}
+		{forminput}
+			<input type = "hidden" name="verify" value="validate_form" />
+			<input type = "hidden" name="GEDFILENAME" value="{$GEDFILENAME}" />
+			<input type = "hidden" name="bakfile" value="{$bakfile}" />
+			<input type = "hidden" name="path" value="{$path}" />
+			<input type = "hidden" name="no_upload" value="{$no_upload}" />
+			<input type = "hidden" name="override" value="{$override}" />
+			<input type = "hidden" name="ok" value="{$ok}" />
+			<tr><td class="topbottombar $TEXT_DIRECTION" colspan="2">
+				<a href="javascript: {tr}Verify GEDCOM{/tr}" onclick="expand_layer('verify_gedcom'); return false;"> 
+					{if $startimport eq "true"} <img id="upload_gedcom_img" src="image/minus.gif" border="0" width="11" height="11" alt="" > 
+					{else} <img id="upload_gedcom_img" src="image/plus.gif" border="0" width="11" height="11" alt="" >
+					{/if}
+				</a>
+			{* print_help_link("validate_gedcom_help", "qm","validate_gedcom") *}
+			&nbsp;<a href="javascript: {tr}Validate GEDCOM{/tr}" onclick="expand_layer('validate_gedcom');return false">{tr}Validate GEDCOM{/tr}</a>
+			</td></tr>
+			<tr><td class="optionbox">
+			<div id="validate_gedcom" style="display: 
+			{if $startimport ne "true"} block 
+			{else} none {/if} 
+			">
+			<table class="facts_table">
+			<tr><td class="descriptionbox" colspan="2">Performing GEDCOM validation...<br />
+			{if !empty($error)} <span class="error">$error</span> {/if}
+		
+			{if $cleanup_needed eq 'false'}
+				Valid GEDCOM detected. No cleanup required.
+				</td></tr>
+			{else}
+				<input type="hidden" name="cleanup_needed" value="cleanup_needed">
+				{if $l_write eq 'false' }
+					<span class="error">{tr}The GEDCOM file{/tr}, $GEDCOM, {tr}is not writable. Please check attributes and access rights{/tr}</span>
+					</td></tr>
+				{/if}
+				{* NOTE: Check for head cleanup *}
+				{if $l_headcleanup eq 'true' }
+					<tr><td class="optionbox wrap" colspan="2">
+					{* print_help_link("invalid_header_help", "qm", "invalid_header") *}
+					<span class="error">{tr}~INVALID GEDCOM HEADER~{/tr}</span>\n
+					</td></tr>
+				{/if}
+				{*  NOTE: Check for mac file cleanup *}
+				{if $l_macfilecleanup eq 'true' }
+					<tr><td class="optionbox wrap" colspan="2">
+					{*  print_help_link("macfile_detected_help", "qm", "macfile_detected" ) *}
+					<span class="error">{tr}Macintosh file detected.  On cleanup your file will be converted to a DOS file.{/tr}</span>\n
+					</td></tr>
+				{/if}
+				{*  NOTE: Check for line endings cleanup *}
+				{if $l_lineendingscleanup eq 'true' }
+					<tr><td class="optionbox wrap" colspan="2">
+					{*  print_help_link("empty_lines_detected_help", "qm", "empty_lines_detected") *}
+					<span class="error">{tr}Empty lines were detected in your GEDCOM file.	On cleanup, these empty lines will be removed.{/tr}</span>\n
+					</td></tr>
+				{/if}
+				{*  NOTE: Check for place cleanup *}
+				{if $l_placecleanup eq 'true' }
+					<tr><td class="optionbox wrap" colspan="2">
+					<table class="facts_table">
+					<tr><td class="optionbox wrap" colspan="2">
+					<span class="error">{tr}Invalid place encodings were detected.  These errors should be fixed.{/tr}</span>\n
+					</td></tr>
+					<tr><td class="descriptionbox wrap width20">
+					{*  print_help_link("cleanup_places_help", "qm", "cleanup_places") *}
+					{tr}Cleanup Places{/tr}
+					</td><td class="optionbox" colspan="2"><select name="cleanup_places">\n
+					<option value="YES" selected="selected">{tr}yes{/tr}</option>
+					<option value="NO">{tr}no{/tr}</option>\n</select>
+					</td></tr>
+					</td></tr><tr><td class="optionbox" colspan="2">{tr}Example of invalid place from your GEDCOM:{/tr}<br />".PrintReady(nl2br($placesample[0]));
+					</table>\n
+					</td></tr>
+				{/if}
+				{* NOTE: Check for date cleanup *}
+				{if $l_datecleanup eq 'true' }
+					<tr><td class="optionbox wrap" colspan="2">
+					<span class="error">".$pgv_lang["invalid_dates"]."</span>\n
+					<table class="facts_table">
+					<tr><td class="descriptionbox width20">
+					{*	print_help_link("detected_date_help", "qm") *}
+					{tr}Date Format{/tr}:					
+					</td><td class="optionbox" colspan="2">
+					{if isset($datesample.choose) }
+						<select name="datetype">\n
+							<option value="1">{tr}Day{/tr} {tr}before{/tr} {tr}Month{/tr} (DD MM YYYY)</option>
+							<option value="2">{tr}Month{/tr} {tr}before{/tr} {tr}Day{/tr} (MM DD YYYY)</option>
+						</select>
+					{else}
+					<input type="hidden" name="datetype" value="3" />
+					</td></tr><tr><td class="optionbox" colspan="2">{tr}Example of invalid date from your GEDCOM:{/tr}<br />{$datesample[0]}
+					</td></tr>
+					</table>\n
+					</td></tr>
+					{/if}
+				{/if}
+				{* NOTE: Check for ansi encoding *}
+				{if $l_isansi eq 'true' }
+					<tr><td class="optionbox" colspan="2">
+					<span class="error">{tr}ANSI file encoding detected. PhpGedView works best with files encoded in UTF-8.{/tr}</span>\n
+					<table class="facts_table">
+					<tr><td class="descriptionbox wrap width20">
+					{* print_help_link("detected_ansi2utf_help", "qm", "ansi_to_utf8") *}
+					{tr}Convert this ANSI encoded GEDCOM to UTF-8?{/tr}
+					</td><td class="optionbox">
+						<select name="utf8convert">
+							<option value="YES" selected="selected">{tr}yes{/tr}</option>
+							<option value="NO">{tr}no{/tr}</option>
+						</select>
+					</td></tr>
+					</table>\n
+				{/if}
+			{/if}
+		{/forminput}
+
+		<div class="row submit">
+			<input type="submit" name="continue" value="{tr}Upload GEDCOM{/tr}" />
+		</div>
+	{/form}
+	{/strip}
+	</div><!-- end .body -->
+
+</div><!-- end .gedcom -->
