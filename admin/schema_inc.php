@@ -15,7 +15,7 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 	i_id C(250) PRIMARY,
 	i_file I4,
 	i_rin C(30),
-	i_name C(255),
+	i_name C(250),
 	i_isdead I1,
 	i_GEDCOM X,
 	i_letter C(5),
@@ -25,8 +25,8 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 PHPGEDVIEW_DB_PREFIX.'families' => "
 	f_id C(250) PRIMARY,
 	f_file I4,
-	f_husb C(255),
-	f_wife C(255),
+	f_husb C(250),
+	f_wife C(250),
 	f_chil X,
 	f_GEDCOM X,
 	f_numchil I1
@@ -35,7 +35,7 @@ PHPGEDVIEW_DB_PREFIX.'families' => "
 PHPGEDVIEW_DB_PREFIX.'sources' => "
 	s_id C(250) PRIMARY,
 	s_file I4,
-	s_name C(255),
+	s_name C(250),
 	s_GEDCOM X
 ",
 
@@ -49,7 +49,7 @@ PHPGEDVIEW_DB_PREFIX.'other' => "
 PHPGEDVIEW_DB_PREFIX.'names' => "
 	n_gid C(250) PRIMARY,
 	n_file I4,
-	n_type C(10),
+	n_name C(250),
 	n_letter C(5),
 	n_surname C(100),
 	n_type C(10)
@@ -62,7 +62,7 @@ PHPGEDVIEW_DB_PREFIX.'dates' => "
 	d_year I,
 	d_datestamp D,
 	d_fact I,
-	d_gid C(255),
+	d_gid C(250),
 	d_file I4,
 	d_type C(10)
 ",
@@ -82,16 +82,16 @@ PHPGEDVIEW_DB_PREFIX.'favorites' => "
 	fv_gid C(10),
 	fv_type C(10),
 	fv_file C(100),
-	fv_url C(255),
-	fv_title C(255),
+	fv_url C(250),
+	fv_title C(250),
 	fv_note X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'messages' => "
 	m_id I4 PRIMARY,
-	m_from C(255),
+	m_from C(250),
 	m_to C(30),
-	m_subject C(255),
+	m_subject C(250),
 	m_note X,
 	m_created C(20)
 ",
@@ -100,7 +100,7 @@ PHPGEDVIEW_DB_PREFIX.'news' => "
 	n_id I4 PRIMARY,
 	n_username C(100),
 	n_date I4,
-	n_title C(255),
+	n_title C(250),
 	n_note X
 ",
 
@@ -116,6 +116,25 @@ PHPGEDVIEW_DB_PREFIX.'placelinks' => "
 	pl_p_id I4 PRIMARY,
 	pl_gid C(30),
 	pl_file I4
+",
+
+PHPGEDVIEW_DB_PREFIX.'media' => "
+	m_id I4 PRIMARY,
+	m_media C(15),
+	m_ext C(6),
+	m_title C(250),
+	m_file C(250),
+	m_gedfile I8,
+	m_gedrec X
+",
+
+PHPGEDVIEW_DB_PREFIX.'media_mapping' => "
+	mm_id I4 PRIMARY,
+	mm_media C(15) NOTNULL DEFAULT '',
+	mm_gid C(15) NOTNULL DEFAULT '',
+	mm_order I4 NOTNULL DEFAULT '0',
+	mm_gedfile I4,
+	mm_gedrec X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'users' => "
@@ -148,9 +167,43 @@ foreach( array_keys( $tables ) AS $tableName ) {
 }
 
 $indices = array (
-	'id_rin_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_rin', 'opts' => array( 'UNIQUE' ) ),
-	'id_surname_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_surname', 'opts' => NULL ),
-	'p_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_place', 'opts' => NULL ),
+	'indi_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_name', 'opts' => NULL ),
+	'indi_letter_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_letter', 'opts' => NULL ),
+	'indi_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_file', 'opts' => NULL ),
+	'indi_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_surname', 'opts' => NULL ),
+	'fam_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'families', 'cols' => 'f_file', 'opts' => NULL ),
+	'sour_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'sources', 'cols' => 's_name', 'opts' => NULL ),
+	'sour_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'sources', 'cols' => 's_file', 'opts' => NULL ),
+	'other_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'other', 'cols' => 'o_file', 'opts' => NULL ),
+	'place_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_place', 'opts' => NULL ),
+	'place_level_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_level', 'opts' => NULL ),
+	'place_parent_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_parent_id', 'opts' => NULL ),
+	'place_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_file', 'opts' => NULL ),
+	'plindex_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_gid', 'opts' => NULL ),
+	'plindex_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_file', 'opts' => NULL ),
+	'm_media_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'media', 'cols' => 'm_media', 'opts' => NULL ),
+	'mm_mediamapping_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'media_mapping', 'cols' => 'mm_media', 'opts' => NULL ),
+	'place_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_place', 'opts' => NULL ),
+	'place_level_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_level', 'opts' => NULL ),
+	'place_parent_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_parent_id', 'opts' => NULL ),
+	'place_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_file', 'opts' => NULL ),
+	'plindex_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_gid', 'opts' => NULL ),
+	'plindex_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_file', 'opts' => NULL ),
+	'name_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_name', 'opts' => NULL ),
+	'name_letter_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_letter', 'opts' => NULL ),
+	'name_type_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_type', 'opts' => NULL ),
+	'name_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_surname', 'opts' => NULL ),
+	'indi_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_surname', 'opts' => NULL ),
+	'name_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_surname', 'opts' => NULL ),
+	'date_day_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_day', 'opts' => NULL ),
+	'date_month_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_month', 'opts' => NULL ),
+	'date_mon_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_mon', 'opts' => NULL ),
+	'date_year_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_year', 'opts' => NULL ),
+	'date_datestamp_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_datestamp', 'opts' => NULL ),
+	'date_fact_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_fact', 'opts' => NULL ),
+	'date_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_gid', 'opts' => NULL ),
+	'date_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_file', 'opts' => NULL ),
+	'date_type_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_type', 'opts' => NULL ),
 	'tc_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'temple_code', 'cols' => 'tc_name', 'opts' => array( 'UNIQUE' ) ),
 );
 $gBitInstaller->registerSchemaIndexes( PHPGEDVIEW_PKG_NAME, $indices );
