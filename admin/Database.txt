@@ -174,3 +174,69 @@ Following is a more detailed description of each table:
     u_auto_accept VARCHAR(2)    # Are changes made by this user automatically 
                                 #   accepted into the database
 
+media:
+	m_id INT NOT NULL
+	m_media VARCHAR(15)
+	m_ext VARCHAR(6)
+	m_titl VARCHAR(255)
+	m_file VARCHAR(255)
+	m_gedfile BIGINT
+	m_gedrec BLOB
+	PRIMARY KEY (m_id)
+
+media_mapping:
+	mm_id INT NOT NULL
+	mm_media VARCHAR(15) NOT NULL default ''
+	mm_gid VARCHAR(15) NOT NULL default ''
+	mm_order INT NOT NULL default '0'
+	mm_gedfile INT default NULL
+	mm_gedrec BLOB
+	PRIMARY KEY (mm_id)
+
+	'id_rin_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_rin', 'opts' => array( 'UNIQUE' ) ),
+	'indi_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_id, 'opts' => array( 'UNIQUE' ) ),
+	'indi_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_name, 'opts' => array( 'UNIQUE' ) ),
+	'indi_letter_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_letter, 'opts' => array( 'UNIQUE' ) ),
+	'indi_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_file, 'opts' => array( 'UNIQUE' ) ),
+	'indi_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_surname, 'opts' => array( 'UNIQUE' ) ),
+	'fam_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'families', 'cols' => 'f_id, 'opts' => array( 'UNIQUE' ) ),
+	'fam_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'families', 'cols' => 'f_file, 'opts' => array( 'UNIQUE' ) ),
+	'sour_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'sources', 'cols' => 's_id, 'opts' => array( 'UNIQUE' ) ),
+	'sour_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'sources', 'cols' => 's_name, 'opts' => array( 'UNIQUE' ) ),
+	'sour_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'sources', 'cols' => 's_file, 'opts' => array( 'UNIQUE' ) ),
+	'other_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'other', 'cols' => 'o_id, 'opts' => array( 'UNIQUE' ) ),
+	'other_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'other', 'cols' => 'o_file, 'opts' => array( 'UNIQUE' ) ),
+	'place_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_place, 'opts' => array( 'UNIQUE' ) ),
+	'place_level_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_level, 'opts' => array( 'UNIQUE' ) ),
+	'place_parent_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_parent_id, 'opts' => array( 'UNIQUE' ) ),
+	'place_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_file, 'opts' => array( 'UNIQUE' ) ),
+	'plindex_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_p_id, 'opts' => array( 'UNIQUE' ) ),
+	'plindex_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_gid, 'opts' => array( 'UNIQUE' ) ),
+	'plindex_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_file, 'opts' => array( 'UNIQUE' ) ),
+	'm_media_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'media', 'cols' => 'm_media, 'opts' => array( 'UNIQUE' ) ),
+	'mm_mediamapping_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'media_mapping', 'cols' => 'mm_media, 'opts' => array( 'UNIQUE' ) ),
+	'place_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_place, 'opts' => array( 'UNIQUE' ) ),
+	'place_level_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_level, 'opts' => array( 'UNIQUE' ) ),
+	'place_parent_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_parent_id, 'opts' => array( 'UNIQUE' ) ),
+	'place_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_file, 'opts' => array( 'UNIQUE' ) ),
+	'plindex_place_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_p_id, 'opts' => array( 'UNIQUE' ) ),
+	'plindex_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_gid, 'opts' => array( 'UNIQUE' ) ),
+	'plindex_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_file, 'opts' => array( 'UNIQUE' ) ),
+	'name_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_gid, 'opts' => array( 'UNIQUE' ) ),
+	'name_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_name, 'opts' => array( 'UNIQUE' ) ),
+	'name_letter_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_letter, 'opts' => array( 'UNIQUE' ) ),
+	'name_type_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_type, 'opts' => array( 'UNIQUE' ) ),
+	'name_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_surname, 'opts' => array( 'UNIQUE' ) ),
+	'indi_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_surname, 'opts' => array( 'UNIQUE' ) ),
+	'name_surn_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_surname, 'opts' => array( 'UNIQUE' ) ),
+	'date_day_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_day, 'opts' => array( 'UNIQUE' ) ),
+	'date_month_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_month, 'opts' => array( 'UNIQUE' ) ),
+	'date_mon_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_mon, 'opts' => array( 'UNIQUE' ) ),
+	'date_year_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_year, 'opts' => array( 'UNIQUE' ) ),
+	'date_datestamp_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_datestamp, 'opts' => array( 'UNIQUE' ) ),
+	'date_fact_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_fact, 'opts' => array( 'UNIQUE' ) ),
+	'date_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_gid, 'opts' => array( 'UNIQUE' ) ),
+	'date_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_file, 'opts' => array( 'UNIQUE' ) ),
+	'date_type_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_type, 'opts' => array( 'UNIQUE' ) ),
+	'm_media_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'media', 'cols' => 'm_media, 'opts' => array( 'UNIQUE' ) ),
+	'mm_media_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'media_mapping', 'cols' => 'mm_media, 'opts' => array( 'UNIQUE' ) ),
