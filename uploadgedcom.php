@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.3 2005/12/31 12:52:02 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.4 2006/01/01 14:59:28 lsces Exp $
  */
 
 /**
@@ -68,7 +68,7 @@ $gBitSystem->verifyPermission( 'bit_p_admin' );
 if (empty($action)) $action = "upload_form";
 if (!isset($path)) $path = "";
 if (!isset($check)) $check = "";
-if (!isset($error)) $error = "";
+if (!isset($errors)) $errors = "";
 if (!isset($verify)) $verify = "";
 if (!isset($import)) $import = false;
 if (!isset($bakfile)) $bakfile = "";
@@ -97,9 +97,9 @@ else if ($check == "add") {
 	$ok = true;
 }
 else if ($check == "add_new") {
-	if (((!file_exists($INDEX_DIRECTORY.$GEDFILENAME)) && !file_exists($path.$GEDFILENAME))  || $override == "yes") {
+	if (((!file_exists($GEDCOMS->getPath($GEDFILENAME))) && !file_exists($path.$GEDFILENAME))  || $override == "yes") {
 		if ($path != "") $fp = fopen($path.$GEDFILENAME, "wb");
-		else	$fp = fopen($INDEX_DIRECTORY.$GEDFILENAME, "wb");
+		else	$fp = fopen($GEDCOMS->getPath($GEDFILENAME), "wb");
 		if ($fp) {
 			$newgedcom = '0 HEAD
 1 SOUR PhpGedView
@@ -130,7 +130,7 @@ else if ($check == "add_new") {
 	}
 	else {
 		if ($path != "") $fp = fopen($path.$GEDFILENAME.".bak", "wb");
-		else	$fp = fopen($INDEX_DIRECTORY.$GEDFILENAME.".bak", "wb");
+		else	$fp = fopen($GEDCOMS->getPath($GEDFILENAME).".bak", "wb");
 		if ($fp) {
 			$newgedcom = '0 HEAD
 1 SOUR PhpGedView
@@ -150,7 +150,7 @@ else if ($check == "add_new") {
 			fwrite($fp, $newgedcom);
 			fclose($fp);
 			if ($path != "") $bakfile = $path.$GEDFILENAME.".bak";
-			else	$bakfile = $INDEX_DIRECTORY.$GEDFILENAME.".bak";
+			else	$bakfile = $GEDCOMS->getPath($GEDFILENAME).".bak";
 			$ok = false;
 			$verify = "verify_gedcom";
 			$exists = true;
@@ -159,9 +159,8 @@ else if ($check == "add_new") {
 }
 else if ($check == "cancel_upload") {
 	if ($exists) {
-		unset($GEDCOMS[$GEDFILENAME]);
-		store_gedcoms();
-		if ($action == "add_new_form") @unlink($INDEX_DIRECTORY.$GEDFILENAME);
+		$GEDCOMS->expunge();
+//		if ($action == "add_new_form") @unlink($INDEX_DIRECTORY.$GEDFILENAME);
 	}
 	// NOTE: Cleanup everything no longer needed
 	if (isset($bakfile) && file_exists($bakfile)) unlink($bakfile);
@@ -173,19 +172,20 @@ else if ($check == "cancel_upload") {
 	$noupload = true;
 	header("Location: index.php");
 }
-if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]) {
-//	require_once("includes/functions_tools.php");
-	
+if ($cleanup_needed == "cleanup_needed" && $continue ) {
+require_once("includes/functions_tools.php");
+// development hook
+$GEDFILENAME = "CAINEFull07022004.GED";	
 	$filechanged=false;
-	if (file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
+	if (file_is_writeable( $GEDCOMS->getPath($GEDFILENAME) ) && (file_exists($GEDCOMS->getPath($GEDFILENAME)))) {
 		$l_headcleanup = false;
 		$l_macfilecleanup = false;
 		$l_lineendingscleanup = false;
 		$l_placecleanup = false;
 		$l_datecleanup=false;
 		$l_isansi = false;
-		$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "rb");
-		$fw = fopen($INDEX_DIRECTORY."/".$GEDFILENAME.".bak", "wb");
+		$fp = fopen($GEDCOMS->getPath($GEDFILENAME), "rb");
+		$fw = fopen("c:\\Data\\".$GEDFILENAME.".bak", "wb");
 		//-- read the gedcom and test it in 8KB chunks
 		while(!feof($fp)) {
 			$fcontents = fread($fp, 1024*8);
@@ -241,12 +241,13 @@ if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]
 		}
 		fclose($fp);
 		fclose($fw);
-		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak", $GEDCOMS[$GEDFILENAME]["path"]);
+		copy( 'c:\\Data\\'.$GEDFILENAME.".bak", $GEDCOMS->getPath($GEDFILENAME) );
 		$cleanup_needed = false;
 		$import = "true";
 	}
 	else {
-		$error = str_replace("#GEDCOM#", $GEDFILENAME, $pgv_lang["error_header_write"]);
+		$errors = str_replace("#GEDCOM#", $GEDFILENAME, "The GEDCOM file, <b>#GEDCOM#</b>, is not writable. Please check attributes and access rights.");
+		$gBitSmarty->assign( 'error', $errors );
 	}
 }
 
@@ -255,17 +256,11 @@ if ($action == "upload_form") $header = "upload_gedcom";
 else if ($action == "add_form") $header = "add_gedcom";
 else if ($action == "add_new_form") $header = "add_new_gedcom";
 else $header = "ged_import";
-$gBitSmarty->assign( 'header', $header );
-
-// NOTE: Print form header
-//print "<form enctype=\"multipart/form-data\" method=\"post\" name=\"configform\" action=\"uploadgedcom.php\">";
 
 $gBitSmarty->assign( 'startimport', $startimport );
 $text_dir = $gBitSystem->getPreference("text_direction", " ");
 $gBitSmarty->assign( 'text_dir', $text_dir );
 $gBitSmarty->assign( 'action', $action );
-// NOTE: Print table header
-// print "<table class=\"facts_table center $text_dir\">";
 
 // NOTE: Add GEDCOM form
 if ($action == "add_form") {
@@ -299,116 +294,83 @@ if (isset($path))
 else
 	$gBitSmarty->assign( 'path', '' );
 
+$imported = $GEDCOMS->isValid(); // $GEDFILENAME);
 if ($verify=="verify_gedcom") {
 	// NOTE: Check if GEDCOM has been imported into DB
-	$imported = $GEDCOMS->isValid(); // $GEDFILENAME);
 	if ( $imported || $bakfile != "") {
 		$gBitSmarty->assign( 'imported', 'true' );
 		$action_form = "check";
 	}
 	else $verify = "validate_form";
-	
 }
 
 if ($verify == "validate_form") {
+require_once("includes/functions_tools.php");
 	$action_form = "validate_form";
+	if (isset($no_upload))
+		$gBitSmarty->assign( 'no_upload', $no_upload );
+	else
+		$gBitSmarty->assign( 'no_upload', '' );
+	if (isset($ok))
+		$gBitSmarty->assign( 'ok', $ok );
+	else
+		$gBitSmarty->assign( 'ok', '' );
+	if (isset($no_upload))
+		$gBitSmarty->assign( 'override', $override );
+	else
+		$gBitSmarty->assign( 'override', '' );
+	if ($import != true && $skip_cleanup != "skip_cleanup") {
+		// require_once("includes/functions_tools.php");
+		if ($override == "yes") {
+			copy($bakfile, $GEDCOMS->getPath());
+			if (file_exists($bakfile)) unlink($bakfile);
+			$bakfile = false;
+		}
+		$l_headcleanup = false;
+		$l_macfilecleanup = false;
+		$l_lineendingscleanup = false;
+		$l_placecleanup = false;
+		$l_datecleanup=false;
+		$l_isansi = false;
+		$fp = fopen($GEDCOMS->getPath(), "r");
+		//-- read the gedcom and test it in 8KB chunks
+		while(!feof($fp)) {
+			$fcontents = fread($fp, 1024*8);
+			if (!$l_headcleanup && need_head_cleanup()) $l_headcleanup = true;
+			if (!$l_macfilecleanup && need_macfile_cleanup()) $l_macfilecleanup = true;
+			if (!$l_lineendingscleanup && need_line_endings_cleanup()) $l_lineendingscleanup = true;
+			if (!$l_placecleanup && ($placesample = need_place_cleanup()) !== false) {
+				 $l_placecleanup = true;
+				$gBitSmarty->assign( 'placesample', $datesample );
+			}
+			if (!$l_datecleanup && ($datesample = need_date_cleanup()) !== false) {
+				$l_datecleanup = true;
+				$gBitSmarty->assign( 'datesample', $datesample );
+			}
+			if (!$l_isansi && is_ansi()) $l_isansi = true;
+		}
+		fclose($fp);
+		
+		if ( !file_is_writeable($GEDCOMS->getPath()) && (file_exists($GEDCOMS->getPath())) )
+			$gBitSmarty->assign( 'l_write', 'false' );	
+		if (!$l_datecleanup && !$l_isansi  && !$l_headcleanup && !$l_macfilecleanup &&!$l_placecleanup && !$l_lineendingscleanup) {
+			$cleanup_needed = true;
+			$import = true;
+			$gBitSmarty->assign( 'l_headcleanup', $l_headcleanup_);
+			$gBitSmarty->assign( 'l_macfilecleanup', $l_macfilecleanup_);
+			$gBitSmarty->assign( 'l_lineendingscleanup', $l_lineendingscleanup_);
+			$gBitSmarty->assign( 'l_placecleanup', $l_placecleanup_);
+			$gBitSmarty->assign( 'l_datecleanup', $l_datecleanup_);
+			$gBitSmarty->assign( 'l_isansi', $l_isansi_);
+		}	
+		if (!isset($cleanup_needed)) $cleanup_needed = false;
+		$gBitSmarty->assign( 'cleanup_needed', $cleanup_needed );
+		$gBitSmarty->assign( 'import', $import );
+	}	
 }
 
 if ($import == true) {
-	// NOTE: Additional import options
-	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-	print "<a href=\"javascript: ".$pgv_lang["import_options"]."\" onclick=\"expand_layer('import_options');return false\"><img id=\"import_options_img\" src=\"".$PGV_IMAGE_DIR."/";
-	if ($startimport != "true") print $PGV_IMAGES["minus"]["other"];
-	else print $PGV_IMAGES["plus"]["other"];
-	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";
-	print_help_link("import_options_help", "qm", "import_options");
-	print "&nbsp;<a href=\"javascript: ".$pgv_lang["import_options"]."\" onclick=\"expand_layer('import_options');return false\">".$pgv_lang["import_options"]."</a>";
-	print "</td></tr>";
-	print "<tr><td class=\"optionbox\" colspan=\"2\">";
-	print "<div id=\"import_options\" style=\"display: ";
-	if ($startimport != "true") print "block ";
-	else print "none ";
-	print "\">";
-	print "<table class=\"facts_table\">";
-	
-	// NOTE: Time limit for import
-	// TODO: Write help text
-	print "<tr><td class=\"descriptionbox width20 wrap\">";
-	print_help_link("time_limit_help", "qm", "time_limit");
-	print $pgv_lang["time_limit"];
-	print "</td><td class=\"optionbox\"><input type=\"text\" name=\"timelimit\" value=\"".$timelimit."\" size=\"5\"";
-	if ($startimport == "true")  print " disabled ";
-	print "/>\n";
-	print "</td></tr>";
-	
-	// NOTE: Import married names
-	print "<tr><td class=\"descriptionbox width20 wrap\">";
-	print_help_link("import_marr_names_help", "qm", "import_marr_names");
-	print $pgv_lang["import_marr_names"].":";
-	print "</td><td class=\"optionbox\">";
-	if ($startimport == "true") print $pgv_lang[$marr_names];
-	else {
-		print "<select name=\"marr_names\">\n";
-		print "<option value=\"yes\">".$pgv_lang["yes"]."</option>\n";
-		print "<option value=\"no\" selected=\"selected\">".$pgv_lang["no"]."</option>\n</select>";
-	}
-	print "</td></tr>";
-	
-	// NOTE: change XREF to RIN, REFN, or Don't change
-	print "<tr><td class=\"descriptionbox wrap\">";
-	print_help_link("change_indi2id_help", "qm", "change_id");
-	print $pgv_lang["change_id"];
-	print "</td><td class=\"optionbox\">";
-	if ($startimport == "true") {
-		if ($xreftype == "NA") print $pgv_lang["do_not_change"];
-		else print $xreftype;
-	}
-	else {
-		print "<select name=\"xreftype\">\n";
-		print "<option value=\"NA\">".$pgv_lang["do_not_change"]."</option>\n<option value=\"RIN\">RIN</option>\n";
-		print "<option value=\"REFN\">REFN</option>\n</select>";
-	}
-	print "</td></tr>\n";
-	
-	// NOTE: option to convert to utf8
-	print "<tr><td class=\"descriptionbox wrap\">";
-	print_help_link("convert_ansi2utf_help", "qm", "ansi_to_utf8");
-	print $pgv_lang["ansi_to_utf8"];
-	print "</td><td class=\"optionbox\">";
-	if ($startimport == "true") print $pgv_lang[strtolower($utf8convert)];
-	else {
-		print "<select name=\"utf8convert\">\n";
-		print "<option value=\"YES\">".$pgv_lang["yes"]."</option>\n";
-		print "<option value=\"NO\" selected=\"selected\">".$pgv_lang["no"]."</option>\n</select>";
-	}
-	print "</td></tr>";
-	//-- option to start addmedia tool
-	/**
-	 * Removed Addmedia tool link because of the new media centre
-	 * Will leave in case we do need it later
-		print "<tr><td class=\"descriptionbox wrap\">";
-		print_help_link("inject_media_tool_help", "qm", "inject_media_tool");
-		print $pgv_lang["inject_media_tool"];
-		print "</td><td class=\"optionbox\"><a href=\"addmedia.php?ged=$GEDCOM&action=injectmedia\" target=\"media_win\">".$pgv_lang["launch_media_tool"]."</a></td></tr>\n";
-	*/
-	print "<input type=\"hidden\" name=\"startimport\" value=\"true\" />";
-	print "<input type=\"hidden\" name=\"ged\" value=\"";
-	if (isset($GEDFILENAME)) print $GEDFILENAME;
-	print "\" />";
-	print "<input type=\"hidden\" name=\"GEDFILENAME\" value=\"";
-	if (isset($GEDFILENAME)) print $GEDFILENAME;
-	print "\" />";
-	print "<input type=\"hidden\" name=\"exists\" value=\"";
-	if (isset($exists)) print $exists;
-	print "\" />";
-	print "<input type=\"hidden\" name=\"ok\" value=\"".$ok."\" />";
-	print "<input type=\"hidden\" name=\"import\" value=\"".$import."\" />";
-	print "<input type=\"hidden\" name=\"l_isansi\" value=\"";
-	if (isset($l_isansi)) print $l_isansi;
-	print "\" />";
-	print "<input type=\"hidden\" name=\"check\" value=\"\" />";
-	print "</table></div>";
-	print "</td></tr>";
+	$action_form = "import_options";
 }
 
 if ($startimport == "true") {
@@ -425,7 +387,7 @@ if ($startimport == "true") {
 	/**
 	 * function that sets up the html required to run the progress bar
 	 * @param long $FILE_SIZE	the size of the file
-	 */
+
 	function setup_progress_bar($FILE_SIZE) {
 		global $pgv_lang, $ged, $timelimit;
 		?>
@@ -492,24 +454,19 @@ if ($startimport == "true") {
 		flush();
 	}
 	//-- end of setup_progress_bar function
+	 */
 	
 	if (!isset($stage)) $stage = 0;
 	if ((empty($ged))||(!isset($GEDCOMS[$ged]))) $ged = $GEDCOM;
 	
-	$temp = $THEME_DIR;
-	$GEDCOM_FILE = $GEDCOMS[$ged]["path"];
+	$GEDCOMS->load($ged);
+	$GEDCOM_FILE = $GEDCOMS->getPath();
 	$FILE = $ged;
-	$TITLE = $GEDCOMS[$ged]["title"];
-	require($GEDCOMS[$ged]["config"]);
-	if ($LANGUAGE <> $_SESSION["CLANGUAGE"]) $LANGUAGE = $_SESSION["CLANGUAGE"];
+	$TITLE = $GEDCOMS->getTitle();
 	
-	$temp2 = $THEME_DIR;
-	$THEME_DIR = $temp;
-	$THEME_DIR = $temp2;
-
 	if (isset($GEDCOM_FILE)) {
 		if ((!strstr($GEDCOM_FILE, "://"))&&(!file_exists($GEDCOM_FILE))) {
-			print "<span class=\"error\"><b>Could not locate gedcom file at $GEDCOM_FILE<br /></b></span>\n";
+			$errors = "Could not locate gedcom file at $GEDCOM_FILE";
 			unset($GEDCOM_FILE);
 		}
 	}
@@ -527,18 +484,15 @@ if ($startimport == "true") {
 		write_changes();
 		$stage=1;
 	}
-	flush();
+//	flush();
 	
 	if ($stage==1) {
 		@set_time_limit($timelimit);
 		$FILE_SIZE = filesize($GEDCOM_FILE);
-		print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-		print $pgv_lang["reading_file"]." ".$GEDCOM_FILE;
-		print "</td></tr>";
-		print "<tr><td class=\"optionbox\">";
-		setup_progress_bar($FILE_SIZE);
-		print "</td></tr>";
-		flush();
+		$header = "Reading GEDCOM file";
+//		setup_progress_bar($FILE_SIZE);
+//		print "</td></tr>";
+//		flush();
 		// ------------------------------------------------------ Begin importing data
 		// -- array of names
 		if (!isset($indilist)) $indilist = array();
@@ -641,10 +595,10 @@ if ($startimport == "true") {
 				if ($i%10==0) {
 					$newtime = time();
 					$exectime = $newtime - $oldtime;
-					print "\n<script type=\"text/javascript\">update_progress($TOTAL_BYTES, $exectime);</script>\n";
-					flush();
+//					print "\n<script type=\"text/javascript\">update_progress($TOTAL_BYTES, $exectime);</script>\n";
+//					flush();
 				}
-				else print " ";
+//				else print " ";
 				$show_gid=$gid;
 				
 				//-- check if we are getting close to timing out
@@ -669,24 +623,8 @@ if ($startimport == "true") {
 						fclose($fpged);
 						fclose($fpnewged);
 						$_SESSION["resumed"]++;
-						?>
-						<tr><td class="descriptionbox"><?php print $pgv_lang["import_time_exceeded"]; ?></td></tr>
-						<tr><td class="topbottombar">
-						<input type="hidden" name="ged" value="<?php print $ged; ?>" />
-						<input type="hidden" name="stage" value="1" />
-						<input type="hidden" name="timelimit" value="<?php print $timelimit; ?>" />
-						<input type="hidden" name="importtime" value="<?php print $importtime; ?>" />
-						<input type="hidden" name="marr_names" value="<?php print $marr_names; ?>" />
-						<input type="hidden" name="xreftype" value="<?php print $xreftype; ?>" />
-						<input type="hidden" name="utf8convert" value="<?php print $utf8convert; ?>" />
-						<input type="hidden" name="verify" value="<?php print $verify; ?>" />
-						<input type="hidden" name="startimport" value="<?php print $startimport; ?>" />
-						<input type="hidden" name="import" value="<?php print $import; ?>" />
-						<input type="hidden" name="FILE" value="<?php print $FILE; ?>" />
-						<input type="submit" name="continue" value="<?php print $pgv_lang["del_proceed"]; ?>" />
-						</td></tr></table>
-						<?php
-						print_footer();
+						$gBitSmarty->assign( 'header', $header );
+						$gBitSystem->display( "bitpackage:phpgedview/gedcom_resume.tpl" );
 						exit;
 					}
 				}
@@ -702,32 +640,29 @@ if ($startimport == "true") {
 		//-- The records are written during the import_record() method and the
 		//-- update_media() method
 		$res = @copy($GEDCOM_FILE, $INDEX_DIRECTORY.basename($GEDCOM_FILE).".bak");
-		if (!$res) print "<span class=\"error\">Unable to create backup of the GEDCOM file at ".$INDEX_DIRECTORY.basename($GEDCOM_FILE).".bak</span><br />";
+		if (!$res) $errors =  "Unable to create backup of the GEDCOM file at ".$GEDCOM_FILE;
 		//unlink($GEDCOM_FILE);
 		$res = @copy($INDEX_DIRECTORY.basename($GEDCOM_FILE).".new", $GEDCOM_FILE);
-		if (!$res) print "<span class=\"error\">Unable to copy updated GEDCOM file ".$INDEX_DIRECTORY.basename($GEDCOM_FILE).".new to ".$GEDCOM_FILE."</span><br />";
+		if (!$res) $errors =  "Unable to copy updated GEDCOM file ".$GEDCOM_FILE;
 		$newtime = time();
 		$exectime = $newtime - $oldtime;
 		$importtime = $importtime + $exectime;
 		$exec_text = $pgv_lang["exec_time"];
 		$go_pedi = $pgv_lang["click_here_to_go_to_pedigree_tree"];
 		$go_welc = $pgv_lang["welcome_page"];
-		if ($LANGUAGE=="french" || $LANGUAGE=="italian"){
+/*		if ($LANGUAGE=="french" || $LANGUAGE=="italian"){
 			print "<script type=\"text/javascript\">complete_progress($importtime, \"$exec_text\", \"$go_pedi\", \"$go_welc\");</script>";
 		}
 		else print "<script type=\"text/javascript\">complete_progress($importtime, '$exec_text', '$go_pedi', '$go_welc');</script>";
 		flush();
-				
+*/				
 		if ($marr_names == "yes") {
 			$GEDCOM = $FILE;
 			get_indi_list();
 			get_fam_list();
-			print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
-			print $pgv_lang["calc_marr_names"];
-			print "</td></tr>";
-			print "<tr><td class=\"optionbox\">";
-			setup_progress_bar(count($indilist));
-			print "</td></tr>";
+			$header = "Calculating Married Names";
+//			setup_progress_bar(count($indilist));
+//			print "</td></tr>";
 		
 			$i=0;
 			$newtime = time();
@@ -778,8 +713,8 @@ if ($startimport == "true") {
 				if ($i%10==0) {
 					$newtime = time();
 					$exectime = $newtime - $oldtime;
-					print "\n<script type=\"text/javascript\">update_progress($i, $exectime);</script>\n";
-					flush();
+//					print "\n<script type=\"text/javascript\">update_progress($i, $exectime);</script>\n";
+//					flush();
 
 					//-- check if we are getting close to timing out
 					$newtime = time();
@@ -801,23 +736,8 @@ if ($startimport == "true") {
 						//-- close the file connection
 						fclose($fpged);
 						$_SESSION["resumed"]++;
-						?>
-						<tr><td class="descriptionbox"><?php print $pgv_lang["import_time_exceeded"]; ?></td></tr>
-						<tr><td class="topbottombar">
-						<input type="hidden" name="ged" value="<?php print $ged; ?>" />
-						<input type="hidden" name="stage" value="1" />
-						<input type="hidden" name="timelimit" value="<?php print $timelimit; ?>" />
-						<input type="hidden" name="importtime" value="<?php print $importtime; ?>" />
-						<input type="hidden" name="marr_names" value="<?php print $marr_names; ?>" />
-						<input type="hidden" name="xreftype" value="<?php print $xreftype; ?>" />
-						<input type="hidden" name="utf8convert" value="<?php print $utf8convert; ?>" />
-						<input type="hidden" name="verify" value="<?php print $verify; ?>" />
-						<input type="hidden" name="startimport" value="<?php print $startimport; ?>" />
-						<input type="hidden" name="import" value="<?php print $import; ?>" />
-						<input type="hidden" name="FILE" value="<?php print $FILE; ?>" />
-						<input type="submit" name="continue" value="<?php print $pgv_lang["del_proceed"]; ?>" />
-						<?php
-						print_footer();
+						$gBitSmarty->assign( 'header', $header );
+						$gBitSystem->display( "bitpackage:phpgedview/gedcom_resume.tpl" );
 						exit;
 					}
 				}
@@ -835,11 +755,12 @@ if ($startimport == "true") {
 			$show_table_marr .= "<td class=\"optionbox indent_rtl rtl\">$names_added<script type=\"text/javascript\">update_progress($i, $exectime);</script></td>";
 			$show_table_marr .= "<td class=\"optionbox\">&nbsp;INDI&nbsp;</td></tr>\n";
 			$show_table_marr .= "</table>\n";
+			
+			$gBitSmarty->assign( 'show_table_marr', $show_table_marr );
 			$stage=10;
 			$record_count=0;
-			flush();
+//			flush();
 		}
-		// TODO: Layout for Hebrew
 		$show_table1 = "<table class=\"list_table\"><tr>";
 		$show_table1 .= "<tr><td class=\"topbottombar\" colspan=\"4\">".$pgv_lang["ged_import"]."</td></tr>";
 		$show_table1 .= "<td class=\"descriptionbox\">&nbsp;".$pgv_lang["exec_time"]."&nbsp;</td>";
@@ -857,21 +778,10 @@ if ($startimport == "true") {
 		$show_table1 .= "<td class=\"optionbox indent_rtl rtl \">".($i-1)."</td>";
 		$show_table1 .= "<td class=\"optionbox\">&nbsp;</td></tr>\n";
 		$show_table1 .= "</table>\n";
-		print "<tr><td class=\"topbottombar $TEXT_DIRECTION\">";
-		print $pgv_lang["import_statistics"];
-		print "</td></tr>";
-		print "<tr><td class=\"optionbox\">";
-		print "<table cellspacing=\"20px\"><tr><td class=\"optionbox\" style=\"vertical-align: top;\">";
-		if (isset($skip_table)) print "<br />...";
-		else {
-			print $show_table1;
-			if ($marr_names == "yes") print "</td><td class=\"optionbox\">".$show_table_marr;
-		}
-		print "</td></tr></table>\n";
-		// NOTE: Finished Links
 		cleanup_database();
-		print "</td></tr>";
-		
+		$gBitSmarty->assign( 'show_table1', $show_table1 );
+		$action_form = "statistics";
+
 		$record_count=0;
 		$_SESSION["resumed"] = 0;
 		unset($_SESSION["place_count"]);
