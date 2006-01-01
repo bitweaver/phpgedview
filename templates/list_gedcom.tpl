@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.3 2005/12/31 17:32:43 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.4 2006/01/01 15:00:07 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin wiki">
@@ -36,19 +36,19 @@
 					{else}
 					  {assign var='checkboxes_on' value='n'}
 					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_lastver' )}
+					{if $gBitSystem->isFeatureActive( 'gedcom_list_lastver' )}
 						<th>{smartlink ititle="Last Version" isort="version" offset=$offset}</th> 
 						{counter name=cols assign=cols print=false}
 					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_versions' )}
+					{if $gBitSystem->isFeatureActive( 'gedcom_list_versions' )}
 						<th>{smartlink ititle="Version" isort="versions" offset=$offset}</th> 
 						{counter name=cols assign=cols print=false}
 					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_format_guid' )}
+					{if $gBitSystem->isFeatureActive( 'gedcom_list_format_guid' )}
 						<th>{smartlink ititle="GUID" isort="format_guid" offset=$offset}</th> 
 						{counter name=cols assign=cols print=false}
 					{/if}
-					{if $gBitSystem->isFeatureActive( 'wiki_list_size' )}
+					{if $gBitSystem->isFeatureActive( 'gedcom_list_size' )}
 						<th>{smartlink ititle="Size" isort="size" offset=$offset}</th> 
 						{counter name=cols assign=cols print=false}
 					{/if}
@@ -62,16 +62,16 @@
 				{section name=changes loop=$listgedcom}
 					<tr class="{cycle advance=false}">
 						<td colspan="{$cols}">
-							{if $gBitSystem->isFeatureActive( 'wiki_list_name' )}
+							{if $gBitSystem->isFeatureActive( 'gedcom_list_name' )}
 								<h3><a href="{$listgedcom[changes].display_url}" title="{$listgedcom[changes].description}">{$listgedcom[changes].title}</a></h3>
 							{else}
 								<a href="{$smarty.const.WIKI_PKG_URL}index.php?page_id={$listgedcom[changes].page_id}" title="{$listgedcom[changes].page_id}">Page #{$listgedcom[changes].page_id}</a>
 							{/if}
-							{if $gBitSystem->isFeatureActive( 'wiki_list_creator' )}
+							{if $gBitSystem->isFeatureActive( 'gedcom_list_creator' )}
 								{tr}Created by{/tr} {displayname real_name=$listgedcom[changes].creator_real_name user=$listgedcom[changes].creator_user}
 							{/if}
 							, {$listgedcom[changes].created|bit_short_datetime}
-							{if $gBitSystem->isFeatureActive( 'wiki_list_lastmodif' ) && ($listgedcom[changes].version > 1)}
+							{if $gBitSystem->isFeatureActive( 'gedcom_list_lastmodif' ) && ($listgedcom[changes].version > 1)}
 								<br />
 								{tr}Last modified{/tr}
 								{if $listgedcom[changes].editor != $listgedcom[changes].creator}
@@ -82,20 +82,20 @@
 						</td>
 					</tr>
 					<tr class="{cycle}">
-						{if $gBitSystem->isFeatureActive( 'wiki_list_lastver' )}
+						{if $gBitSystem->isFeatureActive( 'gedcom_list_lastver' )}
 							<td style="text-align:center;">{$listgedcom[changes].version}</td>
 						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_versions' )}
+						{if $gBitSystem->isFeatureActive( 'gedcom_list_versions' )}
 							{if $gBitSystem->isFeatureActive( 'feature_history' )}
 								<td style="text-align:center;">{smartlink ititle=$listgedcom[changes].version ifile='page_history.php' page_id=$listgedcom[changes].page_id}</td>
 							{else}
 								<td style="text-align:center;">{$listgedcom[changes].version}</td>
 							{/if}
 						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_format_guid' )}
+						{if $gBitSystem->isFeatureActive( 'gedcom_list_format_guid' )}
 							<td>{$listgedcom[changes].format_guid}</td>
 						{/if}
-						{if $gBitSystem->isFeatureActive( 'wiki_list_size' )}
+						{if $gBitSystem->isFeatureActive( 'gedcom_list_size' )}
 							<td style="text-align:right;">{$listgedcom[changes].len|kbsize}</td>
 						{/if}
 						{if $gBitUser->hasPermission( 'bit_p_edit' )}
