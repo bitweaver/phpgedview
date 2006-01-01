@@ -17,7 +17,7 @@ require_once( LIBERTY_PKG_PATH.'LibertyAttachable.php' );
 
 class BitGEDCOM extends LibertyAttachable {
 	var $mGEDCOMId;
-	var $mPageName;
+	var $mGedcomName;
 
 	function BitGEDCOM( $pGEDCOMId=NULL, $pContentId=NULL ) {
 		LibertyAttachable::LibertyAttachable();
@@ -58,6 +58,28 @@ class BitGEDCOM extends LibertyAttachable {
 			$cant = $this->mDb->getOne( $query_cant );
 		}
 		return $cant;		
+	}
+
+	/**
+	 * Get the path to the GEDCOM file copy
+	 * @param GEDFILENAME If set, create path to this file
+	 */
+	function getPath( $GEDFILENAME = "" ) {
+		if ( $GEDFILENAME == "" )
+			return "c:\\Data\\".$mGedcomName;
+		else
+			return "c:\\Data\\".$GEDFILENAME;
+	}
+
+	/**
+	 * Get the GEDCOM file name
+	 * @param GEDFILENAME If set, return, otherwise return elected file name 
+	 */
+	function getTitle( $GEDFILENAME = "" ) {
+		if ( $GEDFILENAME == "" )
+			return $mGedcomName;
+		else 
+			return $GEDFILENAME;
 	}
 
 	/**
