@@ -39,7 +39,7 @@
 				{* NOTE: Time limit for import *}
 				{* TODO: Write help text *}
 				<tr><td class="descriptionbox width20 wrap">
-				{* print_help_link("time_limit_help", "qm", "time_limit") *}
+				{formhelp note="{tr}<br /><br />The maximum time the import is allowed to run for processing the GEDCOM file."{/tr}"}
 				{tr}Time limit{/tr}:
 				</td><td class="optionbox"><input type="text" name="timelimit" value="".$timelimit."" size="5"
 				{if $startimport eq "true"} disabled {/if} >
@@ -47,7 +47,7 @@
 	
 				{* NOTE: Import married names *}
 				<tr><td class="descriptionbox width20 wrap">
-				{* print_help_link("import_marr_names_help", "qm", "import_marr_names" *}
+				{formhelp note="{tr}Show married names on Individual list<br /><br />If you choose the option to import married names PhpGedView will look through all of the females in your GEDCOM file and automatically create a married name subrecord for them in their GEDCOM record.  This will allow you to search for these females by their married name or their maiden name.<br /><br />This option will also allow you to show married names in the individual list if you enable the <b>Show married names on Individual list</b> option in the GEDCOM configuration settings.<br /><br />{/tr}"}
 				{tr}Import Married Names{/tr}:
 				</td><td class="optionbox">
 				{if $startimport eq "true" } $pgv_lang[$marr_names];
@@ -61,8 +61,8 @@
 	
 				{* NOTE: change XREF to RIN, REFN, or Don't change *}
 				<tr><td class="descriptionbox wrap">
-				print_help_link("change_indi2id_help", "qm", "change_id");
-				print $pgv_lang["change_id"];
+				{* print_help_link("change_indi2id_help", "qm", "change_id") *}
+				{tr}Change Individual ID to:{/tr}
 				</td><td class="optionbox">
 				{if $startimport eq "true" }
 					{if $xreftype == "NA"} {tr}Do not change{/tr}

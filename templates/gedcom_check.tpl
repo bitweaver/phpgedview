@@ -27,7 +27,7 @@
 					{else} <img id="upload_gedcom_img" src="image/plus.gif" border="0" width="11" height="11" alt="" >
 					{/if}
 				</a>
-				<!-- print_help_link("verify_gedcom_help", "qm", "verify_gedcom"); -->
+				{formhelp note="{tr}Here you can choose to either continue with the upload and import of this GEDCOM file or to abort the upload and import.{/tr}"}
 				&nbsp;<a href="javascript: {tr}Verify GEDCOM{/tr}" onclick="expand_layer('verify_gedcom');return false">{tr}Verify GEDCOM{/tr}</a>
 			</td></tr>
 			<tr><td class="descriptionbox width20 wrap" colspan="2">GEDCOM File:</td>
