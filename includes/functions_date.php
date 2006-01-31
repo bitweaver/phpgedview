@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_date.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: functions_date.php,v 1.2 2006/01/31 20:19:17 bitweaver Exp $
  */
 
 /**
@@ -356,13 +356,13 @@ function getFinnishDate($datestr, $day) {
 		$datestr = preg_replace("/^$value([^a-zA-Z])/i", $pgv_lang[$value]."\$1", $datestr);
 		$datestr = preg_replace("/(\W)$value([^a-zA-Z])/i", "\$1".$pgv_lang[$value]."\$2", $datestr);
 	}
-	//-- Constant 'ta' is appended to the Finnish month values, if a day value exists (for the last date)
+	//-- Constant 'a' is appended to the Finnish month values, if a day value exists (for the last date)
 	$array_short = array("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec");
 	foreach($array_short as $indexval => $value) {
 
 	if ($day > 0) {
-		 $datestr = preg_replace("/(\W)$value([^a-zA-Z])/i", "\$1".$pgv_lang[$value]."ta"."\$2", $datestr);
-		 $datestr = preg_replace("/^$value([^a-zA-Z])/i", $pgv_lang[$value]."ta"."\$1", $datestr);
+		 $datestr = preg_replace("/(\W)$value([^a-zA-Z])/i", "\$1".$pgv_lang[$value]."a"."\$2", $datestr);
+		 $datestr = preg_replace("/^$value([^a-zA-Z])/i", $pgv_lang[$value]."a"."\$1", $datestr);
 	  }
 	else {
 		 $datestr = preg_replace("/(\W)$value([^a-zA-Z])/i", "\$1".$pgv_lang[$value]."\$2", $datestr);

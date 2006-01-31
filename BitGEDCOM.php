@@ -99,7 +99,7 @@ class BitGEDCOM extends LibertyAttachable {
 			}
 			if( $gBitSystem->isPackageActive( 'gatekeeper' ) ) {
 				$gateSql = ' ,ts.`security_id`, ts.`security_description`, ts.`is_private`, ts.`is_hidden`, ts.`access_question`, ts.`access_answer` ';
-				$mid = " LEFT OUTER JOIN `".BIT_DB_PREFIX."tiki_content_security_map` tcs ON ( tc.`content_id`=tcs.`content_id` )  LEFT OUTER JOIN `".BIT_DB_PREFIX."tiki_security` ts ON ( tcs.`security_id`=ts.`security_id` )
+				$mid = " LEFT OUTER JOIN `".BIT_DB_PREFIX."gatekeeper_security_map` cg ON ( tc.`content_id`=cg.`content_id` )  LEFT OUTER JOIN `".BIT_DB_PREFIX."gatekeeper_security` ts ON ( cg.`security_id`=ts.`security_id` )
  						".$mid;
 			}
 			$sql = "SELECT ged.*, tc.* $gateSql
@@ -108,7 +108,7 @@ class BitGEDCOM extends LibertyAttachable {
 					FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged, `".BIT_DB_PREFIX."tiki_content` tc
 						LEFT JOIN `".BIT_DB_PREFIX."users_users` uue ON (uue.`user_id` = tc.`modifier_user_id`)
 						LEFT JOIN `".BIT_DB_PREFIX."users_users` uuc ON (uuc.`user_id` = tc.`user_id`)
-					$mid AND tc.`content_id` = tfi.`content_id`";
+					$mid AND tc.`content_id` = fi.`content_id`";
 			if( $rs = $this->mDb->query($sql, array($bindVars)) ) {
 				$this->mInfo = $rs->fields;
 
@@ -121,10 +121,10 @@ class BitGEDCOM extends LibertyAttachable {
 /*				if( $gBitSystem->isPackageActive( 'gatekeeper' ) && !@$this->verifyId( $this->mInfo['security_id'] ) ) {
 					// check to see if this image is in a protected gallery
 					// this burns an extra select but avoids an big and gnarly LEFT JOIN sequence that may be hard to optimize on all DB's
-					$query = "SELECT ts.* FROM `".BIT_DB_PREFIX."tiki_fisheye_gallery_image_map` tfgim
-								INNER JOIN `".BIT_DB_PREFIX."tiki_content_security_map` tsm ON(tfgim.`gallery_content_id`=tsm.`content_id` )
-								INNER JOIN `".BIT_DB_PREFIX."tiki_security` ts ON(tsm.`security_id`=ts.`security_id` )
-							  WHERE tfgim.`item_content_id`=?";
+					$query = "SELECT ts.* FROM `".BIT_DB_PREFIX."fisheye_gallery_image_map` fgim
+								INNER JOIN `".BIT_DB_PREFIX."gatekeeper_security_map` tsm ON(fgim.`gallery_content_id`=tsm.`content_id` )
+								INNER JOIN `".BIT_DB_PREFIX."gatekeeper_security` ts ON(tsm.`security_id`=ts.`security_id` )
+							  WHERE fgim.`item_content_id`=?";
 					$grs = $this->mDb->query($query, array( $this->mContentId ) );
 					if( $grs && $grs->RecordCount() ) {
 						$this->mInfo = array_merge( $this->mInfo, $grs->fields );

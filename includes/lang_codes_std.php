@@ -3,7 +3,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: lang_codes_std.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: lang_codes_std.php,v 1.2 2006/01/31 20:19:17 bitweaver Exp $
  *
  * RFC1766 (HTML language codes) refers to ISO standard 639, and specifies that the 
  * 2-character language code of the ISO standard should be used, and that an ISO 
@@ -189,7 +189,7 @@ $lng_codes["sv"]    = array("Swedish", "Sweden");
 $lng_codes["tl"]    = array("Tagalog", "Philippines");
 $lng_codes["ty"]    = array("Tahitian", "Tahiti");
 $lng_codes["tg"]    = array("Tajik", "Tajikistan");
-$lng_codes["ta"]    = array("Tamil", "India");
+$lng_codes["a"]    = array("Tamil", "India");
 $lng_codes["tt"]    = array("Tatar", "Ukraine");
 $lng_codes["te"]    = array("Telugu", "India");
 $lng_codes["th"]    = array("Thai", "Thailand");
