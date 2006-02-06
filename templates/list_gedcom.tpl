@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.4 2006/01/01 15:00:07 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.5 2006/02/06 22:56:48 squareing Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin wiki">
@@ -86,7 +86,7 @@
 							<td style="text-align:center;">{$listgedcom[changes].version}</td>
 						{/if}
 						{if $gBitSystem->isFeatureActive( 'gedcom_list_versions' )}
-							{if $gBitSystem->isFeatureActive( 'feature_history' )}
+							{if $gBitSystem->isFeatureActive( 'wiki_history' )}
 								<td style="text-align:center;">{smartlink ititle=$listgedcom[changes].version ifile='page_history.php' page_id=$listgedcom[changes].page_id}</td>
 							{else}
 								<td style="text-align:center;">{$listgedcom[changes].version}</td>
