@@ -1,7 +1,11 @@
 <?php
 global $gBitSystem;
 
-$gBitSystem->registerPackage( 'phpgedview',  dirname( __FILE__ ).'/' );
+$registerHash = array(
+	'package_name' => 'phpgedview',
+	'package_path' => dirname( __FILE__ ).'/',
+);
+$gBitSystem->registerPackage( $registerHash );
 
 if( $gBitSystem->isPackageActive( PHPGEDVIEW_PKG_NAME ) ) {
 	$gBitSystem->registerAppMenu( PHPGEDVIEW_PKG_DIR, 'Genealogy', PHPGEDVIEW_PKG_URL.'index.php', 'bitpackage:phpgedview/menu_phpgedview.tpl', PHPGEDVIEW_PKG_NAME );
