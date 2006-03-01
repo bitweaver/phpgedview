@@ -43,7 +43,7 @@
 					<div class="row">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
-							<input type="text" id="{$item}" name="{$item}" value="{$gBitSystem->getConfig('')$item}" size="10">
+							<input type="text" id="{$item}" name="{$item}" value="{$gBitSystem->getConfig($item)}" size="10">
 							{formhelp note=`$output.note`}
 						{/forminput}
 					</div>
