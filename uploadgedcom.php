@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.4 2006/01/01 14:59:28 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.5 2006/03/01 20:16:20 spiderr Exp $
  */
 
 /**
@@ -75,7 +75,7 @@ if (!isset($bakfile)) $bakfile = "";
 if (!isset($cleanup_needed)) $cleanup_needed = false;
 if (!isset($ok)) $ok = false;
 if (!isset($startimport)) $startimport = false;
-if (!isset($timelimit)) $timelimit = $home_blog = $gBitSystem->getPreference("time_limit", 60);
+if (!isset($timelimit)) $timelimit = $home_blog = $gBitSystem->getConfig("time_limit", 60);
 if (!isset($importtime)) $importtime = 0;
 if (!isset($no_upload)) $no_upload = false;
 if (!isset($override)) $override = false;
@@ -258,7 +258,7 @@ else if ($action == "add_new_form") $header = "add_new_gedcom";
 else $header = "ged_import";
 
 $gBitSmarty->assign( 'startimport', $startimport );
-$text_dir = $gBitSystem->getPreference("text_direction", " ");
+$text_dir = $gBitSystem->getConfig("text_direction", " ");
 $gBitSmarty->assign( 'text_dir', $text_dir );
 $gBitSmarty->assign( 'action', $action );
 

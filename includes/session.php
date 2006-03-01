@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.3 2005/12/31 12:52:02 lsces Exp $
+ * @version $Id: session.php,v 1.4 2006/03/01 20:16:21 spiderr Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -80,7 +80,7 @@ require_once( PHPGEDVIEW_PKG_PATH . "includes/functions.php");
 $MEDIATYPE = array("a11","acb","adc","adf","afm","ai","aiff","aif","amg","anm","ans","apd","asf","au","avi","awm","bga","bmp","bob","bpt","bw","cal","cel","cdr","cgm","cmp","cmv","cmx","cpi","cur","cut","cvs","cwk","dcs","dib","dmf","dng","doc","dsm","dxf","dwg","emf","enc","eps","fac","fax","fit","fla","flc","fli","fpx","ftk","ged","gif","gmf","hdf","iax","ica","icb","ico","idw","iff","img","jbg","jbig","jfif","jpe","jpeg","jp2","jpg","jtf","jtp","lwf","mac","mid","midi","miff","mki","mmm",".mod","mov","mp2","mp3","mpg","mpt","msk","msp","mus","mvi","nap","ogg","pal","pbm","pcc","pcd","pcf","pct","pcx","pdd","pdf","pfr","pgm","pic","pict","pk","pm3","pm4","pm5","png","ppm","ppt","ps","psd","psp","pxr","qt","qxd","ras","rgb","rgba","rif","rip","rla","rle","rpf","rtf","scr","sdc","sdd","sdw","sgi","sid","sng","swf","tga","tiff","tif","txt","text","tub","ul","vda","vis","vob","vpg","vst","wav","wdb","win","wk1","wks","wmf","wmv","wpd","wxf","wp4","wp5","wp6","wpg","wpp","xbm","xls","xpm","xwd","yuv","zgm");
 
 //-- start the php session
-$time = time() + $gBitSystem->getPreference( 'pgv_session_time' );
+$time = time() + $gBitSystem->getConfig( 'pgv_session_time' );
 $date = date("D M j H:i:s T Y", $time);
 //-- import the post, get, and cookie variable into the scope on new versions of php
 if (phpversion() >= '4.1') {
@@ -167,7 +167,7 @@ if (strstr($SCRIPT_NAME, "client.php")===false) {
 }
  */
 
-if (empty($PEDIGREE_GENERATIONS)) $PEDIGREE_GENERATIONS = $gBitSystem->getPreference( 'default_pedigree_generations'  );
+if (empty($PEDIGREE_GENERATIONS)) $PEDIGREE_GENERATIONS = $gBitSystem->getConfig( 'default_pedigree_generations'  );
 
 // Bodge until we can switch to bitweaver language kernel
 $LANGUAGE = "english";

@@ -7,7 +7,7 @@
 				<div class="row">
 					{formlabel label=calendar_format for=$item}
 					{forminput}
-						{html_options name=calendar_format output=$calendar values=$calendar selected=`$gBitSystemPrefs.calendar_format` id=calendar_format}
+						{html_options name=calendar_format output=$calendar values=$calendar selected=`$gBitSystem->getConfig('calendar_format')` id=calendar_format}
 						{formhelp note="Selection of gedcom display calendar format."}
 					{/forminput}
 				</div>
@@ -16,7 +16,7 @@
 					<div class="row">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
-							{html_options name=$output.label output=$generation values=$generation selected=`$gBitSystemPrefs.$item` id=$output.label}
+							{html_options name=$output.label output=$generation values=$generation selected=$gBitSystem->getConfig($item) id=$output.label}
 							{formhelp note=`$output.note`}
 						{/forminput}
 					</div>
@@ -25,7 +25,7 @@
 				<div class="row">
 					{formlabel label="Use RIN References" for="use_RIN"}
 					{forminput}
-						{html_checkboxes name="use_RIN" values="y" checked=`$gBitSystemPrefs.use_RIN` labels=false id=Use_RIN}
+						{html_checkboxes name="use_RIN" values="y" checked=`$gBitSystem->getConfig('use_RIN')` labels=false id=Use_RIN}
 						{formhelp note="Allow users to select to use RIN reference identifiers."}
 					{/forminput}
 				</div>
@@ -43,7 +43,7 @@
 					<div class="row">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
-							<input type="text" id="{$item}" name="{$item}" value="{$gBitSystemPrefs.$item}" size="10">
+							<input type="text" id="{$item}" name="{$item}" value="{$gBitSystem->getConfig('')$item}" size="10">
 							{formhelp note=`$output.note`}
 						{/forminput}
 					</div>
@@ -97,7 +97,7 @@
 					<div class="row">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
-							{html_checkboxes name="$item" values="y" checked=`$gBitSystemPrefs.$item` labels=false id=$item}
+							{html_checkboxes name="$item" values="y" checked=$gBitSystem->getConfig($item) labels=false id=$item}
 							{formhelp note=`$output.note` page=`$output.page`}
 						{/forminput}
 					</div>
