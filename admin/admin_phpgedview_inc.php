@@ -1,5 +1,5 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_phpgedview_inc.php,v 1.2 2005/12/31 17:17:05 lsces Exp $
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_phpgedview_inc.php,v 1.3 2006/04/14 20:25:52 squareing Exp $
 // All Rights Reserved. See copyright.txt for details and a complete list of authors.
 // Licensed under the GNU LESSER GENERAL PUBLIC LICENSE. See license.txt for details.
 
@@ -10,34 +10,34 @@ $generation = range( 0, 20 );
 $gBitSmarty->assign( 'generation', $generation );
 
 $gedcomPrefixValues = array(
-	"gedcom_prefix_id" => array(
+	"pgv_gedcom_prefix_id" => array(
 		'label' => 'Individual entry prefix',
 	),
-	"source_prefix_id" => array(
+	"pgv_source_prefix_id" => array(
 		'label' => 'Source entry prefix',
 	),
-	"repo_prefix_id" => array(
+	"pgv_repo_prefix_id" => array(
 		'label' => 'Repo entry prefix',
 	),
-	"fam_prefix_id" => array(
+	"pgv_fam_prefix_id" => array(
 		'label' => 'Family entry prefix',
 	),
-	"media_prefix_id" => array(
+	"pgv_media_prefix_id" => array(
 		'label' => 'Media entry prefix',
 	),
 );
 $gBitSmarty->assign( 'gedcomPrefixValues', $gedcomPrefixValues );
 
 $formGedcomFeatures = array(
-	"default_pedigree_generations" => array(
+	"pgv_default_pedigree_generations" => array(
 		'label' => 'Default Pedigree Generations',
 		'note' => 'Default number of generations in pedigree charts.',
 	),
-	"max_pedigree_generations" => array(
+	"pgv_max_pedigree_generations" => array(
 		'label' => 'Maximum Pedigree Generations',
 		'note' => 'Maximum number of generations in pedigree charts.',
 	),
-	"max_descendancy_generations" => array(
+	"pgv_max_descendancy_generations" => array(
 		'label' => 'Maximum Descendancy Generations',
 		'note' => 'Maximum number of generations in descendancy charts.',
 	),
@@ -83,11 +83,11 @@ $gBitSmarty->assign( 'formGedcomLists',$formGedcomLists );
 // it's been included from anywhere else, we don't execute this section
 if( function_exists( 'simple_set_value' ) && $gBitUser->isAdmin() ) {
 	if (!empty( $_REQUEST['gedcomTabSubmit'] ) ) {
-		simple_set_value( 'calendar_format', PHPGEDVIEW_PKG_NAME );
-		simple_set_value( 'default_pedigree_generations', PHPGEDVIEW_PKG_NAME );
-		simple_set_value( 'max_pedigree_generations', PHPGEDVIEW_PKG_NAME );
-		simple_set_value( 'max_descendancy_generations', PHPGEDVIEW_PKG_NAME );
-		simple_set_toggle( 'use_RIN' );
+		simple_set_value( 'pgv_calendar_format', PHPGEDVIEW_PKG_NAME );
+		simple_set_value( 'pgv_default_pedigree_generations', PHPGEDVIEW_PKG_NAME );
+		simple_set_value( 'pgv_max_pedigree_generations', PHPGEDVIEW_PKG_NAME );
+		simple_set_value( 'pgv_max_descendancy_generations', PHPGEDVIEW_PKG_NAME );
+		simple_set_toggle( 'pgv_use_RIN' );
 	}
 	if (!empty( $_REQUEST['gedcomPrefixSubmit'] ) ) {
 		foreach( $gedcomPrefixValues as $item => $data ) {

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.4 2006/03/01 20:16:21 spiderr Exp $
+ * @version $Id: session.php,v 1.5 2006/04/14 20:25:52 squareing Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -167,7 +167,7 @@ if (strstr($SCRIPT_NAME, "client.php")===false) {
 }
  */
 
-if (empty($PEDIGREE_GENERATIONS)) $PEDIGREE_GENERATIONS = $gBitSystem->getConfig( 'default_pedigree_generations'  );
+if (empty($PEDIGREE_GENERATIONS)) $PEDIGREE_GENERATIONS = $gBitSystem->getConfig( 'pgv_default_pedigree_generations'  );
 
 // Bodge until we can switch to bitweaver language kernel
 $LANGUAGE = "english";

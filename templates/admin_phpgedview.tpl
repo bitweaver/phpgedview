@@ -5,9 +5,9 @@
 			{legend legend="GEDCOM Settings"}
 				<input type="hidden" name="page" value="{$page}" />
 				<div class="row">
-					{formlabel label=calendar_format for=$item}
+					{formlabel label=pgv_calendar_format for=$item}
 					{forminput}
-						{html_options name=calendar_format output=$calendar values=$calendar selected=`$gBitSystem->getConfig('calendar_format')` id=calendar_format}
+						{html_options name=pgv_calendar_format output=$calendar values=$calendar selected=`$gBitSystem->getConfig('pgv_calendar_format')` id=pgv_calendar_format}
 						{formhelp note="Selection of gedcom display calendar format."}
 					{/forminput}
 				</div>
@@ -23,9 +23,9 @@
 				{/foreach}
 
 				<div class="row">
-					{formlabel label="Use RIN References" for="use_RIN"}
+					{formlabel label="Use RIN References" for="pgv_use_RIN"}
 					{forminput}
-						{html_checkboxes name="use_RIN" values="y" checked=`$gBitSystem->getConfig('use_RIN')` labels=false id=Use_RIN}
+						{html_checkboxes name="pgv_use_RIN" values="y" checked=`$gBitSystem->getConfig('pgv_use_RIN')` labels=false id=Use_RIN}
 						{formhelp note="Allow users to select to use RIN reference identifiers."}
 					{/forminput}
 				</div>
