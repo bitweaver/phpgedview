@@ -211,9 +211,6 @@ $gBitInstaller->registerSchemaIndexes( PHPGEDVIEW_PKG_NAME, $indices );
 $gBitInstaller->registerPackageInfo( PHPGEDVIEW_PKG_NAME, array(
 	'description' => "phpgedview genealogy data management interface.",
 	'license' => '<a href="http://www.gnu.org/licenses/licenses.html#LGPL">LGPL</a>',
-	'version' => '0.1',
-	'state' => 'beta',
-	'dependencies' => 'html',
 ) );
 
 // ### Default Preferences
