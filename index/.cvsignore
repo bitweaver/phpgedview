@@ -1,0 +1,10 @@
+authenticate.php
+favorites.dat
+gedcoms.php
+news.dat
+pgv_changes.php
+pgv-*.log
+*.GED
+*.GED_*.php
+sql_log.txt
+*.dat
