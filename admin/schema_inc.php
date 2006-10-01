@@ -4,19 +4,19 @@ $tables = array(
 PHPGEDVIEW_DB_PREFIX.'gedcom' => "
 	g_id I4 PRIMARY,
 	g_content_id I4,
-	g_name C(255),
-	g_path C(255),
-	g_config C(255),
-	g_privacy C(255),
+	g_name C(250),
+	g_path C(250),
+	g_config C(250),
+	g_privacy C(250),
 	g_commonsurnames X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'individuals' => "
 	i_id C(250) PRIMARY,
 	i_file I4,
-	i_rin C(30),
+	i_rin C(250),
 	i_name C(250),
-	i_isdead I1,
+	i_isdead I1 DEFAULT 1,
 	i_GEDCOM X,
 	i_letter C(5),
 	i_surname C(100)
@@ -57,14 +57,14 @@ PHPGEDVIEW_DB_PREFIX.'names' => "
 
 PHPGEDVIEW_DB_PREFIX.'dates' => "
 	d_day I,
-	d_month C(15),
+	d_month C(5),
 	d_mon I,
 	d_year I,
-	d_datestamp D,
-	d_fact I,
-	d_gid C(250),
+	d_datestamp I,
+	d_fact C(10),
+	d_gid C(180),
 	d_file I4,
-	d_type C(10)
+	d_type C(13)
 ",
 
 PHPGEDVIEW_DB_PREFIX.'blocks' => "
@@ -72,7 +72,7 @@ PHPGEDVIEW_DB_PREFIX.'blocks' => "
 	b_username C(100),
 	b_location C(30),
 	b_order I,
-	b_name C(255),
+	b_name C(250),
 	b_config X
 ",
 
@@ -93,7 +93,7 @@ PHPGEDVIEW_DB_PREFIX.'messages' => "
 	m_to C(30),
 	m_subject C(250),
 	m_note X,
-	m_created C(20)
+	m_created C(250)
 ",
 
 PHPGEDVIEW_DB_PREFIX.'news' => "
@@ -109,11 +109,13 @@ PHPGEDVIEW_DB_PREFIX.'places' => "
 	p_place C(150),
 	p_level I4,
 	p_parent_id I4,
-	p_file I4
+	p_file I4,
+	p_std_soundex X,
+	p_dm_soundex X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'placelinks' => "
-	pl_p_id I4 PRIMARY,
+	pl_p_id I4,
 	pl_gid C(30),
 	pl_file I4
 ",
@@ -122,7 +124,7 @@ PHPGEDVIEW_DB_PREFIX.'media' => "
 	m_id I4 PRIMARY,
 	m_media C(15),
 	m_ext C(6),
-	m_title C(250),
+	m_titl C(250),
 	m_file C(250),
 	m_gedfile I8,
 	m_gedrec X
@@ -138,10 +140,40 @@ PHPGEDVIEW_DB_PREFIX.'media_mapping' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'users' => "
-	u_id I4 PRIMARY,
-	u_username C(30),
-	u_GEDCOMid X,
-	u_rootid X
+	u_username  C(30) NOTNULL,
+	u_firstname	C(250),
+	u_lastname	C(250),
+	u_GEDCOMid  X,
+	u_rootid 	X,
+	u_password	c(250),
+	u_canadmin	C(2),
+	u_canedit	X,
+	u_email		X,
+	u_verified	C(20),
+	u_verified_by_admin	 C(20),
+	u_language	C(50),
+	u_pwrequested	 C(20),
+	u_reg_timestamp	 C(50),
+	u_reg_hashcode	 C(255),
+	u_theme	 	C(50),
+	u_loggedin	C(2),
+	u_sessiontime	I4,
+	u_contacymethod	C(20),
+	u_visibleonline	C(2),
+	u_editaccount	C(2),
+	u_defaulttab	I4,
+	u_comment	 	C(255),
+	u_comment_exp	C(20),
+	u_sync_gedcom	C(2),
+	u_relationship_privacy	 C(2),
+	u_max_relation_path	 I4,
+	u_auto_accept	C(2)
+",
+
+PHPGEDVIEW_DB_PREFIX.'remotelinks' => " 
+	r_gid		C(250),
+	r_linkid	C(250),
+	r_file		I4
 ",
 
 PHPGEDVIEW_DB_PREFIX.'temple_code' => "
@@ -152,19 +184,25 @@ PHPGEDVIEW_DB_PREFIX.'temple_code' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'status_code' => "
-	sc_id I4 PRIMARY AUTO,
+	sc_id I4 PRIMARY,
 	sc_name C(20),
 	sc_title C(100)
-"
+",
+
+PHPGEDVIEW_DB_PREFIX.'nextid' => " 
+	ni_ID		I4 NOTNULL,
+	ni_type		C(30) NOTNULL,
+	ni_gedfile	I4 NOTNULL
+",
 );
 
 global $gBitInstaller;
 
-$gBitInstaller->makePackageHomeable('phpgedview');
-
 foreach( array_keys( $tables ) AS $tableName ) {
 	$gBitInstaller->registerSchemaTable( PHPGEDVIEW_PKG_NAME, $tableName, $tables[$tableName] );
 }
+
+$gBitInstaller->registerSchemaSequences( ARTICLES_PKG_NAME, $sequences );
 
 $indices = array (
 	'indi_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_name', 'opts' => NULL ),
@@ -187,6 +225,7 @@ $indices = array (
 	'place_level_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_level', 'opts' => NULL ),
 	'place_parent_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_parent_id', 'opts' => NULL ),
 	'place_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'places', 'cols' => 'p_file', 'opts' => NULL ),
+	'plindex_p_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_p_id', 'opts' => NULL ),
 	'plindex_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_gid', 'opts' => NULL ),
 	'plindex_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'placelinks', 'cols' => 'pl_file', 'opts' => NULL ),
 	'name_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'names', 'cols' => 'n_name', 'opts' => NULL ),
@@ -204,6 +243,8 @@ $indices = array (
 	'date_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_gid', 'opts' => NULL ),
 	'date_file_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_file', 'opts' => NULL ),
 	'date_type_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_type', 'opts' => NULL ),
+	'r_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'remotelinks', 'cols' => 'r_gid', 'opts' => NULL ),
+	'r_link_id_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'remotelinks', 'cols' => 'r_linkid', 'opts' => NULL ),
 	'tc_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'temple_code', 'cols' => 'tc_name', 'opts' => array( 'UNIQUE' ) ),
 );
 $gBitInstaller->registerSchemaIndexes( PHPGEDVIEW_PKG_NAME, $indices );
