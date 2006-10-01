@@ -24,20 +24,20 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: editconfig.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
-require $PGV_BASE_DIRECTORY.$helptextfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE];
-if (!defined("DB_ERROR")) require_once('includes/DB.php');
-
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
+require $helptextfile["english"];
+if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
+if (!defined("DB_ERROR")) require_once('../util/adodb/adodb-pear.inc.php');
 if (empty($action)) $action="";
 if (!isset($LOGIN_URL)) $LOGIN_URL = "";
+if (!isset($COMMIT_COMMAND)) $COMMIT_COMMAND="";
 if ($CONFIGURED) {
-if (check_db()) {
+if (check_db(true)) {
 	//-- check if no users have been defined and create the main admin user
 	if (!adminUserExists()) {
 		print_header($pgv_lang["configure_head"]);
@@ -57,20 +57,20 @@ if (check_db()) {
 				$user["email"]=$emailadress;
 				$user["verified"] = "yes";
 				$user["verified_by_admin"] = "yes";
-				$user["pwrequested"] = "  ";
-				$user["theme"] = "  ";
+				$user["pwrequested"] = "";
+				$user["theme"] = "";
 				$user["theme"] = "Y";
 				$user["language"] = $LANGUAGE;
 				$user["reg_timestamp"] = date("U");
-				$user["reg_hashcode"] = "  ";
+				$user["reg_hashcode"] = "";
 				$user["loggedin"] = "Y";
 				$user["sessiontime"] = 0;
 				$user["contactmethod"] = "messaging2";
 				$user["visibleonline"] = true;
 				$user["editaccount"] = true;
 				$user["default_tab"] = 0;
-				$user["comment"] = "  ";
-				$user["comment_exp"] = "  ";
+				$user["comment"] = "";
+				$user["comment_exp"] = "";
 				$user["sync_gedcom"] = "N";
 				$user["relationship_privacy"] = "N";
 				$user["max_relation_path"] = 2;
@@ -154,9 +154,10 @@ if (check_db()) {
 		}
 	}
 	if (!userIsAdmin(getUserName())) {
-		//-- upgrade the database
-		setup_database(1);
-		cleanup_database();
+		require_once("includes/functions_import.php");
+//		//-- upgrade the database
+//		setup_database(1);
+//		cleanup_database();
    		header("Location: login.php?url=editconfig.php");
 		exit;
 	}
@@ -174,7 +175,7 @@ else {
 
 
 print_header($pgv_lang["configure_head"]);
-if ($action=="update") {
+if ($action=="update" && !isset($security_user)) {
 	if (!isset($_POST)) $_POST = $HTTP_POST_VARS;
 	$boolarray = array();
 	$boolarray["yes"]="true";
@@ -219,6 +220,7 @@ if ($action=="update") {
 	$configtext = preg_replace('/\$MAX_VIEWS\s*=\s*".*";/', "\$MAX_VIEWS = \"".$_POST["NEW_MAX_VIEWS"]."\";", $configtext);
 	$configtext = preg_replace('/\$MAX_VIEW_TIME\s*=\s*".*";/', "\$MAX_VIEW_TIME = \"".$_POST["NEW_MAX_VIEW_TIME"]."\";", $configtext);
 	$configtext = preg_replace('/\$SERVER_URL\s*=\s*".*";/', "\$SERVER_URL = \"".$_POST["NEW_SERVER_URL"]."\";", $configtext);
+	$configtext = preg_replace('/\$COMMIT_COMMAND\s*=\s*".*";/', "\$COMMIT_COMMAND = \"".$_POST["NEW_COMMIT_COMMAND"]."\";", $configtext);
 	if (preg_match('/\$DBTYPE\s*=\s*".*";/', $configtext)>0) {
 		$configtext = preg_replace('/\$LOGIN_URL\s*=\s*".*";/', "\$LOGIN_URL = \"".$_POST["NEW_LOGIN_URL"]."\";", $configtext);
 	}
@@ -233,94 +235,105 @@ if ($action=="update") {
 	if (!empty($_POST["NEW_DBPASS"])) $DBPASS = $_POST["NEW_DBPASS"];
 
 	//-- make sure the database configuration is set properly
-	if (check_db()) {
+	if (check_db(true)) {
 		$configtext = preg_replace('/\$CONFIGURED\s*=\s*.*;/', "\$CONFIGURED = true;", $configtext);
 		$CONFIGURED = true;
-        //-- upgrade the database
-        setup_database(1);
-        cleanup_database();
+//		require_once("includes/functions_import.php");
+//        //-- upgrade the database
+//        setup_database(1);
+//        cleanup_database();
 	}
 
 	// Save the languages the user has chosen to have active on the website
 	$Filename = $INDEX_DIRECTORY . "lang_settings.php";
 	if (!file_exists($Filename)) copy("includes/lang_settings_std.php", $Filename);
 
-	// Set the chosen languages to active
-	foreach ($NEW_LANGS as $key => $name) {
-		$pgv_lang_use[$name] = true;
-	}
-
-	// Set the other languages to non-active
-	foreach ($pgv_lang_use as $name => $value) {
-		if (!isset($NEW_LANGS[$name])) $pgv_lang_use[$name] = false;
-	}
-	$error = "";
-	if ($file_array = file($Filename)) {
-		@copy($Filename, $Filename . ".old");
-		if ($fp = @fopen($Filename, "w")) {
-			for ($x = 0; $x < count($file_array); $x++) {
-				fwrite($fp, $file_array[$x]);
-				$dDummy00 = trim($file_array[$x]);
-				if ($dDummy00 == "//-- NEVER manually delete or edit this entry and every line below this entry! --START--//") break;
-			}
-			fwrite($fp, "\r\n");
-			fwrite($fp, "// Array definition of language_settings\r\n");
-			fwrite($fp, "\$language_settings = array();\r\n");
-			foreach ($language_settings as $key => $value) {
-				fwrite($fp, "\r\n");
-				fwrite($fp, "//-- settings for " . $languages[$key] . "\r\n");
-				fwrite($fp, "\$lang = array();\r\n");
-				fwrite($fp, "\$lang[\"pgv_langname\"]    = \"" . $languages[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"pgv_lang_use\"]    = ");
-				if ($pgv_lang_use[$key]) fwrite($fp, "true"); else fwrite($fp, "false");
-				fwrite($fp, ";\r\n");
-				fwrite($fp, "\$lang[\"pgv_lang\"]    = \"" . $pgv_lang[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"lang_short_cut\"]    = \"" . $lang_short_cut[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"langcode\"]    = \"" . $lang_langcode[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"pgv_language\"]    = \"" . $pgv_language[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"confighelpfile\"]    = \"" . $confighelpfile[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"helptextfile\"]    = \"" . $helptextfile[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"flagsfile\"]    = \"" . $flagsfile[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"factsfile\"]    = \"" . $factsfile[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"DATE_FORMAT\"]    = \"" . $DATE_FORMAT_array[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"TIME_FORMAT\"]    = \"" . $TIME_FORMAT_array[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"WEEK_START\"]    = \"" . $WEEK_START_array[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"TEXT_DIRECTION\"]    = \"" . $TEXT_DIRECTION_array[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"NAME_REVERSE\"]    = ");
-				if ($NAME_REVERSE_array[$key]) fwrite($fp, "true"); else fwrite($fp, "false");
-				fwrite($fp, ";\r\n");
-				fwrite($fp, "\$lang[\"ALPHABET_upper\"]    = \"" . $ALPHABET_upper[$key] . "\";\r\n");
-				fwrite($fp, "\$lang[\"ALPHABET_lower\"]    = \"" . $ALPHABET_lower[$key] . "\";\r\n");
-				fwrite($fp, "\$language_settings[\"" . $languages[$key] . "\"]  = \$lang;\r\n");
-			}
-			$end_found = false;
-			for ($x = 0; $x < count($file_array); $x++) {
-				$dDummy00 = trim($file_array[$x]);
-				if ($dDummy00 == "//-- NEVER manually delete or edit this entry and every line above this entry! --END--//"){fwrite($fp, "\r\n"); $end_found = true;}
-				if ($end_found) fwrite($fp, $file_array[$x]);
-			}
-			fclose($fp);
+	if (isset($NEW_LANGS)) {
+		// Set the chosen languages to active
+		foreach ($NEW_LANGS as $key => $name) {
+			$pgv_lang_use[$name] = true;
 		}
-		else $error = "lang_config_write_error";
+	
+		// Set the other languages to non-active
+		foreach ($pgv_lang_use as $name => $value) {
+			if (!isset($NEW_LANGS[$name])) $pgv_lang_use[$name] = false;
+		}
+		$error = "";
+		if ($file_array = file($Filename)) {
+			@copy($Filename, $Filename . ".old");
+			if ($fp = @fopen($Filename, "w")) {
+				for ($x = 0; $x < count($file_array); $x++) {
+					fwrite($fp, $file_array[$x]);
+					$dDummy00 = trim($file_array[$x]);
+					if ($dDummy00 == "//-- NEVER manually delete or edit this entry and every line below this entry! --START--//") break;
+				}
+				fwrite($fp, "\r\n");
+				fwrite($fp, "// Array definition of language_settings\r\n");
+				fwrite($fp, "\$language_settings = array();\r\n");
+				foreach ($language_settings as $key => $value) {
+					fwrite($fp, "\r\n");
+					fwrite($fp, "//-- settings for " . $languages[$key] . "\r\n");
+					fwrite($fp, "\$lang = array();\r\n");
+					fwrite($fp, "\$lang[\"pgv_langname\"]    = \"" . $languages[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"pgv_lang_use\"]    = ");
+					if ($pgv_lang_use[$key]) fwrite($fp, "true"); else fwrite($fp, "false");
+					fwrite($fp, ";\r\n");
+					fwrite($fp, "\$lang[\"pgv_lang\"]    = \"" . $pgv_lang[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"lang_short_cut\"]    = \"" . $lang_short_cut[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"langcode\"]    = \"" . $lang_langcode[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"pgv_language\"]    = \"" . $pgv_language[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"confighelpfile\"]    = \"" . $confighelpfile[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"helptextfile\"]    = \"" . $helptextfile[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"flagsfile\"]    = \"" . $flagsfile[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"factsfile\"]    = \"" . $factsfile[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"DATE_FORMAT\"]    = \"" . $DATE_FORMAT_array[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"TIME_FORMAT\"]    = \"" . $TIME_FORMAT_array[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"WEEK_START\"]    = \"" . $WEEK_START_array[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"TEXT_DIRECTION\"]    = \"" . $TEXT_DIRECTION_array[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"NAME_REVERSE\"]    = ");
+					if ($NAME_REVERSE_array[$key]) fwrite($fp, "true"); else fwrite($fp, "false");
+					fwrite($fp, ";\r\n");
+					fwrite($fp, "\$lang[\"ALPHABET_upper\"]    = \"" . $ALPHABET_upper[$key] . "\";\r\n");
+					fwrite($fp, "\$lang[\"ALPHABET_lower\"]    = \"" . $ALPHABET_lower[$key] . "\";\r\n");
+					fwrite($fp, "\$language_settings[\"" . $languages[$key] . "\"]  = \$lang;\r\n");
+				}
+				$end_found = false;
+				for ($x = 0; $x < count($file_array); $x++) {
+					$dDummy00 = trim($file_array[$x]);
+					if ($dDummy00 == "//-- NEVER manually delete or edit this entry and every line above this entry! --END--//"){fwrite($fp, "\r\n"); $end_found = true;}
+					if ($end_found) fwrite($fp, $file_array[$x]);
+				}
+				fclose($fp);
+				$logline = AddToLog("Language settings file, lang_settings.php, updated by >".getUserName()."<");
+	 			if (!empty($COMMIT_COMMAND)) check_in($logline, $Filename, $INDEX_DIRECTORY);	
+			}
+			else $error = "lang_config_write_error";
+		}
+		else $error = "lang_set_file_read_error";
 	}
-	else $error = "lang_set_file_read_error";
 
-	if ($error != "") {
+	if (!empty($error)) {
 	    print "<span class=\"error\">" . $pgv_lang[$error] . "</span><br /><br />";
 	}
 
 	if (!isset($download)) {
-		$fp = fopen("config.php", "wb");
-		if (!$fp) {
-			print "<span class=\"error\">";
-			print $pgv_lang["pgv_config_write_error"];
-			print "<br /></span>\n";
+		$res = @eval($configtext);
+		if ($res===false) {
+			$fp = fopen("config.php", "wb");
+			if (!$fp) {
+				print "<span class=\"error\">";
+				print $pgv_lang["pgv_config_write_error"];
+				print "<br /></span>\n";
+			}
+			else {
+				fwrite($fp, $configtext);
+				fclose($fp);
+				$logline = AddToLog("config.php updated by >".getUserName()."<");
+	 			if (!empty($COMMIT_COMMAND)) check_in($logline, "config.php", "");	
+				if ($CONFIGURED) print "<script language=\"JavaScript\" type=\"text/javascript\">\nwindow.location = 'editconfig.php';\n</script>\n";
+			}
 		}
-		else {
-			fwrite($fp, $configtext);
-			fclose($fp);
-			if ($CONFIGURED) print "<script language=\"JavaScript\" type=\"text/javascript\">\nwindow.location = 'editconfig.php';\n</script>\n";
-		}
+		else print "<span class=\"error\">There was an error in the generated config.php.</span>".htmlentities($configtext);
 		foreach($_POST as $key=>$value) {
 			$key=preg_replace("/NEW_/", "", $key);
 			if ($value=='yes') $$key=true;
@@ -341,7 +354,7 @@ if ($action=="update") {
 <!--
 	var helpWin;
 	function helpPopup(which) {
-		if ((!helpWin)||(helpWin.closed)) helpWin = window.open('editconfig_help.php?help='+which,'','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');
+		if ((!helpWin)||(helpWin.closed)) helpWin = window.open('editconfig_help.php?help='+which,'_blank','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');
 		else helpWin.location = 'editconfig_help.php?help='+which;
 		return false;
 	}
@@ -357,14 +370,14 @@ if ($action=="update") {
 		}
 		else {
 			document.configform.NEW_DBNAME.value='phpgedview';
-		} 
+		}
 	}
 	//-->
 </script>
 <form method="post" name="configform" action="editconfig.php">
 <input type="hidden" name="action" value="update" />
 <?php
-	if (($CONFIGURED || $action=="update") && !check_db()) {
+	if (($CONFIGURED || $action=="update") && !check_db(true)) {
 		print "<span class=\"error\">";
 		print $pgv_lang["db_setup_bad"];
 		print "</span><br />";
@@ -412,12 +425,12 @@ if ($action=="update") {
 				<!--<option value="dbase" <?php if ($DBTYPE=='dbase') print "selected=\"selected\""; ?>><?php print $pgv_lang["dbase"];?></option>-->
 				<!--<option value="fbsql" <?php if ($DBTYPE=='fbsql') print "selected=\"selected\""; ?>><?php print $pgv_lang["fbsql"];?></option>-->
 				<option value="ibase" <?php if ($DBTYPE=='ibase') print "selected=\"selected\""; ?>><?php print $pgv_lang["ibase"];?></option>
-				<!--<option value="ifx" <?php if ($DBTYPE=='ifx') print "selected=\"selected\""; ?>><?php print $pgv_lang["ifx"];?></option>
-				<option value="msql" <?php if ($DBTYPE=='msql') print "selected=\"selected\""; ?>><?php print $pgv_lang["msql"];?></option>-->
+				<!--<option value="ifx" <?php if ($DBTYPE=='ifx') print "selected=\"selected\""; ?>><?php print $pgv_lang["ifx"];?></option>-->
+				<!--<option value="msql" <?php if ($DBTYPE=='msql') print "selected=\"selected\""; ?>><?php print $pgv_lang["msql"];?></option>-->
 				<option value="mssql" <?php if ($DBTYPE=='mssql') print "selected=\"selected\""; ?>><?php print $pgv_lang["mssql"];?></option>
 				<option value="mysql" <?php if ($DBTYPE=='mysql') print "selected=\"selected\""; ?>><?php print $pgv_lang["mysql"];?></option>
 				<option value="mysqli" <?php if ($DBTYPE=='mysqli') print "selected=\"selected\""; ?>><?php print $pgv_lang["mysqli"];?></option>
-				<option value="oci8" <?php if ($DBTYPE=='oci8') print "selected=\"selected\""; ?>><?php print $pgv_lang["oci8"];?></option>
+				<!--<option value="oci8" <?php if ($DBTYPE=='oci8') print "selected=\"selected\""; ?>><?php print $pgv_lang["oci8"];?></option>-->
 				<option value="pgsql" <?php if ($DBTYPE=='pgsql') print "selected=\"selected\""; ?>><?php print $pgv_lang["pgsql"];?></option>
 				<option value="sqlite" <?php if ($DBTYPE=='sqlite') print "selected=\"selected\""; ?>><?php print $pgv_lang["sqlite"];?></option>
 				<!--<option value="txtdb" <?php if ($DBTYPE=='txtdbapi') print "selected=\"selected\""; ?>><?php /* print $pgv_lang["sqlite"]; */?>TxtDB</option>-->
@@ -626,13 +639,22 @@ if ($action=="update") {
 				else print $pgv_lang["seconds"];
 			?>
 			<input type="text" name="NEW_MAX_VIEW_TIME" value="<?php print $MAX_VIEW_TIME?>" tabindex="<?php $i++; print $i?>" onfocus="getHelp('MAX_VIEW_RATE_help');" />
-			<?php 
+			<?php
 				if ($TEXT_DIRECTION == "ltr") print $pgv_lang["seconds"];
 				else print $pgv_lang["page_views"];
 			?>
 		</td>
 	</tr>
 	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("COMMIT_COMMAND_help", "qm", "COMMIT_COMMAND"); print $pgv_lang['COMMIT_COMMAND'];?></td>
+ 		<td class="optionbox"><select name="NEW_COMMIT_COMMAND" tabindex="<?php $i++; print $i?>" onfocus="getHelp('COMMIT_COMMAND_help');">
+				<option value="" <?php if ($COMMIT_COMMAND=="") print "selected=\"selected\""; ?>><?php print $pgv_lang["none"];?></option>
+				<option value="cvs" <?php if ($COMMIT_COMMAND=="cvs") print "selected=\"selected\""; ?>>CVS</option>
+				<option value="svn" <?php if ($COMMIT_COMMAND=="svn") print "selected=\"selected\""; ?>>SVN</option>
+			</select>
+		</td>
+ 	</tr>
+ 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("PGV_MEMORY_LIMIT_help", "qm", "PGV_MEMORY_LIMIT"); print $pgv_lang["PGV_MEMORY_LIMIT"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_PGV_MEMORY_LIMIT" value="<?php print $PGV_MEMORY_LIMIT?>" tabindex="<?php $i++; print $i?>" onfocus="getHelp('PGV_MEMORY_LIMIT_help');" /></td>
 	</tr>
@@ -644,9 +666,9 @@ if ($action=="update") {
 	</tr>
 <?php
 	if (!file_is_writeable("config.php")) {
-			print "<tr><td class=\"descriptionbox\" colspan=\"2\">";
+			print "<tr><td class=\"descriptionbox wrap\" colspan=\"2\"><span class=\"largeError\">";
 			print_text("not_writable");
-			print "</td></tr>";
+			print "</span></td></tr>";
 			print "<tr><td class=\"topbottombar\" colspan=\"2\"><input type=\"submit\" value=\"";
 			print $pgv_lang["download_file"];
 			print "\" name=\"download\" /></td></tr>\n";
@@ -662,7 +684,7 @@ if ($action=="update") {
 }
 ?>
 <script language="JavaScript" type="text/javascript">
-	document.configform.NEW_DBTYPE.focus();
+	document.configform.NEW_DBHOST.focus();
 </script>
 <?php
 print_footer();

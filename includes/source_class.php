@@ -1,7 +1,7 @@
 <?php
 /**
  * Class file for a Source (SOUR) object
- * 
+ *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2005	John Finlay and Others
  *
@@ -21,10 +21,10 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: source_class.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: source_class.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 
-require_once 'includes/gedcomrecord.php';
+require_once('includes/gedcomrecord.php');
 
 class Source extends GedcomRecord {
 	var $disp = true;
@@ -32,7 +32,7 @@ class Source extends GedcomRecord {
 	var $sourcefacts = null;
 	var $indilist = null;
 	var $famlist = null;
-	
+
 	/**
 	 * Constructor for source object
 	 * @param string $gedrec	the raw source gedcom record
@@ -44,7 +44,42 @@ class Source extends GedcomRecord {
 		$add_descriptor = get_add_source_descriptor($this->xref);
 		if ($add_descriptor) $this->name .= " - ".$add_descriptor;
 	}
-	
+
+	/**
+	 * Static function used to get an instance of a source object
+	 * @param string $pid	the ID of the source to retrieve
+	 */
+	function &getInstance($pid, $simple=true) {
+		global $sourcelist, $GEDCOM, $GEDCOMS, $pgv_changes;
+
+		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+			if (isset($sourcelist[$pid]['object'])) return $sourcelist[$pid]['object'];
+		}
+
+		$sourcerec = find_source_record($pid);
+		if (empty($sourcerec)) {
+			$ct = preg_match("/(\w+):(.+)/", $pid, $match);
+			if ($ct>0) {
+				$servid = trim($match[1]);
+				$remoteid = trim($match[2]);
+				$service = ServiceClient::getInstance($servid);
+				$newrec= $service->mergeGedcomRecord($remoteid, "0 @".$pid."@ SOUR\r\n1 RFN ".$pid, false);
+				$sourcerec = $newrec;
+			}
+		}
+		if (empty($sourcerec)) {
+			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
+				$sourcerec = find_record_in_file($pid);
+				$fromfile = true;
+			}
+		}
+		if (empty($sourcerec)) return null;
+		$source = new Source($sourcerec, $simple);
+		if (!empty($fromfile)) $source->setChanged(true);
+		$sourcelist[$pid]['object'] = &$source;
+		return $source;
+	}
+
 	/**
 	 * Check if privacy options allow this record to be displayed
 	 * @return boolean
@@ -52,18 +87,18 @@ class Source extends GedcomRecord {
 	function canDisplayDetails() {
 		return $this->disp;
 	}
-	
+
 	/**
 	 * get the title of this source record
 	 * @return string
 	 */
 	function getTitle() {
 		global $pgv_lang;
-		
+
 		if (empty($this->name)) return $pgv_lang["unknown"];
 		return $this->name;
 	}
-	
+
 	/**
 	 * get source facts array
 	 * @return array
@@ -72,7 +107,7 @@ class Source extends GedcomRecord {
 		$this->parseFacts();
 		return $this->sourcefacts;
 	}
-	
+
 	/**
 	 * Parse the facts from the individual record
 	 */
@@ -98,7 +133,7 @@ class Source extends GedcomRecord {
 			else $factrec .= "\n".$line;
 		}
 	}
-	
+
 	/**
 	 * Merge the facts from another Source object into this object
 	 * for generating a diff view
@@ -108,7 +143,7 @@ class Source extends GedcomRecord {
 		if (is_null($diff)) return;
 		$this->parseFacts();
 		$diff->parseFacts();
-		
+
 		//-- update old facts
 		foreach($this->sourcefacts as $key=>$fact) {
 			$found = false;
@@ -139,7 +174,7 @@ class Source extends GedcomRecord {
 			}
 		}
 	}
-	
+
 	/**
 	 * get the list of individuals connected to this source
 	 * @return array
@@ -149,12 +184,12 @@ class Source extends GedcomRecord {
 		if (!is_null($this->indilist)) return $this->indilist;
 		$query = "SOUR @".$this->xref."@";
 		if (!$REGEXP_DB) $query = "%".$query."%";
-		
+
 		$this->indilist = search_indis($query);
 		uasort($this->indilist, "itemsort");
 		return $this->indilist;
 	}
-	
+
 	/**
 	 * get the list of families connected to this source
 	 * @return array

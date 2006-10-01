@@ -21,40 +21,11 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: genservice.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: genservice.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
  
  //needed for $INDEX_DIRECTORY
  require_once('config.php');
- 
- /**
-  * Remote IP Address Banning
-  */
- if (file_exists($INDEX_DIRECTORY."banned.php")) {
- 	require($INDEX_DIRECTORY."banned.php");
- 	//loops through each ip in banned.php
-	foreach($banned as $key=>$value) {
-		//creates a regex foreach ip
-		$ipRegEx = '';
-		$arrayIP = explode('*', $value);
-		$ipRegEx .= $arrayIP[0];
-		if (count($arrayIP) > 1) {
-			for($i=1; $i < count($arrayIP); $i++) {
-				if($i == (count($arrayIP)))
-		 			$ipRegEx .= "\d{0,3}";
-	 			else
-	 				$ipRegEx .= "\d{0,3}".$arrayIP[$i];
-			}
-		}
-		//checks the remote ip address against each ip regex
-		if (preg_match('/^'.$ipRegEx.'/', $_SERVER['REMOTE_ADDR'])) {
-			//adds a message to the log and exits with an Access Denied header
- 			AddToLog("genservice.php blocked IP Address: ".$_SERVER['REMOTE_ADDR']." by regex: ".$ipRegEx);
- 			header("HTTP/1.1 403 Access Deniced");
- 			exit;
- 		}
-	}
- }
  
  /**
   * we have to manually pull the SID from the SOAP request

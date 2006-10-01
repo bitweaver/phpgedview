@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: uploadmedia.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: uploadmedia.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
@@ -43,10 +43,14 @@ $upload_errors = array($pgv_lang["file_success"], $pgv_lang["file_too_big"], $pg
 	print "<span class=\"subheaders\">".str2upper($pgv_lang["upload_media"])."</span><br /><br />\n";
 	if ((isset($action)) && ($action=="upload")) {
 		for($i=1; $i<6; $i++) {
-			if (substr($_POST["folder".$i],0,1) == "/") $_POST["folder".$i] = substr($_POST["folder".$i],1);
-			if (substr($_POST["folder".$i],-1,1) != "/") $_POST["folder".$i] .= "/";
 			$error="";
 			if (!empty($_FILES['mediafile'.$i]["name"])) {
+				//-- ensure sub-folder name is properly formatted
+				if (substr($_POST["folder".$i],0,1) == "/") $_POST["folder".$i] = substr($_POST["folder".$i],1);
+				$_POST["folder".$i] .= "/";
+				$_POST["folder".$i] = str_replace("//", "/", $_POST["folder".$i]);
+				if ($_POST["folder".$i] == "/") $_POST["folder".$i] = "";
+				
 				AddToLog("Media file ".$MEDIA_DIRECTORY.$_POST["folder".$i].basename($_FILES['mediafile'.$i]['name'])." uploaded by >".getUserName()."<");
 				$thumbgenned = false;
 				if (!move_uploaded_file($_FILES['mediafile'.$i]['tmp_name'], $MEDIA_DIRECTORY.$_POST["folder".$i].basename($_FILES['mediafile'.$i]['name']))) {
@@ -56,26 +60,26 @@ $upload_errors = array($pgv_lang["file_success"], $pgv_lang["file_too_big"], $pg
 					//-- automatically generate thumbnail
 					if (!empty($_POST['genthumb'.$i]) && ($_POST['genthumb'.$i]=="yes")) {
 						$filename = $MEDIA_DIRECTORY.$_POST["folder".$i].basename($_FILES['mediafile'.$i]['name']);
-						if (!is_dir($MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs")) mkdir($MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs");
-						$thumbnail = $MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs/".basename($_FILES['mediafile'.$i]['name']);
+						if (!is_dir($MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i])) mkdir($MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i]);
+						$thumbnail = $MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i].basename($_FILES['mediafile'.$i]['name']);
 						$thumbgenned = generate_thumbnail($filename, $thumbnail);
-						if (!$thumbgenned) $error .= $pgv_lang["thumbgen_error"].$filename."<br />";
-						else print $thumbnail." ".$pgv_lang["thumb_genned"]."<br />";
+						if (!$thumbgenned) $error .= str_replace("#thumbnail#", $thumbnail, $pgv_lang["thumbgen_error"])."<br />";
+						else print str_replace("#thumbnail#", $thumbnail, $pgv_lang["thumb_genned"])."<br />";
 					}
 				}
-				AddToLog("Media thumbnail ".$MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs/".basename($_FILES['thumbnail'.$i]['name'])." uploaded by >".getUserName()."<");
+				AddToLog("Media thumbnail ".$MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i].basename($_FILES['thumbnail'.$i]['name'])." uploaded by >".getUserName()."<");
 				if (!$thumbgenned) {
-					if (!is_dir($MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs")) mkdir($MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs");
-					if (!move_uploaded_file($_FILES['thumbnail'.$i]['tmp_name'], $MEDIA_DIRECTORY.$_POST["folder".$i]."thumbs/".basename($_FILES['thumbnail'.$i]['name']))) {
+					if (!is_dir($MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i])) mkdir($MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i]);
+					if (!move_uploaded_file($_FILES['thumbnail'.$i]['tmp_name'], $MEDIA_DIRECTORY."thumbs/".$_POST["folder".$i].basename($_FILES['thumbnail'.$i]['name']))) {
 						$error .= $pgv_lang["upload_error"]."<br />".$upload_errors[$_FILES['thumbnail'.$i]['error']]."<br />";
 					}
 				}
 				if (!empty($error)) print "<span class=\"error\">".$error."</span><br />\n";
 				else {
 					print $pgv_lang["upload_successful"]."<br /><br />";
-					$imgsize = getimagesize($MEDIA_DIRECTORY.$_POST["folder".$i].$_FILES['mediafile'.$i]['name']);
-					$imgwidth = $imgsize[0]+50;
-					$imgheight = $imgsize[1]+50;
+					$imgsize = findImageSize($MEDIA_DIRECTORY.$_POST["folder".$i].$_FILES['mediafile'.$i]['name']);
+					$imgwidth = $imgsize[0]+40;
+					$imgheight = $imgsize[1]+150;
 					print "<a href=\"javascript:;\" onclick=\"return openImage('".urlencode($MEDIA_DIRECTORY.$_POST["folder".$i].$_FILES['mediafile'.$i]['name'])."',$imgwidth, $imgheight);\">".$_FILES['mediafile'.$i]['name']."</a>";
 					print"<br /><br />";
 				}
@@ -145,7 +149,7 @@ $upload_errors = array($pgv_lang["file_success"], $pgv_lang["file_too_big"], $pg
 				$ThumbSupport = substr($ThumbSupport, 2);	// Trim off first ", "
 				print "<tr>";
 					print "<td colspan=\"2\" class=\"center\">";
-						print "<input type=\"checkbox\" name=\"genthumb".$i."\" value=\"yes\" /> ";
+						print "<input type=\"checkbox\" name=\"genthumb".$i."\" value=\"yes\" checked/> ";
 						print $pgv_lang["generate_thumbnail"];
 						print $ThumbSupport;
 						print_help_link("generate_thumb_help", "qm");

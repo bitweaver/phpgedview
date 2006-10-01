@@ -22,12 +22,14 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repo.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: repo.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require_once 'includes/functions_print_facts.php';
+require_once("includes/functions_print_lists.php");
+require($factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 if ($SHOW_SOURCES<getUserAccessLevel(getUserName())) {
 	header("Location: index.php");
@@ -44,6 +46,7 @@ global $PGV_IMAGES;
 $accept_success=false;
 if (userCanAccept(getUserName())) {
 	if ($action=="accept") {
+		require_once("includes/functions_import.php");
 		if (accept_changes($rid."_".$GEDCOM)) {
 			$show_changes="no";
 			$accept_success=true;
@@ -69,7 +72,7 @@ print_header("$name - $rid - ".$pgv_lang["repo_info"]);
 <script language="JavaScript" type="text/javascript">
 <!--
 	function show_gedcom_record() {
-		var recwin = window.open("gedrecord.php?pid=<?php print $rid ?>", "", "top=0,left=0,width=300,height=400,scrollbars=1,scrollable=1,resizable=1");
+		var recwin = window.open("gedrecord.php?pid=<?php print $rid ?>", "_blank", "top=50,left=50,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");
 	}
 	function showchanges() {
 		window.location = '<?php print $SCRIPT_NAME."?".$QUERY_STRING."&show_changes=yes"; ?>';
@@ -199,7 +202,7 @@ foreach($repofacts as $indexval => $fact) {
 	if (!empty($fact)) {
 		if (showFact($fact, $rid)) {
 			if ($fact=="OBJE") {
-				print_main_media($factrec, 1, $rid, $linenum);
+				print_main_media($rid);
 			}
 			else if ($fact=="NOTE") {
 				print_main_notes($factrec, 1, $rid, $linenum);

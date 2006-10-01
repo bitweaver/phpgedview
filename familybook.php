@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: familybook.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: familybook.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
-require("includes/functions_charts.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require_once("includes/functions_charts.php");
+require($factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 function print_descendency($pid, $count) {
 	global $show_spouse, $dgenerations, $bwidth, $bheight, $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $generations, $box_width, $view, $show_full, $pgv_lang;
@@ -42,9 +42,10 @@ function print_descendency($pid, $count) {
 	if (count($famids)>0) {
 		$firstkids = 0;
 		foreach($famids as $indexval => $famid) {
-			print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
 			$famrec = find_family_record($famid);
 			$ct = preg_match_all("/1 CHIL @(.*)@/", $famrec, $match, PREG_SET_ORDER);
+			if ($ct>0) {
+			print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
 			for($i=0; $i<$ct; $i++) {
 				$rowspan = 2;
 				if (($i>0)&&($i<$ct-1)) $rowspan=1;
@@ -79,6 +80,7 @@ function print_descendency($pid, $count) {
 				print "</tr>\n";
 			}
 			print "</table>\n";
+			}
 		}
 		print "</td>\n";
 		print "<td width=\"$bwidth\">\n";
@@ -140,16 +142,16 @@ function print_descendency($pid, $count) {
 			}
 			// NOTE: If statement OK
 			if ($famids||($num>1)) {
-				print "\n\t\t<div id=\"childarrow\" dir=\"";
+				print "\n\t\t<div id=\"childarrow.$pid\" dir=\"";
 				if ($TEXT_DIRECTION=="rtl") print "rtl\" style=\"position:absolute; ";
 				else print "ltr\" style=\"position:absolute; ";
 				print "width:10px; height:10px; \">";
 				if ($view!="preview") {
-					print "<a href=\"javascript: ".$pgv_lang["show"]."\" onclick=\"return togglechildrenbox();\" onmouseover=\"swap_image('larrow',3);\" onmouseout=\"swap_image('larrow',3);\">";
-					print "<img id=\"larrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow"]["other"]."\" border=\"0\" alt=\"\" />";
+					print "<a href=\"javascript: ".$pgv_lang["show"]."\" onclick=\"return togglechildrenbox('$pid');\" onmouseover=\"swap_image('larrow.$pid',3);\" onmouseout=\"swap_image('larrow.$pid',3);\">";
+					print "<img id=\"larrow.$pid\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow"]["other"]."\" border=\"0\" alt=\"\" />";
 					print "</a>";
 				}
-				print "\n\t\t<div id=\"childbox\" dir=\"";
+				print "\n\t\t<div id=\"childbox.$pid\" dir=\"";
 				if ($TEXT_DIRECTION=="rtl") print "rtl\" style=\"position:absolute; right: 20px; ";
 				else print "ltr\" style=\"position:absolute; left: 20px;";
 				print " width:".$bwidth."px; height:".$bheight."px; visibility: hidden;\">";
@@ -162,16 +164,15 @@ function print_descendency($pid, $count) {
 							if($pid!=$parents["HUSB"]) $spid=$parents["HUSB"];
 							else $spid=$parents["WIFE"];
 							if (!empty($spid)) {
-								print "\n\t\t\t\t<a href=\"familybook.php?pid=$spid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span ";
 								if (displayDetailsById($spid) || showLivingNameById($spid)) {
 									$name = get_person_name($spid);
 									$name = rtrim($name);
-									if (hasRTLText($name))
-									     print "class=\"name2\">";
-					   				else print "class=\"name1\">";
-									print PrintReady($name);
-								}
-								else print $pgv_lang["private"];
+								} else $name = $pgv_lang["private"];
+								print "\n\t\t\t\t<a href=\"familybook.php?pid=$spid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span class=\"";
+								if (hasRTLText($name)) print "name2";
+					   			else print "name1";
+					   			print "\">";
+								print PrintReady($name);
 								print "<br /></span></a>";
 							}
 						}
@@ -180,16 +181,15 @@ function print_descendency($pid, $count) {
 							//-- add the following line to stop a bad PHP bug
 							if ($i>=$num) break;
 							$cid = $smatch[$i][1];
-							print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$cid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span ";
 							if (displayDetailsById($cid) || showLivingNameById($cid)) {
 								$name = get_person_name($cid);
 								$name = rtrim($name);
-								if (hasRTLText($name))
-								     print "class=\"name2\">&lt; ";
-					   			else print "class=\"name1\">&lt; ";
-								print PrintReady($name);
-							}
-							else print ">" . $pgv_lang["private"];
+							} else $name = $pgv_lang["private"];
+							print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$cid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span class=\"";
+							if (hasRTLText($name)) print "name2";
+					   		else print "name1";
+					   		print "\">&lt; ";
+							print PrintReady($name);
 							print "<br /></span></a>";
 						}
 					}
@@ -203,30 +203,28 @@ function print_descendency($pid, $count) {
 							print "<span class=\"name1\"><br />".$pgv_lang["parents"]."<br /></span>";
 							if (!empty($parents["HUSB"])) {
 								$spid = $parents["HUSB"];
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$spid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span ";
 								if (displayDetailsById($spid) || showLivingNameById($spid)) {
 									$name = get_person_name($spid);
 									$name = rtrim($name);
-									if (hasRTLText($name))
-									     print "class=\"name2\">";
-					   				else print "class=\"name1\">";
-									print PrintReady($name);
-								}
-								else print $pgv_lang["private"];
+								} else $name = $pgv_lang["private"];
+								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$spid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span class=\"";
+								if (hasRTLText($name)) print "name2";
+					   			else print "name1";
+					   			print "\">";
+								print PrintReady($name);
 								print "<br /></span></a>";
 							}
 							if (!empty($parents["WIFE"])) {
 								$spid = $parents["WIFE"];
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$spid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span ";
 								if (displayDetailsById($spid) || showLivingNameById($spid)) {
 									$name = get_person_name($spid);
 									$name = rtrim($name);
-									if (hasRTLText($name))
-									     print "class=\"name2\">";
-					   				else print "class=\"name1\">";
-									print PrintReady($name);
-								}
-								else print $pgv_lang["private"];
+								} else $name = $pgv_lang["private"];
+								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$spid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span class=\"";
+								if (hasRTLText($name)) print "name2";
+					   			else print "name1";
+					   			print "\">";
+								print PrintReady($name);
 								print "<br /></span></a>";
 							}
 						}
@@ -237,16 +235,15 @@ function print_descendency($pid, $count) {
 							if ($i>=$num) break;
 							$cid = $smatch[$i][1];
 							if ($cid!=$pid) {
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$cid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span ";
 								if (displayDetailsById($cid) || showLivingNameById($cid)) {
 									$name = get_person_name($cid);
 									$name = rtrim($name);
-									if (hasRTLText($name))
-									print "class=\"name2\"> ";
-					   				else print "class=\"name1\"> ";
-									print PrintReady($name);
-								}
-								else print ">". $pgv_lang["private"];
+								} else $name = $pgv_lang["private"];
+								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"familybook.php?pid=$cid&amp;show_spouse=$show_spouse&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width\"><span class=\"";
+								if (hasRTLText($name)) print "name2";
+					   			else print "name1";
+					   			print "\"> ";
+								print PrintReady($name);
 								print "<br /></span></a>";
 							}
 						}
@@ -326,7 +323,7 @@ function print_family_book($pid, $descent)
         if ((DisplayDetailsByID($pid))||(showLivingNameByID($pid))) $name = get_person_name($pid);
         else $name = $pgv_lang["private"];
         
-        print "\n\t<h2 style=\"text-align: center\">"."Family of".": ".PrintReady($name)."</h2>";
+        print "\n\t<h2 style=\"text-align: center\">".$pgv_lang["family_of"].PrintReady($name)."</h2>";
         print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\"><tr>\n";
         
         //-- descendancy
@@ -391,7 +388,7 @@ else print "\n\t<h2 style=\"text-align: center\">".$pgv_lang["familybook_chart"]
 	var pasteto;
 	function open_find(textbox) {
 		pasteto = textbox;
-		findwin = window.open('find.php?type=indi', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=indi', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	function paste_id(value) {
 		pasteto.value=value;
@@ -446,9 +443,9 @@ if ($view!="preview") {
 	print_help_link("box_width_help", "qm");
 	print "</td>";
 	print "</tr><tr>";
-	print "<td class=\"list_label\" >&nbsp;" . "Descent Steps" . "&nbsp;</td>";
+	print "<td class=\"list_label\" >&nbsp;" . $pgv_lang["descent_steps"] . "&nbsp;</td>";
 	print "<td class=\"list_value\"><input type=\"text\" size=\"3\" name=\"descent\" value=\"$descent\" />";
-	print_help_link("desc_descent_help", "qm");
+	print_help_link("fambook_descent_help", "qm");
 	print "</td>";
 	print "</tr></table>";
 	print "</form>\n";

@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportengine.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: reportengine.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
-require("includes/functions_charts.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
+require_once("includes/functions_charts.php");
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
 //-- try to increase the time limit because reports can take a long time
 @set_time_limit($TIME_LIMIT*2);
@@ -231,7 +231,7 @@ function paste_id(value) {
 						print "<input type=\"hidden\" name=\"type[".$input["name"]."]\" value=\"".$input["lookup"]."\" />";
 						if ($input["lookup"]=="FAM") print_findfamily_link("famid");
 						if ($input["lookup"]=="INDI") print_findindi_link("pid","");
-						if ($input["lookup"]=="PLAC") print_findplace_link("birthplace");
+						if ($input["lookup"]=="PLAC") print_findplace_link($input["name"]);
 						if ($input["lookup"]=="DATE") {
 							$text = $pgv_lang["select_date"];
 							if (isset($PGV_IMAGES["calendar"]["button"])) $Link = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["calendar"]["button"]."\" name=\"a_".$input["name"]."\" id=\"a_".$input["name"]."\" alt=\"".$text."\" title=\"".$text."\" border=\"0\" align=\"middle\" />";

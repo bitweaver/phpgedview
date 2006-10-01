@@ -23,12 +23,12 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: login_register.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: login_register.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 // Remove slashes
 if (isset($user_firstname)) $user_firstname = stripslashes($user_firstname);
@@ -77,11 +77,14 @@ switch ($action) {
   			break;
   case "requestpw" :
   			$QUERY_STRING = "";
-  			if (!isset($user_name)) $user_name = "";
+  			$user_name="";
+			if (!empty($_POST['user_name'])) $user_name = $_POST['user_name'];
   			print_header("PhpGedView - " . $pgv_lang["lost_pw_reset"]);
   			print "<div class=\"center\">";
   			$newuser = getUser($user_name);
   			if ($newuser==false || empty($newuser["email"])) {
+				if ($newuser==false) AddToLog("New password requests for user ".$user_name." that does not exist");
+				else AddToLog("Unable to send password to user ".$user_name." because they do not have an email address");
   				print "<span class=\"warning\">";
   				print_text("user_not_found");
   				print "</span><br />";
@@ -107,14 +110,7 @@ switch ($action) {
 
 				// switch language to user settings
 				$oldlanguage = $LANGUAGE;
-				$LANGUAGE = $newuser["language"];
-				if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-				$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-				$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-				$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-				$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-				$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
-
+				loadLanguage($newuser["language"]);
 
   			  $mail_body = "";
   			  $mail_body .= str_replace("#user_fullname#", $newuser["firstname"]." ".$newuser["lastname"], $pgv_lang["mail04_line01"]) . "\r\n\r\n";
@@ -135,19 +131,14 @@ switch ($action) {
 
 				$host = preg_replace("/^www\./i", "", $_SERVER["SERVER_NAME"]);
   			  $headers = "From: phpgedview-noreply@".$host;
+  			  require_once('includes/functions_mail.php');
   			  pgvMail($newuser["email"], str_replace("#SERVER_NAME#", $SERVER_URL, $pgv_lang["mail04_subject"]), $mail_body, $headers);
 
-				// Reset language to original page language
-				$LANGUAGE = $oldlanguage;
-				if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-				$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-				$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-				$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-				$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-				$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+				loadLanguage($oldlanguage);   // Reset language
+				
 			?>
 			  <table class="center facts_table">
-			  <tr><td class="ltr"><?php print str_replace("#user[email]#", $newuser["email"], $pgv_lang["pwreqinfo"]);?></td></tr>
+			  <tr><td class="ltr"><?php print str_replace("#user[email]#", $newuser["username"], $pgv_lang["pwreqinfo"]);?></td></tr>
 			  </table>
 			  <?php
   			  AddToLog("Password request was sent to user: ".$user_name);
@@ -157,6 +148,10 @@ switch ($action) {
   			print "</div>";
   			break;
   case "register" :
+  			if (!$USE_REGISTRATION_MODULE) {
+  				header("Location: index.php");
+  				exit;
+  			}
   			$message = "";
 			if (isset($user_name)&& strlen($user_name)==0) {
 				$message .= $pgv_lang["enter_username"]."<br />";
@@ -320,6 +315,8 @@ switch ($action) {
 	  			      	}
 	  			      	print "</select>\n\t\t";
 	  			      	print "</td></tr>\n";
+	  			      } else {
+		  			    print "<input type=\"hidden\" name=\"user_language\" value=\"".$LANGUAGE."\" />";
 	  			      }
 	  			      ?>
 	  			      <tr><td class="descriptionbox nowrap ltr"><?php print_help_link("edituser_email_help", "qm", "emailadress");print $pgv_lang["emailadress"];?></td><td class="optionbox ltr"><input type="text" size="30" name="user_email" value="<?php if (!$user_email_false) print $user_email;?>" tabindex="<?php print $i++;?>" /> *</td></tr>
@@ -339,6 +336,15 @@ switch ($action) {
   				break;
 			}
   case "registernew" :
+  			if (!$USE_REGISTRATION_MODULE) {
+  				header("Location: index.php");
+  				exit;
+  			}
+  			if (preg_match("/SUNTZU/i", $user_name) || preg_match("/SUNTZU/i", $user_email)) {
+	  			AddToLog("SUNTZU hacker");
+	  			print "Go Away!";
+  				exit;
+  			}
   			$QUERY_STRING = "";
   			if (isset($user_name)) {
   			print_header("PhpGedView - " . $pgv_lang["registernew"]);
@@ -369,9 +375,11 @@ switch ($action) {
 					  $user["username"] = $user_name;
 					  $user["firstname"] = $user_firstname;
 					  $user["lastname"] = $user_lastname;
-					  $user["email"] = $user_email;
+					  if (preg_match("/[\w\.-_]+@[\w\.-_]+/", $user_email)>0) $user["email"] = $user_email;
+					  else $user["email"]="";
 					  if (!isset($user_language)) $user_language = $LANGUAGE;
-					  $user["language"] = $user_language;
+					  if (isset($language_settings[$user_language])) $user["language"] = $user_language;
+					  else $user_language = "english";
 					  $user["verified"] = "";
 					  if ($REQUIRE_ADMIN_AUTH_REGISTRATION) $user["verified_by_admin"] = "N";
 					  else $user["verified_by_admin"] = "Y";
@@ -420,13 +428,7 @@ switch ($action) {
 					{
 					 // switch to the users language
 					$oldlanguage = $LANGUAGE;
-					$LANGUAGE = $user_language;
-					if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-					$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-					$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-					$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-					$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-					$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+					loadLanguage($user_language);
 	
 					  $mail_body = "";
 					  $mail_body .= str_replace("#user_fullname#", $user_firstname." ".$user_lastname, $pgv_lang["mail01_line01"]) . "\r\n\r\n";
@@ -448,17 +450,13 @@ switch ($action) {
 					  $mail_body .= $pgv_lang["mail01_line06"] . "\r\n";
 					  $host = preg_replace("/^www\./i", "", $_SERVER["SERVER_NAME"]);
 					  $headers = "From: phpgedview-noreply@".$host;
+					  require_once('includes/functions_mail.php');
 					  pgvMail($user_email, str_replace("#SERVER_NAME#", $SERVER_URL, $pgv_lang["mail01_subject"]), $mail_body, $headers);
 	
 					// switch language to webmaster settings
+					$oldlanguage = $LANGUAGE;
 					$admuser = getuser($WEBMASTER_EMAIL);
-					$LANGUAGE = $admuser["language"];
-					if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-					$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-					$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-					$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-					$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-					$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+					loadLanguage($admuser["language"]);
 	
 					  $mail_body = "";
 					  $mail_body .= $pgv_lang["mail02_line01"] . "\r\n\r\n";
@@ -485,14 +483,7 @@ switch ($action) {
 						$message["no_from"] = true;
 						addMessage($message);
 	
-					// switch language back to earlier settings
-					$LANGUAGE = $oldlanguage;
-					if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) 	require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-					$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-					$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-					$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-					$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-					$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+						loadLanguage($oldlanguage);		// Reset language
 					?>
 					  <table class="center facts_table">
 					  <tr><td class="ltr"><?php print str_replace("#user_fullname#", $user_firstname." ".$user_lastname, $pgv_lang["thankyou"]);?><br /><br />
@@ -516,6 +507,10 @@ switch ($action) {
 			}			
 			break;
   case "userverify" :
+  			if (!$USE_REGISTRATION_MODULE) {
+  				header("Location: index.php");
+  				exit;
+  			}
   			if (!isset($user_name)) $user_name = "";
   			if (!isset($user_hashcode)) $user_hashcode = "";
   			print_header("PhpGedView - " . $pgv_lang["user_verify"]);
@@ -538,6 +533,10 @@ switch ($action) {
 			<?php
 			break;
   case "verify_hash" :
+  			if (!$USE_REGISTRATION_MODULE) {
+  				header("Location: index.php");
+  				exit;
+  			}
   			$QUERY_STRING = "";
   			AddToLog("User attempted to verify hashcode: ".$user_name);
   			print_header("PhpGedView - " . $pgv_lang["user_verify"]);# <-- better verification of authentication code
@@ -566,15 +565,9 @@ switch ($action) {
   			      updateUser($user_name, $newuser, "verified");
 
 				// switch language to webmaster settings
-				$admuser = getuser($WEBMASTER_EMAIL);
 				$oldlanguage = $LANGUAGE;
-				$LANGUAGE = $admuser["language"];
-				if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-				$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-				$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-				$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-				$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-				$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+				$admuser = getuser($WEBMASTER_EMAIL);
+				loadLanguage($admuser["language"]);
 
   			      $mail_body = "";
   			      $mail_body .= $pgv_lang["mail03_line01"] . "\r\n\r\n";
@@ -598,15 +591,7 @@ switch ($action) {
 					$message["no_from"] = true;
 					addMessage($message);
 
-				// Reset language to original page language
-				$LANGUAGE = $oldlanguage;
-				if (isset($pgv_language[$LANGUAGE]) && (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]))) require($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE]);	//-- load language file
-				$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
-				$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
-				$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
-				$WEEK_START	= $WEEK_START_array[$LANGUAGE];
-				$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
-
+				loadLanguage($oldlanguage);		// Reset language
   			
 				print "<br /><br />".$pgv_lang["pls_note09"]."<br /><br />";
 				if ($REQUIRE_ADMIN_AUTH_REGISTRATION) print $pgv_lang["pls_note10"];

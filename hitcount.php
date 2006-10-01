@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: hitcount.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: hitcount.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -73,7 +73,7 @@ if($SHOW_COUNTER)
     	if($ct>0) //found individual increment counter
     	{
     		$hits = $matches[1][0];
-    		$hits++;
+    		$hits = ((int)$hits) + 1;
     		$l_fcontents = preg_replace("/(@$pid@) (\d+)/","$1 $hits",$l_fcontents);
     		$fp=fopen($PGV_COUNTER_FILENAME,"r+");
     		fputs($fp,$l_fcontents);
@@ -103,20 +103,20 @@ if($SHOW_COUNTER)
     	$ct = preg_match ("/^(\d+)/",$l_fcontents,$matches);
     	if($ct)
         {
-				   $hits = $matches[0];
-					 $hits++;
-					 $ct = preg_match("/^(\d+)@/",$l_fcontents,$matches);
-					 if($ct) //found missing return & newline
-					   $l_fcontents = preg_replace("/^(\d+)/","$hits\r\n",$l_fcontents);
-					 else  //returns & newline exist
-					   $l_fcontents = preg_replace("/^(\d+)/","$hits",$l_fcontents);
-    		   $fp=fopen($PGV_COUNTER_FILENAME,"r+");
-    		   fputs($fp,$l_fcontents);
-    		   fclose($fp);
-				 }
-				 else
-				   $hits=0;
-     		 $_SESSION[$PGV_COUNTER_NAME]=$hits;
+			$hits = $matches[0];
+			$hits = ((int)$hits) + 1;
+			$ct = preg_match("/^(\d+)@/",$l_fcontents,$matches);
+			if($ct) //found missing return & newline
+			   $l_fcontents = preg_replace("/^(\d+)/","$hits\r\n",$l_fcontents);
+			else  //returns & newline exist
+			   $l_fcontents = preg_replace("/^(\d+)/","$hits",$l_fcontents);
+    		$fp=fopen($PGV_COUNTER_FILENAME,"r+");
+    		fputs($fp,$l_fcontents);
+    		fclose($fp);
+		}
+		else
+		  $hits=0;
+     	$_SESSION[$PGV_COUNTER_NAME]=$hits;
     }
   }
 
@@ -124,7 +124,6 @@ if($SHOW_COUNTER)
   for($i=0;$i<10;$i++)
     $hits = str_replace("$i","<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$i]["digit"]."\" alt=\"pgv_counter\" />","$hits");
 
-  //$hits = str_replace('alt=""','alt="pgv_counter" border="0" height="12" width="10"',$hits);
-   $hits = '<span dir="ltr">'.$hits.'</span>';
+    if ($TEXT_DIRECTION=="rtl") $hits = "&lrm;".$hits."&lrm;";
 }
 ?>

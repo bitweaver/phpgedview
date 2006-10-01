@@ -23,12 +23,12 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: addremotelink.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: addremotelink.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 require("includes/functions_edit.php");
 require("includes/serviceclient_class.php");
 
@@ -85,13 +85,17 @@ if ($action=="addlink") {
 	if($is_remote=="remote") {
 		if(empty($_POST["txtURL"])) {
 			$serverID = $_POST["cbExistingServers"];
-			print $_POST["cbExistingServers"];
+			//print $_POST["cbExistingServers"];
 		}
 		else {
-			$server_name = $_POST["txtURL"];
-			$gedcom_id = $_POST["txtGID"];
-			$username = $_POST["txtUsername"];
-			$password = $_POST["txtPassword"];
+			if (isset($_POST["txtURL"])) $server_name = $_POST["txtURL"];
+			else $server_name = "";
+			if (isset($_POST["txtGID"]))$gedcom_id = $_POST["txtGID"];
+			else $gedcom_id = "";
+			if (isset($_POST["txtUsername"])) $username = $_POST["txtUsername"];
+			else $username = "";
+			if (isset($_POST["txtPassword"])) $password = $_POST["txtPassword"];
+			else $password = "";
 			$gedcom_string = "0 @new@ SOUR\r\n";
 			$gedcom_string.= "1 URL ".$server_name."\r\n";
 			$gedcom_string.= "1 _DBID ".$gedcom_id."\r\n";
@@ -125,7 +129,7 @@ if ($action=="addlink") {
 		$serverID = append_gedrec($gedcom_string);
 	}
 
-	if (!empty($serverID)) {
+	if (!empty($serverID)&&!empty($link_pid)) {
        if (isset($pgv_changes[$pid."_".$GEDCOM])) $indirec = find_record_in_file($pid);
        else $indirec = find_person_record($pid);
 
@@ -147,6 +151,8 @@ if ($action=="addlink") {
            $answer2 = replace_gedrec($pid, $indirec);
            
            $indistub.= "\r\n1 FAMS @".$fam_id."@\r\n";
+           $serviceClient = ServiceClient::getInstance($serverID);
+            $indistub = $serviceClient->mergeGedcomRecord($link_pid, $indistub, true, true);
            $answer2 = replace_gedrec($stub_id, $indistub, false);
        }else if($relation_type=="mother"){
        	   $indistub = "0 @NEW@ INDI\r\n";
@@ -166,6 +172,8 @@ if ($action=="addlink") {
            $answer2 = replace_gedrec($pid, $indirec);
            
            $indistub.= "\r\n1 FAMS @".$fam_id."@\r\n";
+           $serviceClient = ServiceClient::getInstance($serverID);
+            $indistub = $serviceClient->mergeGedcomRecord($link_pid, $indistub, true, true);
            $answer2 = replace_gedrec($stub_id, $indistub, false);
        }else if($relation_type=="husband"){
        		$indistub = "0 @NEW@ INDI\r\n";
@@ -185,6 +193,8 @@ if ($action=="addlink") {
             $answer2 = replace_gedrec($pid, $indirec);
             
             $indistub.= "\r\n1 FAMS @".$fam_id."@\r\n";
+            $serviceClient = ServiceClient::getInstance($serverID);
+            $indistub = $serviceClient->mergeGedcomRecord($link_pid, $indistub, true, true);
            $answer2 = replace_gedrec($stub_id, $indistub, false);
         }else if($relation_type=="wife"){
         	$indistub = "0 @NEW@ INDI\r\n";
@@ -195,8 +205,8 @@ if ($action=="addlink") {
        	   $indistub = find_record_in_file($stub_id);
        	   
             $gedcom_fam = "0 @NEW@ FAM\r\n";
-            $gedcom_fam.= "1 HUSB @".$stub_id."@\r\n";
-            $gedcom_fam.= "1 WIFE @".$link_pid."@\r\n";
+            $gedcom_fam.= "1 WIFE @".$stub_id."@\r\n";
+            $gedcom_fam.= "1 HUSB @".$pid."@\r\n";
             $fam_id = append_gedrec($gedcom_fam);
             
             $indirec.= "\r\n";
@@ -204,6 +214,8 @@ if ($action=="addlink") {
             $answer2 = replace_gedrec($pid, $indirec);
             
             $indistub.= "\r\n1 FAMS @".$fam_id."@\r\n";
+            $serviceClient = ServiceClient::getInstance($serverID);
+            $indistub = $serviceClient->mergeGedcomRecord($link_pid, $indistub, true, true);
            $answer2 = replace_gedrec($stub_id, $indistub, false);
         }else if($relation_type=="son"||$relation_type=="daughter"){
         	$indistub = "0 @NEW@ INDI\r\n";
@@ -218,18 +230,19 @@ if ($action=="addlink") {
                 $gedcom_fam = "0 @NEW@ FAM\r\n";
                 $gedcom_fam.= "1 HUSB @".$pid."@\r\n";
                 $gedcom_fam.= "1 CHIL @".$stub_id."@\r\n";
-                $fam_id = append_gedrec($gedcom_fam);
             }else{
                 $gedcom_fam = "0 @NEW@ FAM\r\n";
                 $gedcom_fam.= "1 WIFE @".$pid."@\r\n";
                 $gedcom_fam.= "1 CHIL @".$stub_id."@\r\n";
-                $fam_id = append_gedrec($gedcom_fam);
             }
+            $fam_id = append_gedrec($gedcom_fam);
             $indirec.= "\r\n";
             $indirec.= "1 FAMS @".$fam_id."@\r\n";
             $answer2 = replace_gedrec($pid, $indirec);
             
             $indistub.= "\r\n1 FAMC @".$fam_id."@\r\n";
+            $serviceClient = ServiceClient::getInstance($serverID);
+            $indistub = $serviceClient->mergeGedcomRecord($link_pid, $indistub, true, true);
            $answer2 = replace_gedrec($stub_id, $indistub,false);
         }else if($relation_type=="self"){
         	/*
@@ -242,7 +255,19 @@ if ($action=="addlink") {
             $indirec.="\r\n";
             $indirec.="1 RFN ".$serverID.":".$link_pid."\r\n";
             $indirec.="1 SOUR @".$serverID."@\r\n";
-            $answer2 = replace_gedrec($pid, $indirec);
+			
+			$serviceClient = ServiceClient::getInstance($serverID);
+			//-- get rid of change date
+			$pos1 = strpos($indirec, "\n1 CHAN");
+			if ($pos1!==false) {
+				$pos2 = strpos($indirec, "\n1", $pos1+5);
+				if ($pos2===false) $indirec = substr($indirec, 0, $pos1+1);
+				else $indirec= substr($indirec, 0, $pos1+1).substr($indirec, $pos2+1);
+			}
+			//print "{".$indirec."}";
+			$indirec = $serviceClient->mergeGedcomRecord($link_pid, $indirec, true, true);
+			
+            //$answer2 = replace_gedrec($pid, $indirec);
         }
         print "<b>".$pgv_lang["link_success"]."</b>";
         $success = true;
@@ -267,7 +292,7 @@ function swapComponents(btnPressed){
 
     if(btnPressed=="remote"){
       tdblah.innerHTML = '<?php print preg_replace(array("/'/", "/[\r\n]+/"), array("\\'", " "), print_help_link("link_remote_site_help", "qm", "", false, true));?> <?php echo $pgv_lang["label_site"];?>';
-      tdblah2.innerHTML =  '<?php echo $pgv_lang["lbl_server_list"]; ?><br /><select id="cbExistingServers" name="cbExistingServers" style="width: 400px;"><?php if(isset($server_list)){foreach($server_list as $key=>$server){?><option value="<?php echo $key; ?>"><?php print $server['name'];?></option><?php }}?></select><br /><br />-or-<br /><br /><?php echo $pgv_lang["lbl_type_server"];?><br /><?php echo $pgv_lang["label_site_url"];?><input type="text" id="txtURL" name="txtURL" size="66"><br /><?php echo $pgv_lang["label_gedcom_id2"];?><input type="text" id="txtGID" name="txtGID" size="14"/>';
+      tdblah2.innerHTML =  '<?php echo $pgv_lang["lbl_server_list"]; ?><br /><select id="cbExistingServers" name="cbExistingServers" style="width: 400px;"><?php if(isset($server_list)){foreach($server_list as $key=>$server){?><option value="<?php echo $key; ?>"><?php print $server['name'];?></option><?php }}?></select><br /><br />-or-<br /><br /><?php echo $pgv_lang["lbl_type_server"];?><br /><?php echo $pgv_lang["label_site_url"];?><input type="text" id="txtURL" name="txtURL" size="66"><br /><?php echo $pgv_lang["label_gedcom_id2"];?><input type="text" id="txtGID" name="txtGID" size="14"/><br /><?php echo $pgv_lang["label_username_id2"];?><input type="text" id="txtUsername" name="txtUsername" size="20"/><br /><?php echo $pgv_lang["label_password_id2"];?>&nbsp;<input type="password" id="txtPassword" name="txtPassword" size="20"/>';
       tdId.innerHTML = '<?php print preg_replace(array("/'/", "/[\r\n]+/"), array("\\'", " "), print_help_link("link_person_id_help", "qm", "", false, true));?> <?php echo $pgv_lang['label_remote_id'];?>';
 
     }else{
@@ -282,10 +307,18 @@ function edit_close() {
 	if (window.opener.showchanges) window.opener.showchanges();
 	window.close();
 }
+
+function checkform(frm){
+	if (frm.txtPID.value=='') {
+		alert('Please enter all fields.');
+		return false;
+	}
+	return true;
+}
 //-->
 </script>
 <?php if ($action!="addlink") { ?>
-<form method="post" name="addRemoteRelationship" action="addremotelink.php">
+<form method="post" name="addRemoteRelationship" action="addremotelink.php" onsubmit="return checkform(this);">
 <input type="hidden" name="action" value="addlink" />
 <input type="hidden" name="pid" value="<?php print $pid;?>"/>
 <input type="hidden" name="indi_rec" value="<?php print $indirec;?>"/>

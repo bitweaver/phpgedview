@@ -1,0 +1,462 @@
+<PGVReport access="PGV_PUBLIC" icon="descend">
+	<PGVRTitle><PGVRvar var="pgv_lang[descend_report]" /></PGVRTitle>
+	<PGVRDescription>Prints a descendant chart in portrait mode</PGVRDescription>
+	<PGVRInput name="pid" lookup="INDI" type="text" default=""><PGVRvar var="pgv_lang[enter_pid]" />:</PGVRInput>
+	<PGVRInput name="maxgen" type="select" options="3,4,5,6,7,8,9,*"><PGVRvar var="pgv_lang[generations]" /></PGVRInput>
+	<PGVRInput name="sources" type="checkbox" default="1"><PGVRvar var="pgv_lang[show_sources]" /></PGVRInput>
+	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRStyle name="header" font="LucidaSansUnicode" size="18" style="" />
+	<PGVRStyle name="subheader" font="LucidaSansUnicode" size="12" style="b" />
+	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="label1" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="label2" font="LucidaSansUnicode" size="10" style="" />
+	<PGVRStyle name="name" font="LucidaSansUnicode" size="9" style="" />
+	<PGVRStyle name="name1" font="LucidaSansUnicode" size="14" style="" />
+	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
+	<PGVRStyle name="footnote" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="footnotenum" font="LucidaSansUnicode" size="6" style="" />
+	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
+		<PGVRHeader>
+			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /></PGVRCell>
+		</PGVRHeader>
+		<PGVRBody>
+			<PGVRSetVar name="personNumber" value="1" />
+			<PGVRSetVar name="childNumber" value="2" />
+			<PGVRSetVar name="generation" value="0" />
+			<PGVRCell width="0" height="30" align="center" style="header"><PGVRvar var="pgv_lang[descendancy_header]" /><PGVRGetPersonName id="$pid" /></PGVRCell>
+			<PGVRRelatives id="$pid" group="descendants" sortby="generation" maxgen="$maxgen">
+				<PGVRSetVar name="showPerson" value="F" />
+				<PGVRRepeatTag tag="FAMS">
+					<PGVRGedcom id="@FAMS:@CHIL">
+						<PGVRSetVar name="showPerson" value="T" />
+					</PGVRGedcom>
+				</PGVRRepeatTag>
+				<PGVRif condition="$showPerson=='T'">
+					<PGVRif condition="$generation!=@generation">
+						<PGVRCell width="0" height="20" align="center" style="subheader"><PGVRvar var="pgv_lang[ahnentafel_generation]" /> <PGVRGeneration /></PGVRCell>
+						<PGVRSetVar name="generation" value="@generation" />
+					</PGVRif>
+					<PGVRTextBox width="25" height="20" border="0">
+						<PGVRText style="name"><PGVRvar var="personNumber" />.</PGVRText>
+					</PGVRTextBox>
+					<PGVRTextBox width="500" height="40" border="0" newline="1">
+						<PGVRText style="name"><PGVRGetPersonName id="" truncate="34" /></PGVRText>
+						<PGVRSetVar name="printPeriod" value="false" />
+						<PGVRif condition="@SEX=='M'">
+							<PGVRSetVar name="gender" value="male" />
+						</PGVRif>
+						<PGVRif condition="@SEX=='F'">
+							<PGVRSetVar name="gender" value="female" />
+						</PGVRif>
+						<PGVRSetVar name="birtExists" value="false" />
+						<PGVRGedcom id="BIRT">
+							<PGVRSetVar name="birtExists" value="true" />	
+							<PGVRSetVar name="printPeriod" value="true" />
+							<PGVRif condition="$gender=='male'">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_born_m]" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="$gender=='female'">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_born_f]" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="$sources==1">
+								<PGVRRepeatTag tag="BIRT:SOUR">
+									<PGVRFootnote>
+										<PGVRGedcom id="@SOUR">
+											<PGVRGedcomValue tag="TITL" />
+										</PGVRGedcom>
+										<PGVRif condition="@PAGE!=''">: </PGVRif>
+										<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+									</PGVRFootnote>
+								</PGVRRepeatTag>
+							</PGVRif>
+							<PGVRif condition="@DATE!=''">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="@PLAC!=''">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+							</PGVRif>
+						</PGVRGedcom>
+						<PGVRGedcom id="DEAT">
+							<PGVRSetVar name="printPeriod" value="true" />
+							<PGVRif condition="$birtExists=='true'">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[and]" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="$gender=='male'">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_died_m]" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="$gender=='female'">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_died_f]" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="$sources==1">
+								<PGVRRepeatTag tag="DEAT:SOUR">
+									<PGVRFootnote>
+										<PGVRGedcom id="@SOUR">
+											<PGVRGedcomValue tag="TITL" />
+										</PGVRGedcom>
+										<PGVRif condition="@PAGE!=''">: </PGVRif>
+										<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+									</PGVRFootnote>
+								</PGVRRepeatTag>
+							</PGVRif>
+							<PGVRif condition="@DATE!=''">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+							</PGVRif>
+							<PGVRif condition="@PLAC!=''">
+								<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+							</PGVRif>
+						</PGVRGedcom>
+						<PGVRif condition="$printPeriod=='true'">
+							<PGVRText style="label1">.</PGVRText>
+						</PGVRif>
+						<PGVRRepeatTag tag="FAMS">
+							<PGVRSetVar name="printPronoun" value="$printPeriod" />
+							<PGVRSetVar name="printPeriod" value="false" />
+							<PGVRGedcom id="@FAMS">
+								<PGVRSetVar name="marrExists" value="false" />
+								<PGVRif condition="$gender=='male'">
+									<PGVRGedcom id="MARR">
+										<PGVRSetVar name="marrExists" value="true" />
+										<PGVRif condition="$printPronoun=='true'" >
+											<PGVRText style="label1">  <PGVRvar var="pgv_lang[ahnentafel_pronoun_m]" /></PGVRText>
+										</PGVRif>
+										<PGVRSetVar name="printPeriod" value="true" />
+										<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_married_m]" /></PGVRText>
+										<PGVRif condition="$sources==1">
+											<PGVRRepeatTag tag="MARR:SOUR">
+												<PGVRFootnote>
+													<PGVRGedcom id="@SOUR">
+														<PGVRGedcomValue tag="TITL" />
+													</PGVRGedcom>
+													<PGVRif condition="@PAGE!=''">: </PGVRif>
+													<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+												</PGVRFootnote>
+											</PGVRRepeatTag>
+										</PGVRif>
+									</PGVRGedcom>
+									<PGVRif condition="$marrExists=='true'">
+										<PGVRGedcom id="@WIFE">
+											<PGVRText style="name"> <PGVRGetPersonName id="" /></PGVRText>
+											<PGVRGedcom id="@FAMC">
+												<PGVRText style="label1"> <PGVRvar var="pgv_lang[daughter]" /> <PGVRvar var="pgv_lang[of]" /></PGVRText>
+												<PGVRText style="name"> <PGVRGetPersonName id="@HUSB" /></PGVRText>
+												<PGVRGedcom id="@HUSB">
+													<PGVRGedcom id="@FAMS:@WIFE">
+														<PGVRText style="label1"> <PGVRvar var="pgv_lang[and]" /></PGVRText>
+													</PGVRGedcom>
+												</PGVRGedcom>
+												<PGVRText style="name"> <PGVRGetPersonName id="@WIFE" /></PGVRText>
+											</PGVRGedcom>
+										</PGVRGedcom>
+									</PGVRif>
+								</PGVRif>
+								<PGVRif condition="$gender=='female'">
+									<PGVRGedcom id="MARR">
+										<PGVRSetVar name="marrExists" value="true" />
+										<PGVRif condition="$printPeriod=='true'" >
+											<PGVRText style="label1">  <PGVRvar var="pgv_lang[ahnentafel_pronoun_f]" /></PGVRText>
+										</PGVRif>
+										<PGVRSetVar name="printPeriod" value="true" />
+										<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_married_f]" /></PGVRText>
+										<PGVRif condition="$sources==1">
+											<PGVRRepeatTag tag="MARR:SOUR">
+												<PGVRFootnote>
+													<PGVRGedcom id="@SOUR">
+														<PGVRGedcomValue tag="TITL" />
+													</PGVRGedcom>
+													<PGVRif condition="@PAGE!=''">: </PGVRif>
+													<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+												</PGVRFootnote>
+											</PGVRRepeatTag>
+										</PGVRif>
+									</PGVRGedcom>
+									<PGVRif condition="$marrExists=='true'">
+										<PGVRGedcom id="@HUSB">
+											<PGVRText style="name"> <PGVRGetPersonName id="" /></PGVRText>
+											<PGVRGedcom id="@FAMC">
+												<PGVRText style="label1"> <PGVRvar var="pgv_lang[son]" /> <PGVRvar var="pgv_lang[of]" /></PGVRText>
+												<PGVRText style="name"> <PGVRGetPersonName id="@HUSB" /></PGVRText>
+												<PGVRGedcom id="@HUSB">
+													<PGVRGedcom id="@FAMS:@WIFE">
+														<PGVRText style="label1"> <PGVRvar var="pgv_lang[and]" /></PGVRText>
+													</PGVRGedcom>
+												</PGVRGedcom>
+												<PGVRText style="name"> <PGVRGetPersonName id="@WIFE" /></PGVRText>
+											</PGVRGedcom>
+										</PGVRGedcom>
+									</PGVRif>
+								</PGVRif>
+								<PGVRGedcom id="MARR">
+									<PGVRif condition="@DATE!=''">
+										<PGVRSetVar name="printPeriod" value="true" />
+										<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2"/></PGVRText>
+									</PGVRif>
+									<PGVRif condition="@PLAC!=''">
+										<PGVRSetVar name="printPeriod" value="true" />
+										<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2"/></PGVRText>
+									</PGVRif>
+								</PGVRGedcom>
+								<PGVRif condition="$printPeriod=='true'">
+									<PGVRText style="label1">.</PGVRText>
+								</PGVRif>
+								<PGVRif condition="$marrExists=='true'">
+									<PGVRif condition="$gender=='male'">
+										<PGVRGedcom id="@WIFE">
+											<PGVRSetVar name="printPeriod" value="false" />
+											<PGVRSetVar name="birtExist" value="false" />
+											<PGVRSetVar name="printPronoun" value="true" />
+											<PGVRGedcom id="BIRT">
+												<PGVRif condition="$printPronoun=='true'">
+													<PGVRSetVar name="printPeriod" value="true" />
+													<PGVRText style="label1">  <PGVRvar var="pgv_lang[ahnentafel_pronoun_f]" /></PGVRText>
+													<PGVRSetVar name="printPronoun" value="false" />
+												</PGVRif>
+												<PGVRSetVar name="birtExist" value="true" />
+												<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_born_f]" /></PGVRText>
+												<PGVRif condition="$sources==1">
+													<PGVRRepeatTag tag="BIRT:SOUR">
+														<PGVRFootnote>
+															<PGVRGedcom id="@SOUR">
+																<PGVRGedcomValue tag="TITL" />
+															</PGVRGedcom>
+															<PGVRif condition="@PAGE!=''">: </PGVRif>
+															<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+														</PGVRFootnote>
+													</PGVRRepeatTag>
+												</PGVRif>
+												<PGVRif condition="@DATE!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+												</PGVRif>
+												<PGVRif condition="@PLAC!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+												</PGVRif>
+											</PGVRGedcom>
+											<PGVRGedcom id="DEAT">
+												<PGVRif condition="$printPronoun=='true'">
+													<PGVRText style="label1">  <PGVRvar var="pgv_lang[ahnentafel_pronoun_f]" /></PGVRText>
+													<PGVRSetVar name="printPronoun" value="false" />
+												</PGVRif>
+												<PGVRSetVar name="printPeriod" value="true" />
+												<PGVRif condition="$birtExist=='true'">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[and]" /></PGVRText>
+												</PGVRif>
+												<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_died_f]" /></PGVRText>
+												<PGVRif condition="$sources==1">
+													<PGVRRepeatTag tag="DEAT:SOUR">
+														<PGVRFootnote>
+															<PGVRGedcom id="@SOUR">
+																<PGVRGedcomValue tag="TITL" />
+															</PGVRGedcom>
+															<PGVRif condition="@PAGE!=''">: </PGVRif>
+															<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+														</PGVRFootnote>
+													</PGVRRepeatTag>
+												</PGVRif>
+												<PGVRif condition="@DATE!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+												</PGVRif>
+												<PGVRif condition="@PLAC!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+												</PGVRif>
+											</PGVRGedcom>
+											<PGVRif condition="$printPeriod=='true'">
+												<PGVRText style="label1">.</PGVRText>
+											</PGVRif>
+										</PGVRGedcom>
+									</PGVRif>
+									<PGVRif condition="$gender=='female'">
+										<PGVRGedcom id="@HUSB">
+											<PGVRSetVar name="printPronoun" value="true" />
+											<PGVRSetVar name="printPeriod" value="false" />
+											<PGVRSetVar name="birtExist" value="false" />
+											<PGVRGedcom id="BIRT">
+												<PGVRSetVar name="printPeriod" value="true" />
+												<PGVRif condition="$printPronoun=='true'">
+													<PGVRText style="label1">  <PGVRvar var="pgv_lang[ahnentafel_pronoun_m]" /></PGVRText>
+													<PGVRSetVar name="printPronoun" value="false" />
+												</PGVRif>
+												<PGVRSetVar name="birtExist" value="true" />
+												<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_born_m]" /></PGVRText>
+												<PGVRif condition="$sources==1">
+													<PGVRRepeatTag tag="BIRT:SOUR">
+														<PGVRFootnote>
+															<PGVRGedcom id="@SOUR">
+																<PGVRGedcomValue tag="TITL" />
+															</PGVRGedcom>
+															<PGVRif condition="@PAGE!=''">: </PGVRif>
+															<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+														</PGVRFootnote>
+													</PGVRRepeatTag>
+												</PGVRif>
+												<PGVRif condition="@DATE!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+												</PGVRif>
+												<PGVRif condition="@PLAC!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+												</PGVRif>
+											</PGVRGedcom>
+											<PGVRGedcom id="DEAT">
+												<PGVRif condition="$printPronoun=='true'">
+													<PGVRText style="label1">  <PGVRvar var="pgv_lang[ahnentafel_pronoun_m]" /></PGVRText>
+													<PGVRSetVar name="printPronoun" value="true" />
+												</PGVRif>
+												<PGVRSetVar name="printPeriod" value="true" />
+												<PGVRif condition="$birtExist=='true'">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[and]" /></PGVRText>
+												</PGVRif>
+												<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_died_m]" /></PGVRText>
+												<PGVRif condition="$sources==1">
+													<PGVRRepeatTag tag="DEAT:SOUR">
+														<PGVRFootnote>
+															<PGVRGedcom id="@SOUR">
+																<PGVRGedcomValue tag="TITL" />
+															</PGVRGedcom>
+															<PGVRif condition="@PAGE!=''">: </PGVRif>
+															<PGVRGedcomValue tag="PAGE" level="3"/> <PGVRGedcomValue tag="DATA:TEXT" level="3"/>
+														</PGVRFootnote>
+													</PGVRRepeatTag>
+												</PGVRif>
+												<PGVRif condition="@DATE!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[on]" /> <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+												</PGVRif>
+												<PGVRif condition="@PLAC!=''">
+													<PGVRText style="label1"> <PGVRvar var="pgv_lang[ahnentafel_place]" /> <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+												</PGVRif>
+											</PGVRGedcom>
+											<PGVRif condition="$printPeriod=='true'">
+												<PGVRText style="label1">.</PGVRText>
+											</PGVRif>
+										</PGVRGedcom>
+									</PGVRif>
+								</PGVRif>
+							</PGVRGedcom>
+						</PGVRRepeatTag>
+					</PGVRTextBox>
+					<PGVRTextBox width="25" height="20" border="0">
+						<PGVRText style="label1"><br /></PGVRText>
+					</PGVRTextBox>
+					<PGVRRepeatTag tag="FAMS">
+						<PGVRGedcom id="@FAMS">
+							<PGVRif condition="@CHIL!=''">
+								<PGVRSetVar name="numberOfChildren" value="0" />
+								<PGVRRepeatTag tag="CHIL">
+									<PGVRGedcom id="@CHIL">
+										<PGVRSetVar name="numberOfChildren" value="$numberOfChildren+1" />
+									</PGVRGedcom>
+								</PGVRRepeatTag>
+								<PGVRTextBox width="500" height="20" border="0" newline="1">
+									<PGVRif condition="$numberOfChildren==1">
+										<PGVRText style="label1"><br /><PGVRvar var="pgv_lang[child]" /></PGVRText>
+									</PGVRif>
+									<PGVRif condition="$numberOfChildren>1">
+										<PGVRText style="label1"><br /><PGVRvar var="pgv_lang[children]" /></PGVRText>
+									</PGVRif>
+									
+									<PGVRText style="label1"> <PGVRvar var="pgv_lang[of]" /> </PGVRText>
+									<PGVRText style="name"><PGVRGetPersonName id="@HUSB" /></PGVRText>
+									<PGVRText style="label1"> <PGVRvar var="pgv_lang[and]" /> </PGVRText>
+									<PGVRText style="name"><PGVRGetPersonName id="@WIFE" /></PGVRText>
+									<PGVRText style="label1">:</PGVRText>
+i								</PGVRTextBox>
+								<PGVRSetVar name="familyChildNumber" value ="1" />
+								<PGVRRepeatTag tag="CHIL">
+									<PGVRGedcom id="@CHIL">
+										<PGVRif condition="$familyChildNumber==1"><PGVRSetVar name="familyChildRoman" value="i" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==2"><PGVRSetVar name="familyChildRoman" value="ii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==3"><PGVRSetVar name="familyChildRoman" value="iii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==4"><PGVRSetVar name="familyChildRoman" value="iv" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==5"><PGVRSetVar name="familyChildRoman" value="v" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==6"><PGVRSetVar name="familyChildRoman" value="vi" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==7"><PGVRSetVar name="familyChildRoman" value="vii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==8"><PGVRSetVar name="familyChildRoman" value="viii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==9"><PGVRSetVar name="familyChildRoman" value="ix" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==10"><PGVRSetVar name="familyChildRoman" value="x" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==11"><PGVRSetVar name="familyChildRoman" value="xi" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==12"><PGVRSetVar name="familyChildRoman" value="xii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==13"><PGVRSetVar name="familyChildRoman" value="xiii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==14"><PGVRSetVar name="familyChildRoman" value="xiv" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==15"><PGVRSetVar name="familyChildRoman" value="xv" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==16"><PGVRSetVar name="familyChildRoman" value="xvi" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==17"><PGVRSetVar name="familyChildRoman" value="xvii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==18"><PGVRSetVar name="familyChildRoman" value="xviii" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==19"><PGVRSetVar name="familyChildRoman" value="xix" /></PGVRif>
+										<PGVRif condition="$familyChildNumber==20"><PGVRSetVar name="familyChildRoman" value="xx" /></PGVRif>
+										<PGVRTextBox width="25" height="20" border="0">
+											<PGVRText style="label1"><br /></PGVRText>
+										</PGVRTextBox>
+										<PGVRSetVar name="showChildNumber" value="false" />
+										<PGVRRepeatTag tag="FAMS">
+											<PGVRGedcom id="@FAMS:@CHIL">
+												<PGVRSetVar name="showChildNumber" value="true" />
+											</PGVRGedcom>
+										</PGVRRepeatTag>
+										<PGVRTextBox width="15" height="20" border="0">
+											<PGVRif condition="$showChildNumber=='true'">
+												<PGVRText style="name"><PGVRvar var="childNumber" />.</PGVRText>
+												<PGVRSetVar name="childNumber" value="$childNumber + 1" />
+											</PGVRif>
+										</PGVRTextBox>
+										<PGVRTextBox width="485" height="20" newline="1" border="0">
+											<PGVRText style="label1"><PGVRvar var="familyChildRoman" /></PGVRText>
+											<PGVRText style="name">  <PGVRGetPersonName id="" /></PGVRText>
+											<PGVRGedcom id="BIRT">
+												<PGVRText style="label1"> B:<PGVRGedcomValue tag="DATE" level="2"/>  <PGVRGedcomValue tag="PLAC" level="2"/></PGVRText>
+											</PGVRGedcom>
+											<PGVRSetVar name="showMarraige" value="T" />
+											<PGVRRepeatTag tag="FAMS">
+												<PGVRGedcom id="@FAMS:@CHIL">
+												<PGVRSetVar name="showMarraige" value="F" />
+												</PGVRGedcom>
+											</PGVRRepeatTag>
+											<PGVRif condition="$showMarraige=='T'">
+												<PGVRif condition="@SEX=='M'">
+													<PGVRSetVar name="gender" value="male" />
+												</PGVRif>
+												<PGVRif condition="@SEX=='F'">
+													<PGVRSetVar name="gender" value="female" />
+												</PGVRif>
+												<PGVRRepeatTag tag="FAMS">
+													<PGVRGedcom id="@FAMS">
+														<PGVRText style="label1"> M: </PGVRText>
+														<PGVRif condition="$gender=='male'">
+															<PGVRText style="name"><PGVRGetPersonName id="@WIFE" /></PGVRText>
+														</PGVRif>
+														<PGVRif condition="$gender=='female'">
+															<PGVRText style="name"><PGVRGetPersonName id="@HUSB" /></PGVRText>
+														</PGVRif>
+														<PGVRGedcom id="MARR">
+															<PGVRif condition="@DATE!=''">
+																<PGVRText style="label1">, <PGVRGedcomValue tag="DATE" level="2" /></PGVRText>
+															</PGVRif>
+															<PGVRif condition="@PLAC!=''">
+																<PGVRText style="label1">, <PGVRGedcomValue tag="PLAC" level="2" /></PGVRText>
+															</PGVRif>
+														</PGVRGedcom>
+													</PGVRGedcom>
+												</PGVRRepeatTag>
+											</PGVRif>
+											<PGVRGedcom id="DEAT">
+												<PGVRText style="label1"> D: <PGVRGedcomValue tag="DATE" level="2"/> <PGVRGedcomValue tag="PLAC" level="2"/></PGVRText>
+											</PGVRGedcom>
+										</PGVRTextBox>
+									</PGVRGedcom>
+									<PGVRSetVar name="familyChildNumber" value="$familyChildNumber+1" />
+								</PGVRRepeatTag>
+							</PGVRif>
+						</PGVRGedcom>
+					</PGVRRepeatTag>
+					<PGVRSetVar name="personNumber" value="$personNumber + 1" />
+				</PGVRif>
+			</PGVRRelatives>
+			<PGVRif condition="$sources==1">
+				<PGVRTextBox border="0" width="$width" height="20">
+					<PGVRText style="subheader"><br /><PGVRvar var="pgv_lang[sources]" /><br /><br /></PGVRText>
+					<PGVRFootnoteTexts />
+				</PGVRTextBox>
+			</PGVRif>
+		</PGVRBody>
+		<PGVRFooter>
+			<PGVRCell width="$width" height="10"><PGVRNow /></PGVRCell>
+		</PGVRFooter>
+	</PGVRDoc>
+</PGVReport>
+

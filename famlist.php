@@ -19,21 +19,34 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: famlist.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
 
 require("config.php");
+require_once("includes/functions_print_lists.php");
 print_header($pgv_lang["family_list"]);
 print "<div class =\"center\">";
 print "\n\t<h2>".$pgv_lang["family_list"]."</h2>";
+
 if (empty($surname_sublist)) $surname_sublist = "yes";
 if (empty($show_all)) $show_all = "no";
 
+$minNamesPerColumn = 8;		// Number of names required before list switches to two columns
+$sublistTrigger = 500;		// Number of names required before list starts sub-listing by first name
+
 // Remove slashes
-if (isset($alpha)) $alpha = stripslashes($alpha);
-if (isset($surname)) $surname = stripslashes($surname);
+$lrm = chr(0xE2).chr(0x80).chr(0x8E);
+$rlm = chr(0xE2).chr(0x80).chr(0x8F);
+if (isset($alpha)) {
+	$alpha = stripslashes($alpha);
+	$alpha = str_replace(array($lrm, $rlm), "", $alpha);
+}
+if (isset($surname)) {
+	$surname = stripslashes($surname);
+	$surname = str_replace(array($lrm, $rlm), "", $surname);
+}
 if (empty($show_all_firstnames)) $show_all_firstnames = "no";
 if (empty($DEBUG)) $DEBUG = false;
 
@@ -43,7 +56,7 @@ if (empty($DEBUG)) $DEBUG = false;
  * This variable is used for checking if the @ symbol is present in the alphabet list.
  * @global boolean $pass
  */
-$pass = FALSE;
+$pass = false;
 
 /**
  * Total famlist array
@@ -73,7 +86,7 @@ if (count($famalpha) > 0) {
 	foreach($famalpha as $letter=>$list) {
 		if (empty($alpha)) {
 			if (!empty($surname)) {
-				if ($USE_RTL_FUNCTIONS && isRTLText($surname)) $alpha = substr(preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z. ]*/"), array(",",",",""), $surname),0,2);
+				if ($USE_RTL_FUNCTIONS && hasRTLText($surname)) $alpha = substr(preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z. ]*/"), array(",",",",""), $surname),0,2);
 				else $alpha = substr(preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z. ]*/"), array(",",",",""), $surname),0,1);
 			}
 		}
@@ -82,27 +95,26 @@ if (count($famalpha) > 0) {
 				$startalpha = $letter;
 				$alpha = $letter;
 			}
-//			print "<a href=\"famlist.php?alpha=".urlencode($letter)."&amp;surname_sublist=$surname_sublist\">";
-			print "<a href=\"famlist.php?alpha=".urlencode($letter)."&amp;surname_sublist=yes\">";
+			print "<a href=\"?alpha=".urlencode($letter)."&amp;surname_sublist=".$surname_sublist."\">";
 			if (($alpha==$letter)&&($show_all=="no")) print "<span class=\"warning\">".$letter."</span>";
 			else print $letter;
 			print "</a> | \n";
 		}
-		if ($letter === "@") $pass = TRUE;
+		if ($letter === "@") $pass = true;
 	}
-	if ($pass == TRUE) {
-		if (isset($alpha) && $alpha == "@") print "<a href=\"famlist.php?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
-		else print "<a href=\"famlist.php?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.\">".PrintReady($pgv_lang["NN"])."</a>";
+	if ($pass == true) {
+		if (isset($alpha) && $alpha == "@") print "<a href=\"?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
+		else print "<a href=\"?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.\">".PrintReady($pgv_lang["NN"])."</a>";
 		print " | \n";
-		$pass = FALSE;
+		$pass = false;
 	}
-	if ($show_all=="yes") print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=$surname_sublist\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
-	else print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=$surname_sublist\">".$pgv_lang["all"]."</a>\n";
+	if ($show_all=="yes") print "<a href=\"?show_all=yes&amp;surname_sublist=".$surname_sublist."\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
+	else print "<a href=\"?show_all=yes&amp;surname_sublist=".$surname_sublist."\">".$pgv_lang["all"]."</a>\n";
 	if (isset($startalpha)) $alpha = $startalpha;
 }
-print "<br />";
+print "<br /><br />";
 print_help_link("name_list_help", "qm", "name_list");
-print "<br /><table class=\"list_table $TEXT_DIRECTION\"><tr>";
+print "<table class=\"list_table $TEXT_DIRECTION\"><tr>";
 if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	get_fam_list();
 	if (!isset($alpha)) $alpha="";
@@ -127,27 +139,35 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	uasort($surnames, "itemsort");
 	$count = count($surnames);
 	$col = 1;
-	if ($count>36) $col=4;
-	else if ($count>18) $col=3;
-	else if ($count>6) $col=2;
+	if ($count>$minNamesPerColumn) $col=2;
+	if ($count>($minNamesPerColumn << 1)) $col=3;
+	if ($count>($minNamesPerColumn << 2)) $col=4;
 	$newcol=ceil($count/$col);
 	print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"$col\">";
 	print $TableTitle;
 	print $pgv_lang["surnames"]."</td></tr><tr>\n";
-	print "<td class=\"list_value\" style=\"padding: 14px;\">\n";
+	print "<td class=\"list_value wrap";
+	if ($col==4) print " width25";
+	if ($col==3) print " width33";
+	if ($col==2) print " width50";
+	print "\" style=\"padding: 14px;\">\n";
 	foreach($surnames as $surname=>$namecount) {
 		if (stristr($namecount["name"], "@")) $namelist = check_NN($namecount["name"]);
 		else $namelist = $namecount["name"];
 		if (begRTLText($namecount["name"])) {
-			print "<div class =\"rtl\" dir=\"rtl\">&nbsp;<a href=\"famlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=".urlencode($namecount["name"])."\">&nbsp;".$namelist . "&rlm; - [".($namecount["match"])."]&rlm;";
+			print "<div class =\"rtl\" dir=\"rtl\">&nbsp;<a href=\"?alpha=".$namecount["alpha"]."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">&nbsp;".$namelist . "&rlm; - [".($namecount["match"])."]&rlm;";
 		}
 		else {
-			print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"famlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=".urlencode($namecount["name"])."\">&nbsp;".$namelist . "&lrm; - [".($namecount["match"])."]&lrm;";
+			print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"?alpha=".$namecount["alpha"]."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">&nbsp;".$namelist . "&lrm; - [".($namecount["match"])."]&lrm;";
         }
 		print "</a></div>\n";
 		$i++;
 		if ($i==$newcol && $i<$count) {
-			print "</td><td class=\"list_value\" style=\"padding: 14px;\">\n";
+			print "</td><td class=\"list_value wrap";
+			if ($col==4) print " width25";
+			if ($col==3) print " width33";
+			if ($col==2) print " width50";
+			print "\" style=\"padding: 14px;\">\n";
 			$newcol=$i+ceil($count/$col);
 		}
 	}
@@ -182,31 +202,39 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	$count_indi = 0;
 	$count_fam = 0;
 	$col = 1;
-	if ($count>36) $col=4;
-	else if ($count>18) $col=3;
-	else if ($count>6) $col=2;
+	if ($count>$minNamesPerColumn) $col=2;
+	if ($count>($minNamesPerColumn << 1)) $col=3;
+	if ($count>($minNamesPerColumn << 2)) $col=4;
 	$newcol=ceil($count/$col);
 	print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"$col\">";
 	print $TableTitle;
 	print $pgv_lang["surnames"]."</td></tr><tr>\n";
-	print "<td class=\"list_value\" style=\"padding: 14px;\">\n";
+	print "<td class=\"list_value wrap";
+	if ($col==4) print " width25";
+	if ($col==3) print " width33";
+	if ($col==2) print " width50";
+	print "\" style=\"padding: 14px;\">\n";
 	foreach($surnames as $surname=>$namecount) {
-		if (begRTLText($namecount["name"])) print "<div class =\"rtl\" dir=\"rtl\">&nbsp;<a href=\"famlist.php?alpha=".$alpha."&amp;surname_sublist=$surname_sublist&amp;surname=".urlencode($namecount["name"])."\">".$namecount["name"]."&rlm;&nbsp;-&nbsp;[".($namecount["fam"])."]&rlm;";
-		else print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"famlist.php?alpha=".$alpha."&amp;surname_sublist=$surname_sublist&amp;surname=".urlencode($namecount["name"])."\">".$namecount["name"]."&lrm;&nbsp;-&nbsp;[".($namecount["fam"])."]&lrm;";
+		if (begRTLText($namecount["name"])) print "<div class =\"rtl\" dir=\"rtl\">&nbsp;<a href=\"?alpha=".$alpha."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">".$namecount["name"]."&rlm;&nbsp;-&nbsp;[".($namecount["fam"])."]&rlm;";
+		else print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"?alpha=".$alpha."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">".$namecount["name"]."&lrm;&nbsp;-&nbsp;[".($namecount["fam"])."]&lrm;";
 		print "</a>&nbsp;</div>\n";
 		$count_indi += $namecount["match"];
 		$count_fam += $namecount["fam"];
 		$i++;
 		if ($i==$newcol && $i<$count) {
-			print "</td><td class=\"list_value\" style=\"padding: 14px;\">\n";
+			print "</td><td class=\"list_value wrap";
+			if ($col==4) print " width25";
+			if ($col==3) print " width33";
+			if ($col==2) print " width50";
+			print "\" style=\"padding: 14px;\">\n";
 			$newcol=$i+ceil($count/$col);
 		}
 	}
 	print "</td>\n";
 	if ($count>1 || count($fam_hide)>0) {
 		print "</tr><tr><td colspan=\"$col\" align=\"center\">&nbsp;";
-	    if (oneRTLText($alpha) || ($alpha == "@" && begRTLText($pgv_lang["NN"]))) print $pgv_lang["total_indis"]." &lrm;(".str2lower($pgv_lang["surname"])." ".($alpha=="@"?$pgv_lang["NN"]:$alpha).")&lrm;&nbsp;&rlm;&nbsp;".($count_indi)."&rlm;&nbsp;<br />";
-		else print $pgv_lang["total_indis"]." &rlm;(".str2lower($pgv_lang["surname"])." ".($alpha=="@"?$pgv_lang["NN"]:$alpha).")&rlm;&nbsp;&lrm;".($count_indi)."&lrm;&nbsp;<br />";
+	    if (oneRTLText($alpha) || ($alpha == "@" && begRTLText($pgv_lang["NN"]))) print $pgv_lang["total_indis"]."&nbsp;&nbsp;&lrm;(".$pgv_lang["surname"]." ".($alpha=="@"?$pgv_lang["NN"]:$alpha).")&lrm;&nbsp;&rlm;&nbsp;".($count_indi)."&rlm;&nbsp;<br />";
+		else print $pgv_lang["total_indis"]."&nbsp;&nbsp;&rlm;(".$pgv_lang["surname"]." ".($alpha=="@"?$pgv_lang["NN"]:$alpha).")&rlm;&nbsp;&lrm;".($count_indi)."&lrm;&nbsp;<br />";
 		print $pgv_lang["total_fams"]." ".count($tfamlist)."&nbsp;<br />";
 		print $pgv_lang["surnames"]." ".$count."&nbsp;</td>\n";
 	}
@@ -218,7 +246,7 @@ else {
 		$surname = trim($surname);
 		$tfamlist = get_surname_fams($surname);
 		//-- split up long surname lists by first letter of first name
-		if (count($tfamlist)>500) $firstname_alpha = true;
+		if (count($tfamlist)>$sublistTrigger) $firstname_alpha = true;
 	}
 
 	if (($surname_sublist=="no")&&(!empty($alpha))&&($show_all=="no")) {
@@ -234,12 +262,18 @@ else {
 		print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
 		print $TableTitle;
 		print $pgv_lang["families"]."</td></tr><tr>\n";
-		print "<td class=\"list_value_wrap $TEXT_DIRECTION\"><ul>\n";
+		//print "<td class=\"list_value_wrap $TEXT_DIRECTION\"><ul>\n";
+		print "<td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
 		foreach($tfamlist as $gid => $fam) {
-			$fam["name"] = check_NN($fam["name"]);
+			$partners = explode("+", $fam["name"]);
+			$fam["name"] = check_NN(trim($partners[0]));
+			if (isset($partners[1])) $fam["name"] .= " + ".check_NN(trim($partners[1]));
 			print_list_family($gid, array($fam["name"], get_gedcom_from_id($fam["gedfile"])));
 			$i++;
-			if ($i==ceil($count/2) && $count>8) print "</ul></td><td class=\"list_value_wrap\"><ul>\n";
+			if ($i==ceil($count/2) && $count>$minNamesPerColumn) {
+				print "</ul></td>";
+				print "<td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
+			}
 		}
 		print "</ul></td>\n";
 		if ($count>1) {
@@ -282,28 +316,28 @@ else {
 			print "<td style=\"text-align:center;\" colspan=\"2\">";
 			print $pgv_lang["first_letter_fname"]."<br />\n";
 			foreach($firstalpha as $letter=>$list) {
-				$PASS = false;
+				$pass = false;
 				if ($letter != "@") {
 					if (!isset($fstartalpha) && !isset($falpha)) {
 						$fstartalpha = $letter;
 						$falpha = $letter;
 					}
-					print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=".urlencode($letter)."&amp;surname_sublist=$surname_sublist\">";
+					print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=".urlencode($letter)."&amp;surname_sublist=".$surname_sublist."\">";
 					if (($falpha==$letter)&&($show_all_firstnames=="no")) print "<span class=\"warning\">".$letter."</span>";
 					else print $letter;
 					print "</a> | \n";
 				}
-				if ($letter === "@") $pass = TRUE;
+				if ($letter === "@") $pass = true;
 			}
-			if ($pass == TRUE) {
-				if (isset($falpha) && $falpha == "@") print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=@&amp;surname_sublist=yes\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
-				else print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=@&amp;surname_sublist=yes\">".PrintReady($pgv_lang["NN"])."</a>";
+			if ($pass == true) {
+				if (isset($falpha) && $falpha == "@") print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=@&amp;surname_sublist=yes\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
+				else print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=@&amp;surname_sublist=yes\">".PrintReady($pgv_lang["NN"])."</a>";
 				print " | \n";
-				$pass = FALSE;
+				$pass = false;
 			}
 			print_help_link("firstname_alpha_help", "qm", "firstname_alpha_index");
-			if ($show_all_firstnames=="yes") print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=no\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
-			else print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=yes\">".$pgv_lang["all"]."</a>\n";
+			if ($show_all_firstnames=="yes") print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=no\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
+			else print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=yes\">".$pgv_lang["all"]."</a>\n";
 			if (isset($fstartalpha)) $falpha = $fstartalpha;
 			if ($show_all_firstnames=="no") {
 				$ffamlist = array();
@@ -325,12 +359,17 @@ else {
 			else print $pgv_lang["families"];
 			print "</td></tr><tr>\n";
 		}
-		print "<td class=\"list_value_wrap\"><ul>\n";
+		print "<td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
 		foreach($tfamlist as $gid => $fam) {
-			$fam["name"] = check_NN($fam["name"]);
+			$partners = explode("+", $fam["name"]);
+			$fam["name"] = check_NN(trim($partners[0]));
+			if (isset($partners[1])) $fam["name"] .= " + ".check_NN(trim($partners[1]));
 			print_list_family($gid, array($fam["name"], get_gedcom_from_id($fam["gedfile"])));
 			$i++;
-			if ($i==ceil($count/2) && $count>8) print "</ul></td><td class=\"list_value_wrap\"><ul>\n";
+			if ($i==ceil($count/2) && $count>$minNamesPerColumn) {
+				print "</ul></td>";
+				print "<td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
+			}
 		}
 		print "</ul></td>\n";
 		if ($count>1) {
@@ -351,19 +390,19 @@ if ($alpha != "@") {
 	else print_help_link("skip_sublist_help", "qm", "show_surnames");
 }
 if ($show_all=="yes" && $alpha != "@"){
-	if ($surname_sublist=="yes") print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=no\">".$pgv_lang["skip_surnames"]."</a>";
- 	else print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>";
+	if ($surname_sublist=="yes") print "<a href=\"?show_all=yes&amp;surname_sublist=no\">".$pgv_lang["skip_surnames"]."</a>";
+ 	else print "<a href=\"?show_all=yes&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>";
 }
 else if (empty($alpha)) {
-	if ($surname_sublist=="yes") print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=no\">".$pgv_lang["skip_surnames"]."</a>";
-	else print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>\n";
+	if ($surname_sublist=="yes") print "<a href=\"?show_all=yes&amp;surname_sublist=no\">".$pgv_lang["skip_surnames"]."</a>";
+	else print "<a href=\"?show_all=yes&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>\n";
 }
 else if ($alpha != "@" && is_array(isset($surname))) {
-	print "<a href=\"famlist.php?alpha=$alpha&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>";
+	print "<a href=\"?alpha=$alpha&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>";
 }
 else if ($alpha != "@") {
-	if ($surname_sublist=="yes") print "<a href=\"famlist.php?alpha=$alpha&amp;surname_sublist=no\">".$pgv_lang["skip_surnames"]."</a>";
-	else print "<a href=\"famlist.php?alpha=$alpha&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>";
+	if ($surname_sublist=="yes") print "<a href=\"?alpha=$alpha&amp;surname_sublist=no\">".$pgv_lang["skip_surnames"]."</a>";
+	else print "<a href=\"?alpha=$alpha&amp;surname_sublist=yes\">".$pgv_lang["show_surnames"]."</a>";
 }
 
 print "<br /><br />\n";

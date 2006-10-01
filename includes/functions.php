@@ -10,7 +10,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; eithewherer version 2 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.2 2005/12/31 12:52:02 lsces Exp $
+ * @version $Id: functions.php,v 1.3 2006/10/01 22:44:02 lsces Exp $
  */
 
 /**
@@ -48,13 +48,19 @@ if (isset($DEBUG)) $ERROR_LEVEL = 2;
  * initialize and check the database
  *
  * this function will create a database connection and return false if any errors occurred
- * @return boolean true if database successully connected, false if there was an error
+ * @param boolean $ignore_previous	whether or not to ignore a previous connection , this parameter is used mainly for the editconfig.php page when setting everything up
+ * @return boolean true if database successfully connected, false if there was an error
  */
-function check_db() {
-	global $DBTYPE, $DBHOST, $DBUSER, $DBPASS, $DBNAME, $DBCONN, $TOTAL_QUERIES, $PHP_SELF, $DBPERSIST;
+function check_db($ignore_previous=false) {
+	global $DBTYPE, $DBHOST, $DBUSER, $DBPASS, $DBNAME, $DBCONN, $TOTAL_QUERIES, $PHP_SELF, $DBPERSIST, $CONFIGURED;
 	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
-	if ((is_object($DBCONN)) && (!DB::isError($DBCONN))) return true;
+	if (!$ignore_previous) {
+		if ((is_object($DBCONN)) && (!DB::isError($DBCONN))) return true;
+		if (DB::isError($DBCONN)) {
+			return false;
+		}
+	}
 	//-- initialize query counter
 	$TOTAL_QUERIES = 0;
 
@@ -93,14 +99,14 @@ function check_db() {
  * @return string path to gedcom.ged_conf.php configuration file
  */
 function get_config_file() {
-	global $GEDCOMS;
-	if ( $GEDCOMS->getCount() == 0) {
-		return PHPGEDVIEW_PKG_PATH."config_gedcom.php";
+	global $GEDCOMS, $GEDCOM;
+	if (count($GEDCOMS)==0) {
+		return "config_gedcom.php";
 	}
 	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) return $GEDCOMS[$GEDCOM]["config"];
 	foreach($GEDCOMS as $GEDCOM=>$gedarray) {
 		$_SESSION["GEDCOM"] = $GEDCOM;
-		return PHPGEDVIEW_PKG_PATH.$gedarray["config"];
+		return $gedarray["config"];
 	}
 }
 
@@ -137,21 +143,21 @@ function get_privacy_file() {
 
 	$privfile = "privacy.php";
 	if (count($GEDCOMS)==0) {
-		$privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
+		$privfile = "privacy.php";
 	}
 	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) {
 		if ((isset($GEDCOMS[$GEDCOM]["privacy"]))&&(file_exists($GEDCOMS[$GEDCOM]["privacy"]))) $privfile = $GEDCOMS[$GEDCOM]["privacy"];
-		else $privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
+		else $privfile = "privacy.php";
 	}
 	else {
 		foreach($GEDCOMS as $GEDCOM=>$gedarray) {
 			$_SESSION["GEDCOM"] = $GEDCOM;
-			if ((isset($gedarray["privacy"]))&&(file_exists($gedarray["privacy"]))) $privfile = PHPGEDVIEW_PKG_PATH.$gedarray["privacy"];
-			else $privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
+			if ((isset($gedarray["privacy"]))&&(file_exists($gedarray["privacy"]))) $privfile = $gedarray["privacy"];
+			else $privfile = "privacy.php";
 		}
 	}
 	$privversion = get_privacy_file_version($privfile);
-	if ($privversion<$REQUIRED_PRIVACY_VERSION) $privfile = PHPGEDVIEW_PKG_PATH."privacy.php";
+	if ($privversion<$REQUIRED_PRIVACY_VERSION) $privfile = "privacy.php";
 
 	return $privfile;
 }
@@ -179,6 +185,7 @@ function getmicrotime(){
  */
 function store_gedcoms() {
 	global $GEDCOMS, $pgv_lang, $INDEX_DIRECTORY, $DEFAULT_GEDCOM, $COMMON_NAMES_THRESHOLD, $GEDCOM, $CONFIGURED;
+	global $COMMIT_COMMAND;
 
 	if (!$CONFIGURED) return false;
 	uasort($GEDCOMS, "gedcomsort");
@@ -227,7 +234,7 @@ function store_gedcoms() {
 		$gedcomtext .= "\$GEDCOMS[\"".$GED["gedcom"]."\"] = \$gedarray;\n";
 	}
 	$gedcomtext .= "\n\$DEFAULT_GEDCOM = \"$DEFAULT_GEDCOM\";\n";
-	$gedcomtext .= "\n"."?>";
+	$gedcomtext .= "\n?".">";
 	$fp = fopen($INDEX_DIRECTORY."gedcoms.php", "wb");
 	if (!$fp) {
 		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
@@ -235,72 +242,7 @@ function store_gedcoms() {
 	else {
 		fwrite($fp, $gedcomtext);
 		fclose($fp);
-	}
-}
-
-/**
- * Adds an ip address to the banned.php file
- * @param varchar(30) $ip	The ip to be saved
- */
-function add_banned_ip($ip) {
-	global $banned, $INDEX_DIRECTORY;
-	if (file_exists($INDEX_DIRECTORY."banned.php"))
-	{
-	include_once($INDEX_DIRECTORY."banned.php");
-	}
-	$bannedtext = "<?php\n//--List of banned IP addresses\n";
-	$bannedtext .= "\$banned = array();\n";	
-	if(isset($banned)){
-	reset($banned);
-		foreach ($banned as $value)
-		{
-			$bannedtext .= "\$banned[] = \"".$value."\";\n";
-		}
-	}
-	$bannedtext .= "\$banned[] = \"".$ip."\";\n";
-	$bannedtext .= "\n"."?>";
-
-	$fp = fopen($INDEX_DIRECTORY."banned.php", "wb");
-	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
-	}
-	else {
-		fwrite($fp, $bannedtext);
-		fclose($fp);
-	}
-}
-
-/**
- * Removes an IP address from the banned.php list
- * 
- * @param varchar(30) $ip	IP address to remove
- */
-function delete_banned_ip($ip) {
-	global $banned, $INDEX_DIRECTORY;
-	if (file_exists($INDEX_DIRECTORY."banned.php"))
-	{
-	include_once($INDEX_DIRECTORY."banned.php");
-	}
-	
-	$bannedtext = "<?php\n//--List of banned IP addresses\n";
-	$bannedtext .= "\$banned = array();\n";	
-	foreach ($banned as $value)
-	{
-		if ($value != $ip)
-		{
-			$bannedtext .= "\$banned[] = \"".$value."\";\n";
-		}
-	}
-	
-	$bannedtext .= "\n"."?>";
-
-	$fp = fopen($INDEX_DIRECTORY."banned.php", "wb");
-	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
-	}
-	else {
-		fwrite($fp, $bannedtext);
-		fclose($fp);
+		if (!empty($COMMIT_COMMAND)) check_in("store_gedcoms() ->" . getUserName() ."<-", "gedcoms.php", $INDEX_DIRECTORY, true);
 	}
 }
 
@@ -318,31 +260,6 @@ function get_gedcom_from_id($ged_id) {
 	}
 
 	return $ged;
-}
-
-/**
- * Check if a gedcom file is downloadable over the internet
- *
- * @author opus27
- * @param string $gedfile gedcom file
- * @return mixed 	$url if file is downloadable, false if not
- */
-function check_gedcom_downloadable($gedfile) {
-	global $SERVER_URL, $pgv_lang;
-
-	//$url = $SERVER_URL;
-	$url = "http://localhost/";
-	if (substr($url,-1,1)!="/") $url .= "/";
-	$url .= preg_replace("/ /", "%20", $gedfile);
-	@ini_set('user_agent','MSIE 4\.0b2;'); // force a HTTP/1.0 request
-	@ini_set('default_socket_timeout', '10'); // timeout
-	$handle = @fopen ($url, "r");
-	if ($handle==false) return false;
-	// open successfull : now make sure this is a GEDCOM file
-	$txt = fread ($handle, 80);
-	fclose($handle);
-	if (strpos($txt, " HEAD")==false) return false;
-	return $url;
 }
 
 /**
@@ -388,20 +305,6 @@ function file_is_writeable($file) {
 	return($err_write);
 }
 
-// This functions checks if an existing directory is physically writeable
-// The standard PHP function only checks for the R/O attribute and doesn't
-// detect authorisation by ACL.
-function dir_is_writable($dir) {
-	$err_write = false;
-	$handle = @fopen($dir."foo.txt","w+");
-	if	($handle) {
-		$i = fclose($handle);
-		$err_write = true;
-		@unlink($dir."foo.txt");
-	}
-	return($err_write);
-}
-
 /**
  * PGV Error Handling function
  *
@@ -421,7 +324,8 @@ function pgv_error_handler($errno, $errstr, $errfile, $errline) {
 		print $msg;
 		//AddToLog($msg);
 		if (($errno<16)&&(function_exists("debug_backtrace"))&&(strstr($errstr, "headers already sent by")===false)) {
-			$backtrace = debug_backtrace();
+			$backtrace = array();
+			if (function_exists('debug_backtrace')) $backtrace = debug_backtrace();
 			$num = count($backtrace);
 			if ($ERROR_LEVEL==1) $num = 1;
 			for($i=0; $i<$num; $i++) {
@@ -466,6 +370,20 @@ function strrpos4($haystack, $needle) {
 }
 
 /**
+ * Get first tag in GEDCOM sub-record
+ *
+ * This routine uses function get_sub_record to retrieve the specified sub-record
+ * and then returns the first tag.
+ *
+ */
+function get_first_tag($level, $tag, $gedrec, $num=1) {
+	$temp = get_sub_record($level, $tag, $gedrec, $num)."\n";
+	$temp = str_replace("\r\n", "\n", $temp);
+	$length = strpos($temp, "\n");
+	return substr($temp, 0, $length);
+}
+
+/**
  * get a gedcom subrecord
  *
  * searches a gedcom record and returns a subrecord of it.  A subrecord is defined starting at a
@@ -490,23 +408,29 @@ function strrpos4($haystack, $needle) {
 function get_sub_record($level, $tag, $gedrec, $num=1) {
 	$pos1=0;
 	$subrec = "";
+	$tag = trim($tag);
+	$searchTarget = "/".preg_replace("~/~","\\/",$tag)."[\W]/"; // see [ 1492470 ] and [ 1507176 ]
 	if (empty($gedrec)) return "";
-	while(($num>0)&&($pos1<strlen($gedrec))) {
-		$pos1 = strpos($gedrec, $tag, $pos1);
-		if ($pos1===false) {
+
+		$ct = preg_match_all($searchTarget, $gedrec, $match, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+		if ($ct==0) {
 			$tag = preg_replace("/(\w+)/", "_$1", $tag);
-			$pos1 = strpos($gedrec, $tag, $pos1);
-			if ($pos1===false) return "";
+			$ct = preg_match_all($searchTarget, $gedrec, $match, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+			if ($ct==0) return "";
 		}
-		$pos2 = strpos($gedrec, "\n$level", $pos1+1);
-		if (!$pos2) $pos2 = strpos($gedrec, "\n1", $pos1+1);
-		if (!$pos2) $pos2 = strpos($gedrec, "\nPGV_", $pos1+1); // PGV_SPOUSE, PGV_FAMILY_ID ...
+		//print_r($match);
+		if (count($match)<$num) return "";
+		$pos1 = $match[$num-1][0][1];
+		if ($pos1===false) return "";
+		$pos2 = @strpos($gedrec, "\n$level", $pos1+5);
+		if (!$pos2) $pos2 = @strpos($gedrec, "\n1", $pos1+5);
+		if (!$pos2) $pos2 = @strpos($gedrec, "\nPGV_", $pos1+5); // PGV_SPOUSE, PGV_FAMILY_ID ...
 		if (!$pos2) {
-			if ($num==1) return substr($gedrec, $pos1);
-			else return "";
+			return substr($gedrec, $pos1);
 		}
+		$subrec = substr($gedrec, $pos1, $pos2-$pos1);
+		//-- does anybody know what this is for?
 		if ($num==1) {
-			$subrec = substr($gedrec, $pos1, $pos2-$pos1);
 			$lowtag = "\n".($level-1).(substr($tag, 1));
 			if (phpversion() < 5) {
 				if ($newpos = strrpos4($subrec, $lowtag)) {
@@ -519,9 +443,7 @@ function get_sub_record($level, $tag, $gedrec, $num=1) {
 				$subrec = substr($gedrec, $pos1, $pos2-$pos1);
 			}
 		}
-		$num--;
-		$pos1 = $pos2;
-	}
+
 	return $subrec;
 }
 
@@ -585,8 +507,8 @@ function get_all_subrecords($gedrec, $ignore="", $families=true, $sort=true, $Ap
 						if (isset($prev_tags[$fact])) $prev_tags[$fact]++;
 						else $prev_tags[$fact] = 1;
 						$subrec = get_sub_record(1, "1 $fact", $famrec, $prev_tags[$fact]);
-						$subrec .= "\r\n1 _PGVS @$spid@\r\n";
-						$subrec .= "1 _PGVFS @$famid@\r\n";
+						$subrec .= "\r\n2 _PGVS @$spid@\r\n";
+						$subrec .= "2 _PGVFS @$famid@\r\n";
 						if ($fact=="EVEN") {
 							$ct = preg_match("/2 TYPE (.*)/", $subrec, $tmatch);
 							if ($ct>0) {
@@ -752,12 +674,14 @@ function get_gedcom_value($tag, $level, $gedrec, $truncate='', $convert=true) {
  * @param string $nrec the gedcom subrecord to search in
  * @return string a string with all CONT or CONC lines merged
  */
-function get_cont($nlevel, $nrec) {
+function get_cont($nlevel, $nrec, $tobr=true) {
 	global $WORD_WRAPPED_NOTES;
 	$text = "";
+	if ($tobr) $newline = "<br />\n";
+	else $newline = "\r\n";
 	$tt = preg_match_all("/$nlevel CON[CT](.*)/", $nrec, $cmatch, PREG_SET_ORDER);
 	for($i=0; $i<$tt; $i++) {
-		if (strstr($cmatch[$i][0], "CONT")) $text.="<br />\n";
+		if (strstr($cmatch[$i][0], "CONT")) $text.=$newline;
 		else if ($WORD_WRAPPED_NOTES) $text.=" ";
 		$conctxt = $cmatch[$i][1];
 		if (!empty($conctxt)) {
@@ -766,7 +690,7 @@ function get_cont($nlevel, $nrec) {
 			$text.=$conctxt;
 		}
 	}
-	$text = preg_replace("/~~/", "<br />", $text);
+	$text = preg_replace("/~~/", $newline, $text);
 	return $text;
 }
 
@@ -966,88 +890,98 @@ function find_record_in_file($gid) {
 	return false;
 }
 
-function cleanup_tags_y($irec) {
-	$cleanup_facts = array("ANUL","CENS","DIV","DIVF","ENGA","MARR","MARB","MARC","MARL","MARS","BIRT","CHR","DEAT","BURI","CREM","ADOP","DSCR","BAPM","BARM","BASM","BLES","CHRA","CONF","FCOM","ORDN","NATU","EMIG","IMMI","CENS","PROB","WILL","GRAD","RETI");
-	$irec .= "\r\n1";
-//	$ft = preg_match_all("/1\s(_?\w+)\s/", $irec, $match);
-	$ft = preg_match_all("/1\s(\w+)\s/", $irec, $match);
-	for($i=0; $i<$ft; $i++){
-		$sfact = $match[1][$i];
-		$sfact = trim($sfact);
-		if (in_array($sfact, $cleanup_facts)) {
-			$srchstr = "/1\s".$sfact."\sY\r\n2/";
-			$replstr = "1 ".$sfact."\r\n2";
-			$srchstr2 = "/1\s".$sfact."(.{0,1})\r\n2/";
-			$srchstr = "/1\s".$sfact."\sY\r\n2/";
-			$srchstr3 = "/1\s".$sfact."\sY\r\n1/";
-			$irec = preg_replace($srchstr,$replstr,$irec);
-			if (preg_match($srchstr2,$irec)){
-				$irec = preg_replace($srchstr3,"1",$irec);
-			}
-		}
-	}
-	$irec=substr($irec,0,-3);
-	return $irec;
+/**
+ * find and return an updated gedcom record
+ * @param string $gid	the id of the record to find
+ * @param string $gedfile	the gedcom file to get the record from.. defaults to currently active gedcom
+ */
+function find_updated_record($gid, $gedfile="") {
+	return find_record_in_file();
 }
 
 // ************************************************* START OF MULTIMEDIA FUNCTIONS ********************************* //
 /**
  * find the highlighted media object for a gedcom entity
  *
- * New rules for finding primary picture and using thumbnails either under
- * the thumbs directory or with OBJE's with _THUM:
- * - skip files that have _PRIM/_THUM N
- * - default to first (existing) files
- * - first _PRIM and _THUM with Y override defaults
+ * Rules for finding the highlighted media object:
+ * 1. The first _THUM Y object will be used regardless of the object's level in the gedcom record
+ * 2. The first _PRIM Y object will be used if no _THUM Y exists regardless of level in gedcom record
+ * 3. The first level 1 object will be used if there is no _THUM Y or _PRIM Y and if its doesn't have _THUM N or _PRIM N (level 1 objects appear on the media tab on the individual page)
  * @param string $pid the individual, source, or family id
  * @param string $indirec the gedcom record to look in
  * @return array an object array with indexes "thumb" and "file" for thumbnail and filename
  */
 function find_highlighted_object($pid, $indirec) {
 	global $MEDIA_DIRECTORY, $MEDIA_DIRECTORY_LEVELS, $PGV_IMAGE_DIR, $PGV_IMAGES, $MEDIA_EXTERNAL;
-	global $GEDCOMS, $GEDCOM, $TBLPREFIX;
-	
+	global $GEDCOMS, $GEDCOM, $TBLPREFIX, $DBCONN;
+
 	if (!showFactDetails("OBJE", $pid)) return false;
 	$object = array();
-	$media_ids = array();
-	
-	// NOTE: Find media ID's for person
-	$sql = "select mm_media as media_id from ".$TBLPREFIX."media_mapping where mm_gid = '".$pid."' AND mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY mm_id ASC";
-	$res =& dbquery($sql);
-	while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-		$media_ids[] = $row["media_id"];
+	$media = array();
+
+	//-- handle finding the media of remote objects
+	$ct = preg_match("/(.*):(.*)/", $pid, $match);
+	if ($ct>0) {
+		if (class_exists("ServiceClient")) {
+			$client = ServiceClient::getInstance($match[1]);
+			if (!is_null($client)) {
+				$mt = preg_match_all("/\d OBJE @(.*)@/", $indirec, $matches, PREG_SET_ORDER);
+				for($i=0; $i<$mt; $i++) {
+					$parts = preg_split("/:/", $matches[$i][1]);
+					if (isset($parts[1])) {
+						$mrec = $client->getRemoteRecord($parts[1]);
+						if (!empty($mrec)) {
+							$file = get_gedcom_value("FILE", 1, $mrec);
+							$row = array($matches[$i][1], $file, $mrec, $matches[$i][0]);
+							$media[] = $row;
+						}
+					}
+				}
+			}
+		}
 	}
-	$ct_media_ids = count($media_ids);
-	if ($ct_media_ids==0) return false;
-	
-	// NOTE: Find the media items for that person
-	$sql = "select m_file from ".$TBLPREFIX."media where m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' AND m_gedrec REGEXP '_PRIM Y' AND (";
-	foreach ($media_ids as $key => $media_id) {
-		$sql .= "m_media = '".$media_id."'";
-		if ($ct_media_ids > 1 && $key < $ct_media_ids-1) $sql .= " OR ";
+
+	//-- find all of the media items for a person
+	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' AND mm_gid='".$DBCONN->escape($pid)."' ORDER BY m_id";
+	$res = dbquery($sql);
+	while($row = $res->fetchRow()) {
+		$media[] = $row;
 	}
-	$sql .= ")";
-	$res =& dbquery($sql);
-	$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
-	
-	// NOTE: If no media item is found then take the first media item for that person.
-	// if (count($row) == 0) {
-		// $sql = "SELECT m_id, m_file FROM ".$TBLPREFIX."media WHERE m_gedrec NOT REGEXP '_PRIM N' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' AND (";
-		// foreach ($media_ids as $key => $media_id) {
-			// $sql .= "m_media = '".$media_id."'";
-			// if ($ct_media_ids > 1 && $key < $ct_media_ids-1) $sql .= " OR ";
-		// }
-		// $sql .= ") ORDER BY m_id ASC";
-	// }
-	// $res =& dbquery($sql);
-	// $row = $res->fetchRow(DB_FETCHMODE_ASSOC);
-	
-	// NOTE: If we still can't find anything, return no results
-	if (count($row) == 0) return false;
-	
-	// NOTE: Otherwise return the details of the image
-	$object["file"] = check_media_depth($row["m_file"]);
-	$object["thumb"] = thumbnail_file($row["m_file"]);
+	$res->free();
+
+	//-- for the given media choose the
+	foreach($media as $i=>$row) {
+		if (displayDetailsById($row['m_media'], 'OBJE') && !FactViewRestricted($row['m_media'], $row['m_gedrec'])) {
+			$thum = get_gedcom_value('_THUM', 1, $row['m_gedrec']);
+			$prim = get_gedcom_value('_PRIM', 1, $row['m_gedrec']);
+			$level=0;
+			$ct = preg_match("/(\d+) OBJE/", $row['mm_gedrec'], $match);
+			if ($ct>0) $level = $match[1];
+			//-- always take _THUM Y objects
+			if ($thum=='Y') {
+				$object["file"] = check_media_depth($row['m_file']);
+				$object["thumb"] = $object["file"];
+				$object["level"] = $level;
+				break;
+			}
+			//-- take the first _PRIM Y object... _PRIM Y overrides first level 1 object
+			else if ($prim=='Y') {
+				if (!isset($object['prim']) || !isset($object['level']) || $object['level']>$level) {
+					$object["file"] = check_media_depth($row['m_file']);
+					$object["thumb"] = thumbnail_file($row['m_file']);
+					$object["prim"] = $prim;
+					$object["level"] = $level;
+				}
+			}
+			//-- take the first level 1 object if we don't already have one and it doesn't have _THUM N or _PRIM N
+			else if (empty($object['file']) && $level==1 && $thum!='N' && $prim!='N') {
+				$object["file"] = check_media_depth($row['m_file']);
+				$object["thumb"] = thumbnail_file($row['m_file']);
+				$object["level"] = $level;
+			}
+		}
+	}
+
 	return $object;
 }
 
@@ -1078,7 +1012,7 @@ function extract_fullpath($mediarec) {
  */
 function extract_filename($fullpath) {
 	global $MEDIA_DIRECTORY_LEVELS, $MEDIA_DIRECTORY;
-	
+
 	$filename="";
 	$regexp = "'[/\\\]'";
 	$srch = "/".addcslashes($MEDIA_DIRECTORY,'/.')."/";
@@ -1100,110 +1034,6 @@ function extract_filename($fullpath) {
 	return $filename;
 }
 
-//-- This function finds and returns all of the media objects in a given gedcom record
-function find_media_in_record($gedrec) {
-	global $medialist, $MEDIA_DIRECTORY, $ct, $PGV_IMAGE_DIR, $PGV_IMAGES, $foundlist, $medialinks, $MEDIA_EXTERNAL;
-
-	$pos1=0;
-	$findged = $gedrec;
-	while($pos1 = strpos($findged, " OBJE")) {
-		//-- get the media sub record from the main gedcom record
-		$level = $findged[$pos1-1];
-
-		// NOTE: Get the media record
-		$mediarec = get_sub_record($level, "$level OBJE", $findged);
-
-		// NOTE: Determine new position in the record
-		if ($mediarec == "") {
-			$findged = substr($findged, ($pos1+strlen($mediarec)-1));
-			$pos1 = strlen($findged);
-		}
-		else $findged = substr($findged, ($pos1+strlen($mediarec)-1));
-
-		//-- search if it is an embedded or linked media object
-		$embed = preg_match("/(\d) _*FILE (.*)/", $mediarec, $embmatch);
-		if ($embed==0) {
-			//-- if it is a linked object then store a reference to this individual/family in the
-			//-- $medialinks array
-			$c2t = preg_match("/@(.*)@/", $mediarec, $match);
-			if ($c2t>0) {
-				$oid = $match[1];
-				$tt = preg_match("/0 @(.*)@ (.*)/", $gedrec, $match);
-				if ($tt>0) $id = $match[1];
- 				else $id=$ct;
-				$type = trim($match[2]);
-				if (!isset($medialinks)) $medialinks = array();
-				if (!isset($medialinks[$oid])) $medialinks[$oid] = array();
-				$medialinks[$oid][$id] = $type;
-			}
-		}
-		else {
-			//-- if it is an embedded object then get the filename from it
-			$level = $embmatch[1];
-			$tt = preg_match("/\d TITL (.*)/", $mediarec, $match);
-			$fullpath = extract_fullpath($mediarec);
-			$filename = "";
-			if ((strstr( $fullpath, "://"))||(strstr( $fullpath, "mailto:"))) {
-				$filename=$fullpath;
-			    $image_type = array("bmp", "gif", "jpeg", "jpg", "pcx", "png", "tiff");
-				$path_end=substr($fullpath, strlen($fullpath)-5);
-				$type=strtolower(substr($path_end, strpos($path_end, ".")+1));
-				if ($MEDIA_EXTERNAL && in_array($type, $image_type)) {
-					$thumbnail = $MEDIA_DIRECTORY."thumbs/urls/".preg_replace(array("/http:\/\//", "/\//"), array("","_"),$filename);
-				}
-				else $thumbnail=$PGV_IMAGE_DIR."/".$PGV_IMAGES["media"]["large"];
-			}
-			else {
-				$filename = extract_filename($fullpath);
-				$thumbnail = $MEDIA_DIRECTORY."thumbs/".$filename;
-				$thumbnail = trim($thumbnail);
-				$filename = $MEDIA_DIRECTORY.$filename;
-				$filename = trim($filename);
-			}
-			if ($tt>0) $title = trim($match[1]);
-			else $title="";
-			if (empty($title)) $title = $filename;
-			$isprim="N";
-			$isthumb="N";
-			$pt = preg_match("/\d _PRIM (.*)/", $mediarec, $match);
-			if ($pt>0) $isprim = trim($match[1]);
-			$pt = preg_match("/\d _THUM (.*)/", $mediarec, $match);
-			if ($pt>0) $isthumb = trim($match[1]);
-			$linked = preg_match("/0 @(.*)@ OBJE/", $mediarec, $match);
-			if ($linked>0) {
-				$linkid = trim($match[1]);
-				if (isset($medialinks[$linkid])) $links = $medialinks[$linkid];
-				else $links = array();
-			}
-			else {
-				$tt = preg_match("/0 @(.*)@ (.*)/", $gedrec, $match);
-				if ($tt>0) $id = $match[1];
-				else $id=$ct;
-				$type = trim($match[2]);
-				if ((isset($foundlist[$filename]))&&(isset($medialist[$foundlist[$filename]]["link"]))) {
-					$links = $medialist[$foundlist[$filename]]["link"];
-				}
-				else $links = array();
-				$links[$id] = $type;
-			}
-			if (!isset($foundlist[$filename])) {
-				$media = array();
-				$media["file"] = $filename;
-				$media["thumb"] = $thumbnail;
-				$media["title"] = $title;
-				$media["gedcom"] = $mediarec;
-				$media["level"] = $level;
-				$media["THUM"] = $isthumb;
-				$media["PRIM"] = $isprim;
-				$medialist[$ct]=$media;
-				$foundlist[$filename] = $ct;
-				$ct++;
-			}
-			$medialist[$foundlist[$filename]]["link"]=$links;
-		}
-	}
-}
-
 /**
  * function to generate a thumbnail image
  * @param string $filename
@@ -1211,18 +1041,27 @@ function find_media_in_record($gedrec) {
  */
 function generate_thumbnail($filename, $thumbnail) {
 	global $MEDIA_DIRECTORY, $THUMBNAIL_WIDTH, $AUTO_GENERATE_THUMBS;
-	
+
 	if (!$AUTO_GENERATE_THUMBS) return false;
 	if (file_exists($thumbnail)) return false;
 	if (!is_writable($MEDIA_DIRECTORY."thumbs")) return false;
-	if (!is_dir($MEDIA_DIRECTORY."thumbs/urls")) {
-		mkdir($MEDIA_DIRECTORY."thumbs/urls", 0777);
+
+	if (!is_dir(filename_decode($MEDIA_DIRECTORY."thumbs/urls"))) {
+		mkdir(filename_decode($MEDIA_DIRECTORY."thumbs/urls"), 0777);
 		AddToLog("Folder ".$MEDIA_DIRECTORY."thumbs/urls created.");
 	}
-	if (!is_writable($MEDIA_DIRECTORY."thumbs/urls")) return false;
+	if (!is_writable(filename_decode($MEDIA_DIRECTORY."thumbs/urls"))) return false;
+
+	$ext = "";
+	$ct = preg_match("/\.([^\.]+)$/", $filename, $match);
+	if ($ct>0) {
+		$ext = strtolower(trim($match[1]));
+	}
+	if ($ext!='jpg' && $ext!='jpeg' && $ext!='gif' && $ext!='png') return false;
+
 	if (!strstr($filename, "://")) {
-		if (!file_exists($filename)) return false;
-		$imgsize = getimagesize($filename);
+		if (!file_exists(filename_decode($filename))) return false;
+		$imgsize = getimagesize(filename_decode($filename));
 		// Check if a size has been determined
 		if (!$imgsize) return false;
 
@@ -1233,20 +1072,18 @@ function generate_thumbnail($filename, $thumbnail) {
 		}
 	}
 	else {
-		$filename = preg_replace("/ /", "%20", $filename);
-		if ($fp = @fopen($filename, "rb")) {
+		if ($fp = @fopen(filename_decode($filename), "rb")) {
 			if ($fp===false) return false;
 			$conts = "";
 			while(!feof($fp)) {
 				$conts .= fread($fp, 4098);
 			}
 			fclose($fp);
-			$fp = fopen($thumbnail, "wb");
+			$fp = fopen(filename_decode($thumbnail), "wb");
 			if (!fwrite($fp, $conts)) return false;
 			fclose($fp);
-			$thumbnail = preg_replace("/%20/", " ", $thumbnail);
-			if (!stristr("://", $filename)) $imgsize = getimagesize($filename);
-			else $imgsize = getimagesize($thumbnail);
+			if (!stristr("://", $filename)) $imgsize = getimagesize(filename_decode($filename));
+			else $imgsize = getimagesize(filename_decode($thumbnail));
 			if ($imgsize===false) return false;
 			if (($imgsize[0]<150)&&($imgsize[1]<150)) return true;
 		}
@@ -1255,44 +1092,41 @@ function generate_thumbnail($filename, $thumbnail) {
 
 	$width = $THUMBNAIL_WIDTH;
 	$height = round($imgsize[1] * ($width/$imgsize[0]));
-	$ct = preg_match("/\.([^\.]+)$/", $filename, $match);
-	if ($ct>0) {
-		$ext = strtolower(trim($match[1]));
-		if ($ext=="gif") {
-			if (function_exists("imagecreatefromgif") && function_exists("imagegif")) {
-				$im = imagecreatefromgif($filename);
-				if (empty($im)) return false;
-				$new = imagecreatetruecolor($width, $height);
-				imagecopyresampled($new, $im, 0, 0, 0, 0, $width, $height, $imgsize[0], $imgsize[1]);
-				imagegif($new, $thumbnail);
-				imagedestroy($im);
-				imagedestroy($new);
-				return true;
-			}
+
+	if ($ext=="gif") {
+		if (function_exists("imagecreatefromgif") && function_exists("imagegif")) {
+			$im = imagecreatefromgif(filename_decode($filename));
+			if (empty($im)) return false;
+			$new = imagecreatetruecolor($width, $height);
+			imagecopyresampled($new, $im, 0, 0, 0, 0, $width, $height, $imgsize[0], $imgsize[1]);
+			imagegif($new, filename_decode($thumbnail));
+			imagedestroy($im);
+			imagedestroy($new);
+			return true;
 		}
-		else if ($ext=="jpg" || $ext=="jpeg") {
-			if (function_exists("imagecreatefromjpeg") && function_exists("imagejpeg")) {
-				$im = imagecreatefromjpeg($filename);
-				if (empty($im)) return false;
-				$new = imagecreatetruecolor($width, $height);
-				imagecopyresampled($new, $im, 0, 0, 0, 0, $width, $height, $imgsize[0], $imgsize[1]);
-				imagejpeg($new, $thumbnail);
-				imagedestroy($im);
-				imagedestroy($new);
-				return true;
-			}
+	}
+	else if ($ext=="jpg" || $ext=="jpeg") {
+		if (function_exists("imagecreatefromjpeg") && function_exists("imagejpeg")) {
+			$im = imagecreatefromjpeg(filename_decode($filename));
+			if (empty($im)) return false;
+			$new = imagecreatetruecolor($width, $height);
+			imagecopyresampled($new, $im, 0, 0, 0, 0, $width, $height, $imgsize[0], $imgsize[1]);
+			imagejpeg($new, filename_decode($thumbnail));
+			imagedestroy($im);
+			imagedestroy($new);
+			return true;
 		}
-		else if ($ext=="png") {
-			if (function_exists("imagecreatefrompng") && function_exists("imagepng")) {
-				$im = imagecreatefrompng($filename);
-				if (empty($im)) return false;
-				$new = imagecreatetruecolor($width, $height);
-				imagecopyresampled($new, $im, 0, 0, 0, 0, $width, $height, $imgsize[0], $imgsize[1]);
-				imagepng($new, $thumbnail);
-				imagedestroy($im);
-				imagedestroy($new);
-				return true;
-			}
+	}
+	else if ($ext=="png") {
+		if (function_exists("imagecreatefrompng") && function_exists("imagepng")) {
+			$im = imagecreatefrompng(filename_decode($filename));
+			if (empty($im)) return false;
+			$new = imagecreatetruecolor($width, $height);
+			imagecopyresampled($new, $im, 0, 0, 0, 0, $width, $height, $imgsize[0], $imgsize[1]);
+			imagepng($new, filename_decode($thumbnail));
+			imagedestroy($im);
+			imagedestroy($new);
+			return true;
 		}
 	}
 
@@ -1314,141 +1148,238 @@ function factsort($a, $b) {
  * @param string $b
  * @return int negative numbers sort $a first, positive sort $b first
  */
-function stringsort($aname, $bname) {
-	global $LANGUAGE, $alphabet, $CHARACTER_SET;
+function stringsort($aName, $bName) {
+	return compareStrings($aName, $bName, true);		// Case-insensitive sort
+}
+function stringsort2($aName, $bName) {
+	return compareStrings($aName, $bName, false);		// Case-sensitive sort
+}
+function compareStrings($aName, $bName, $ignoreCase=true) {
+	global $LANGUAGE, $CHARACTER_SET;
+	global $alphabet, $alphabet_lower, $alphabet_upper;
+	global $digraph, $trigraph, $quadgraph;
+	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 
-	$alphabet = getAlphabet();
+	if (is_array($aName)) debug_print_backtrace();
+	getAlphabet();
 
-	if (is_array($aname)) debug_print_backtrace();
+	if ($LANGUAGE == "danish" || $LANGUAGE == "norwegian") {
+		$danishFrom = array("AA", "Aa", "AE", "Ae", "OE", "Oe", "aa", "ae", "oe");
+		$danishTo 	= array("Å", "Å", "Æ", "Æ", "Ø", "Ø", "å", "æ", "ø");
+	}
+
+	if ($LANGUAGE == "german") {
+		$germanFrom = array("AA", "Aa", "Æ", "AE", "Ae", "Ø", "OE", "Oe", "SS", "Ss", "UE", "Ue", "aa", "æ", "ae", "ø", "oe", "ss", "ue");
+		$germanTo 	= array("Å", "Å", "Ä", "Ä", "Ä", "Ö", "Ö", "Ö", "ß", "ß", "Ü", "Ü", "å", "ä", "ä", "ö", "ö", "ß", "ü");
+	}
 
 	//-- split strings into strings and numbers
-	$aparts = preg_split("/(\d+)/", $aname, -1, PREG_SPLIT_DELIM_CAPTURE);
-	$bparts = preg_split("/(\d+)/", $bname, -1, PREG_SPLIT_DELIM_CAPTURE);
+	$aParts = preg_split("/(\d+)/", $aName, -1, PREG_SPLIT_DELIM_CAPTURE);
+	$bParts = preg_split("/(\d+)/", $bName, -1, PREG_SPLIT_DELIM_CAPTURE);
 
 	//-- loop through the arrays of strings and numbers
-	for($j=0; ($j<count($aparts) && $j<count($bparts)); $j++) {
-		$aname = $aparts[$j];
-		$bname = $bparts[$j];
+	for($j=0; ($j<count($aParts) && $j<count($bParts)); $j++) {
+		$aName = $aParts[$j];
+		$bName = $bParts[$j];
 
 		//-- sort numbers differently
-		if (is_numeric($aname) && is_numeric($bname)) {
-			if ($aname!=$bname) return $aname-$bname;
+		if (is_numeric($aName) && is_numeric($bName)) {
+			if ($aName!=$bName) return $aName-$bName;
 		}
 		else {
-	//-- get the name lengths
-	$alen = strlen($aname);
-	$blen = strlen($bname);
+			//-- Take care of Danish and Norwegian character transformations
+			if ($LANGUAGE == "danish" || $LANGUAGE == "norwegian") {
+				$aName = str_replace($danishFrom, $danishTo, $aName);
+				$bName = str_replace($danishFrom, $danishTo, $bName);
+			}
+			// -- Take care of German character transformations
+			if ($LANGUAGE == "german") {
+				$aName = str_replace($germanFrom, $germanTo, $aName);
+				$bName = str_replace($germanFrom, $germanTo, $bName);
+			}
 
-	//-- loop through the characters in the string and if we find one that is different between the strings
-	//-- return the difference
-	$hungarianex = array("CS","DZ","GY","LY","NY","SZ","TY","ZS","DZS");
-	$danishex = array("OE", "AE", "AA");
-	for($i=0; ($i<$alen)&&($i<$blen); $i++) {
-		if ($LANGUAGE == "hungarian" && $i==0){
-			$aletter = substr($aname, $i, 3);
-			if (strtoupper($aletter) == "DZS");
-			else $aletter = substr($aname, $i, 2);
-			if (in_array(strtoupper($aletter), $hungarianex));
-			else $aletter = $aname{$i};
+			//-- get the name lengths
+			$alen = strlen($aName);
+			$blen = strlen($bName);
 
-			$bletter = substr($bname, $i, 3);
-			if (strtoupper($bletter) == "DZS");
-			else $bletter = substr($bname, $i, 2);
-			if (in_array(strtoupper($bletter), $hungarianex));
-			else $bletter = $bname{$i};
-		}
-		else if (($LANGUAGE == "danish" || $LANGUAGE == "norwegian")){
-			$aletter = substr($aname, $i, 2);
-			if (in_array(strtoupper($aletter), $danishex)) {
-				if (strtoupper($aletter) == "AA") {
-					if ($aletter == "aa") $aname=substr_replace($aname, "å", $i, 2);
-					else $aname=substr_replace($aname, "Å", $i, 2);
-				}
-				else if (strtoupper($aletter) == "OE") {
-					if ($i==0 || $aletter=="Oe") $aname=substr_replace($aname, "Ø", $i, 2);
-				}
-				else if (strtoupper($aletter) == "AE") {
-					if ($aletter == "ae") $aname=substr_replace($aname, "æ", $i, 2);
-					else $aname=substr_replace($aname, "Æ", $i, 2);
-				}
-			}
-			$aletter = substr($aname, $i, 1);
-
-			$bletter = substr($bname, $i, 2);
-			if (in_array(strtoupper($bletter), $danishex)) {
-				if (strtoupper($bletter) == "AA") {
-					if ($bletter == "aa") $bname=substr_replace($bname, "å", $i, 2);
-					else $bname=substr_replace($bname, "Å", $i, 2);
-				}
-				else if (strtoupper($bletter) == "OE") {
-					if ($i==0 || $bletter=="Oe") $bname=substr_replace($bname, "Ø", $i, 2);
-				}
-				else if (strtoupper($bletter) == "AE") {
-					if ($bletter == "ae") $bname=substr_replace($bname, "æ", $i, 2);
-					else $bname=substr_replace($bname, "Æ", $i, 2);
-				}
-			}
-			$bletter = substr($bname, $i, 1);
-		}
-		else {
-			$aletter = substr($aname, $i, 1);
-			$bletter = substr($bname, $i, 1);
-		}
-		if ($CHARACTER_SET=="UTF-8") {
-			$ord = ord($aletter);
-			if ($ord==92 || $ord==195 || $ord==196 || $ord==197 || $ord==206 || $ord==207 || $ord==208 || $ord==209 || $ord==214 || $ord==215 || $ord==216 || $ord==217 || $ord==218 || $ord==219){
-				$aletter = stripslashes(substr($aname, $i, 2));
-			}
-			else if ($ord==228 || $ord==229 || $ord == 230 || $ord==232 || $ord==233){
-				$aletter = substr($aname, $i, 3);
-			}
-			else if (strlen($aletter) == 1) $aletter = strtoupper($aletter);
-
-			$ord = ord($bletter);
-			if ($ord==92 || $ord==195 || $ord==196 || $ord==197 || $ord==206 || $ord==207 || $ord==208 || $ord==209 || $ord==214 || $ord==215 || $ord==216 || $ord==217 || $ord==218 || $ord==219){
-				$bletter = stripslashes(substr($bname, $i, 2));
-			}
-			else if ($ord==228 || $ord==229 || $ord == 230 || $ord==232 || $ord==233){
-				$bletter = substr($bname, $i, 3);
-			}
-			else if (strlen($bletter) == 1) $bletter = strtoupper($bletter);
-		}
-
-		if ($aletter!=$bletter) {
-			//-- get the position of the letter in the alphabet string
-			$apos = strpos($alphabet, $aletter);
-			//print $aletter."=".$apos." ";
-			$bpos = strpos($alphabet, $bletter);
-			//print $bletter."=".$bpos." ";
-			if ($LANGUAGE == "hungarian" && $i==0){ // Check for combination of letters not in the alphabet
-				if ($apos==0 || $bpos==0){			// (see array hungarianex)
-					$lettera=strtoupper($aletter);
-					if (in_array($lettera, $hungarianex)) {
-						if ($apos==0) $apos = (strpos($alphabet, substr($lettera,0,1))*3)+(strlen($aletter)>2?2:1);
+			//-- loop through the characters in the string and if we find one that is different between the strings
+			//-- return the difference
+			$aIndex = 0;
+			$bIndex = 0;
+			$aDiacriticValue = "";
+			$bDiacriticValue = "";
+			while (true) {
+				$aMultiLetter = false;
+				$bMultiLetter = false;
+				// Look for quadgraphs (4 letters that should be treated as 1)
+				if (isset($quadgraphs[$LANGUAGE])) {
+					$aLetter = strtoupper(substr($aName, $aIndex, 4));
+					if (isset($quadgraphs[$LANGUAGE][$aLetter])) {
+						$aMultiLetter = $quadgraphs[$LANGUAGE][$aLetter];
+						$aCharLen = 4;
 					}
-					else $apos = $apos*3;
-					$letterb=strtoupper($bletter);
-					if (in_array($letterb, $hungarianex)) {
-						if ($bpos==0) $bpos = (strpos($alphabet, substr($letterb,0,1))*3)+(strlen($bletter)>2?2:1);
+					$bLetter = strtoupper(substr($bName, $bIndex, 4));
+					if (isset($quadgraphs[$LANGUAGE][$bLetter])) {
+						$bMultiLetter = $quadgraphs[$LANGUAGE][$bLetter];
+						$bCharLen = 4;
 					}
-					else $bpos = $bpos*3;
 				}
+				// Look for trigraphs (3 letters that should be treated as 1)
+				if (isset($trigraphs[$LANGUAGE])) {
+					if (!$aMultiLetter) {
+						$aLetter = strtoupper(substr($aName, $aIndex, 3));
+						if (isset($trigraphs[$LANGUAGE][$aLetter])) {
+							$aMultiLetter = $trigraphs[$LANGUAGE][$aLetter];
+							$aCharLen = 3;
+						}
+					}
+					if (!$bMultiLetter) {
+						$bLetter = strtoupper(substr($bName, $bIndex, 3));
+						if (isset($trigraphs[$LANGUAGE][$bLetter])) {
+							$bMultiLetter = $trigraphs[$LANGUAGE][$bLetter];
+							$bCharLen = 3;
+						}
+					}
+				}
+				// Look for digraphs (2 letters that should be treated as 1)
+				if (isset($digraphs[$LANGUAGE])) {
+					if (!$aMultiLetter) {
+					$aLetter = strtoupper(substr($aName, $aIndex, 2));
+						if (isset($digraphs[$LANGUAGE][$aLetter])) {
+							$aMultiLetter = $digraphs[$LANGUAGE][$aLetter];
+							$aCharLen = 2;
+						}
+					}
+					if (!$bMultiLetter) {
+					$bLetter = strtoupper(substr($bName, $bIndex, 2));
+						if (isset($digraphs[$LANGUAGE][$bLetter])) {
+							$bMultiLetter = $digraphs[$LANGUAGE][$bLetter];
+							$bCharLen = 2;
+						}
+					}
+				}
+
+				// Look for UTF-8 encoded characters
+				if (!$aMultiLetter) {
+					$aCharLen = 1;
+					$aLetter = substr($aName, $aIndex, 1);
+					if ((ord($aLetter) & 0xE0) == 0xC0) $aCharLen = 2;		// 2-byte sequence
+					if ((ord($aLetter) & 0xF0) == 0xE0) $aCharLen = 3;		// 3-byte sequence
+					if ((ord($aLetter) & 0xF8) == 0xF0) $aCharLen = 4;		// 4-byte sequence
+				}
+
+				if (!$bMultiLetter) {
+					$bCharLen = 1;
+					$bLetter = substr($bName, $bIndex, 1);
+					if ((ord($bLetter) & 0xE0) == 0xC0) $bCharLen = 2;		// 2-byte sequence
+					if ((ord($bLetter) & 0xF0) == 0xE0) $bCharLen = 3;		// 3-byte sequence
+					if ((ord($bLetter) & 0xF8) == 0xF0) $bCharLen = 4;		// 4-byte sequence
+				}
+
+				$aLetter = substr($aName, $aIndex, $aCharLen);
+				$bLetter = substr($bName, $bIndex, $bCharLen);
+
+				if ($DICTIONARY_SORT[$LANGUAGE]) {
+					//-- strip diacritics before checking equality
+					if ($aCharLen==2) {
+						$aPos = strpos($UCDiacritWhole, $aLetter);
+						if ($aPos!==false) {
+							$aPos = $aPos >> 1;
+							$aLetter = substr($UCDiacritStrip, $aPos, 1);
+							$aDiacriticValue .= substr($UCDiacritOrder, $aPos, 1);
+						} else {
+							$aPos = strpos($LCDiacritWhole, $aLetter);
+							if ($aPos!==false) {
+								$aPos = $aPos >> 1;
+								$aLetter = substr($LCDiacritStrip, $aPos, 1);
+								$aDiacriticValue .= substr($LCDiacritOrder, $aPos, 1);
+							} else $aDiacriticValue .= " ";
+						}
+					} else $aDiacriticValue .= " ";
+
+					if ($bCharLen==2) {
+						$bPos = strpos($UCDiacritWhole, $bLetter);
+						if ($bPos!==false) {
+							$bPos = $bPos >> 1;
+							$bLetter = substr($UCDiacritStrip, $bPos, 1);
+							$bDiacriticValue .= substr($UCDiacritOrder, $bPos, 1);
+						} else {
+							$bPos = strpos($LCDiacritWhole, $bLetter);
+							if ($bPos!==false) {
+								$bPos = $bPos >> 1;
+								$bLetter = substr($LCDiacritStrip, $bPos, 1);
+								$bDiacriticValue .= substr($LCDiacritOrder, $bPos, 1);
+							} else $bDiacriticValue .= " ";
+						}
+					} else $bDiacriticValue .= " ";
+				}
+
+				if ($ignoreCase) {
+					$aLetter = str2upper($aLetter);
+					$bLetter = str2upper($bLetter);
+				}
+
+				if ($aLetter!=$bLetter) {
+					//-- get the position of the letter in the alphabet string
+					if ($aMultiLetter) {
+						$sortAfter = substr($aLetter,0,1);
+						if ($aLetter=="CH") $sortAfter = "H";		// This one doesn't follow the rule
+						if ($aLetter=="Ch") $sortAfter = "H";
+						if ($aLetter=="ch") $sortAfter = "h";
+						$aPos = strpos($alphabet_upper, $sortAfter);
+						if ($aPos===false) $aPos = strpos($alphabet_lower, $sortAfter);
+					} else {
+						$aPos = @strpos($alphabet_upper, $aLetter);
+						if ($aPos===false) $aPos = @strpos($alphabet_lower, $aLetter);
+					}
+					if ($bMultiLetter) {
+						$sortAfter = substr($bLetter,0,1);
+						if ($bLetter=="CH") $sortAfter = "H";		// This one doesn't follow the rule
+						if ($bLetter=="Ch") $sortAfter = "H";
+						if ($bLetter=="ch") $sortAfter = "h";
+						$bPos = strpos($alphabet_upper, $sortAfter);
+						if ($bPos===false) $bPos = strpos($alphabet_lower, $sortAfter);
+					} else {
+						$bPos = @strpos($alphabet_upper, $bLetter);
+						if ($bPos===false) $bPos = @strpos($alphabet_lower, $bLetter);
+					}
+
+					// Insert digraphs and trigraphs into main sequence
+					if ($aMultiLetter || $bMultiLetter) {
+						$aPos = ((int) $aPos << 3) + (int) $aMultiLetter;
+						$bPos = ((int) $bPos << 3) + (int) $bMultiLetter;
+					}
+
+					if ($aPos!=$bPos) {
+						if ($aLetter=="@") return 1;		// Force "@" to the end
+						if ($bLetter=="@") return -1;		// Force "@" to the end
+						if (($bPos!==false)&&($aPos===false)) return -1;
+						if (($bPos===false)&&($aPos!==false)) return 1;
+						if (($bPos===false)&&($aPos===false)) {
+							// Determine the binary value of both letters
+							$aValue = ord_UTF8($aLetter);
+							$bValue = ord_UTF8($bLetter);
+							return $aValue - $bValue;
+						}
+						return ($aPos-$bPos);
+					}
+				}
+				$aIndex += $aCharLen;			// advance to the 1st byte of the next sequence
+				$bIndex += $bCharLen;			// advance to the 1st byte of the next sequence
+				if ($aIndex >= $alen) break;
+				if ($bIndex >= $blen) break;
 			}
-
-			if (($bpos!==false)&&($apos===false)) return -1;
-			if (($bpos===false)&&($apos!==false)) return 1;
-			if (($bpos===false)&&($apos===false)) return ord($aletter)-ord($bletter);
-			//print ($apos-$bpos)."<br />";
-			if ($apos!=$bpos) return ($apos-$bpos);
 		}
-	}
-	}
 
-	//-- if we made it through the loop then check if one name is longer than the
-	//-- other, the shorter one should be first
-	if ($alen!=$blen) return ($alen-$blen);
+		//-- if we made it through the loop then check if one name is longer than the
+		//-- other, the shorter one should be first
+		if ($alen!=$blen) return ($alen-$blen);
+
+		//-- They're identical: let diacritics (if any) decide
+		if ($aDiacriticValue < $bDiacriticValue) return -1;
+		if ($aDiacriticValue > $bDiacriticValue) return 1;
 	}
-	if (count($aparts)!=count($bparts)) return (count($aparts)-count($bparts));
+	if (count($aParts)!=count($bParts)) return (count($aParts)-count($bParts));
 
 	//-- the strings are exactly the same so return 0
 	return 0;
@@ -1478,7 +1409,7 @@ function usersort($a, $b) {
 		$aname = $a["lastname"]." ".$a["firstname"];
 		$bname = $b["lastname"]." ".$b["firstname"];
 	}
-	return stringsort($aname, $bname);
+	return compareStrings($aname, $bname, true);		// Case-insensitive compare
 }
 
 /**
@@ -1504,7 +1435,32 @@ function itemsort($a, $b) {
 
 	$aname = strip_prefix($aname);
 	$bname = strip_prefix($bname);
-	return stringsort($aname, $bname);
+	$result = compareStrings($aname, $bname, true);		// Case-insensitive compare
+	return $result;
+}
+
+/**
+ * sort an array of media items
+ *
+ */
+
+function mediasort($a, $b) {
+	$aKey = "";
+	if (!empty($a["TITL"])) $aKey = $a["TITL"];
+	else if (!empty($a["titl"])) $aKey = $a["titl"];
+	else if (!empty($a["NAME"])) $aKey = $a["NAME"];
+	else if (!empty($a["name"])) $aKey = $a["name"];
+	else if (!empty($a["FILE"])) $aKey = basename($a["FILE"]);
+	else if (!empty($a["file"])) $aKey = basename($a["file"]);
+
+	$bKey = "";
+	if (!empty($b["TITL"])) $bKey = $b["TITL"];
+	else if (!empty($b["titl"])) $bKey = $b["titl"];
+	else if (!empty($b["NAME"])) $bKey = $b["NAME"];
+	else if (!empty($b["name"])) $bKey = $b["name"];
+	else if (!empty($b["FILE"])) $bKey = basename($b["FILE"]);
+	else if (!empty($b["file"])) $bKey = basename($b["file"]);
+	return compareStrings($aKey, $bKey, true);		// Case-insensitive compare
 }
 
 /**
@@ -1530,6 +1486,68 @@ function idsort($a, $b) {
 //-- used for index mode
 function lettersort($a, $b) {
 	return stringsort($a["letter"], $b["letter"]);
+}
+
+function compare_fact_type($arec, $brec) {
+	global $factarray, $pgv_lang, $ASC, $IGNORE_YEAR, $IGNORE_FACTS, $DEBUG, $USE_RTL_FUNCTIONS;
+
+	$bef = -1;
+	$aft = 1;
+	if ($ASC) {
+		$bef = 1;
+		$aft = -1;
+	}
+
+	$ft = preg_match("/1\s(\w+)(.*)/", $arec, $match);
+	if ($ft>0) $afact = $match[1];
+	else $afact="";
+	$afact = trim($afact);
+
+	$ft = preg_match("/1\s(\w+)(.*)/", $brec, $match);
+	if ($ft>0) $bfact = $match[1];
+	else $bfact="";
+	$bfact = trim($bfact);
+
+	//-- array for sorting facts in the correct order
+	$factsort = array("BIRT"=>1, "FCOM"=>2, "CHR"=>3, "ADOP"=>4, "BAPM"=>5, "BARM"=>6, "BASM"=>6, "NATU"=>8, "EMIG"=>8, "IMMI"=>8, "MARR"=>7, "DIV"=>8, "RESI"=>8, "OCCU"=>8, "RETI"=>9, "DEAT"=>10, "BURI"=>11, "CREM"=>12, "BAPL"=>51, "ENDL"=>52, "SLGC"=>50, "SLGS"=>53, "CHAN"=>100);
+	if (isset($factsort[$afact]) || isset($factsort[$bfact])) {
+		if (!isset($factsort[$afact])) {
+			if (preg_match("/ASSO/", $arec)>0) $factsort[$afact] = 9;
+			else {
+				//-- this line causes issues with the sorting algorithm
+//				if ($bfact=="DEAT" || $bfact=="BURI") return $bef;
+				if ($DEBUG) print " bdeat aft";
+				return $aft;
+			}
+		}
+		if (!isset($factsort[$bfact])) {
+			if (preg_match("/ASSO/", $brec)>0) $factsort[$bfact] = 9;
+			else {
+//				if ($afact=="BIRT" || $afact=="CHR") return $aft;
+				if ($DEBUG) print " adeat bef";
+				return $bef;
+			}
+		}
+		if ($DEBUG) print "factsort ".($factsort[$afact]-$factsort[$bfact]);
+		return $factsort[$afact]-$factsort[$bfact];
+	}
+
+	//-- group address related data together
+	$addr_group = array("ADDR"=>1,"PHON"=>2,"EMAIL"=>3,"FAX"=>4,"WWW"=>5);
+	if (isset($addr_group[$afact]) && isset($addr_group[$bfact])) {
+		if ($DEBUG) print ($addr_group[$afact]-$addr_group[$bfact]);
+		return $addr_group[$afact]-$addr_group[$bfact];
+	}
+	if (isset($addr_group[$afact]) && !isset($addr_group[$bfact])) {
+		if ($DEBUG) print "aft";
+		return $aft;
+	}
+	if (!isset($addr_group[$afact]) && isset($addr_group[$bfact])) {
+		if ($DEBUG) print "bef";
+		return $bef;
+	}
+
+	return false;
 }
 
 /**
@@ -1563,186 +1581,126 @@ function compare_facts($a, $b) {
 	else $arec = $a;
 	if (is_array($b)) $brec = $b[1];
 	else $brec = $b;
-	if ($DEBUG) print "\n<br />".substr($arec,0,6)."==".substr($brec,0,6)." ";
+	if ($DEBUG) print "\n<br />".substr($arec,0,8)."==".substr($brec,0,8)." ";
 
-	if (!$IGNORE_FACTS) {
-		$ft = preg_match("/1\s(\w+)(.*)/", $arec, $match);
-		if ($ft>0) $afact = $match[1];
-		else $afact="";
-		$afact = trim($afact);
+	// Float birth to the very top
+	if ((preg_match("/1 BIRT/", $arec)>0) && (!preg_match("/1 BIRT/", $brec)>0)) {
+		if ($DEBUG) print "birt bef";
+		return $bef;
+	}
+	if ((preg_match("/1 BIRT/", $brec)>0) && (!preg_match("/1 BIRT/", $arec)>0)) {
+		if ($DEBUG) print "birt aft";
+		return $aft;
+	}
+	// Sinking "changed" to the very bottom
+	if (preg_match("/1 CHAN/", $arec)>0) {
+		if ($DEBUG) print "chan aft";
+		return $aft;
+	}
+	if (preg_match("/1 CHAN/", $brec)>0) {
+		if ($DEBUG) print "chan bef";
+		return $bef;
+	}
+	// Putting Death before burial or cremation.
+	if ((preg_match("/1 DEAT/", $arec)>0) && ((preg_match("/1 BURI/", $brec)>0) || (preg_match("/1 CREM/", $brec)>0))) {
+		if ($DEBUG) print "deat bef buri";
+		return $bef;
+	}
+	if ((preg_match("/1 DEAT/", $brec)>0) && ((preg_match("/1 BURI/", $arec)>0) || (preg_match("/1 CREM/", $arec)>0))) {
+		if ($DEBUG) print "buri aft deat";
+		return $aft;
+	}
+	// cremation then burial is possible, reverse is not logical.
+	if ((preg_match("/1 CREM/", $arec)>0) && (preg_match("/1 BURI/", $brec)>0)) {
+		if ($DEBUG) print "crem bef buri";
+		return $bef;
+	}
+	if ((preg_match("/1 CREM/", $brec)>0) && (preg_match("/1 BURI/", $arec)>0)) {
+		if ($DEBUG) print "crem aft deat";
+		return $aft;
+	}
 
-		$ft = preg_match("/1\s(\w+)(.*)/", $brec, $match);
-		if ($ft>0) $bfact = $match[1];
-		else $bfact="";
-		$bfact = trim($bfact);
-
-		//-- make sure CHAN facts are displayed at the end of the list
-		if ($afact=="CHAN" && $bfact!="CHAN") {
-			if ($DEBUG) print "aft";
-			return $aft;
-		}
-		if ($afact!="CHAN" && $bfact=="CHAN") {
-			if ($DEBUG) print "bef";
-			return $bef;
-		}
-
-		//-- DEAT before BURI
-		if ($afact=="FCOM" && $bfact=="BIRT") {
-			if ($DEBUG) print "aft";
-			return $aft;
-		}
-		if ($afact=="BIRT" && $bfact=="FCOM") {
-			if ($DEBUG) print "bef";
-			return $bef;
-		}
-		
-		//-- DEAT before BURI
-		if ($afact=="DEAT" && $bfact=="BURI") {
-			if ($DEBUG) print "bef";
-			return $bef;
-		}
-		if ($afact=="BURI" && $bfact=="DEAT") {
-			if ($DEBUG) print "aft";
-			return $aft;
-		}
-
-		//-- DEAT before CREM
-		if ($afact=="DEAT" && $bfact=="CREM") {
-			if ($DEBUG) print "bef";
-			return $bef;
-		}
-		if ($afact=="CREM" && $bfact=="DEAT") {
-			if ($DEBUG) print "aft";
-			return $aft;
-		}
-
-		//-- group address related data together
-		$addr_group = array("ADDR"=>1,"PHON"=>2,"EMAIL"=>3,"FAX"=>4,"WWW"=>5);
-		if (isset($addr_group[$afact]) && isset($addr_group[$bfact])) {
-			if ($DEBUG) print ($addr_group[$afact]-$addr_group[$bfact]);
-			return $addr_group[$afact]-$addr_group[$bfact];
-		}
-		if (isset($addr_group[$afact]) && !isset($addr_group[$bfact])) {
-			if ($DEBUG) print "aft";
-			return $aft;
-		}
-		if (!isset($addr_group[$afact]) && isset($addr_group[$bfact])) {
-			if ($DEBUG) print "bef";
-			return $bef;
-		}
+	// Sink Death, burial and cremation to the bottom of the list.
+	if ((preg_match("/1 DEAT/", $arec)>0) && ((stristr($arec, "UNKNOWN")) ||
+	    (stristr($arec, "DATE Y")) || (!stristr($arec, "DATE")))) {
+		if ($DEBUG) print "deat aft";
+		return $aft;
+	}
+	if ((preg_match("/1 DEAT/", $brec)>0) && ((stristr($brec, "UNKNOWN")) ||
+	    (stristr($brec, "DATE Y")) || (!stristr($brec, "DATE")))) {
+		if ($DEBUG) print "deat bef";
+		return $bef;
+	}
+	if ((preg_match("/1 BURI/", $arec)>0) && ((stristr($arec, "UNKNOWN")) ||
+            (stristr($arec, "DATE Y")) || (!stristr($arec, "DATE")))) {
+		if ($DEBUG) print "buri aft";
+		return $aft;
+	}
+	if ((preg_match("/1 BURI/", $brec)>0) && ((stristr($brec, "UNKNOWN")) ||
+            (stristr($brec, "DATE Y")) || (!stristr($brec, "DATE")))) {
+		if ($DEBUG) print "buri bef";
+		return $bef;
+	}
+	if ((preg_match("/1 CREM/", $arec)>0) && ((stristr($arec, "UNKNOWN")) ||
+	    (stristr($arec, "DATE Y")) || (!stristr($arec, "DATE")))) {
+		if ($DEBUG) print "crem aft";
+		return $aft;
+	}
+	if ((preg_match("/1 CREM/", $brec)>0) && ((stristr($brec, "UNKNOWN")) ||
+            (stristr($brec, "DATE Y")) || (!stristr($brec, "DATE")))) {
+		if ($DEBUG) print "crem bef";
+		return $bef;
 	}
 
 	$cta = preg_match("/2 DATE (.*)/", $arec, $match);
 	if ($cta>0) $adate = parse_date(trim($match[1]));
 	$ctb = preg_match("/2 DATE (.*)/", $brec, $match);
 	if ($ctb>0) $bdate = parse_date(trim($match[1]));
-	//-- DEAT after any other fact if one date is missing
-	if ($cta==0 || $ctb==0) {
-		if (isset($afact)) {
-			if ($afact=="BURI") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($afact=="DEAT") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($afact=="SLGC") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($afact=="SLGS") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($afact=="BAPL") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($afact=="ENDL") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($afact=="BIRT") {
-				if ($DEBUG) print "bef";
-				return $bef;
-			}
-			if ($afact=="FCOM") {
-				if ($DEBUG) print "bef";
-				return $bef;
-			}
+	//-- if the date of one fact is missing, or it is missing a year, then sort
+	//-- based on fact label
+	if ($cta==0 || $ctb==0 || empty($adate[0]["year"]) || empty($bdate[0]["year"])) {
+		if (!$IGNORE_FACTS) {
+			$res = compare_fact_type($arec, $brec);
+			if ($res!==false) return $res;
 		}
-		if (isset($bfact)) {
-			if ($bfact=="BURI") {
-				if ($DEBUG) print "bef";
-				return $bef;
+
+		//-- check if both had a date
+		if($cta<$ctb) {
+			if ($DEBUG) print "daft";
+			return $aft;
+		}
+		if($cta>$ctb) {
+			if ($DEBUG) print "dbef";
+			return $bef;
+		}
+		//-- neither had a date so sort by fact name
+		if(($cta==0)&&($ctb==0)) {
+			if (isset($afact)) {
+				if ($afact=="EVEN" || $afact=="FACT") {
+					$ft = preg_match("/2 TYPE (.*)/", $arec, $match);
+					if ($ft>0) $afact = trim($match[1]);
+				}
 			}
-			if ($bfact=="DEAT") {
-				if ($DEBUG) print "bef";
-				return $bef;
+			else $afact = "";
+			if (isset($bfact)) {
+				if ($bfact=="EVEN" || $bfact=="FACT") {
+					$ft = preg_match("/2 TYPE (.*)/", $brec, $match);
+					if ($ft>0) $bfact = trim($match[1]);
+				}
 			}
-			if ($bfact=="SLGC") {
-				if ($DEBUG) print "bef";
-				return $bef;
+			else $bfact = "";
+			if (isset($factarray[$afact])) $afact = $factarray[$afact];
+			else if (isset($pgv_lang[$afact])) $afact = $pgv_lang[$afact];
+			if (isset($factarray[$bfact])) $bfact = $factarray[$bfact];
+			else if (isset($pgv_lang[$bfact])) $bfact = $pgv_lang[$bfact];
+			$c = stringsort($afact, $bfact);
+			if ($DEBUG==1) {
+				if ($c<0) print "bef"; else print "aft";
 			}
-			if ($bfact=="SLGS") {
-				if ($DEBUG) print "bef";
-				return $bef;
-			}
-			if ($bfact=="BAPL") {
-				if ($DEBUG) print "bef";
-				return $bef;
-			}
-			if ($bfact=="ENDL") {
-				if ($DEBUG) print "bef";
-				return $bef;
-			}
-			if ($bfact=="BIRT") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
-			if ($bfact=="FCOM") {
-				if ($DEBUG) print "aft";
-				return $aft;
-			}
+			return $c;
 		}
 	}
 
-	//-- check if both had a date
-	if($cta>$ctb) {
-		if ($DEBUG) print "daft";
-		return $aft;
-	}
-	if($cta<$ctb) {
-		if ($DEBUG) print "dbef";
-		return $bef;
-	}
-	//-- neither had a date so sort by fact name
-	if(($cta==0)&&($ctb==0)) {
-		if (isset($afact)) {
-			if ($afact=="EVEN" || $afact=="FACT") {
-				$ft = preg_match("/2 TYPE (.*)/", $arec, $match);
-				if ($ft>0) $afact = trim($match[1]);
-			}
-		}
-		else $afact = "";
-		if (isset($bfact)) {
-			if ($bfact=="EVEN" || $bfact=="FACT") {
-				$ft = preg_match("/2 TYPE (.*)/", $brec, $match);
-				if ($ft>0) $bfact = trim($match[1]);
-			}
-		}
-		else $bfact = "";
-		if (isset($factarray[$afact])) $afact = $factarray[$afact];
-		else if (isset($pgv_lang[$afact])) $afact = $pgv_lang[$afact];
-		if (isset($factarray[$bfact])) $bfact = $factarray[$bfact];
-		else if (isset($pgv_lang[$bfact])) $bfact = $pgv_lang[$bfact];
-		$c = stringsort($afact, $bfact);
-		if ($DEBUG==1) {
-			if ($c<0) print "bef"; else print "aft";
-		}
-		return $c;
-	}
 	if ($IGNORE_YEAR) {
     // Calculate Current year Gregorian date for Hebrew date
         if ($USE_RTL_FUNCTIONS && isset($adate[0]["ext"]) && strstr($adate[0]["ext"], "#DHEBREW")!==false) $adate = jewishGedcomDateToCurrentGregorian($adate);
@@ -1775,16 +1733,15 @@ if ($DEBUG) print $adate[0]["year"]."==".$bdate[0]["year"]." ";
 				if($cta>$ctb) return $bef;
 				//-- neither had a time
 				if(($cta==0)&&($ctb==0)) {
-					// BIRT before DEAT on same date
-					if (isset($afact) and strstr($afact, "BIRT_")) return $bef;
-					if (isset($bfact) and strstr($bfact, "BIRT_")) return $aft;
+					$res = compare_fact_type($arec, $brec);
+					if ($res!==false) return $res;
 					return 0;
 				}
 				$atime = trim($amatch[1]);
 				$btime = trim($bmatch[1]);
 				$astamp = strtotime($newa." ".$atime);
 				$bstamp = strtotime($newb." ".$btime);
-				if ($astamp==$bstamp) return 0;
+				if ($astamp==$bstamp) return compare_fact_type($arec, $brec);
 			}
 			if ($DEBUG) print ($astamp < $bstamp) ? "bef".$bef : "aft".$aft;
 			return ($astamp < $bstamp) ? $bef : $aft;
@@ -1795,6 +1752,13 @@ if ($DEBUG) print (($adate[0]["year"] < $bdate[0]["year"]) ? "bef".$bef : "aft".
 	return ($adate[0]["year"] < $bdate[0]["year"]) ? $bef : $aft;
 }
 
+/**
+ * This function will sort a list of facts
+ * It uses an insertion sort algorithm which is a slower algorithm
+ * but it insures that all of the items get checked against each other
+ * which works better with the way that facts are sorted.
+ * @param $array $factlist	the array of facts to sort
+ */
 function sort_facts(&$factlist) {
 	global $DEBUG;
 	$count = count($factlist);
@@ -1803,25 +1767,33 @@ function sort_facts(&$factlist) {
 			print "[".$i."=>".substr($factlist[$i][1], 0, 6)."]";
 		}
 	}
-	for($i=0; $i<$count-1; $i++) {
+	$newfacts = array();
+	if ($count==0) return;
+	$newfacts[]=$factlist[0];
+	//-- insertion sort algorithm
+	for($i=1; $i<$count; $i++) {
 		if ($DEBUG==1) print "<br /><br />";
-		$small = $i;
-		for($j=$i+1; $j<$count; $j++) {
-			$c = compare_facts($factlist[$small], $factlist[$j]);
-			if ($c>0) $small = $j;
+		$countj = count($newfacts);
+
+		$small = 0;
+		for($j=0; $j<$countj; $j++) {
+			$c = compare_facts($factlist[$i], $newfacts[$j]);
+			if ($c<0) break;
+			else $small = $j;
 		}
-		if ($small!=$i) {
-			$temp = $factlist[$i];
-			$factlist[$i] = $factlist[$small];
-			$factlist[$small] = $temp;
-		}
+
+		if ($small==0 && $j<1) array_unshift($newfacts, $factlist[$i]);
+		else if ($c>0) array_push($newfacts, $factlist[$i]);
+		else array_splice($newfacts, $small+1, 0, array($factlist[$i]));
+
 		if ($DEBUG==1) {
-			print "<br />Small=".$small." ";
-			for($k=0; $k<$count; $k++) {
-				print "[".$k."=>".substr($factlist[$k][1], 0, 6)."]";
+			print "<br />Small=".$small." C=$c";
+			for($k=0; $k<$countj+1; $k++) {
+				print "[".$k."=>".substr($newfacts[$k][1], 0, 6)."]";
 			}
 		}
 	}
+	$factlist = $newfacts;
 }
 
 /**
@@ -2276,7 +2248,7 @@ function write_changes() {
 			}
 		}
 	}
-	$changestext .= "\n"."?>\n";
+	$changestext .= "\n?".">\n";
 	$fp = fopen($INDEX_DIRECTORY."pgv_changes.php", "wb");
 	if ($fp===false) {
 		print "ERROR 6: Unable to open changes file resource.  Unable to complete request.\n";
@@ -2289,6 +2261,10 @@ function write_changes() {
 		return false;
 	}
 	fclose($fp);
+ 	if (!empty($COMMIT_COMMAND)) {
+ 		$logline = AddToLog("pgv_changes.php updated by >".getUserName()."<");
+ 		check_in($logline, "pgv_changes.php", $INDEX_DIRECTORY);
+ 	}
 	return true;
 }
 
@@ -2304,7 +2280,7 @@ function get_theme_names() {
 	$themes = array();
 	$d = dir("themes");
 	while (false !== ($entry = $d->read())) {
-		if ($entry{0}!="." && $entry!="CVS" && is_dir("themes/$entry")) {
+		if ($entry{0}!="." && $entry!="CVS" && !stristr($entry, "svn") && is_dir("themes/$entry") && file_exists("themes/$entry/theme.php")) {
 			$theme = array();
 			$themefile = implode("", file("themes/$entry/theme.php"));
 			$tt = preg_match("/theme_name\s+=\s+\"(.*)\";/", $themefile, $match);
@@ -2507,191 +2483,6 @@ function convert_number($num) {
 	return $num;
 }
 
-//-- this function is a wrapper to the php mail() function so that we can change settings globally
-// for more info on format="flowed" see: http://www.joeclark.org/ffaq.html
-// for deatiled info on MIME (RFC 1521) email see: http://www.freesoft.org/CIE/RFC/1521/index.htm
-function pgvMail($to, $subject, $message, $extraHeaders){
-	global $pgv_lang, $CHARACTER_SET, $LANGUAGE, $PGV_STORE_MESSAGES, $TEXT_DIRECTION;
-	$mailFormat = "plain";
-	//$mailFormat = "html";
-	//$mailFormat = "multipart"
-
-	$mailFormatText = "text/plain";
-
-	$boundry = "PGV-123454321-PGV"; //unique identifier for multipart
-	$boundry2 = "PGV-123454321-PGV2";
-
-	if($TEXT_DIRECTION == "rtl") { // needed for rtl but we can change this to a global config
-		$mailFormat = "html";
-	}
-
-	if($mailFormat == "html"){
-		$mailFormatText = "text/html";
-	} else if($mailFormat == "multipart") {
-		$mailFormatText = "multipart/related; \r\n\tboundary=\"$boundry\""; //for double display use:multipart/mixed
-	} else {
-		$mailFormatText = "text/plain";
-	}
-
-	$defaultExtraHeaders = "\r\nContent-type: " . $mailFormatText . ";\r\n";
-
-	if($mailFormat != "multipart"){
-		$defaultExtraHeaders .= "\tcharset=\"$CHARACTER_SET\";\r\n\tformat=\"flowed\"\r\nContent-Transfer-Encoding: 8bit\r\n";
-	}
-
-	if($mailFormat == "html" || $mailFormat == "multipart"){
-		$defaultExtraHeaders .= "Mime-Version: 1.0\r\n";
-	}
-
-	$extraHeaders .= $defaultExtraHeaders; //add custom extra header
-
-
-	if($mailFormat == "html") {
-		//wrap message in html
-		$htmlMessage = "";
-		$htmlMessage .= "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">";
-		$htmlMessage .= "<html xmlns=\"http://www.w3.org/1999/xhtml\">";
-		$htmlMessage .= "<head>";
-		$htmlMessage .= "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />";
-		$htmlMessage .= "</head>";
-		$htmlMessage .= "<body dir=\"$TEXT_DIRECTION\"><pre>";
-		$htmlMessage .= $message; //add message
-		$htmlMessage .= "</pre></body>";
-		$htmlMessage .= "</html>";
-		$message = $htmlMessage;
-	} else if($mailFormat == "multipart"){
-		//wrap message in html
-		$htmlMessage = "--$boundry\r\n";
-		$htmlMessage .= "Content-Type: multipart/alternative; \r\n\tboundry=--$boundry2\r\n\r\n";
-		$htmlMessage = "--$boundry2\r\n";
-		$htmlMessage .= "Content-Type: text/plain; \r\n\tcharset=\"$CHARACTER_SET\";\r\n\tformat=\"flowed\"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n";
-		$htmlMessage .= $message;
-		$htmlMessage .= "\r\n\r\n--$boundry2\r\n";
-		$htmlMessage .= "Content-Type: text/html; \r\n\tcharset=\"$CHARACTER_SET\";\r\n\tformat=\"flowed\"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n";
-		$htmlMessage .= "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">";
-		$htmlMessage .= "<html xmlns=\"http://www.w3.org/1999/xhtml\">";
-		$htmlMessage .= "<head>";
-		$htmlMessage .= "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />";
-		$htmlMessage .= "</head>";
-		$htmlMessage .= "<body dir=\"$TEXT_DIRECTION\"><pre>";
-		$htmlMessage .= $message; //add message
-		$htmlMessage .= "</pre>";
-		$htmlMessage .= "<img src=\"cid:pgvlogo@pgvserver\" alt=\"\" style=\"border: 0px; display: block; margin-left: auto; margin-right: auto;\" />";
-		$htmlMessage .= "</body>";
-		$htmlMessage .= "</html>";
-		$htmlMessage .= "\r\n--$boundry2--\r\n";
-		$htmlMessage .= "\r\n--$boundry\r\n";
-		$htmlMessage .= getPgvMailLogo();
-		$htmlMessage .= "\r\n\r\n\r\n\r\n--$boundry--";
-		$message = $htmlMessage;
-	}
-	mail($to, hex4email($subject,$CHARACTER_SET), $message, $extraHeaders);
-}
-
-function getPgvMailLogo(){
-// the following is a base64 encoded PGV logo for use in html formatted email.
-	$pgvLogo =
-"Content-Type: image/gif;
-	name=\"gedview.gif\"
-Content-Transfer-Encoding: base64
-Content-ID: <pgvlogo@pgvserver>
-Content-Description: gedview.gif
-Content-Location: gedview.gif
-
-R0lGODlhZAAtAPcAAAMZLwUmRRIsRBo0SwctURU2UyY+UxE8ZTJHWx5GagxFehVKeyZIaC1NazdT
-bSVTfT5Zc0dYaFNjc25ubmBtemRyf3V1dXt7extRgx9SgShbijdegjRkkD1rlERmhk1vj1NqgFl0
-jkJwml99mWl6iUxhrFZpr0t2oFF7oVR+pV1utGx6q2N1vG18wHmJmFeApmaMr2uLqHWArHaSq32I
-sHuatn+gvXiFwoCAgIODg4WEhYaEhYmGh4eIiImJiYyMjIKPmpGRkZeXl5qbm4aNroiXpJGdqYiP
-tImfsouUuJacu5WhrJmksp2os5Knup+lvpWpvKChoaenp6Onraqrq6Cst6ast6qyu7Gys7O2urW4
-vLu8vL6/v4ONx42WzJae05asxp2yxp+2zJyj1KWsw6W3x6yywq+2wa2zx6u4xKK6z6q6y7S6wbi9
-w7K2yLS7ybm8y6Sr2Kq/06qx3Lu/0ru/3bC34rzAxbXBzb3Cy7LF1rnF0L3J1bTH2bfJ2rzM27/P
-38LCw8LFysTGz8fIysvMzcXL0szO0sLO2cTS38jR2c3X39DR09PW2dTY3dnZ2t3e38HE48jL58HR
-4MbU4cnW48rX5MvZ5szY5M3Z5c7Z5c3a5s/a5s/b58zQ7sra6Mzb6c7d6tLa4dfa4NPc4NTc4dDa
-5NDc59Td5dTV7NLd6NPe6dDe69rc79TX8dbg5t7g4tbg6tPg7Nbh7dji69zi6N/l6tnj7Nvk7Nvk
-7dvm793m7d3l7t/n7t/o79/h893o8uLk5eTm6eDn7ebo6eHo7+Tq7ebr7ejp6evs7OLp8OPr8uTr
-8ebs8uDq9OLt9ubu9err8+nt8Ovv8+3u8O7v8Onu9O3t9uLk+Orr+uvw9Ovx9uzx9ezy9u7y9u/z
-9+3z+e/1+vHy8vDy9PDz9fL09vX29vH0+PL1+PL2+fH2+vP3+/T3+fDw/PH2/PT0/PX4+vb5+/P5
-/Pj5+vv7+/n6/Pz7/Pr8/fv+//z8/Pz9/v7+/v7+//7//////wAAACH5BAkAAP8ALAAAAABkAC0A
-AAj+AP8JFLglCA8dOxIqVMjDh8OFECNKnEjxx4+FPi5S3KhQB48gWwaKhBXokTl/KFOq9GdOnLiT
-K2PKnEkTpT5kyVSKC0avps+U5hoFEvnvUaCe/vYpXcrUHxYcOXJEQZYUpVKr+5Jm1Yqy39WUX7Ve
-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";
-
-return $pgvLogo;
-}
-
-/**
- * hex encode a string
- *
- * this function encodes a string in quoted_printable format
- * found at http://us3.php.net/bin2hex
- */
-function hex4email ($string,$charset) {
-	global $LANGUAGE;
-
-	//-- check if the string has extended characters in it
-	$str = utf8_decode($string);
-	//-- if the strings are the same no conversion is necessary
-	if ($str==$string) return $string;
-	//-- convert to string into quoted_printable format
-	$string = bin2hex ($string);
-	$encoded = chunk_split($string, 2, '=');
-	$encoded = preg_replace ("/=$/","",$encoded);
-	$string = "=?$charset?Q?=" . $encoded . "?=";
-	return $string;
-}
-
 /**
  * decode a filename
  *
@@ -2699,7 +2490,8 @@ function hex4email ($string,$charset) {
  * before it can be used on the filesystem
  */
 function filename_decode($filename) {
-	if (preg_match("/Win32/", $_SERVER["SERVER_SOFTWARE"])>0) return utf8_decode($filename);
+	global $WIN32;
+	if ($WIN32) return utf8_decode($filename);
 	else return $filename;
 }
 
@@ -2710,11 +2502,14 @@ function filename_decode($filename) {
  * before it can be used in PGV
  */
 function filename_encode($filename) {
-	if (preg_match("/Win32/", $_SERVER["SERVER_SOFTWARE"])>0) return utf8_encode($filename);
+	global $WIN32;
+	if ($WIN32) return utf8_encode($filename);
 	else return $filename;
 }
 
 
+/*
+ * - Function is not used anywhere so it is commented out to save memory
 //-- This function changes the used gedcom connected to a language
 function change_gedcom_per_language($new_gedcom_name,$new_language_name)
 {
@@ -2741,19 +2536,26 @@ function change_gedcom_per_language($new_gedcom_name,$new_language_name)
   header("Location: ".$PHP_SELF."?".$QUERY_STRING);
   exit;
 }
+*/
 
 function getAlphabet(){
-	global $ALPHABET_upper, $ALPHABET_lower, $LANGUAGE, $alphabet;
+	global $ALPHABET_upper, $ALPHABET_lower, $LANGUAGE;
+	global $alphabet, $alphabet_lower, $alphabet_upper, $alphabet_lang;
 
 	//-- setup the language alphabet string
-	if (!isset($alphabet)) {
+	if (!isset($alphabet_lang) || $alphabet_lang!=$LANGUAGE) {
 		$alphabet = "0123456789".$ALPHABET_upper[$LANGUAGE].$ALPHABET_lower[$LANGUAGE];
+		$alphabet_lower = "0123456789".$ALPHABET_lower[$LANGUAGE];
+		$alphabet_upper = "0123456789".$ALPHABET_upper[$LANGUAGE];
 		foreach ($ALPHABET_upper as $l => $upper){
-			if ($l <> $LANGUAGE) $alphabet.=$upper;
+			if ($l <> $LANGUAGE) {
+				$alphabet .= $ALPHABET_upper[$l];
+				$alphabet_upper .= $ALPHABET_upper[$l];
+				$alphabet .= $ALPHABET_lower[$l];
+				$alphabet_lower .= $ALPHABET_lower[$l];
+			}
 		}
-		foreach ($ALPHABET_lower as $l => $lower){
-			if ($l <> $LANGUAGE) $alphabet.=$lower;
-		}
+		$alphabet_lang = $LANGUAGE;
 	}
 	return $alphabet;
 }
@@ -2833,6 +2635,8 @@ function get_report_list($force=false) {
 	$fp = @fopen($INDEX_DIRECTORY."/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
+	$logline = AddToLog("reports.dat updated by >".getUserName()."<");
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, "reports.dat", $INDEX_DIRECTORY);
 
 	return $files;
 }
@@ -2850,59 +2654,6 @@ function clean_input($pid) {
 	$pid = preg_replace("/[%?_]/", "", trim($pid));
 	return $pid;
 }
-
-/**
- * get a quick-glance view of current LDS ordinances
- * @param string $indirec
- * @return string
- */
-function get_lds_glance($indirec) {
-	$text = "";
-
-	$ord = get_sub_record(1, "1 BAPL", $indirec);
-	if ($ord) $text .= "B";
-	else $text .= "_";
-	$ord = get_sub_record(1, "1 ENDL", $indirec);
-	if ($ord) $text .= "E";
-	else $text .= "_";
-	$found = false;
-	$ct = preg_match_all("/1 FAMS @(.*)@/", $indirec, $match, PREG_SET_ORDER);
-	for($i=0; $i<$ct; $i++) {
-		$famrec = find_family_record($match[$i][1]);
-		if ($famrec) {
-			$ord = get_sub_record(1, "1 SLGS", $famrec);
-			if ($ord) {
-				$found = true;
-				break;
-			}
-		}
-	}
-	if ($found) $text .= "S";
-	else $text .= "_";
-	$ord = get_sub_record(1, "1 SLGC", $indirec);
-	if ($ord) $text .= "P";
-	else $text .= "_";
-	return $text;
-}
-
-/**
- * Check for facts that may exist only once for a certain record type.
- * If the fact already exists in the second array, delete it from the first one.
- */
- function CheckFactUnique($uniquefacts, $recfacts, $type) {
-
-	 foreach($recfacts as $indexval => $fact) {
-		if (($type == "SOUR") || ($type == "REPO")) $factrec = $fact[0];
-		if (($type == "FAM") || ($type == "INDI")) $factrec = $fact[1];
-		$ft = preg_match("/1 (\w+)(.*)/", $factrec, $match);
-		if ($ft>0) {
-			$fact = trim($match[1]);
-			$key = array_search($fact, $uniquefacts);
-			if ($key !== false) unset($uniquefacts[$key]);
-		}
-	 }
-	 return $uniquefacts;
- }
 
 /**
  * remove any custom PGV tags from the given gedcom record
@@ -2925,101 +2676,54 @@ function remove_custom_tags($gedrec, $remove="no") {
 }
 
 /**
- * find the name of the first GEDCOM file in a zipfile
- * @param string $zipfile	the path and filename
- * @param boolean $extract  true = extract and return filename, false = return filename
- * @return string		the path and filename of the gedcom file
- */
-
-function GetGEDFromZIP($zipfile, $extract=true) {
-	GLOBAL $INDEX_DIRECTORY;
-
-	require_once "includes/pclzip.lib.php";
-	$zip = new PclZip($zipfile);
-
-	// if it's not a valid zip, just return the filename
-	if (($list = $zip->listContent()) == 0) {
-		return $zipfile;
-	}
-
-	// Determine the extract directory
-	$slpos = strrpos($zipfile, "/");
-	if (!$slpos) $slpos = strrpos($zipfile,"\\");
-	if ($slpos) $path = substr($zipfile, 0, $slpos+1);
-	else $path = $INDEX_DIRECTORY;
-	// Scan the files and return the first .ged found
-	foreach($list as $key=>$listitem) {
-		if (($listitem["status"]="ok") && (strstr(strtolower($listitem["filename"]), ".")==".ged")) {
-			$filename = basename($listitem["filename"]);
-			if ($extract == false) return $filename;
-
-			// if the gedcom exists, save the old one. NOT to bak as it will be overwritten on import
-			if (file_exists($path.$filename)) {
-				if (file_exists($path.$filename.".old")) unlink($path.$filename.".old");
-				copy($path.$filename, $path.$filename.".old");
-				unlink($path.$filename);
-			}
-			if ($zip->extract(PCLZIP_OPT_REMOVE_ALL_PATH, PCLZIP_OPT_PATH, $path, PCLZIP_OPT_BY_NAME, $listitem["filename"]) == 0) {
-				print "ERROR cannot extract ZIP";
-			}
-			return $filename;
-		}
-	}
-	return $zipfile;
-}
-
-/**
- * look for and run any hook files found
+ * Locate and run any hook files found.
  *
- * @param string $type		the type of hook requested (login|logout|adduser|updateuser|deleteuser)
+ * @param string $type		the type of hook requested (login|logout|adduser|updateuser|deleteuser|getuser)
  * @param array  $params	array of parameters
- * @return bool				returns true
+ * @return array			array containing any results from the hooks (not currently used)
+ * @author					Patrick Kellum
+ * @todo					add aditional types, including search.
  */
-function runHooks($type, $params=array ())
+function runHooks($type, $params=array())
 {
-	// look for core hooks
-	if (file_exists("hooks/{$type}/"))
+	global $THEME_DIR;
+	static $cache = array();
+	// check for cache
+	if(isset($cache[$type]))
 	{
-		$dirs = array ("hooks/{$type}/");
+		$hooks = $cache[$type];
 	}
 	else
 	{
-		$dirs = array ();
-	}
+		// look for core hooks, shouldn't be needed, but may be useful for quick site customizing
+		if(file_exists("hooks/{$type}.php")){$hooks = array('core'=>"hooks/{$type}.php");}else{$hooks = array();}
 	// look for module hooks
 	$d = dir('modules/');
-	while (false !== ($f = $d->read()))
-	{
-		if ($f === '.' || $f === '..')
+		while(false !== ($f = $d->read()))
 		{
-			continue;
-		}
-		if (file_exists("modules/{$f}/hooks/{$type}"))
+			if($f === '.' || $f === '..'){continue;}
+			if(file_exists("modules/{$f}/pgvhooks/{$type}.php"))
 		{
-			$dirs[] = "modules/{$f}/hooks/{$type}/";
+				$hooks[$f] = "modules/{$f}/pgvhooks/{$type}.php";
 		}
 	}
 	$d->close();
-	// run all found hooks
-	foreach ($dirs as $directory)
-	{
-		$d = @dir($directory);
-		if (is_object($d))
-		{
-			while (false !== ($f = $d->read()))
-			{
-				if (stristr($f, '.php'))
-				{
-					include_once "{$directory}/{$f}";
-					$cl = substr($f, 0, -4);
-					$obj = new $cl();
-					$obj->hook($params);
-				}
-			}
-			$d->close();
-		}
+		// look for theme hooks
+		if(file_exists("{$THEME_DIR}hooks/{$type}.php")){$hooks['theme'] = "{$THEME_DIR}hooks/{$type}.php";}
+		// cache the results for speed
+		$cache[$type] = $hooks;
 	}
-	return true;
+	// run all found hooks
+	$results = array();
+	foreach($hooks as $module=>$hook)
+		{
+		include_once $hook;
+		$cl = "mod_{$module}_{$type}";
+					$obj = new $cl();
+		$res = $obj->hook($params);
+		if($res !== null){$results = array_merge($results, $res);}
+	}
+	return $results;
 }
 
 function getfilesize($bytes) {
@@ -3061,7 +2765,8 @@ function splitkey($key, $type) {
 	if ($type == "id") return $id;
 	$p2 = strpos($key,"]");
 	$ged = substr($key,$p1+1,$p2-$p1-1);
-	return get_gedcom_from_id($ged);
+	if ($ged>=1) get_gedcom_from_id($ged);
+	return $ged;
 }
 
 /**
@@ -3103,112 +2808,144 @@ function get_query_string() {
 	return $qstring;
 }
 
-//--- copied from reportpdf.php
-	function add_ancestors($pid, $children=false, $generations=-1) {
-		global $list, $indilist, $genlist;
+//This function works with a specified generation limit.  It will completely fill
+//the pdf witout regard to if a known person exists in each generation.
+//ToDo: If a known individual is found in a generation, add prior empty positions
+//and add remaining empty spots automatically.
+function add_ancestors($pid, $children=false, $generations=-1, $show_empty=false) {
+	global $list, $indilist, $genlist;
+	$total_num_skipped = 0;
+	$skipped_gen = 0;
+	$num_skipped = 0;
+	$genlist = array($pid);
+	$list[$pid]["generation"] = 1;
+	while(count($genlist)>0) {
+		$id = array_shift($genlist);
+		$famids = find_family_ids($id);
+		if (count($famids)>0) {
+			if ($show_empty){
+				for ($i=0;$i<$num_skipped;$i++){
+					$list["empty" . $total_num_skipped] = array();
+					$list["empty" . $total_num_skipped]["generation"] = $list[$id]["generation"]+1;
+					$list["empty" . $total_num_skipped]["gedcom"] = "";
+					array_push($genlist, "empty" . $total_num_skipped);
+					$total_num_skipped++;
+				}
+			}
+			$num_skipped = 0;
+			foreach($famids as $indexval => $famid) {
+				$parents = find_parents($famid);
+				if (!empty($parents["HUSB"])) {
+					find_person_record($parents["HUSB"]);
+					$list[$parents["HUSB"]] = $indilist[$parents["HUSB"]];
+					$list[$parents["HUSB"]]["generation"] = $list[$id]["generation"]+1;
+				}
+				else if ($show_empty) {
+					$list["empty" . $total_num_skipped] = array("empty");
+					$list["empty" . $total_num_skipped]["generation"] = $list[$id]["generation"]+1;
+					$list["empty" . $total_num_skipped]["gedcom"] = "";
+				}
+				if (!empty($parents["WIFE"])) {
+					find_person_record($parents["WIFE"]);
+					$list[$parents["WIFE"]] = $indilist[$parents["WIFE"]];
+					$list[$parents["WIFE"]]["generation"] = $list[$id]["generation"]+1;
+				}
+				else if ($show_empty) {
+					$list["empty" . $total_num_skipped] = array("empty");
+					$list["empty" . $total_num_skipped]["generation"] = $list[$id]["generation"]+1;
+					$list["empty" . $total_num_skipped]["gedcom"] = "";
+				}
+				if ($generations == -1 || $list[$id]["generation"]+1 < $generations) {
+					$skipped_gen = $list[$id]["generation"]+1;
+					if (!empty($parents["HUSB"])) array_push($genlist, $parents["HUSB"]);
+					else if ($show_empty) array_push($genlist, "empty" . $total_num_skipped);
+					if (!empty($parents["WIFE"])) array_push($genlist, $parents["WIFE"]);
+					else if ($show_empty) array_push($genlist, "empty" . $total_num_skipped);
+				}
+				$total_num_skipped++;
+				if ($children) {
+					$famrec = find_family_record($famid);
+					if ($famrec) {
+						$num = preg_match_all("/1\s*CHIL\s*@(.*)@/", $famrec, $smatch,PREG_SET_ORDER);
+						for($i=0; $i<$num; $i++) {
+							find_person_record($smatch[$i][1]);
+							$list[$smatch[$i][1]] = $indilist[$smatch[$i][1]];
+							if (isset($list[$id]["generation"])) $list[$smatch[$i][1]]["generation"] = $list[$id]["generation"];
+							else $list[$smatch[$i][1]]["generation"] = 1;
+						}
+					}
+				}
+			}
+		}
+		else if ($show_empty) {
+			if ($skipped_gen > $list[$id]["generation"]){
+				$list["empty" . $total_num_skipped] = array();
+				$list["empty" . $total_num_skipped]["generation"] = $list[$id]["generation"]+1;
+				$list["empty" . $total_num_skipped]["gedcom"] = "";
+				$total_num_skipped++;
+				$list["empty" . $total_num_skipped] = array();
+				$list["empty" . $total_num_skipped]["generation"] = $list[$id]["generation"]+1;
+				$list["empty" . $total_num_skipped]["gedcom"] = "";
+				array_push($genlist, "empty" . ($total_num_skipped - 1));
+				array_push($genlist, "empty" . $total_num_skipped);
+				$total_num_skipped++;
+			}
+			else $num_skipped += 2;
+		}
 
-		$genlist = array($pid);
-		$list[$pid]["generation"] = 1;
-		while(count($genlist)>0) {
-			$id = array_shift($genlist);
-			$famids = find_family_ids($id);
-			if (count($famids)>0) {
-				foreach($famids as $indexval => $famid) {
-					$parents = find_parents($famid);
+	}
+}
+
+//--- copied from reportpdf.php
+function add_descendancy($pid, $parents=false, $generations=-1) {
+	global $list, $indilist;
+
+	if (!isset($list[$pid])) {
+		$indirec = find_person_record($pid);
+		if (!empty($indirec)) $list[$pid] = $indilist[$pid];
+		else return;
+	}
+	if (!isset($list[$pid]["generation"])) {
+		$list[$pid]["generation"] = 0;
+	}
+	$famids = find_sfamily_ids($pid);
+	if (count($famids)>0) {
+		foreach($famids as $indexval => $famid) {
+			$famrec = find_family_record($famid);
+			if ($famrec) {
+				if ($parents) {
+					$parents = find_parents_in_record($famrec);
 					if (!empty($parents["HUSB"])) {
 						find_person_record($parents["HUSB"]);
 						$list[$parents["HUSB"]] = $indilist[$parents["HUSB"]];
-						$list[$parents["HUSB"]]["generation"] = $list[$id]["generation"]+1;
+						if (isset($list[$pid]["generation"])) $list[$parents["HUSB"]]["generation"] = $list[$pid]["generation"]-1;
+						else $list[$parents["HUSB"]]["generation"] = 1;
 					}
 					if (!empty($parents["WIFE"])) {
 						find_person_record($parents["WIFE"]);
 						$list[$parents["WIFE"]] = $indilist[$parents["WIFE"]];
-						$list[$parents["WIFE"]]["generation"] = $list[$id]["generation"]+1;
-					}
-					if ($generations == -1 || $list[$id]["generation"]+1 < $generations) {
-						if (!empty($parents["HUSB"])) array_push($genlist, $parents["HUSB"]);
-						if (!empty($parents["WIFE"])) array_push($genlist, $parents["WIFE"]);
-					}
-					if ($children) {
-						$famrec = find_family_record($famid);
-						if ($famrec) {
-							$num = preg_match_all("/1\s*CHIL\s*@(.*)@/", $famrec, $smatch,PREG_SET_ORDER);
-							for($i=0; $i<$num; $i++) {
-								find_person_record($smatch[$i][1]);
-								$list[$smatch[$i][1]] = $indilist[$smatch[$i][1]];
-								if (isset($list[$id]["generation"])) $list[$smatch[$i][1]]["generation"] = $list[$id]["generation"];
-								else $list[$smatch[$i][1]]["generation"] = 1;
-							}
-						}
+						if (isset($list[$pid]["generation"])) $list[$parents["WIFE"]]["generation"] = $list[$pid]["generation"]-1;
+						else $list[$parents["WIFE"]]["generation"] = 1;
 					}
 				}
-			}
-		}
-	}
-
-	//--- copied from reportpdf.php
-	function add_descendancy($pid, $parents=false, $generations=-1) {
-		global $list, $indilist;
-
-		if (!isset($list[$pid])) {
-			find_person_record($pid);
-			$list[$pid] = $indilist[$pid];
-		}
-		if (!isset($list[$pid]["generation"])) {
-			$list[$pid]["generation"] = 0;
-		}
-		$famids = find_sfamily_ids($pid);
-		if (count($famids)>0) {
-			foreach($famids as $indexval => $famid) {
-				$famrec = find_family_record($famid);
-				if ($famrec) {
-					if ($parents) {
-						$parents = find_parents_in_record($famrec);
-						if (!empty($parents["HUSB"])) {
-							find_person_record($parents["HUSB"]);
-							$list[$parents["HUSB"]] = $indilist[$parents["HUSB"]];
-							if (isset($list[$pid]["generation"])) $list[$parents["HUSB"]]["generation"] = $list[$pid]["generation"]-1;
-							else $list[$parents["HUSB"]]["generation"] = 1;
-						}
-						if (!empty($parents["WIFE"])) {
-							find_person_record($parents["WIFE"]);
-							$list[$parents["WIFE"]] = $indilist[$parents["WIFE"]];
-							if (isset($list[$pid]["generation"])) $list[$parents["WIFE"]]["generation"] = $list[$pid]["generation"]-1;
-							else $list[$parents["HUSB"]]["generation"] = 1;
-						}
-					}
-					$num = preg_match_all("/1\s*CHIL\s*@(.*)@/", $famrec, $smatch,PREG_SET_ORDER);
-					for($i=0; $i<$num; $i++) {
-						find_person_record($smatch[$i][1]);
+				$num = preg_match_all("/1\s*CHIL\s*@(.*)@/", $famrec, $smatch,PREG_SET_ORDER);
+				for($i=0; $i<$num; $i++) {
+					$indirec = find_person_record($smatch[$i][1]);
+					if (!empty($indirec)) {
 						$list[$smatch[$i][1]] = $indilist[$smatch[$i][1]];
-						if (isset($list[$smatch[$i][1]]["generation"])) $list[$smatch[$smatch[$i][1]][1]]["generation"] = $list[$pid]["generation"]+1;
+						if (isset($list[$pid]["generation"])) $list[$smatch[$i][1]]["generation"] = $list[$pid]["generation"]+1;
 						else $list[$smatch[$i][1]]["generation"] = 2;
 					}
-					if($generations == -1 || $list[$pid]["generation"]+1 < $generations)
-					{
-						for($i=0; $i<$num; $i++) {
-							add_descendancy($smatch[$i][1], $parents, $generations);	// recurse on the childs family
-						}
+				}
+				if($generations == -1 || $list[$pid]["generation"]+1 < $generations)
+				{
+					for($i=0; $i<$num; $i++) {
+						add_descendancy($smatch[$i][1], $parents, $generations);	// recurse on the childs family
 					}
 				}
 			}
 		}
 	}
-
-/**
- * check if the given server reference already exists in the database
- * @param string $server_name
- * @param string $gedcom_id
- * @return mixed
- */
-function server_exists($server_name, $gedcom_id=""){
-	$servers = get_server_list();
-	foreach($servers as $sid=>$serv) {
-		$url = get_gedcom_value("URL", 1, $serv["gedcom"]);
-		$dbid = get_gedcom_value("_DBID", 1, $serv["gedcom"]);
-		if ($url==$server_name && $gedcom_id==$dbid) return $sid;
-	}
-	return false;
 }
 
 /**
@@ -3216,9 +2953,9 @@ function server_exists($server_name, $gedcom_id=""){
  */
 function CheckPageViews() {
 	global $MAX_VIEWS, $MAX_VIEW_TIME, $pgv_lang;
-	
+
 	if ($MAX_VIEW_TIME == 0) return;
-	
+
 	if ((!isset($_SESSION["pageviews"])) || (time() - $_SESSION["pageviews"]["time"] > $MAX_VIEW_TIME)) {
 		if (isset($_SESSION["pageviews"])) {
 			$str = "Max pageview counter reset: max reached was ".$_SESSION["pageviews"]["number"];
@@ -3227,9 +2964,9 @@ function CheckPageViews() {
 		$_SESSION["pageviews"]["time"] = time();
 		$_SESSION["pageviews"]["number"] = 0;
 	}
-	
+
 	$_SESSION["pageviews"]["number"]++;
-	
+
 	if ($_SESSION["pageviews"]["number"] > $MAX_VIEWS) {
 		$time = time() - $_SESSION["pageviews"]["time"];
 		print $pgv_lang["maxviews_exceeded"];
@@ -3238,7 +2975,7 @@ function CheckPageViews() {
 		exit;
 	}
 	return;
-}	
+}
 
 /**
  * get the next available xref
@@ -3249,14 +2986,14 @@ function CheckPageViews() {
 function get_new_xref($type='INDI') {
 	global $fcontents, $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $pgv_changes, $GEDCOM, $TBLPREFIX, $GEDCOMS;
 	global $MEDIA_ID_PREFIX, $FAM_ID_PREFIX, $GEDCOM_ID_PREFIX, $FILE, $DBCONN, $MAX_IDS;
-	
+
 	//-- during online updates $FILE comes through as an array for some odd reason
 	if (!empty($FILE) && !is_array($FILE)) {
 		//print_r($FILE);
 		$gedid = $GEDCOMS[$FILE]["id"];
 	}
 	else $gedid = $GEDCOMS[$GEDCOM]["id"];
-	
+
 	$num = null;
 	//-- check if an id is stored in MAX_IDS used mainly during the import
 	//-- the number stored in the max_id is the next number to use... no need to increment it
@@ -3267,11 +3004,11 @@ function get_new_xref($type='INDI') {
 	}
 	else {
 		//-- check for the id in the nextid table
-		$sql = "SELECT * FROM ".$TBLPREFIX."nextid WHERE ni_type='".$DBCONN->escapeSimple($type)."' AND ni_gedfile='".$DBCONN->escapeSimple($gedid)."'";
+		$sql = "SELECT * FROM ".$TBLPREFIX."nextid WHERE ni_type='".$DBCONN->escape($type)."' AND ni_gedfile='".$DBCONN->escape($gedid)."'";
 		$res =& dbquery($sql);
 		if ($res->numRows() > 0) {
 			$row = $res->fetchRow();
-			$num = $row[0];
+			$num = $row['ni_id'];
 		}
 		//-- the id was not found in the table so try and find it in the file
 		if (is_null($num) && !empty($fcontents)) {
@@ -3290,7 +3027,7 @@ function get_new_xref($type='INDI') {
 		//-- type wasn't found in database or in file so make a new one
 		if (is_null($num)) {
 			$num = 1;
-			$sql = "INSERT INTO ".$TBLPREFIX."nextid VALUES('".$DBCONN->escapeSimple($num+1)."', '".$DBCONN->escapeSimple($type)."', '".$gedid."')";
+			$sql = "INSERT INTO ".$TBLPREFIX."nextid VALUES('".$DBCONN->escape($num+1)."', '".$DBCONN->escape($type)."', '".$gedid."')";
 			$res = dbquery($sql);
 		}
 	}
@@ -3305,10 +3042,10 @@ function get_new_xref($type='INDI') {
 
 	//-- the key is the prefix and the number
 	$key = $prefix.$num;
-	
+
 	//-- during the import we won't update the database at this time so return now
 	if (isset($MAX_IDS[$type])) return $key;
-	
+
 	//-- make sure this number has not already been used by an
 	//- item awaiting approval
 	while(isset($pgv_changes[$key."_".$GEDCOM])) {
@@ -3317,14 +3054,14 @@ function get_new_xref($type='INDI') {
 	}
 	$num++;
 	//-- update the next id number in the DB table
-	$sql = "UPDATE ".$TBLPREFIX."nextid SET ni_id='".$DBCONN->escapeSimple($num)."' WHERE ni_type='".$DBCONN->escapeSimple($type)."' AND ni_gedfile='".$DBCONN->escapeSimple($gedid)."'";
+	$sql = "UPDATE ".$TBLPREFIX."nextid SET ni_id='".$DBCONN->escape($num)."' WHERE ni_type='".$DBCONN->escape($type)."' AND ni_gedfile='".$DBCONN->escape($gedid)."'";
 	$res = dbquery($sql);
 	return $key;
 }
 
 /**
  * check if the given string has UTF-8 characters
- * 
+ *
  */
 function has_utf8($string) {
 	$len = strlen($string);
@@ -3338,21 +3075,21 @@ function has_utf8($string) {
 
 /**
  * Determine the type of ID
- * NOTE: Be careful when using this function as not all GEDCOMS have ID 
+ * NOTE: Be careful when using this function as not all GEDCOMS have ID
  * prefixes.  Many GEDCOMS just use numbers like 100, 101, etc without
  * the I, F, etc prefixes.
  * @param string $id
  */
 function id_type($id) {
 	global $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $MEDIA_ID_PREFIX, $FAM_ID_PREFIX, $GEDCOM_ID_PREFIX;
-	
+
 	// NOTE: Set length for the ID's
 	$indi_length = strlen($GEDCOM_ID_PREFIX);
 	$fam_length = strlen($FAM_ID_PREFIX);
 	$source_length = strlen($SOURCE_ID_PREFIX);
 	$repo_length = strlen($REPO_ID_PREFIX);
 	$media_length = strlen($MEDIA_ID_PREFIX);
-	
+
 	// NOTE: Check for individual ID
 	if (substr($id, 0, $indi_length) == $GEDCOM_ID_PREFIX) return "INDI";
 	else if (substr($id, 0, $fam_length) == $FAM_ID_PREFIX) return "FAM";
@@ -3362,7 +3099,178 @@ function id_type($id) {
 	else return "";
 }
 
-// optional extra file
-if (file_exists( PHPGEDVIEW_PKG_PATH . "functions.extra.php")) require PHPGEDVIEW_PKG_PATH . "functions.extra.php";
+//-- only declare this function when it is necessary
+if (!empty($COMMIT_COMMAND)) {
+/**
+ * check file in
+ * @param string $logline	Log message
+ * @param string $filename	Filename
+ * @param string $dirname	Directory
+ * @param boolean $bInsert	Insert Log message
+ * @return boolean			whether the file was checked in
+ */
+function check_in($logline, $filename, $dirname, $bInsert = false) {
+	global $COMMIT_COMMAND;
+	$bRetSts = false;
+        if(! empty($COMMIT_COMMAND))
+        {
+        	$cwd = getcwd();
+			if(! empty($dirname))
+				chdir($dirname);
+        	$cmdline = $COMMIT_COMMAND." commit -m \"".$logline."\" ".$filename;
+        	$output = "";
+        	$retval = "";
+	        exec($cmdline, $output, $retval);
+        	if(! empty($output))
+	        {
+		        if($bInsert)
+			        AddToChangeLog($logline);
+        		$outputstring = implode('\n', $output);
+	        	AddToChangeLog("System Output :".$outputstring.", Return Value :".$retval);
+				$bRetSts = true;
+        	}
+			if(! empty($dirname))
+				chdir($cwd);
+        }
+	return $bRetSts;
+}
+}
 
-?>
+/**
+ *		Load language variables
+ *		Set language-dependent global variables
+ *
+ *		This function loads the variables for the language, as specified by the first
+ *		input parameter. It also loads any existing language-specific functions such
+ *		special date handling for Finnish and Turkish.
+ *
+ *		If the forceLoad parameter is true, English will be loaded first, followed by
+ *		the desired language file.
+ *
+ */
+function loadLanguage($desiredLanguage="english", $forceLoad=false) {
+	global $LANGUAGE, $pgv_language, $lang_short_cut, $pgv_lang;
+	global $TEXT_DIRECTION, $TEXT_DIRECTION_array;
+	global $DATE_FORMAT, $DATE_FORMAT_array;
+	global $TIME_FORMAT, $TIME_FORMAT_array;
+	global $WEEK_START, $WEEK_START_array;
+	global $NAME_REVERSE, $NAME_REVERSE_array;
+	global $MULTI_LETTER_ALPHABET, $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
+	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
+	global $unknownNN, $unknownPN;
+
+	if (!isset($pgv_language[$desiredLanguage])) $desiredLanguage = "english";
+	$result = false;
+	if ($forceLoad) {
+		$LANGUAGE = "english";
+		require ($pgv_language[$LANGUAGE]);			// Load English
+
+		$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
+		$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
+		$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
+		$WEEK_START		= $WEEK_START_array[$LANGUAGE];
+		$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+
+		// Load functions that are specific to the active language
+		@include_once("./includes/extras/functions.".$lang_short_cut[$LANGUAGE].".php");
+
+		$result = true;
+	}
+
+	if ($desiredLanguage!=$LANGUAGE && file_exists($pgv_language[$desiredLanguage])) {
+		$LANGUAGE = $desiredLanguage;
+		include($pgv_language[$LANGUAGE]);		// Load the requested language
+
+		$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
+		$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
+		$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
+		$WEEK_START		= $WEEK_START_array[$LANGUAGE];
+		$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
+
+		// Load functions that are specific to the active language
+		@include_once("./includes/extras/functions.".$lang_short_cut[$LANGUAGE].".php");
+
+		$result = true;
+	}
+
+/**
+ *		Build the tables of multi-character sequences that must be considered as a
+ *		single character when sorting lists of names and titles.
+ *			Reference http://en.wikipedia.org/wiki/Hungarian_alphabet
+ *			Reference http://en.wikipedia.org/wiki/Alphabets_derived_from_the_Latin
+ */
+	$digraph = array();
+	$trigraph = array();
+	$quadgraph = array();
+	if (!isset($MULTI_LETTER_ALPHABET[$LANGUAGE])) $MULTI_LETTER_ALPHABET[$LANGUAGE] = "";
+	if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
+		$myList = str2upper($MULTI_LETTER_ALPHABET[$LANGUAGE]);
+		$myList = str_replace(array(";", ","), " ", $myList);
+		$myList = preg_replace("/\s\s+/", " ", $myList);
+		$myList = trim($myList);
+		$wholeList = explode(" ", $myList);
+		$sortValue = array();
+		foreach ($wholeList as $letter) {
+			$first = substr($letter, 0, 1);
+			if ($letter=="CH") $first = "H";	// This one doesn't follow the rule
+			if (!isset($sortValue[$first])) $sortValue[$first] = 0;
+			$sortValue[$first] ++;
+			if (strlen($letter)==2) $digraph[$letter] = $sortValue[$first];
+			if (strlen($letter)==3) $trigraph[$letter] = $sortValue[$first];
+			if (strlen($letter)==4) $quadgraph[$letter] = $sortValue[$first];
+		}
+		$MULTI_LETTER_ALPHABET[$LANGUAGE] = " ".$myList." ";
+	}
+
+	$digraphAll = array();
+	$trigraphAll = array();
+	$quadgraphAll = array();
+	$MULTI_LETTER_ALPHABET["all"] = "";
+	foreach ($MULTI_LETTER_ALPHABET as $lang => $letters) {
+		if ($lang!="all") $MULTI_LETTER_ALPHABET["all"] .= $letters." ";
+	}
+	$MULTI_LETTER_ALPHABET["all"] = str2upper($MULTI_LETTER_ALPHABET["all"]);
+	$MULTI_LETTER_ALPHABET["all"] = str_replace(array(";", ","), " ", $MULTI_LETTER_ALPHABET["all"]);
+	$MULTI_LETTER_ALPHABET["all"] = preg_replace("/\s\s+/", " ", $MULTI_LETTER_ALPHABET["all"]);
+	$wholeList = explode(" ", $MULTI_LETTER_ALPHABET["all"]);
+	$sortValue = array();
+	foreach ($wholeList as $letter) {
+		$first = substr($letter, 0, 1);
+		if ($letter=="CH") $first = "H";	// This one doesn't follow the rule
+		if (!isset($sortValue[$first])) $sortValue[$first] = 0;
+		$sortValue[$first] ++;
+		if (strlen($letter)==2) $digraphAll[$letter] = $sortValue[$first];
+		if (strlen($letter)==3) $trigraphAll[$letter] = $sortValue[$first];
+		if (strlen($letter)==4) $quadgraphAll[$letter] = $sortValue[$first];
+	}
+	$MULTI_LETTER_ALPHABET["all"] = " ".trim($MULTI_LETTER_ALPHABET["all"])." ";
+
+
+/**
+ *		Build the tables required for the Dictionary sort
+ *
+ *		A Dictionary sort is one where all letters with diacritics are considered to be
+ *		identical to the base letter (without the mark).  Diacritics become important
+ *		only when the two strings (without marks) are identical.
+ *
+ *		There are two sets of tables, one for the Upper Case version of a UTF8 character
+ *		and the other for the lower-case version.  The two tables are not necessarily
+ *		identical.  For example, the Turkish dotless i doesn't exist in the Upper case
+ *		table.
+ *
+ *		Within each set, there are three lists which MUST have a one-to-one relationship.
+ *		The "DiacritStrip" list gives the base letter of the corresponding "DiacritWhole"
+ *		character.
+ *		The "DiacritOrder" list assigns a sort value to the diacritic mark of the
+ *		"DiacritWhole" character.  All letters that don't appear in these lists, including
+ *		the base letter from which the one bearing diacritic marks is formed, are assigned
+ *		a sort value of " ".  By using a single letter from the ASCII code chart, we can
+ *		have 52 different UTF8 characters all mapping to the same base character.  This will
+ *		handle Vietnamese, which is by far the richest language in terms of diacritic marks.
+ */
+ 	require "includes/sort_tables_utf8.php";
+	return $result;
+}
+
+// optional extra file
+if (file_exists( "includes/functions.extra.php")) require  "includes/functions.extra.php";

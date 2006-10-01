@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: media_class.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: media_class.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
 
 require_once('includes/gedcomrecord.php');
@@ -39,6 +39,27 @@ class Media extends GedcomRecord {
 		$et = preg_match("/(\.\w+)$/", $this->file, $ematch);
 		$this->ext = "";
 		if ($et>0) $this->ext = substr(trim($ematch[1]),1);
+	}
+	
+	/**
+	 * check if the given Media object is in the objectlist
+	 * @param Media $obje
+	 * @return mixed  returns the ID for the for the matching media or false if not found
+	 */
+	function in_obje_list(&$obje) {
+		global $TBLPREFIX, $GEDCOMS, $GEDCOM, $FILE, $DBCONN;
+		
+		if (is_null($obje)) return false;
+		if (empty($FILE)) $FILE = $GEDCOM;
+		$sql = "SELECT m_media FROM ".$TBLPREFIX."media WHERE m_file='".$DBCONN->escape($obje->file)."' AND m_titl LIKE '".$DBCONN->escape($obje->title)."' AND m_gedfile=".$GEDCOMS[$FILE]['id'];
+		$res = dbquery($sql);
+	
+		if ($res->numRows()>0) {
+			$row = $res->fetchRow();
+			return $row['m_media'];
+		}
+		
+		return false;
 	}
 	
 	/**

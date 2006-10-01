@@ -1,0 +1,54 @@
+<PGVReport access="PGV_PUBLIC" icon="cfamily">
+<!-- $Id$ -->
+	<PGVRTitle><PGVRvar var="pgv_lang[relatives_report]" /></PGVRTitle>
+	<PGVRDescription>Prints a list of individuals related to a specific person</PGVRDescription>
+	<PGVRInput name="pid" lookup="INDI" type="text"><PGVRvar var="pgv_lang[enter_pid]" /></PGVRInput>
+	<PGVRInput name="relatives" type="select" options="child-family,spouse-family,direct-ancestors,ancestors,descendants,all"><PGVRvar var="pgv_lang[choose_relatives]" /></PGVRInput>
+	<PGVRInput name="sortby" type="select" options="none,BIRT,DEAT,NAME"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
+	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRStyle name="header" font="LucidaSansUnicode" size="14" style="b" />
+	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
+	<PGVRStyle name="label" font="LucidaSansUnicode" size="9" style="b" />
+	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
+		<PGVRHeader>
+			<PGVRCell width="0" height="20" align="center" style="header"><PGVRvar var="pgv_lang[relatives_report]" /></PGVRCell>
+			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /></PGVRCell>
+			<PGVRTextBox width="35" height="12" border="1">
+				<PGVRText style="label"> </PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="160" height="12" border="1">
+				<PGVRText style="label"><PGVRvar var="pgv_lang[name]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="170" height="12" border="1">
+				<PGVRText style="label"><PGVRvar var="factarray[BIRT]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="0" height="12" border="1" newline="1">
+				<PGVRText style="label"><PGVRvar var="factarray[DEAT]" /></PGVRText>
+			</PGVRTextBox>
+		</PGVRHeader>
+		<PGVRBody>
+			<PGVRRelatives id="$pid" group="$relatives" sortby="$sortby">
+				<PGVRTextBox width="35" height="12" border="0">
+					<PGVRText style="text"><PGVRGedcomValue tag="@id" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="160" height="12" border="0">
+					<PGVRText style="text"><PGVRGetPersonName id="" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="170" height="12" border="0">
+					<PGVRText style="text"><PGVRGedcomValue tag="BIRT:DATE" />  <PGVRGedcomValue tag="BIRT:PLAC" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="0" height="12" border="0" newline="1">
+					<PGVRText style="text"><PGVRGedcomValue tag="DEAT:DATE" />  <PGVRGedcomValue tag="DEAT:PLAC" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRLine x1="25" x2="575" />
+			</PGVRRelatives>
+			<PGVRCell width="0" height="15" border="0" align="right" style="label">
+				<br /><PGVRvar var="pgv_lang[total_indis]" />: <PGVRListTotal />
+			</PGVRCell>
+		</PGVRBody>
+		<PGVRFooter>
+			<PGVRCell width="0" height="10"><PGVRNow /></PGVRCell>
+		</PGVRFooter>
+	</PGVRDoc>
+</PGVReport>

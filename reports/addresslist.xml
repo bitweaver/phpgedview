@@ -1,0 +1,89 @@
+<PGVReport access="PGV_USER" icon="place">
+	<!-- $Id$ -->
+	<PGVRTitle><PGVRvar var="pgv_lang[address_list]" /></PGVRTitle>
+	<PGVRDescription>Prints a list of addresses</PGVRDescription>
+	<PGVRStyle name="header" font="LucidaSansUnicode" size="16" style="b" />
+	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
+	<PGVRStyle name="label" font="LucidaSansUnicode" size="10" style="b" />
+	<PGVRInput name="address" type="text"><PGVRvar var="pgv_lang[filter_address]" /> </PGVRInput>
+	<PGVRInput name="sortby" type="select" options="NAME,ID"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
+	<PGVRInput name="email_in" type="select" options="all,noemail,onlyemail"><PGVRvar var="pgv_lang[include]"/> </PGVRInput>
+	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
+		<PGVRHeader>
+			<PGVRCell width="0" height="20" align="center" style="header"><PGVRvar var="pgv_lang[address_list]" /></PGVRCell>
+			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /></PGVRCell>
+			<PGVRTextBox width="60" height="12" border="1">
+				<PGVRText style="label"> </PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="180" height="12" border="1">
+				<PGVRText style="label"><PGVRvar var="pgv_lang[name]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="170" height="12" border="1">
+				<PGVRText style="label"><PGVRvar var="factarray[ADDR]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="0" height="12" border="1" newline="1">
+				<PGVRText style="label"><PGVRvar var="factarray[PHON]" /> / <PGVRvar var="factarray[_EMAIL]" /></PGVRText>
+			</PGVRTextBox>
+		</PGVRHeader>
+		<PGVRBody>
+			<PGVRSetVar name="email" value="" />
+			<PGVRif condition="$email_in=='noemail'">
+				<PGVRSetVar name="email" value="EMAIL EQUALS ''" />
+			</PGVRif>
+			<PGVRif condition="$email_in=='onlyemail'">
+				<PGVRSetVar name="email" value="EMAIL CONTAINS ." />
+			</PGVRif>
+			<PGVRList list="individual" filter1="ADDR CONTAINS ." filter2="ADDR SUBCONTAINS $address" filter3="$email" sortby="$sortby">
+				<PGVRTextBox width="60" height="52" border="1">
+					<PGVRText style="text"><PGVRGedcomValue tag="@id" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="180" height="52" border="1">
+					<PGVRText style="text"><PGVRGetPersonName id="" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="170" height="52" border="1">
+					<PGVRText style="text"><PGVRGedcomValue tag="ADDR" /></PGVRText>
+					<PGVRif condition="@ADDR:ADR1 != ''">
+						<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:ADR1" /></PGVRText>
+					</PGVRif>
+					<PGVRif condition="@ADDR:CITY != ''">
+						<PGVRif condition="$POSTAL_CODE==false">
+							<PGVRif condition="@ADDR:STAE != ''">
+								<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:POST" /> <PGVRGedcomValue tag="ADDR:CITY" />, <PGVRGedcomValue tag="ADDR:STAE" /> </PGVRText>
+							</PGVRif>
+							<PGVRif condition="@ADDR:STAE == ''">
+								<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:POST" /> <PGVRGedcomValue tag="ADDR:CITY" /></PGVRText>
+							</PGVRif>
+						</PGVRif>
+						<PGVRif condition="$POSTAL_CODE==true">
+							<PGVRif condition="@ADDR:STAE != ''">
+								<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:CITY" />, <PGVRGedcomValue tag="ADDR:STAE" /> <PGVRGedcomValue tag="ADDR:POST" /></PGVRText>
+					    	</PGVRif>
+							<PGVRif condition="@ADDR:STAE == ''">
+								<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:CITY" /> <PGVRGedcomValue tag="ADDR:POST" /></PGVRText>
+					    	</PGVRif>
+					    </PGVRif>
+
+					</PGVRif>
+					<PGVRif condition="@ADDR:CTRY != ''">
+						<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:CTRY" /></PGVRText>
+					</PGVRif>
+				</PGVRTextBox>
+				<PGVRTextBox width="0" height="52" border="1" newline="1">
+					<PGVRText style="text">
+						<PGVRvarLetter var="factarray[PHON]" />: <PGVRGedcomValue tag="PHON" /><br />
+						<PGVRvarLetter var="factarray[FAX]" />: <PGVRGedcomValue tag="FAX" /><br />
+						<PGVRvarLetter var="factarray[_EMAIL]" />: <PGVRGedcomValue tag="_EMAIL" /><PGVRGedcomValue tag="EMAIL" />
+					</PGVRText>
+				</PGVRTextBox>
+			</PGVRList>
+			<PGVRCell width="0" height="12" border="0" align="right" style="label">
+				<br /><PGVRvar var="pgv_lang[total_indis]" />: <PGVRListTotal />
+			</PGVRCell>
+		</PGVRBody>
+		<PGVRFooter>
+			<PGVRCell width="0" height="10"><PGVRNow /></PGVRCell>
+		</PGVRFooter>
+	</PGVRDoc>
+</PGVReport>

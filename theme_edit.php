@@ -21,14 +21,14 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: theme_edit.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: theme_edit.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 
 // -- include config file
 
 require("config.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require($factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 if (!isset($action)) $action="";
 if (!isset($choose_theme)) $choose_theme="";

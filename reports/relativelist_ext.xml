@@ -1,0 +1,155 @@
+<PGVReport access="PGV_PUBLIC" icon="cfamily">
+<!-- $Id$ -->
+	<PGVRTitle><PGVRvar var="pgv_lang[relatives_report_ext]" /></PGVRTitle>
+	<PGVRDescription>Prints a list of individuals related to a specific person</PGVRDescription>
+	<PGVRInput name="pid" lookup="INDI" type="text"><PGVRvar var="pgv_lang[enter_pid]" /></PGVRInput>
+	<PGVRInput name="relatives" type="select" options="child-family,spouse-family,direct-ancestors,ancestors,descendants,all"><PGVRvar var="pgv_lang[choose_relatives]" /></PGVRInput>
+	<PGVRInput name="sortby" type="select" options="none,BIRT,DEAT,NAME"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
+	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRStyle name="header" font="LucidaSansUnicode" size="14" style="b" />
+	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="text" font="LucidaSansUnicode" size="10" style="" />
+	<PGVRStyle name="bold" font="LucidaSansUnicode" size="10" style="b" />
+	<PGVRStyle name="mini" font="LucidaSansUnicode" size="8" style="" />
+	<PGVRStyle name="minibold" font="LucidaSansUnicode" size="8" style="b" />
+	<PGVRStyle name="label" font="LucidaSansUnicode" size="10" style="b" />
+	<PGVRDoc pageSize="$pageSize" orientation="L" margin="24">
+        <PGVRSetVar name="height1" value="10" />
+        <PGVRSetVar name="height2" value="10" />
+        <PGVRSetVar name="width1" value="40" />
+        <PGVRSetVar name="width2" value="150" />
+        <PGVRSetVar name="width3" value="120" />
+        <PGVRSetVar name="width4" value="120" />
+        <PGVRSetVar name="width5" value="150" />
+        <PGVRSetVar name="width6" value="150" />
+        <PGVRSetVar name="widthB2" value="280" />
+        <PGVRSetVar name="widthB3" value="40" />
+        <PGVRSetVar name="widthB4" value="375" />
+
+		<PGVRHeader>
+			<PGVRCell width="0" height="20" align="center" style="header"><PGVRvar var="pgv_lang[relatives_report_ext]" /></PGVRCell>
+			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /></PGVRCell>
+			<PGVRTextBox width="" height="3" border="0" newline="1"></PGVRTextBox>
+			<PGVRTextBox width="$width1" height="$height1" border="1">
+				<PGVRText style="label">ID</PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="$width2" height="$height1" border="1">
+				<PGVRText style="label"><PGVRvar var="pgv_lang[name]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="$width3" height="$height1" border="1">
+				<PGVRText style="label"><PGVRvar var="factarray[BIRT]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="$width4" height="$height1" border="1">
+				<PGVRText style="label"><PGVRvar var="factarray[DEAT]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="$width5" height="$height1" border="1">
+				<PGVRText style="label"><PGVRvar var="pgv_lang[father]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="$width6" height="$height1" border="1" newline="1">
+				<PGVRText style="label"><PGVRvar var="pgv_lang[mother]" /></PGVRText>
+			</PGVRTextBox>
+			<PGVRTextBox width="" height="3" border="0" newline="1"></PGVRTextBox>
+		</PGVRHeader>
+		<PGVRBody>
+			<PGVRRelatives id="$pid" group="$relatives" sortby="$sortby">
+				<PGVRSetVar name="sex" value="@SEX" />
+				<!-- 1. Block -->    
+				<PGVRTextBox width="$width1" height="$height1" border="0">
+					<PGVRText style="bold"><PGVRGedcomValue tag="@id" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="$width2" height="$height1" border="0">
+					<PGVRText style="bold"><PGVRGetPersonName id="" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="$width3" height="$height1" border="0">
+					<PGVRText style="text"><PGVRGedcomValue tag="BIRT:DATE" truncate="20" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="$width4" height="$height1" border="0">
+					<PGVRText style="text"><PGVRGedcomValue tag="DEAT:DATE" truncate="20" /></PGVRText>
+				</PGVRTextBox>
+
+				<PGVRGedcom id="@FAMC">
+					<PGVRTextBox width="$width5" height="$height1" border="0">
+						<PGVRGedcom id="@HUSB">
+						<PGVRText style="text"><PGVRGetPersonName id="" truncate="20" /></PGVRText>
+						<PGVRText style="mini"> (<PGVRGedcomValue tag="@id" />)</PGVRText>
+						</PGVRGedcom>
+					</PGVRTextBox>
+                	
+					<PGVRTextBox width="$width6" height="$height1" border="0">
+						<PGVRGedcom id="@WIFE">
+						<PGVRText style="text"><PGVRGetPersonName id="" truncate="20" /></PGVRText>
+						<PGVRText style="mini"> (<PGVRGedcomValue tag="@id" />)</PGVRText>
+						</PGVRGedcom>
+					</PGVRTextBox>
+				</PGVRGedcom>
+
+				<PGVRTextBox width="" height="$height1" border="0" newline="1"></PGVRTextBox>
+
+
+				<!-- 2. Block -->    
+				<PGVRTextBox width="$width1" height="$height2" border="0">
+				    <PGVRText style="mini"></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="$width2" height="$height2" border="0">
+				    <PGVRText style="mini"><PVRGedcomValue tag="@CHIL" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="$width3" height="$height2" border="0">
+				    <PGVRText style="mini"><PGVRGedcomValue tag="BIRT:PLAC" /></PGVRText>
+				</PGVRTextBox>
+				<PGVRTextBox width="$width4" height="$height2" border="0" newline="1">
+				    <PGVRText style="mini"><PGVRGedcomValue tag="DEAT:PLAC" /></PGVRText>
+				</PGVRTextBox>
+
+				<PGVRTextBox width="" height="3" border="0" newline="1"></PGVRTextBox>
+
+				<!-- 3. Block -->    
+				<PGVRRepeatTag tag="FAMS">
+					<PGVRTextBox width="" height="3" border="0" newline="1"></PGVRTextBox>
+
+                	<PGVRGedcom id="@FAMS">
+						<PGVRTextBox width="$width1" height="$height2" border="0">
+						</PGVRTextBox>
+
+	    				<PGVRTextBox width="$widthB2" height="$height2" border="0">
+							<PGVRif condition="$sex=='M'">
+								<PGVRText style="mini">
+									<PGVRvar var="pgv_lang[family]" /> (<PGVRGedcomValue tag="@id" />) <PGVRvar var="pgv_lang[with]" /> <PGVRGetPersonName id="@WIFE" /> (<PGVRGedcom id="@WIFE"><PGVRGedcomValue tag="@id" /></PGVRGedcom>) <PGVRGedcomValue tag="MARR:DATE" />
+								</PGVRText>
+							</PGVRif>
+							<PGVRif condition="$sex=='F'">
+								<PGVRText style="mini">
+									<PGVRvar var="pgv_lang[family]" /> (<PGVRGedcomValue tag="@id" />) <PGVRvar var="pgv_lang[with]" /> <PGVRGetPersonName id="@HUSB" /> (<PGVRGedcom id="@HUSB"><PGVRGedcomValue tag="@id" /></PGVRGedcom>) <PGVRGedcomValue tag="MARR:DATE" />
+								</PGVRText>
+                            </PGVRif>
+						</PGVRTextBox>
+
+	    				<PGVRTextBox width="$widthB3" height="$height2" border="0">
+							<PGVRText style="minibold"><PGVRvar var="pgv_lang[children]" />:</PGVRText>
+						</PGVRTextBox>
+	    				<PGVRTextBox width="$widthB4" height="$height2" border="0" newline="1">
+							<PGVRRepeatTag tag="CHIL">
+								<PGVRGedcom id="@CHIL">
+									<PGVRText style="mini">
+										<PGVRGetPersonName id="" truncate="20" /> (<PGVRGedcomValue tag="@id" />), 
+									</PGVRText>
+								</PGVRGedcom>
+							</PGVRRepeatTag>
+						</PGVRTextBox>
+
+				    </PGVRGedcom>
+				</PGVRRepeatTag>
+
+				<PGVRTextBox width="" height="3" border="0" newline="1"></PGVRTextBox>
+
+				<PGVRLine x1="25" x2="740" />
+				<PGVRTextBox width="" height="3" border="0" newline="1"></PGVRTextBox>
+			</PGVRRelatives>
+			<PGVRCell width="0" height="15" border="0" align="right" style="label">
+				<br /><PGVRvar var="pgv_lang[total_indis]" />: <PGVRListTotal />
+			</PGVRCell>
+		</PGVRBody>
+		<PGVRFooter>
+			<PGVRCell width="0" height="10"><PGVRNow /></PGVRCell>
+		</PGVRFooter>
+	</PGVRDoc>
+</PGVReport>

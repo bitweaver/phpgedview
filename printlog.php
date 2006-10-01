@@ -20,13 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: printlog.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: printlog.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
 
-require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+require  $confighelpfile["english"];
+if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
 print_simple_header("Print logfile");
 
@@ -65,16 +65,22 @@ if ($auth) {
 	print "<table class=\"facts_table ".$TEXT_DIRECTION."\">";
 	
 	if (($logtype == "syslog") || ($logtype == "gedlog")) {
-		print "<tr><td colspan=\"3\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [".$INDEX_DIRECTORY.$logfile."]</td></tr>";
-		print "<tr><td colspan=\"6\" class=\"topbottombar\">";
+		print "<tr><td colspan=\"3\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [&lrm;".$INDEX_DIRECTORY.$logfile."]</td></tr>";
+		print "<tr><td colspan=\"3\" class=\"topbottombar\">";
 		print"<input type=\"button\" value=\"".$pgv_lang["back"]."\" onclick='self.close()';/>&nbsp;<input type=\"button\" value=\"".$pgv_lang["refresh"]."\" onclick='window.location.reload()';/></td></tr>";
-		print "<tr><td class=\"list_label\">".$pgv_lang["date_time"]."</td><td class=\"list_label\">".$pgv_lang["ip_address"]."</td><td class=\"list_label\">".$pgv_lang["message"]."</td></tr>";
+		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width80\">".$pgv_lang["message"]."</td></tr>";
 		for ($i = 0; $i < $num ; $i++)	{
 			print "<tr>";
 			$result = preg_split("/ - /", $lines[$i], 3);
-			$result[2] = PrintReady($result[2]);
-			for ($j = 0; $j < 3; $j++) {
-				print "<td class=\"optionbox\">".$result[$j]."</td>";
+			//-- properly handle lines that may not have the correct format
+			if (count($result)<3) {
+				print "<td class=\"optionbox\" colspan=\"3\" dir=\"ltr\">".PrintReady($lines[$i])."</td>";
+			}
+			else {
+				$result[2] = PrintReady($result[2]);
+				for ($j = 0; $j < 3; $j++) {
+					print "<td class=\"optionbox\" dir=\"ltr\">".$result[$j]."</td>";
+				}
 			}
 			print "</tr>";
 		}
@@ -82,36 +88,36 @@ if ($auth) {
 	}
 
 	if ($logtype == "searchlog") {
-		print "<tr><td colspan=\"6\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [".$INDEX_DIRECTORY.$logfile."]</td></tr>";
+		print "<tr><td colspan=\"6\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [&lrm;".$INDEX_DIRECTORY.$logfile."]</td></tr>";
 		print "<tr><td colspan=\"6\" class=\"topbottombar\">";
 		print"<input type=\"button\" value=\"".$pgv_lang["back"]."\" onclick='self.close()';/>&nbsp;<input type=\"button\" value=\"".$pgv_lang["refresh"]."\" onclick='window.location.reload()';/></td></tr>";
-		print "<tr><td class=\"list_label\">".$pgv_lang["date_time"]."</td><td class=\"list_label\">".$pgv_lang["ip_address"]."</td><td class=\"list_label\">".$pgv_lang["user_name"]."</td><td class=\"list_label\">".$pgv_lang["searchtype"]."</td><td class=\"list_label\">".$pgv_lang["type"]."</td><td class=\"list_label\">".$pgv_lang["query"]."</td></tr>";
+		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width10\">".$pgv_lang["user_name"]."</td><td class=\"list_label width10\">".$pgv_lang["searchtype"]."</td><td class=\"list_label width10\">".$pgv_lang["type"]."</td><td class=\"list_label width50\">".$pgv_lang["query"]."</td></tr>";
 		for ($i = 0; $i < $num ; $i++)	{
 			print "<tr>";
 			$result1 = preg_split("/<br \/>/", $lines[$i], 4);
 			$result2 = preg_split("/ - /", $result1[0], 3);
-			print "<td class=\"optionbox\">".substr($result2[0],13)."</td>";
-			print "<td class=\"optionbox\">".substr($result2[1], 4)."</td>";
-			print "<td class=\"optionbox\">";
+			print "<td class=\"optionbox\" dir=\"ltr\">".substr($result2[0],13)."</td>";
+			print "<td class=\"optionbox\" dir=\"ltr\">".substr($result2[1], 4)."</td>";
+			print "<td class=\"optionbox\" dir=\"ltr\">";
 			$suser = substr($result2[2], 6);
 			if (empty($suser)) print "&nbsp;";
 			else print $suser;
 			print "</td>";
 			if (substr($result1[1], 0, 4) == "Type") {
-				print "<td class=\"optionbox\">&nbsp;</td>";
-				print "<td class=\"optionbox\">".substr($result1[1], 6)."</td>";
+				print "<td class=\"optionbox\" dir=\"ltr\">&nbsp;</td>";
+				print "<td class=\"optionbox\" dir=\"ltr\">".substr($result1[1], 6)."</td>";
 				$result1[2] = trim($result1[2]);
 				while (substr($result1[2],-6) == "<br />") $result1[2] = substr($result1[2],0,-6);
-				if (substr($result1[1], -7) == "General")print "<td class=\"optionbox\">".substr($result1[2], 7)."</td>";
+				if (substr($result1[1], -7) == "General")print "<td class=\"optionbox\" dir=\"ltr\">".substr($result1[2], 7)."</td>";
 				else print "<td class=\"optionbox\">".$result1[2]."</td>";
 			}
 			else {
-				print "<td class=\"optionbox\">".substr($result1[1], 12)."</td>";
-				print "<td class=\"optionbox\">".substr($result1[2], 6)."</td>";
+				print "<td class=\"optionbox\" dir=\"ltr\">".substr($result1[1], 12)."</td>";
+				print "<td class=\"optionbox\" dir=\"ltr\">".substr($result1[2], 6)."</td>";
 				$result1[3] = trim($result1[3]);
 				while (substr($result1[3],-6) == "<br />") $result1[3] = substr($result1[3],0,-6);
-				if (substr($result1[2], -7) == "General")print "<td class=\"optionbox\">".substr($result1[3], 7)."</td>";
-				else print "<td class=\"optionbox\">".$result1[3]."</td>";
+				if (substr($result1[2], -7) == "General")print "<td class=\"optionbox\" dir=\"ltr\">".substr($result1[3], 7)."</td>";
+				else print "<td class=\"optionbox\" dir=\"ltr\">".$result1[3]."</td>";
 			}
 			print "</tr>";
 		}

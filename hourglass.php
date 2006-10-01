@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: hourglass.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: hourglass.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 require_once("includes/controllers/hourglass_ctrl.php");
 
@@ -73,7 +73,7 @@ if ($view!="preview") {
 	</td>
 	<td class="optionbox">
 	<input type="checkbox" value="<?php 
-		if ($controller->show_full) print "1\" checked=\"checked\" onclick=\"document.people.show_full.value='0';\"";
+		if ($controller->show_full) print "1\" checked=\"checked\" onclick=\"document.people.show_full.value='0';";
 	else print "0\" onclick=\"document.people.show_full.value='1';";?>" />
 	</td>
 	

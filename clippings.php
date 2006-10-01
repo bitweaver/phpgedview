@@ -4,11 +4,11 @@
  *
  * Uses the $_SESSION["cart"] to store the ids of clippings to download
  * @TODO print a message if people are not included due to privacy
- * 
- * XHTML Validated 2 Nov 2005 
+ *
+ * XHTML Validated 12 Feb 2006
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2006  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,15 +26,14 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: clippings.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: clippings.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 // -- include config file
 require("config.php");
 
 if (!isset($ENABLE_CLIPPINGS_CART)) $ENABLE_CLIPPINGS_CART = $PRIV_HIDE;
 if ($ENABLE_CLIPPINGS_CART===true) $ENABLE_CLIPPING_CART=$PRIV_PUBLIC;
-if ($ENABLE_CLIPPINGS_CART<getUserAccessLevel())
-{
+if ($ENABLE_CLIPPINGS_CART<getUserAccessLevel()) {
   header("Location: index.php");
   exit;
 }
@@ -94,17 +93,28 @@ function add_clipping($clipping) {
 			if (displayDetailsById($clipping['id'], strtoupper($clipping['type']))) $cart[]=$clipping;
 			else return false;
 		}
-		//-- look in the gedcom record for any linked SOUR, NOTE, or OBJE and also add them to the 
+		//-- look in the gedcom record for any linked SOUR, NOTE, or OBJE and also add them to the
 		//- clippings cart
 		$gedrec = find_gedcom_record($clipping['id']);
 		if ($SHOW_SOURCES>=getUserAccessLevel(getUserName())) {
 			$st = preg_match_all("/\d SOUR @(.*)@/", $gedrec, $match, PREG_SET_ORDER);
 			for($i=0; $i<$st; $i++) {
+				// add SOUR
 				$clipping = array();
 				$clipping['type']="source";
 				$clipping['id']=$match[$i][1];
 				$clipping['gedcom'] = $GEDCOM;
 				add_clipping($clipping);
+				// add REPO
+				$sourec = find_gedcom_record($match[$i][1]);
+				$rt = preg_match_all("/\d REPO @(.*)@/", $sourec, $rmatch, PREG_SET_ORDER);
+				for($j=0; $j<$rt; $j++) {
+					$clipping = array();
+					$clipping['type']="repository";
+					$clipping['id']=$rmatch[$j][1];
+					$clipping['gedcom'] = $GEDCOM;
+					add_clipping($clipping);
+				}
 			}
 		}
 		$nt = preg_match_all("/\d NOTE @(.*)@/", $gedrec, $match, PREG_SET_ORDER);
@@ -281,9 +291,9 @@ if ($action=='add') {
 		print "\r\n\t<input type=\"hidden\" name=\"id\" value=\"$id\" />";
 		print "\r\n\t<input type=\"hidden\" name=\"type\" value=\"$type\" />";
 		print "\r\n\t<input type=\"hidden\" name=\"action\" value=\"add1\" />";
-		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"none\" />".$pgv_lang["just_family"]."<br />";
+		print "\r\n\t<input type=\"radio\" name=\"others\" checked value=\"none\" />".$pgv_lang["just_family"]."<br />";
 		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"parents\" />".$pgv_lang["parents_and_family"]."<br />";
-		print "\r\n\t<input type=\"radio\" name=\"others\" selected value=\"members\" />".$pgv_lang["parents_and_child"]."<br />";
+		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"members\" />".$pgv_lang["parents_and_child"]."<br />";
 		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"descendants\" />".$pgv_lang["parents_desc"]."<br />";
 		print "\r\n\t<input type=\"submit\" value=\"".$pgv_lang["continue"]."\" /><br />\r\n\t</form>";
 	}
@@ -292,11 +302,11 @@ if ($action=='add') {
 		print "\r\n\t<input type=\"hidden\" name=\"id\" value=\"$id\" />";
 		print "\r\n\t<input type=\"hidden\" name=\"type\" value=\"$type\" />";
 		print "\r\n\t<input type=\"hidden\" name=\"action\" value=\"add1\" />";
-		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"none\" />".$pgv_lang["just_person"]."<br />";
+		print "\r\n\t<input type=\"radio\" name=\"others\" checked value=\"none\" />".$pgv_lang["just_person"]."<br />";
 		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"parents\" />".$pgv_lang["person_parents_sibs"]."<br />";
 		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"ancestors\" />".$pgv_lang["person_ancestors"]."<br />";
 		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"ancestorsfamilies\" />".$pgv_lang["person_ancestor_fams"]."<br />";
-		print "\r\n\t<input type=\"radio\" name=\"others\" selected value=\"members\" />".$pgv_lang["person_spouse"]."<br />";
+		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"members\" />".$pgv_lang["person_spouse"]."<br />";
 		print "\r\n\t<input type=\"radio\" name=\"others\" value=\"descendants\" />".$pgv_lang["person_desc"]."<br />";
 		print "\r\n\t<input type=\"submit\" value=\"".$pgv_lang["continue"]."\" /><br />\r\n\t</form>";
 	}
@@ -454,7 +464,7 @@ else if($action=='download') {
 					   $record = preg_replace("/1 CHIL @".$match[$k][1]."@.*/", "", $record);
 					 }
 				}
-	
+
 				$ft = preg_match_all("/1 HUSB @(.*)@/", $record, $match, PREG_SET_ORDER);
 				for ($k=0; $k<$ft; $k++)
 				{
@@ -464,7 +474,7 @@ else if($action=='download') {
 					   $record = preg_replace("/1 HUSB @".$match[$k][1]."@.*/", "", $record);
 					 }
 				}
-	
+
 				$ft = preg_match_all("/1 WIFE @(.*)@/", $record, $match, PREG_SET_ORDER);
 				for ($k=0; $k<$ft; $k++)
 				{
@@ -474,7 +484,7 @@ else if($action=='download') {
 					   $record = preg_replace("/1 WIFE @".$match[$k][1]."@.*/", "", $record);
 					 }
 				}
-	
+
 				$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
 				for ($k=0; $k<$ft; $k++) {
 					$filename = extract_filename($match[$k][1]);
@@ -482,7 +492,7 @@ else if($action=='download') {
 					 		$mediacount++;
 				   	 	$record = preg_replace("@(\d FILE )".addslashes($match[$k][1])."@", "$1".$filename, $record);
 				}
-	
+
 				$filetext .= trim($record)."\r\n";
 				$filetext .= "1 SOUR @SPGV1@\r\n";
 				$filetext .= "2 PAGE ".$dSERVER_URL.$path."family.php?famid=".$clipping['id']."\r\n";
@@ -539,29 +549,42 @@ if($ct==0) {
 
 	// -- new lines, added by Jans, to display helptext when cart is empty
 	if ($action!='add') {
-		require $PGV_BASE_DIRECTORY.$helptextfile["english"];
-		if (file_exists($PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE];
+		require $helptextfile["english"];
+		if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
 		print_text("help_clippings.php");
 	}
 	// -- end new lines
 	print "\r\n\t\t<br /><br />".$pgv_lang["cart_is_empty"]."<br /><br />";
 }
 else {
-	print "\r\n\t<table class=\"list_table\">\r\n\t\t<tr>\r\n\t\t\t<td class=\"list_label\">".$pgv_lang["type"]."</td><td class=\"list_label\">".$pgv_lang["id"]."</td><td class=\"list_label\">".$pgv_lang["name_description"]."</td><td class=\"list_label\">".$pgv_lang["remove"]."</td>\r\n\t\t</tr>";
-	for($i=0; $i<$ct; $i++) {
+?>
+	<table class="list_table">
+		<tr>
+			<td class="list_label"><?php echo $pgv_lang["type"]?></td>
+			<td class="list_label"><?php echo $pgv_lang["id"]?></td>
+			<td class="list_label"><?php echo $pgv_lang["name_description"]?></td>
+			<td class="list_label"><?php echo $pgv_lang["remove"]?></td>
+		</tr>
+<?php
+	for ($i=0; $i<$ct; $i++) {
 		$clipping = $cart[$i];
+		$tag = strtoupper(substr($clipping['type'],0,4)); // source => SOUR
+		//print_r($clipping);
 		//-- don't show clippings from other gedcoms
 		if ($clipping['gedcom']==$GEDCOM) {
-			print "\r\n\t\t<tr>\r\n\t\t<td class=\"list_value\">";
-			if($clipping['type']=='indi') print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["indis"]["small"]."\" border=\"0\" alt=\"".$pgv_lang["individual"]."\" />";
-			else if($clipping['type']=='fam') print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["sfamily"]["small"]."\" border=\"0\" alt=\"".$pgv_lang["family"]."\" />";
-			else if($clipping['type']=='source') print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["source"]["small"]."\" border=\"0\" alt=\"".$pgv_lang["source"]."\" />";
-			else if($clipping['type']=='obje') print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["media"]["small"]."\" border=\"0\" alt=\"".$pgv_lang["media"]."\" />";
-			print "</td><td class=\"list_value\">".$clipping['id']."</td><td class=\"list_value\">";
-	
+			if ($tag=='INDI') $icon = "indis";
+			if ($tag=='FAM' ) $icon = "sfamily";
+			if ($tag=='SOUR') $icon = "source";
+			if ($tag=='REPO') $icon = "repository";
+			if ($tag=='NOTE') $icon = "note";
+			if ($tag=='OBJE') $icon = "media";
+			?>
+			<tr><td class="list_value"><img src="<?php echo $PGV_IMAGE_DIR."/".$PGV_IMAGES[$icon]["small"];?>" border="0" alt="<?php echo $tag;?>" title="<?php echo $tag;?>" /></td>
+			<td class="list_value"><?php echo $clipping['id']?></td>
+			<td class="list_value">
+			<?php
 			$id_ok = true;
-			if($clipping['type']=='indi')
-			{
+			if ($tag=='INDI') {
 			  $indirec = find_person_record($clipping['id']);
 			  if (displayDetails($indirec) or showLivingName($indirec))
 			  {
@@ -576,13 +599,9 @@ else {
 				$dName = check_NN($names);
 			  	print "<a href=\"individual.php?pid=".$clipping['id']."\">".PrintReady($dName)."</a>";
 			}
-			# else if($clipping['type']=='fam') print "<a href=\"family.php?famid=".$clipping['id']."\">".get_family_descriptor($clipping['id'])."</a>";
-			else
-			{
-			  if($clipping['type']=='fam')
-			  {
+			if ($tag=='FAM') {
 			    $famrec = find_family_record($clipping['id']);
-	
+
 			    $husb_ok = true;
 			    $ct01 = preg_match("/1 HUSB @(.*)@/", $famrec, $match);
 			    if ($ct01 > 0)
@@ -597,7 +616,7 @@ else {
 			      	$husb_ok = false;
 			      }
 			    }
-	
+
 			    $wife_ok = true;
 			    $ct02 = preg_match("/1 WIFE @(.*)@/", $famrec, $match);
 			    if ($ct02 > 0)
@@ -617,23 +636,21 @@ else {
 				$dName = check_NN($names);
 			    print "<a href=\"family.php?famid=".$clipping['id']."\">".PrintReady($dName)."</a>";
 			  }
-			  else
-			  {
-			    if($clipping['type']=='source')
-			    {
-			      print "<a href=\"source.php?sid=".$clipping['id']."\">".PrintReady(get_source_descriptor($clipping['id']))."</a>";
-			    }
+			if ($tag=='SOUR') print "<a href=\"source.php?sid=".$clipping['id']."\">".PrintReady(get_source_descriptor($clipping['id']))."</a>";
+			if ($tag=='REPO') print "<a href=\"repo.php?rid=".$clipping['id']."\">".PrintReady(get_repo_descriptor($clipping['id']))."</a>";
+			if ($tag=="OBJE") {
+			  	print PrintReady(get_media_descriptor($clipping['id']));
 			  }
-			  if ($clipping['type']=="obje") {
-			  	$objerec = find_media_record($clipping['id']);
-			  	print PrintReady($medialist[$clipping['id']]['title']);
-			  }
-			}
-			print "</td><td class=\"list_value\"><a href=\"clippings.php?action=remove&amp;item=$i\">".$pgv_lang["remove"]."</a></td>\r\n\t\t</tr>";
+			?>
+			</td>
+			<td class="list_value center vmiddle"><a href="clippings.php?action=remove&amp;item=<?php echo $i;?>"><img src="<?php echo $PGV_IMAGE_DIR."/".$PGV_IMAGES["remove"]["other"];?>" border="0" alt="<?php echo $pgv_lang["remove"]?>" title="<?php echo $pgv_lang["remove"];?>" /></a></td>
+		</tr>
+		<?php
 		}
 	}
-	print "\r\n\t</table>";
-	if ($action != 'download') {
+	?>
+	</table>
+	<?php	if ($action != 'download') {
 		print "<form method=\"post\" action=\"clippings.php\">\n<input type=\"hidden\" name=\"action\" value=\"download\" />\n";
 		?>
 		<table>

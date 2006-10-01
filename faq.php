@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: faq.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: faq.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
  
 // -- include config file
 require("config.php");
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 global $PGV_IMAGES, $faqs;
 
@@ -59,10 +59,10 @@ if ($action=="commit") {
 				}
 			}
 		}
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".$order."', b_config='".$DBCONN->escapeSimple(serialize($header))."' WHERE b_id='".$pidh."' and b_username='".$GEDCOM."' and b_location='header'";
+		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".$order."', b_config='".$DBCONN->escape(serialize($header))."' WHERE b_id='".$pidh."' and b_username='".$GEDCOM."' and b_location='header'";
 		$tempsql = dbquery($sql);
 		$res =& $tempsql;
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".$order."', b_config='".$DBCONN->escapeSimple(serialize($body))."' WHERE b_id='".$pidb."'  and b_username='".$GEDCOM."' and b_location='body'";
+		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".$order."', b_config='".$DBCONN->escape(serialize($body))."' WHERE b_id='".$pidb."'  and b_username='".$GEDCOM."' and b_location='body'";
 		$tempsql = dbquery($sql);
 		$res =& $tempsql;		
 		AddToChangeLog("FAQ item has been edited.<br />Header ID: ".$pidh.".<br />Body ID: ".$pidb, $GEDCOM);
@@ -90,10 +90,10 @@ if ($action=="commit") {
 			}
 		}
 		$newid = get_next_id("blocks", "b_id");
-		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, '".$GEDCOM."', 'header', '$order', 'faq', '".$DBCONN->escapeSimple(serialize($header))."')";
+		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, '".$GEDCOM."', 'header', '$order', 'faq', '".$DBCONN->escape(serialize($header))."')";
 		$tempsql = dbquery($sql);
 		$res =& $tempsql;
-		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES (".($newid+1).", '".$GEDCOM."', 'body', '".$order."', 'faq', '".$DBCONN->escapeSimple(serialize($body))."')";
+		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES (".($newid+1).", '".$GEDCOM."', 'body', '".$order."', 'faq', '".$DBCONN->escape(serialize($body))."')";
 		$tempsql = dbquery($sql);
 		$res =& $tempsql;
 		AddToChangeLog("FAQ item has been added.<br />Header ID: ".$newid.".<br />Body ID: ".($newid+1), $GEDCOM);

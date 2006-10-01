@@ -21,63 +21,64 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: medialist.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: medialist.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 require("config.php");
-global $MEDIA_EXTERNAL;
-//global $TEXT_DIRECTION;
+require_once 'includes/functions_print_facts.php';
 
-  //if ($TEXT_DIRECTION == "ltr")
-  //{print "<td class=\"facts_value\" style=\"text-align:left; \">";}
-  //else
-  //{print "<td class=\"facts_value\" style=\"text-align:right; \">";}
+global $MEDIA_EXTERNAL, $THUMBNAIL_WIDTH;
+global $GEDCOM, $GEDCOMS;
+global $currentPage, $lastPage;
 
-function mediasort($a, $b) {
-        return strnatcasecmp($a["TITL"], $b["TITL"]);
+$lrm = chr(0xE2).chr(0x80).chr(0x8E);
+$rlm = chr(0xE2).chr(0x80).chr(0x8F);
+
+if (!isset($level)) $level = 0;
+if (!isset($action)) $action = "";
+if (!isset($filter)) $filter = "";
+else {
+	$filter = stripslashes($filter);
+	$filter = str_replace(array($lrm, $rlm), "", $filter);
 }
-
-if (!isset($level)) $level=0;
-if (!isset($action)) $action="";
-if (!isset($filter)) $filter="";
-else $filter = stripslashes($filter);
-if (!isset($search)) $search="yes";
-if (!isset($medialist) && !isset($_SESSION["medialist"])) $medialist = array();
+if (!isset($search)) $search = "yes";
+if (!isset($folder)) $folder = "ALL";
+if (!isset($_SESSION["medialist"])) $search = "yes";
 print_header($pgv_lang["multi_title"]);
 print "\n\t<div class=\"center\"><h2>".$pgv_lang["multi_title"]."</h2></div>\n\t";
+
+$isEditUser = userCanEdit(getUserName());		//-- Determines whether to show file names
 
 //-- automatically generate an image
 if (userIsAdmin(getUserName()) && $action=="generate" && !empty($file) && !empty($thumb)) {
 	generate_thumbnail($file, $thumb);
 }
 if ($search == "yes") {
-	// -- array of names
-	$foundlist = array();
-
 	$medialist = array();
-	get_medialist();
-	
-	//-- sort the media by title
-	usort($medialist, "mediasort");
+	if ($folder=="ALL") get_medialist(false, "", true);
+	else get_medialist(true, $folder, true);
 
 	//-- remove all private media objects
-	$newmedialist = array();
-	foreach($medialist as $indexval => $media) {
-	        print " ";
-	        $disp = true;
-	        $links = $media["LINKS"];
-		if (count($links) != 0) {
-	        foreach($links as $id=>$type) {
-	        	$disp = $disp && displayDetailsByID($id, $type);
-	        }
-	        if ($disp) $newmedialist[] = $media;
-	    }
-	    else $newmedialist[] = $media;
+	foreach($medialist as $key => $media) {
+	    print " ";
+
+	    // Display when user has Edit rights or when object belongs to current GEDCOM
+	    $disp = $isEditUser || $media["GEDFILE"]==$GEDCOMS[$GEDCOM]["id"];
+	    // Display when Media objects aren't restricted by global privacy
+	    $disp &= displayDetailsById($media["XREF"], "OBJE");
+	    // Display when this Media object isn't restricted
+	    $disp &= !FactViewRestricted($media["XREF"], $media["GEDCOM"]);
+		if ($disp) {
+		    $links = $media["LINKS"];
+		    //-- make sure that only media with links are shown
+			if (count($links) != 0) {
+		        foreach($links as $id=>$type) {
+		        	$disp &= displayDetailsByID($id, $type);
+		        }
+		    }
+		}
+		if (!$disp) unset($medialist[$key]);
 	}
-	$medialist = $newmedialist;
-	$_SESSION["medialist"] = $medialist;
-}
-else {
-	$medialist = $_SESSION["medialist"];
+	usort($medialist, "mediasort"); // Reset numbering of medialist array
 }
 
 // A form for filtering the media items
@@ -85,55 +86,71 @@ else {
 <form action="medialist.php" method="get">
 	<input type="hidden" name="action" value="filter" />
 	<input type="hidden" name="search" value="yes" />
-	<table class="list-table center">
+	<table class="list-table center width50 <?php print $TEXT_DIRECTION; ?>">
 		<tr>
-		<td class="list-label <?php print $TEXT_DIRECTION; ?>"><?php print_help_link("simple_filter_help","qm"); print $pgv_lang["filter"]; ?></td>
-		<td class="list-label <?php print $TEXT_DIRECTION; ?>">&nbsp;<input id="filter" name="filter" value="<?php print $filter; ?>"/></td>
-		<td class="list-label <?php print $TEXT_DIRECTION; ?>"><input type="submit" value=" &gt; "/></td>
+			<td class="list_label" colspan="2">
+				<?php print_help_link("simple_filter_help","qm"); print $pgv_lang["filter"]; ?>
+				&nbsp;<input id="filter" name="filter" value="<?php print PrintReady($filter); ?>"/>
+			</td>
+		</tr>
+		<?php
+			// Box for user to choose the folder
+			if ($MEDIA_DIRECTORY_LEVELS > 0) {
+				print "<tr><td class=\"list_label width25\">";
+				print_help_link("upload_server_folder_help", "qm");
+				if (empty($folder)) {
+					if (!empty($_SESSION['upload_folder'])) $folder = $_SESSION['upload_folder'];
+					else $folder = "ALL";
+				}
+				print $pgv_lang["server_folder"]."</td><td class=\"list_label wrap\">";
+				$folders = array_merge(array("ALL"), get_media_folders());
+				print "<span dir=\"ltr\"><select name=\"folder\">\n";
+				foreach($folders as $f) {
+					print "<option value=\"".$f."\"";
+					if ($folder==$f) print " selected=\"selected\"";
+					print ">";
+					if ($f=="ALL") print $pgv_lang["all"];
+					else print $f;
+					print "</option>\n";
+				}
+				print "</select></td></tr>";
+			} else print "<input name=\"folder\" type=\"hidden\" value=\"ALL\" />";
+		?>
+		<tr>
+			<td class="list_label" colspan="2">
+				<select name="max">
+				<?php
+					if (empty($max)) $max=20;
+					foreach (array("10", "20", "30", "40", "50", "75", "100", "125", "150", "200") as $selectEntry) {
+						print "<option value=\"$selectEntry\"";
+						if ($selectEntry==$max) print " selected=\"selected\"";
+						print ">".$selectEntry."</option>";
+					}
+					print "</select> ".$pgv_lang["per_page"];
+				?>
+			</td>
+		</tr>
+		<tr>
+			<td class="list_label" colspan="2">
+				<input type="submit" value=" &gt; "/>
+			</td>
 		</tr>
 	</table>
 </form>
 <?php
+
 if ($action=="filter") {
-	if (strlen($filter) >= 1) {
-		foreach($medialist as $key => $value) {
-			if (stristr($value["TITL"], $filter) === false) {
-				$links = $value["LINKS"];
-				$person = false;
-				$family = false;
-				$source = false;
-				if (count($links) != 0){
-					foreach($links as $id=>$type) {
-						if ($type == "INDI") {
-							if (!stristr(get_person_name($id), $filter)) $person = false;
-							else {
-								$person = true;
-								break;
-							}
-						}
-						if ($type=="FAM") {
-							if (!stristr(get_family_descriptor($id), $filter)) $family = false;
-							else {
-								$family = true;
-								break;
-							}
-						}
-						if ($type=="SOUR") {
-							if (!stristr(get_source_descriptor($id), $filter)) $source = false;
-							else {
-								$source = true;
-								break;
-							}
-						}
-						if ($person == false && $family == false && $source == false) unset($medialist[$key]);
-					}
-				}
-				if ($person == false && $family == false && $source == false) unset($medialist[$key]);
-			}
+	if (strlen($filter) > 1) {
+		foreach($medialist as $key => $media) {
+			if (!filterMedia($media, $filter, "http")) unset($medialist[$key]);
 		}
-		usort($medialist, "mediasort"); // Reset numbering of medialist array
-		$_SESSION["medialist"] = $medialist;
 	}
+	usort($medialist, "mediasort"); // Reset numbering of medialist array
+}
+if ($search=="yes") {
+	$_SESSION["medialist"] = $medialist;
+} else {
+	$medialist = $_SESSION["medialist"];
 }
 // Count the number of items in the medialist
 $ct=count($medialist);
@@ -142,175 +159,232 @@ if (!isset($max)) $max = 20;
 $count = $max;
 if ($start+$count > $ct) $count = $ct-$start;
 
-print "\n\t<div align=\"center\">$ct ".$pgv_lang["media_found"]." <br />";
+print "\n\t<div align=\"center\">".$ct." ".$pgv_lang["media_found"]." <br /><br />";
 if ($ct>0){
-	print "<form action=\"$SCRIPT_NAME\" method=\"get\" > ".$pgv_lang["medialist_show"]." <select name=\"max\" onchange=\"javascript:submit();\">";
-	for ($i=1;($i<=20&&$i-1<ceil($ct/10));$i++) {
-	        print "<option value=\"".($i*10)."\" ";
-	        if ($i*10==$max) print "selected=\"selected\" ";
-	        print " >".($i*10)."</option>";
-	}
-	print "</select> ".$pgv_lang["per_page"];
-	print "</form>";
-}
-
-print"\n\t<table class=\"list_table\">\n";
-if ($ct>$max) {
-        print "\n<tr>\n";
-        print "<td align=\"" . ($TEXT_DIRECTION == "ltr"?"left":"right") . "\">";
-        if ($start>0) {
-                $newstart = $start-$max;
-                if ($start<0) $start = 0;
-                print "<a href=\"medialist.php?filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$pgv_lang["prev"]."</a>\n";
-        }
-        print "</td><td align=\"" . ($TEXT_DIRECTION == "ltr"?"right":"left") . "\">";
-        if ($start+$max < $ct) {
-                $newstart = $start+$count;
-                if ($start<0) $start = 0;
-                print "<a href=\"medialist.php?filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$pgv_lang["next"]."</a>\n";
-        }
-        print "</td></tr>\n";
-}
-print"\t\t<tr>\n\t\t";
-// -- print the array
-
-for($i=0; $i<$count; $i++) {
-    $value = $medialist[$start+$i];
-	if ($MEDIA_EXTERNAL && (strstr($value["FILE"], "://")||stristr($value["FILE"], "mailto:"))){
-		$image_type = array("bmp", "gif", "jpeg", "jpg", "pcx", "png", "tiff");
-		$path_end=substr($value["FILE"], strlen($value["FILE"])-5);
-		$type=strtolower(substr($path_end, strpos($path_end, ".")+1));
-		if (in_array($type, $image_type)){
-		   $imgwidth = 400;
-		   $imgheight = 500;
-		} else {
-		   $imgwidth = 800;
-		   $imgheight = 400;
+	if (false) {
+		print "<form action=\"$SCRIPT_NAME\" method=\"get\" > ".$pgv_lang["medialist_show"];
+		print "<input type=\"hidden\" name=\"action\" value=\"filter\" />";
+		print "<input type=\"hidden\" name=\"search\" value=\"yes\" />";
+		print "<input type=\"hidden\" name=\"filter\" value=".$filter." />";
+		print "<select name=\"max\" onchange=\"javascript:submit();\">";
+		for ($i=1;($i<=20&&$i-1<ceil($ct/10));$i++) {
+		        print "<option value=\"".($i*10)."\" ";
+		        if ($i*10==$max) print "selected=\"selected\" ";
+		        print " >".($i*10)."</option>";
 		}
-    }
-	else if (file_exists(filename_decode($value["FILE"]))) {
-		$imgsize = getimagesize(filename_decode($value["FILE"]));
-	    $imgwidth = $imgsize[0]+50;
-	    $imgheight = $imgsize[1]+50;
+		print "</select> ".$pgv_lang["per_page"];
+		print "</form>";
 	}
-	else {
-		$imgwidth=300;
-		$imgheight=200;
-	}
-    print "\n\t\t\t<td class=\"list_value_wrap\" width=\"50%\">";
-    print "<table class=\"$TEXT_DIRECTION\">\n\t<tr>\n\t\t<td valign=\"top\" style=\"white-space: normal;\">";
 
-   	if (stristr($value["FILE"], "mailto:")){
-		if ($MEDIA_EXTERNAL) print "<a href=\"".$value["FILE"]."\">";
-	}
-    else print "<a href=\"#\" onclick=\"return openImage('".urlencode($value["FILE"])."',$imgwidth, $imgheight);\">";
-    if (file_exists(filename_decode($value["THUMB"])) || strstr($value["THUMB"], "://")) {
-	    print "<img src=\"".$value["THUMB"]."\" border=\"0\" align=\"left\" class=\"thumbnail\" alt=\"\" />";
-	    $nothumb = false;
-    }
-	else {
-		print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["media"]["large"]."\" border=\"0\" align=\"left\" class=\"thumbnail\" alt=\"\" />";
-		$nothumb = true;
-	}
-	if (!($MEDIA_EXTERNAL) && stristr($value["FILE"], "mailto:"));
-	else print "</a>";
-	print "</td>\n\t\t<td class=\"list_value_wrap\" style=\"border: none;\" width=\"100%\">";
-	/*
-	if (userIsAdmin(getUserName()) && $nothumb && function_exists("imagecreatefromjpeg")
-		&& function_exists("imagejpeg") && $AUTO_GENERATE_THUMBS) {
-		if ((!strstr($value["file"], "mailto:"))&&(file_exists(filename_decode($value["file"]))||(strstr($value["file"], "://")))) {
-			$ct = preg_match("/\.([^\.]+)$/", $value["file"], $match);
-			if ($ct>0) {
-				$ext = strtolower(trim($match[1]));
-				if ($ext=="jpg" || $ext=="jpeg") print "<a href=\"medialist.php?action=generate&amp;max=$max&amp;start=$start&amp;file=".urlencode($value["file"])."&amp;thumb=".urlencode($value["thumb"])."\">".$pgv_lang["generate_thumbnail"]."JPG</a><br />";
-				if ($ext=="gif" && function_exists("imagecreatefromgif") && function_exists("imagegif")) print "<a href=\"medialist.php?action=generate&amp;max=$max&amp;start=$start&amp;file=".urlencode($value["file"])."&amp;thumb=".urlencode($value["thumb"])."\">".$pgv_lang["generate_thumbnail"]."GIF</a><br />";
-				if ($ext=="png" && function_exists("imagecreatefrompng") && function_exists("imagepng")) print "<a href=\"medialist.php?action=generate&amp;max=$max&amp;start=$start&amp;file=".urlencode($value["file"])."&amp;thumb=".urlencode($value["thumb"])."\">".$pgv_lang["generate_thumbnail"]."PNG</a><br />";
+	$currentPage = ((int) ($start / $max)) + 1;
+	$lastPage = (int) (($ct + $max - 1) / $max);
+	$IconRarrow = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" width=\"20\" height=\"20\" alt=\"\" />";
+	$IconLarrow = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["larrow"]["other"]."\" width=\"20\" height=\"20\" alt=\"\" />";
+	$IconRDarrow = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rdarrow"]["other"]."\" width=\"20\" height=\"20\" alt=\"\" />";
+	$IconLDarrow = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["ldarrow"]["other"]."\" width=\"20\" height=\"20\" alt=\"\" />";
+
+	print"\n\t<table class=\"list_table\">\n";
+
+	// print page back, page number, page forward controls
+	print "\n<tr><td colspan=\"2\">\n";
+	print"\n\t<table class=\"list_table width100\">\n";
+	print "\n<tr>\n";
+	print "<td class=\"width30\" align=\"" . ($TEXT_DIRECTION == "ltr"?"left":"right") . "\">";
+	if ($TEXT_DIRECTION=="ltr") {
+		if ($ct>$max) {
+			if ($currentPage > 1) {
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=0&amp;max=$max\">".$IconLDarrow."</a>\n";
+			}
+			if ($start>0) {
+				$newstart = $start-$max;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconLarrow."</a>\n";
+			}
+		}
+	} else {
+		if ($ct>$max) {
+			if ($currentPage < $lastPage) {
+				$lastStart = ((int) ($ct / $max)) * $max;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$lastStart&amp;max=$max\">".$IconRDarrow."</a>\n";
+			}
+			if ($start+$max < $ct) {
+				$newstart = $start+$count;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconRarrow."</a>\n";
 			}
 		}
 	}
-	*/
-   	if (stristr($value["FILE"], "mailto:")){
-		if ($MEDIA_EXTERNAL) print "<a href=\"".$value["FILE"]."\">";
+	print "</td>";
+	print "<td align=\"center\">".print_text("page_x_of_y", 0, 1)."</td>";
+	print "<td class=\"width30\" align=\"" . ($TEXT_DIRECTION == "ltr"?"right":"left") . "\">";
+	if ($TEXT_DIRECTION=="ltr") {
+		if ($ct>$max) {
+			if ($start+$max < $ct) {
+				$newstart = $start+$count;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconRarrow."</a>\n";
+			}
+			if ($currentPage < $lastPage) {
+				$lastStart = ((int) ($ct / $max)) * $max;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$lastStart&amp;max=$max\">".$IconRDarrow."</a>\n";
+			}
+		}
+	} else {
+		if ($ct>$max) {
+			if ($start>0) {
+				$newstart = $start-$max;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconLarrow."</a>\n";
+			}
+			if ($currentPage > 1) {
+				$lastStart = ((int) ($ct / $max)) * $max;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=0&amp;max=$max\">".$IconLDarrow."</a>\n";
+			}
+		}
 	}
-    else print "<a href=\"#\" onclick=\"return openImage('".urlencode($value["FILE"])."',$imgwidth, $imgheight);\">";
-    if ($value["TITL"]==$value["FILE"]) print "<b>&lrm;".$value["TITL"]."</b>";
-	else if (trim($value["TITL"]) != "") print "<b>".PrintReady($value["TITL"])."</b>";
-	else print "<b>".PrintReady($value["FILE"])."</b>";
-	if (!($MEDIA_EXTERNAL) && stristr($value["FILE"], "mailto:"));
-	else print "</a>";
+	print "</td>";
+	print "</tr>\n</table></td></tr>";
 
-    $links = $value["LINKS"];
-    if (count($links) != 0){
-		$indiexists = 0;
-		$famexists = 0;
-		foreach($links as $id=>$type) {
-			if (($type=="INDI")&&(displayDetailsByID($id))) {
-				print " <br /><a href=\"individual.php?pid=".$id."\"> ".$pgv_lang["view_person"]." - ".PrintReady(get_person_name($id))."</a>";
-				$indiexists = 1;
-			}
-			if ($type=="FAM") {
-				if ($indiexists && !$famexists) print "<br />";
-				$famexists = 1;
-           		print "<br /> <a href=\"family.php?famid=".$id."\"> ".$pgv_lang["view_family"]." - ".PrintReady(get_family_descriptor($id))."</a>";
-			}
-			if ($type=="SOUR") {
-				if ($indiexists || $famexists) {
-					print "<br />";
-					$indiexists = 0;
-					$famexists = 0;
-				}
-				print "<br /> <a href=\"source.php?sid=".$id."\"> ".$pgv_lang["view_source"]." - ".PrintReady(get_source_descriptor($id))."</a>";
-   			}
-        }
-    }
-    $value["FILE"] = filename_decode($value["FILE"]);
-    if ((!strstr($value["FILE"], "://"))&&(!strstr($value["FILE"], "mailto:"))&&(!file_exists($value["FILE"]))) {
-	    print "<br /><span class=\"error\">".$pgv_lang["file_not_found"]." ".$value["FILE"]."</span>";
-    }
-    print "<br /><br /><div class=\"indent\" style=\"white-space: normal; width: 95%;\">";
-    print_fact_notes($value["GEDCOM"], $value["LEVEL"]+1);
+	// -- print the array
+	print "\n<tr>\n";
 
-    print "</div>";
-    if (file_exists($value["FILE"])){
-		$imageTypes = array("","GIF", "JPG", "PNG", "SWF", "PSD", "BMP", "TIFF", "TIFF", "JPC", "JP2", "JPX", "JB2", "SWC", "IFF", "WBMP", "XBM");
-		if(!empty($imgsize[2])){
-	    	print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["media_format"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imageTypes[$imgsize[2]] . "</span>";
-		} else if(empty($imgsize[2])){
-		    $path_end=substr($value["FILE"], strlen($value["FILE"])-5);
-		    $imageType = strtoupper(substr($path_end, strpos($path_end, ".")+1));
-	    	print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["media_format"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imageType . "</span>";
+	for($i=0; $i<$count; $i++) {
+	    $media = $medialist[$start+$i];
+
+	    $isExternal = strstr($media["FILE"], "://");
+
+		$imgsize = findImageSize($media["FILE"]);
+	    $imgwidth = $imgsize[0]+40;
+	    $imgheight = $imgsize[1]+150;
+
+	    $name = trim($media["TITL"]);
+		$showFile = $isEditUser;
+		if ($name=="") {
+			$showFile = false;
+			if ($isExternal) $name = "URL";
+			else $name = $media["FILE"];
+	    }
+
+	    print "\n\t\t\t<td class=\"list_value_wrap\" width=\"50%\">";
+	    print "<table class=\"$TEXT_DIRECTION\">\n\t<tr>\n\t\t<td valign=\"top\" style=\"white-space: normal;\">";
+
+	    print "<a href=\"#\" onclick=\"return openImage('".rawurlencode($media["FILE"])."',$imgwidth, $imgheight);\">";
+		print "<img src=\"".thumbnail_file($media["FILE"])."\" align=\"left\" class=\"thumbnail\" border=\"none\"";
+		if ($isExternal) print " width=\"".$THUMBNAIL_WIDTH."\"";
+		print " alt=\"" . PrintReady($name) . "\" title=\"" . PrintReady($name) . "\" /></a>";
+		print "</td>\n\t\t<td class=\"list_value_wrap\" style=\"border: none;\" width=\"100%\">";
+	    print "<a href=\"#\" onclick=\"return openImage('".rawurlencode($media["FILE"])."',$imgwidth, $imgheight);\">";
+
+	    if (begRTLText($name) && $TEXT_DIRECTION=="ltr") {
+			print "(".$media["XREF"].")&nbsp;&nbsp;&nbsp;";
+			print "<b>".PrintReady($name)."</b>";
+	    } else {
+			print "<b>".PrintReady($name)."</b>&nbsp;&nbsp;&nbsp;";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			print "(".$media["XREF"].")";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+		}
+		if ($showFile) {
+			if ($isExternal) print "<br /><sub>URL</sub>";
+			else print "<br /><sub><span dir=\"ltr\">".PrintReady($media["FILE"])."</span></sub>";
+		}
+		print "</a><br />";
+
+		PrintMediaLinks($media["LINKS"], "small");
+
+	    if (!$isExternal && !file_exists(filename_decode($media["FILE"]))) {
+		    print "<br /><span class=\"error\">".$pgv_lang["file_not_found"]." <span dir=\"ltr\">".PrintReady($media["FILE"])."</span></span>";
+	    }
+	    print "<br /><div class=\"indent\" style=\"white-space: normal; width: 95%;\">";
+	    print_fact_notes($media["GEDCOM"], $media["LEVEL"]+1);
+
+	    print "</div>";
+	    if (!$isExternal && file_exists(filename_decode($media["FILE"]))){
+			$imageTypes = array("","GIF", "JPG", "PNG", "SWF", "PSD", "BMP", "TIFF", "TIFF", "JPC", "JP2", "JPX", "JB2", "SWC", "IFF", "WBMP", "XBM");
+			if(!empty($imgsize[2])){
+		    	print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["media_format"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imageTypes[$imgsize[2]] . "</span>";
+			} else if(empty($imgsize[2])){
+			    $path_end=substr($media["FILE"], strlen($media["FILE"])-5);
+			    $imageType = strtoupper(substr($path_end, strpos($path_end, ".")+1));
+		    	print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["media_format"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imageType . "</span>";
+			}
+
+			$fileSize = filesize(filename_decode($media["FILE"]));
+			$sizeString = getfilesize($fileSize);
+			print "&nbsp;&nbsp;&nbsp;<span class=\"field\" style=\"direction: ltr;\">" . $sizeString . "</span>";
 		}
 
-		if(!empty($imgsize[0]) && !empty($imgsize[0])){
-	    	print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["image_size"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imgsize[0] . ($TEXT_DIRECTION =="rtl"?" &rlm;x&rlm; " : " x ") . $imgsize[1] . "</span>";
-		}
+			if(!empty($imgsize[0]) && !empty($imgsize[1])){
+		    	print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["image_size"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imgsize[0] . ($TEXT_DIRECTION =="rtl"?" &rlm;x&rlm; " : " x ") . $imgsize[1] . "</span>";
+			}
 
-		$fileSize = filesize($value["FILE"]);
-		$sizeString = getfilesize($fileSize);
-		print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["media_file_size"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $sizeString . "</span>";
+	    print "</td></tr></table>\n";
+	    print "</td>";
+	    if ($i%2 == 1 && $i < ($count-1)) print "\n\t\t</tr>\n\t\t<tr>";
 	}
-    print "</td></tr></table>\n";
-    print "</td>";
-    if ($i%2 == 1 && $i < ($count-1)) print "\n\t\t</tr>\n\t\t<tr>";
+	print "\n\t\t</tr>";
+
+	// print page back, page number, page forward controls
+	print "\n<tr><td colspan=\"2\">\n";
+	print"\n\t<table class=\"list_table width100\">\n";
+	print "\n<tr>\n";
+	print "<td class=\"width30\" align=\"" . ($TEXT_DIRECTION == "ltr"?"left":"right") . "\">";
+	if ($TEXT_DIRECTION=="ltr") {
+		if ($ct>$max) {
+			if ($currentPage > 1) {
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=0&amp;max=$max\">".$IconLDarrow."</a>\n";
+			}
+			if ($start>0) {
+				$newstart = $start-$max;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconLarrow."</a>\n";
+			}
+		}
+	} else {
+		if ($ct>$max) {
+			if ($currentPage < $lastPage) {
+				$lastStart = ((int) ($ct / $max)) * $max;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$lastStart&amp;max=$max\">".$IconRDarrow."</a>\n";
+			}
+			if ($start+$max < $ct) {
+				$newstart = $start+$count;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconRarrow."</a>\n";
+			}
+		}
+	}
+	print "</td>";
+	print "<td align=\"center\">".print_text("page_x_of_y", 0, 1)."</td>";
+	print "<td class=\"width30\" align=\"" . ($TEXT_DIRECTION == "ltr"?"right":"left") . "\">";
+	if ($TEXT_DIRECTION=="ltr") {
+		if ($ct>$max) {
+			if ($start+$max < $ct) {
+				$newstart = $start+$count;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconRarrow."</a>\n";
+			}
+			if ($currentPage < $lastPage) {
+				$lastStart = ((int) ($ct / $max)) * $max;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$lastStart&amp;max=$max\">".$IconRDarrow."</a>\n";
+			}
+		}
+	} else {
+		if ($ct>$max) {
+			if ($start>0) {
+				$newstart = $start-$max;
+				if ($start<0) $start = 0;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$IconLarrow."</a>\n";
+			}
+			if ($currentPage > 1) {
+				$lastStart = ((int) ($ct / $max)) * $max;
+				print "<a href=\"medialist.php?folder=$folder&amp;filter=$filter&amp;search=no&amp;start=0&amp;max=$max\">".$IconLDarrow."</a>\n";
+			}
+		}
+	}
+	print "</td>";
+	print "</tr>\n</table></td></tr>";
+	print "</table><br />";
 }
-print "\n\t\t</tr>";
-if ($ct>$max) {
-        print "\n<tr>\n";
-        print "<td align=\"" . ($TEXT_DIRECTION == "ltr"?"left":"right") . "\">";
-        if ($start>0) {
-                $newstart = $start-$max;
-                if ($start<0) $start = 0;
-                print "<a href=\"medialist.php?filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$pgv_lang["prev"]."</a>\n";
-        }
-        print "</td><td align=\"" . ($TEXT_DIRECTION == "ltr"?"right":"left") . "\">";
-        if ($start+$max < $ct) {
-                $newstart = $start+$count;
-                if ($start<0) $start = 0;
-                print "<a href=\"medialist.php?filter=$filter&amp;search=no&amp;start=$newstart&amp;max=$max\">".$pgv_lang["next"]."</a>\n";
-        }
-        print "</td></tr>\n";
-}
-print "</table><br />";
 print "\n</div>\n";
 print_footer();
 

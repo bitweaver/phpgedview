@@ -21,11 +21,11 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: placelist.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: placelist.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
-
+require_once("includes/functions_print_lists.php");
 function case_in_array($value, $array) {
 	foreach($array as $key=>$val) {
 		if (strcasecmp($value, $val)==0) return true;
@@ -49,8 +49,11 @@ else {
 	else $parent = array_values($parent);
 }
 // Remove slashes
+$lrm = chr(0xE2).chr(0x80).chr(0x8E);
+$rlm = chr(0xE2).chr(0x80).chr(0x8F);
 foreach ($parent as $p => $child){
-	$parent[$p] = stripslashes($child);
+	$child = stripslashes($child);
+	$parent[$p] = str_replace(array($lrm, $rlm), "", $child);
 }
 
 if (!isset($level)) {
@@ -137,9 +140,9 @@ if ($display=="hierarchy") {
 		$country = strtoupper($country);
 		if (strlen($country)!=3) {
 			// search country code using current language countries table
-			require($PGV_BASE_DIRECTORY."languages/countries.en.php");
+			require("languages/countries.en.php");
 			// changed $LANGUAGE to $deflang (the language set for the current gedcom)	// eikland
-			if (file_exists($PGV_BASE_DIRECTORY."languages/countries.".$lang_short_cut[$deflang].".php")) require($PGV_BASE_DIRECTORY."languages/countries.".$lang_short_cut[$deflang].".php");
+			if (file_exists("languages/countries.".$lang_short_cut[$deflang].".php")) require("languages/countries.".$lang_short_cut[$deflang].".php");
 			foreach ($countries as $countrycode => $countryname) {
 				if (strtoupper($countryname) == $country) {
 					$country = $countrycode;
@@ -165,7 +168,7 @@ if ($display=="hierarchy") {
 			else {
 				$areaname = str_replace("'","\'",$parent[1]);
 			}
-			$mapname = strtr($mapname,"ŠŒšœŸ¥µÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖØÙÚÛÜİßàáâãäåæçèéêëìíîïğñòóôõöøùúûüıÿ' ","SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyy--");
+			$mapname = strtr($mapname,"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½' ","SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyy--");
 			$imgfile = "places/".$country."/".$mapname.".gif";
 		}
 		if (file_exists($imgfile) and file_exists($mapfile)) {
@@ -173,7 +176,7 @@ if ($display=="hierarchy") {
 //			changed $mapname to $areaname for alt and title to show the area full name and not just area code	// eikland
 			print "<img src='".$imgfile."' usemap='#".$mapname."' border='0' alt='".$areaname."' title='".$areaname."' />";
 			?>
-			<script type="text/javascript" src="strings.js"></script>
+			<script type="text/javascript" src="./js/strings.js"></script>
 			<script type="text/javascript">
 			<!--
 			//	copy php array into js array
@@ -329,7 +332,7 @@ if ($level > 0) {
 					$myindilist["$gid"] = get_sortable_name($gid);
 				}
 				else if ($type == "FAM") {
-					$myfamlist["$gid"] = get_family_descriptor($gid);
+					$myfamlist["$gid"] = get_sortable_family_descriptor($gid);
 				}
 				else if ($type == "SOUR") {
 					$mysourcelist["$gid"] = get_source_descriptor($gid);

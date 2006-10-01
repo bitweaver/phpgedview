@@ -21,16 +21,16 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_interface.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: edit_interface.php,v 1.2 2006/10/01 22:44:00 lsces Exp $
  */
 
 require("config.php");
 require("includes/functions_edit.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require($factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
-require($PGV_BASE_DIRECTORY."languages/countries.en.php");
-if (file_exists($PGV_BASE_DIRECTORY."languages/countries.".$lang_short_cut[$LANGUAGE].".php")) require($PGV_BASE_DIRECTORY."languages/countries.".$lang_short_cut[$LANGUAGE].".php");
+require("languages/countries.en.php");
+if (file_exists("languages/countries.".$lang_short_cut[$LANGUAGE].".php")) require("languages/countries.".$lang_short_cut[$LANGUAGE].".php");
 asort($countries);
 
 if ($_SESSION["cookie_login"]) {
@@ -53,6 +53,9 @@ $uploaded_files = array();
 $assokeys = array(
 "attendant",
 "attending",
+"best_man",
+"bridesmaid",
+"buyer",
 "circumciser",
 "civil_registrar",
 "friend",
@@ -65,6 +68,7 @@ $assokeys = array(
 "priest",
 "rabbi",
 "registry_officer",
+"seller",
 "servant",
 "twin",
 "twin_brother",
@@ -86,44 +90,39 @@ print_simple_header("Edit Interface $VERSION");
 <!--
 	function findIndi(field, indiname) {
 		pastefield = field;
-		findwin = window.open('find.php?type=indi', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=indi', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
 	function findPlace(field) {
 		pastefield = field;
-		findwin = window.open('find.php?type=place', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=place', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
-	function findMedia(field) {
+	function findMedia(field, choose, ged) {
 		pastefield = field;
-		findwin = window.open('find.php?type=media', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		if (!choose) choose="0all";
+		findwin = window.open('find.php?type=media&choose='+choose+'&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
 	function findSource(field) {
 		pastefield = field;
-		findwin = window.open('find.php?type=source', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=source', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
 	function findRepository(field) {
 		pastefield = field;
-		findwin = window.open('find.php?type=repo', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=repo', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
 	function findFamily(field) {
 		pastefield = field;
-		findwin = window.open('find.php?type=fam', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
-		return false;
-	}
-
-	function addnewsource(field) {
-		pastefield = field;
-		window.open('edit_interface.php?action=addnewsource&pid=newsour', '', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=fam', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
 
 	function addnewrepository(field) {
 		pastefield = field;
-		window.open('edit_interface.php?action=addnewrepository&pid=newrepo', '', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
+		window.open('edit_interface.php?action=addnewrepository&pid=newrepo', '_blank', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
 		return false;
 	}
 
@@ -149,7 +148,7 @@ print_simple_header("Edit Interface $VERSION");
 //-->
 </script>
 <?php
-//-- check if user has acces to the gedcom record
+//-- check if user has access to the gedcom record
 $disp = false;
 $success = false;
 $factdisp = true;
@@ -241,7 +240,7 @@ else if (!empty($famid)) {
 		}
 	}
 }
-else if (($action!="addchild")&&($action!="addchildaction")) {
+else if (($action!="addchild")&&($action!="addchildaction")&&($action!="addnewsource")&&($action!="mod_edit_fact")) {
 	print "<span class=\"error\">The \$pid variable was empty.	Unable to perform $action.</span>";
 	print_simple_footer();
 	$disp = true;
@@ -262,39 +261,51 @@ if ((!userCanEdit(getUserName()))||(!$disp)||(!$ALLOW_EDIT_GEDCOM)) {
 		if (!empty($pid)) print "<br />".$pgv_lang["privacy_not_granted"]." pid $pid.";
 		if (!empty($famid)) print "<br />".$pgv_lang["privacy_not_granted"]." famid $famid.";
 	}
+	if (empty($gedrec)) print "<br /><span class=\"error\">".$pgv_lang["record_not_found"]."</span>";
 	print "<br /><br /><div class=\"center\"><a href=\"javascript: ".$pgv_lang["close_window"]."\" onclick=\"window.close();\">".$pgv_lang["close_window"]."</a></div>\n";
 	print_simple_footer();
 	exit;
 }
 
+//-- privatize the record so that line numbers etc. match what was in the display
+//-- data that is hidden because of privacy is stored in the $pgv_private_records array
+//-- any private data will be restored when the record is replaced
+if (isset($gedrec)) $gedrec = privatize_gedcom($gedrec);
+
 if (!isset($type)) $type="";
+$level0type = $type;
 if ($type=="INDI") {
 	print "<b>".PrintReady(get_person_name($pid))."</b><br />";
 }
 else if ($type=="FAM") {
-	print "<b>".PrintReady(get_person_name($parents["HUSB"]))." + ".PrintReady(get_person_name($parents["WIFE"]))."</b><br />";
+	if (!empty($pid)) print "<b>".PrintReady(get_family_descriptor($pid))."</b><br />";
+	else print "<b>".PrintReady(get_family_descriptor($famid))."</b><br />";
 }
 else if ($type=="SOUR") {
-	print "<b>".PrintReady(get_source_descriptor($pid))."</b><br />";
+	print "<b>".PrintReady(get_source_descriptor($pid))."&nbsp;&nbsp;&nbsp;";
+	if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+	print "(".$pid.")";
+	if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+	print "</b><br />";
 }
 if (strstr($action,"addchild")) {
 	if (empty($famid)) {
-		print "<b>".$pgv_lang["add_unlinked_person"]."</b>\n";
 		print_help_link("edit_add_unlinked_person_help", "qm");
+		print "<b>".$pgv_lang["add_unlinked_person"]."</b>\n";
 	}
 	else {
-		print "<b>".$pgv_lang["add_child"]."</b>\n";
 		print_help_link("edit_add_child_help", "qm");
+		print "<b>".$pgv_lang["add_child"]."</b>\n";
 	}
 }
 else if (strstr($action,"addspouse")) {
-	print "<b>".$pgv_lang["add_".strtolower($famtag)]."</b>\n";
 	print_help_link("edit_add_spouse_help", "qm");
+	print "<b>".$pgv_lang["add_".strtolower($famtag)]."</b>\n";
 }
 else if (strstr($action,"addnewparent")) {
+	print_help_link("edit_add_parent_help", "qm");
 	if ($famtag=="WIFE") print "<b>".$pgv_lang["add_mother"]."</b>\n";
 	else print "<b>".$pgv_lang["add_father"]."</b>\n";
-	print_help_link("edit_add_parent_help", "qm");
 }
 else {
 	if (isset($factarray[$type])) print "<b>".$factarray[$type]."</b>";
@@ -304,14 +315,23 @@ if ($action=="delete") {
 	global $MEDIA_ID_PREFIX;
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	if (!empty($linenum)) {
-		if ($linenum==0) {
+		if ($linenum===0) {
 			if (delete_gedrec($pid)) print $pgv_lang["gedrec_deleted"];
 		}
 		else {
 			$gedlines = preg_split("/\n/", $gedrec);
-			$ct_media = preg_match("/@".$MEDIA_ID_PREFIX."(.*)@/", $gedlines[$linenum], $match);
-			if ($ct_media > 0) {
-				delete_gedrec($MEDIA_ID_PREFIX.$match[1]);
+
+			//-- when deleting a media link
+			//-- $linenum comes is an OBJE and the $mediaid to delete should be set
+			if ($linenum=='OBJE') {
+				if (!empty($mediaid)) {
+					for($i=0; $i<count($gedlines); $i++) {
+						if (preg_match("/OBJE @".$mediaid."@/", $gedlines[$i])>0) {
+							$linenum = $i;
+							break;
+						}
+					}
+				}
 			}
 			$newged = "";
 			for($i=0; $i<$linenum; $i++) {
@@ -349,9 +369,15 @@ else if ($action=="editraw") {
 		print "<input type=\"hidden\" name=\"action\" value=\"updateraw\" />\n";
 		print "<input type=\"hidden\" name=\"pid\" value=\"$pid\" />\n";
 		print_specialchar_link("newgedrec",true);
-		print "<textarea name=\"newgedrec\" id=\"newgedrec\" rows=\"20\" cols=\"82\" dir=\"ltr\">".$gedrec."</textarea>\n<br />";
-		print "<input type=\"submit\" value=\"".$pgv_lang["save"]."\" /><br />\n";
+		print "<br />\n";
+		print "<textarea name=\"newgedrec\" id=\"newgedrec\" rows=\"20\" cols=\"60\" dir=\"ltr\">".$gedrec."</textarea>\n<br />";
+		print "<input id=\"savebutton\" type=\"submit\" value=\"".$pgv_lang["save"]."\" /><br />\n";
 		print "</form>\n";
+		print "<script language=\"JavaScript\" type=\"text/javascript\">\n<!--\ntextbox = document.getElementById('newgedrec');\n";
+		print "savebutton = document.getElementById('savebutton');\n";
+		print "if (textbox && savebutton) {\nx = textbox.offsetLeft+textbox.offsetWidth+40;\ny = savebutton.offsetTop+80;\n";
+		print "window.resizeTo(x,y);\n}\n";
+		print "\n//-->\n</script>\n";
 	}
 }
 //-- edit a fact record in a form
@@ -361,140 +387,20 @@ else if ($action=="edit") {
 	print "<input type=\"hidden\" name=\"action\" value=\"update\" />\n";
 	print "<input type=\"hidden\" name=\"linenum\" value=\"$linenum\" />\n";
 	print "<input type=\"hidden\" name=\"pid\" value=\"$pid\" />\n";
+	print "<br /><input type=\"submit\" value=\"".$pgv_lang["save"]."\" /><br />\n";
+
 	print "<table class=\"facts_table\">";
-	$gedlines = split("\n", $gedrec);	// -- find the number of lines in the record
-	$fields = preg_split("/\s/", $gedlines[$linenum]);
-	$glevel = $fields[0];
-	$level = $glevel;
-	$type = trim($fields[1]);
-	$level1type = $type;
-	if (count($fields)>2) {
-		$ct = preg_match("/@.*@/",$fields[2]);
-		$levellink = $ct > 0;
-	}
-	else $levellink = false;
-	$tags=array();
-	$i = $linenum;
-	// Loop on existing tags :
-	do {
-		$text = "";
-		for($j=2; $j<count($fields); $j++) {
-			if ($j>2) $text .= " ";
-			$text .= $fields[$j];
-		}
-		$iscont = false;
-		while(($i+1<count($gedlines))&&(preg_match("/".($level+1)." (CON[CT])\s?(.*)/", $gedlines[$i+1], $cmatch)>0)) {
-			$iscont=true;
-			if ($cmatch[1]=="CONT") $text.="\n";
-			else if ($WORD_WRAPPED_NOTES) $text .= " ";
-			$text .= $cmatch[2];
-			$i++;
-		}
-		$text = trim($text);
-		$tags[]=$type;
-
-		add_simple_tag($level." ".$type." ".$text);
-		if ($type=="DATE" and !strpos(@$gedlines[$i+1], " TIME")) add_simple_tag(($level+1)." TIME");
-		if ($type=="MARR" and !strpos(@$gedlines[$i+1], " TYPE")) add_simple_tag(($level+1)." TYPE");
-
-		$i++;
-		if (isset($gedlines[$i])) {
-			$fields = preg_split("/\s/", $gedlines[$i]);
-			$level = $fields[0];
-			if (isset($fields[1])) $type = trim($fields[1]);
-		}
-	} while (($level>$glevel)&&($i<count($gedlines)));
-
-	// Now add some missing tags :
-	if (in_array($tags[0], $templefacts)) {
-		// 2 TEMP
-		if (!in_array("TEMP", $tags)) add_simple_tag("2 TEMP");
-		// 2 STAT
-		if (!in_array("STAT", $tags)) add_simple_tag("2 STAT");
-	}
-	if ($level1type=="GRAD") {
-		// 1 GRAD
-		// 2 TYPE
-		if (!in_array("TYPE", $tags)) add_simple_tag("2 TYPE");
-	}
-	if ($level1type=="EDUC" or $level1type=="GRAD" or $level1type=="OCCU") {
-		// 1 EDUC|GRAD|OCCU
-		// 2 CORP
-		if (!in_array("CORP", $tags)) add_simple_tag("2 CORP");
-	}
-	if ($level1type=="DEAT") {
-		// 1 DEAT
-		// 2 CAUS
-		if (!in_array("CAUS", $tags)) add_simple_tag("2 CAUS");
-	}
-	if ($level1type=="SOUR") {
-		// 1 SOUR
-		// 2 PAGE
-		// 2 DATA
-		// 3 TEXT
-		if (!in_array("PAGE", $tags)) add_simple_tag("2 PAGE");
-		if (!in_array("TEXT", $tags)) add_simple_tag("3 TEXT");
-	}
-	if ($level1type=="REPO") {
-		//1 REPO
-		//2 CALN
-		if (!in_array("CALN", $tags)) add_simple_tag("2 CALN");
-	}
-	if (!in_array($level1type, $nondatefacts)) {
-		// 2 DATE
-		// 3 TIME
-		if (!in_array("DATE", $tags)) {
-			add_simple_tag("2 DATE");
-			add_simple_tag("3 TIME");
-		}
-		// 2 PLAC
-		if (!in_array("PLAC", $tags) && !in_array($level1type, $nonplacfacts) && !in_array("TEMP", $tags)) add_simple_tag("2 PLAC");
-	}
-	if ($level1type=="BURI") {
-		// 1 BURI
-		// 2 CEME
-		if (!in_array("CEME", $tags)) add_simple_tag("2 CEME");
-	}
-	if ($level1type=="BIRT" or $level1type=="DEAT"
-	or $level1type=="EDUC" or $level1type=="GRAD"
-	or $level1type=="OCCU" or $level1type=="ORDN" or $level1type=="RESI") {
-		// 1 BIRT|DEAT|EDUC|GRAD|ORDN|RESI
-		// 2 ADDR
-		if (!in_array("ADDR", $tags)) add_simple_tag("2 ADDR");
-	}
-	if ($level1type=="OCCU" or $level1type=="RESI") {
-		// 1 OCCU|RESI
-		// 2 PHON|FAX|EMAIL|URL
-		if (!in_array("PHON", $tags)) add_simple_tag("2 PHON");
-		if (!in_array("FAX", $tags)) add_simple_tag("2 FAX");
-		if (!in_array("EMAIL", $tags)) add_simple_tag("2 EMAIL");
-		if (!in_array("URL", $tags)) add_simple_tag("2 URL");
-	}
-	if ($level1type=="OBJE") {
-		// 1 OBJE
-
-		if (!$levellink) {
-			// 2 FORM
-			if (!in_array("FORM", $tags)) add_simple_tag("2 FORM");
-			// 2 FILE
-			if (!in_array("FILE", $tags)) add_simple_tag("2 FILE");
-			// 2 TITL
-			if (!in_array("TITL", $tags)) add_simple_tag("2 TITL");
-		}
-		// 2 _PRIM
-		if (!in_array("_PRIM", $tags)) add_simple_tag("2 _PRIM");
-		// 2 _THUM
-		if (!in_array("_THUM", $tags)) add_simple_tag("2 _THUM");
-	}
-	// 2 RESN
-	if (!in_array("RESN", $tags)) add_simple_tag("2 RESN");
+	$level1type = create_edit_form($gedrec, $linenum, $level0type);
 	print "</table>";
-
-	if ($level1type!="SEX") {
-		if ($level1type!="ASSO"  && $level1type!="REPO") print_add_layer("ASSO");
-		if ($level1type!="SOUR"  && $level1type!="REPO") print_add_layer("SOUR");
+	if ($level0type=="SOUR" || $level0type=="REPO" || $level0type=="OBJE") {
 		if ($level1type!="NOTE") print_add_layer("NOTE");
-		if ($level1type!="OBJE"  && $level1type!="REPO" && $level1type!="NOTE" && $MULTI_MEDIA) print_add_layer("OBJE");
+	} else {
+		if ($level1type!="SEX") {
+			if ($level1type!="ASSO" && $level1type!="REPO") print_add_layer("ASSO");
+			if ($level1type!="SOUR" && $level1type!="REPO") print_add_layer("SOUR");
+			if ($level1type!="NOTE") print_add_layer("NOTE");
+			if ($level1type!="OBJE" && $level1type!="REPO" && $level1type!="NOTE" && $MULTI_MEDIA) print_add_layer("OBJE");
+		}
 	}
 
 	print "<br /><input type=\"submit\" value=\"".$pgv_lang["save"]."\" /><br />\n";
@@ -504,103 +410,36 @@ else if ($action=="add") {
 	//
 	// Start of add section...
 	//
-
-	// handle  MARRiage TYPE
-	$type_val="";
-	if (substr($fact,0,5)=="MARR_") {
-		$type_val=substr($fact,5);
-		$fact="MARR";
-	}
-
-	$tags=array();
-	$tags[0]=$fact;
 	init_calendar_popup();
 	print "<form method=\"post\" action=\"edit_interface.php\" enctype=\"multipart/form-data\">\n";
 	print "<input type=\"hidden\" name=\"action\" value=\"update\" />\n";
 	print "<input type=\"hidden\" name=\"linenum\" value=\"new\" />\n";
 	print "<input type=\"hidden\" name=\"pid\" value=\"$pid\" />\n";
+
+	print "<br /><input type=\"submit\" value=\"".$pgv_lang["add"]."\" /><br />\n";
 	print "<table class=\"facts_table\">";
 
-	if ($fact=="SOUR") add_simple_tag("1 SOUR @");
-	else add_simple_tag("1 ".$fact);
+	create_add_form($fact);
 
-	if ($fact=="EVEN" or $fact=="GRAD" or $fact=="MARR") {
-		// 1 EVEN|GRAD|MARR
-		// 2 TYPE
-		add_simple_tag("2 TYPE ".$type_val);
-	}
-	if (in_array($fact, $templefacts)) {
-		// 2 TEMP
-		add_simple_tag("2 TEMP");
-		// 2 STAT
-		add_simple_tag("2 STAT");
-	}
-	if ($fact=="SOUR") {
-		// 1 SOUR
-		// 2 PAGE
-		add_simple_tag("2 PAGE");
-		// 2 DATA
-		// 3 TEXT
-		add_simple_tag("3 TEXT");
-	}
-	if ($fact=="EDUC" or $fact=="GRAD" or $fact=="OCCU") {
-		// 1 EDUC|GRAD|OCCU
-		// 2 CORP
-		add_simple_tag("2 CORP");
-	}
-	if (!in_array($fact, $nondatefacts)) {
-		// 2 DATE
-		add_simple_tag("2 DATE");
-		// 3 TIME
-		add_simple_tag("3 TIME");
-		// 2 PLAC
-		if (!in_array($fact, $nonplacfacts)) add_simple_tag("2 PLAC");
-	}
-	if ($fact=="BURI") {
-		// 1 BURI
-		// 2 CEME
-		add_simple_tag("2 CEME");
-	}
-	if ($fact=="BIRT" or $fact=="DEAT" or $fact=="EDUC"
-	or $fact=="OCCU" or $fact=="ORDN" or $fact=="RESI") {
-		// 1 BIRT|DEAT|EDUC|OCCU|ORDN|RESI
-		// 2 ADDR
-		add_simple_tag("2 ADDR");
-	}
-	if ($fact=="OCCU" or $fact=="RESI") {
-		// 1 OCCU|RESI
-		// 2 PHON|FAX|EMAIL|URL
-		add_simple_tag("2 PHON");
-		add_simple_tag("2 FAX");
-		add_simple_tag("2 EMAIL");
-		add_simple_tag("2 URL");
-	}
-	if ($fact=="DEAT") {
-		// 1 DEAT
-		// 2 CAUS
-		add_simple_tag("2 CAUS");
-	}
-	if ($fact=="REPO") {
-		//1 REPO
-		//2 CALN
-		add_simple_tag("2 CALN");
-	}
-	if ($fact!="OBJE") {
-		// 2 RESN
-		add_simple_tag("2 RESN");
-	}
 	print "</table>";
 
-	if (($fact!="ASSO") && ($fact!="OBJE") && ($fact!="REPO")) print_add_layer("ASSO");
-	if (($fact!="SOUR") && ($fact!="OBJE") && ($fact!="REPO")) print_add_layer("SOUR");
-	if (($fact!="NOTE") && ($fact!="OBJE")) print_add_layer("NOTE");
-	if (($fact!="OBJE") && ($fact!="REPO")) print_add_layer("OBJE");
+	if ($level0type=="SOUR" || $level0type=="REPO") {
+		if ($fact!="NOTE") print_add_layer("NOTE");
+	} else {
+		if ($fact!="OBJE") {
+			if ($fact!="ASSO" && $fact!="SOUR" && $fact!="REPO") print_add_layer("ASSO");
+			if ($fact!="SOUR" && $fact!="REPO") print_add_layer("SOUR");
+			if ($fact!="NOTE") print_add_layer("NOTE");
+			if ($fact!="REPO") print_add_layer("OBJE");
+		}
+	}
 
 	print "<br /><input type=\"submit\" value=\"".$pgv_lang["add"]."\" /><br />\n";
 	print "</form>\n";
 }
 else if ($action=="addchild") {
-	print_indi_form("addchildaction", $famid);
+//	print_indi_form("addchildaction", $famid);
+	print_indi_form("addchildaction", $famid, "", "", "CHIL", @$_REQUEST["sex"]);
 }
 else if ($action=="addspouse") {
 	print_indi_form("addspouseaction", $famid, "", "", $famtag);
@@ -724,23 +563,29 @@ else if ($action=="addnewsource") {
 		<input type="hidden" name="action" value="addsourceaction" />
 		<input type="hidden" name="pid" value="newsour" />
 		<table class="facts_table">
-			<tr><td class="facts_label"><?php print $factarray["ABBR"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="ABBR" id="ABBR" value="" size="40" maxlength="255" /> <?PHP print_specialchar_link("ABBR",false); ?></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_ABBR_help", "qm"); print $factarray["ABBR"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="ABBR" id="ABBR" value="" size="40" maxlength="255" /> <?php print_specialchar_link("ABBR",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["TITL"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="TITL" id="TITL" value="" size="60" /> <?PHP print_specialchar_link("TITL",false); ?></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_TITL_help", "qm"); print $factarray["TITL"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="TITL" id="TITL" value="" size="60" /> <?php print_specialchar_link("TITL",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["AUTH"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="AUTH" id="AUTH" value="" size="40" maxlength="255" /> <?PHP print_specialchar_link("AUTH",false); ?></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit__HEB_help", "qm"); print $factarray["_HEB"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="_HEB" id="_HEB" value="" size="60" /> <?php print_specialchar_link("_HEB",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["PUBL"]; ?></td>
-			<td class="facts_value"><?PHP print_specialchar_link("PUBL",true); ?> <textarea tabindex="<?php print $tabkey; ?>" name="PUBL" id="PUBL" rows="5" cols="60"></textarea></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_ROMN_help", "qm"); print $factarray["ROMN"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="ROMN" id="ROMN" value="" size="60" /> <?php print_specialchar_link("ROMN",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["REPO"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="REPO" id="REPO" value="" size="<?php print (strlen($REPO_ID_PREFIX) + 4); ?>" /> <?PHP print_findrepository_link("REPO"); print_addnewrepository_link("REPO"); ?></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_AUTH_help", "qm"); print $factarray["AUTH"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="AUTH" id="AUTH" value="" size="40" maxlength="255" /> <?php print_specialchar_link("AUTH",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["CALN"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="CALN" id="CALN" value="" /></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_PUBL_help", "qm"); print $factarray["PUBL"]; ?></td>
+			<td class="optionbox wrap"><textarea tabindex="<?php print $tabkey; ?>" name="PUBL" id="PUBL" rows="5" cols="60"></textarea><br /><?php print_specialchar_link("PUBL",true); ?></td></tr>
+			<?php $tabkey++; ?>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_REPO_help", "qm"); print $factarray["REPO"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="REPO" id="REPO" value="" size="<?php print (strlen($REPO_ID_PREFIX) + 4); ?>" /> <?php print_findrepository_link("REPO"); print_addnewrepository_link("REPO"); ?></td></tr>
+			<?php $tabkey++; ?>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_CALN_help", "qm"); print $factarray["CALN"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="CALN" id="CALN" value="" /></td></tr>
 		</table>
 		<input type="submit" value="<?php print $pgv_lang["create_source"]; ?>" />
 	</form>
@@ -751,7 +596,11 @@ else if ($action=="addsourceaction") {
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	$newgedrec = "0 @XREF@ SOUR\r\n";
 	if (!empty($ABBR)) $newgedrec .= "1 ABBR $ABBR\r\n";
-	if (!empty($TITL)) $newgedrec .= "1 TITL $TITL\r\n";
+	if (!empty($TITL)) {
+		$newgedrec .= "1 TITL $TITL\r\n";
+		if (!empty($_HEB)) $newgedrec .= "2 _HEB $_HEB\r\n";
+		if (!empty($ROMN)) $newgedrec .= "2 ROMN $_HEB\r\n";
+	}
 	if (!empty($AUTH)) $newgedrec .= "1 AUTH $AUTH\r\n";
 	if (!empty($PUBL)) $newgedrec .= "1 PUBL $PUBL\r\n";
 	if (!empty($REPO)) {
@@ -764,8 +613,9 @@ else if ($action=="addsourceaction") {
 		if (((preg_match("/\d .... .*/", $newlines[$k])==0) and strlen($newlines[$k])!=0)) $newlines[$k] = "2 CONT ".$newlines[$k];
 		if (strlen($newlines[$k])>255) {
 			while(strlen($newlines[$k])>255) {
-				$newged .= substr($newlines[$k], 0, 255)."\r\n";
-				$newlines[$k] = substr($newlines[$k], 255);
+				$newPiece = rtrim(substr($newlines[$k], 0, 255));
+				$newged .= $newPiece."\r\n";
+				$newlines[$k] = substr($newlines[$k], strlen($newPiece));
 				$newlines[$k] = "2 CONC ".$newlines[$k];
 			}
 			$newged .= trim($newlines[$k])."\r\n";
@@ -804,23 +654,29 @@ else if ($action=="addnewrepository") {
 		<input type="hidden" name="action" value="addrepoaction" />
 		<input type="hidden" name="pid" value="newrepo" />
 		<table class="facts_table">
-			<tr><td class="facts_label"><?php print $factarray["NAME"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="NAME" id="NAME" value="" size="40" maxlength="255" /> <?PHP print_specialchar_link("NAME",false); ?></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_REPO_NAME_help", "qm"); print $factarray["NAME"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="NAME" id="NAME" value="" size="40" maxlength="255" /> <?php print_specialchar_link("NAME",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["ADDR"]; ?></td>
-			<td class="facts_value"><textarea tabindex="<?php print $tabkey; ?>" name="ADDR" id="ADDR" rows="5" cols="60"></textarea><?PHP print_specialchar_link("ADDR",true); ?> </td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit__HEB_help", "qm"); print $factarray["_HEB"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="_HEB" id="_HEB" value="" size="40" maxlength="255" /> <?php print_specialchar_link("_HEB",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["PHON"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="PHON" id="PHON" value="" size="40" maxlength="255" /> </td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_ROMN_help", "qm"); print $factarray["ROMN"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="ROMN" id="ROMN" value="" size="40" maxlength="255" /> <?php print_specialchar_link("ROMN",false); ?></td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["FAX"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="FAX" id="FAX" value="" size="40" /></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_ADDR_help", "qm"); print $factarray["ADDR"]; ?></td>
+			<td class="optionbox wrap"><textarea tabindex="<?php print $tabkey; ?>" name="ADDR" id="ADDR" rows="5" cols="60"></textarea><?php print_specialchar_link("ADDR",true); ?> </td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["EMAIL"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="EMAIL" id="EMAIL" value="" size="40" maxlength="255" /></td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_PHON_help", "qm"); print $factarray["PHON"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="PHON" id="PHON" value="" size="40" maxlength="255" /> </td></tr>
 			<?php $tabkey++; ?>
-			<tr><td class="facts_label"><?php print $factarray["WWW"]; ?></td>
-			<td class="facts_value"><input tabindex="<?php print $tabkey; ?>" type="text" name="WWW" id="WWW" value="" size="40" maxlength="255" /> </td></tr>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_FAX_help", "qm"); print $factarray["FAX"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="FAX" id="FAX" value="" size="40" /></td></tr>
+			<?php $tabkey++; ?>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_EMAIL_help", "qm"); print $factarray["EMAIL"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="EMAIL" id="EMAIL" value="" size="40" maxlength="255" /></td></tr>
+			<?php $tabkey++; ?>
+			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_WWW_help", "qm"); print $factarray["WWW"]; ?></td>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="WWW" id="WWW" value="" size="40" maxlength="255" /> </td></tr>
 		</table>
 		<input type="submit" value="<?php print $pgv_lang["create_repository"]; ?>" />
 	</form>
@@ -830,7 +686,11 @@ else if ($action=="addnewrepository") {
 else if ($action=="addrepoaction") {
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	$newgedrec = "0 @XREF@ REPO\r\n";
-	if (!empty($NAME)) $newgedrec .= "1 NAME $NAME\r\n";
+	if (!empty($NAME)) {
+		$newgedrec .= "1 NAME $NAME\r\n";
+		if (!empty($_HEB)) $newgedrec .= "2 _HEB $_HEB\r\n";
+		if (!empty($ROMN)) $newgedrec .= "2 ROMN $_HEB\r\n";
+	}
 	if (!empty($ADDR)) $newgedrec .= "1 ADDR $ADDR\r\n";
 	if (!empty($PHON)) $newgedrec .= "1 PHON $PHON\r\n";
 	if (!empty($FAX)) $newgedrec .= "1 FAX $FAX\r\n";
@@ -842,8 +702,9 @@ else if ($action=="addrepoaction") {
 		if ((preg_match("/\d (.....|....|...) .*/", $newlines[$k])==0) and (strlen($newlines[$k])!=0)) $newlines[$k] = "2 CONT ".$newlines[$k];
 		if (strlen($newlines[$k])>255) {
 			while(strlen($newlines[$k])>255) {
-				$newged .= substr($newlines[$k], 0, 255)."\r\n";
-				$newlines[$k] = substr($newlines[$k], 255);
+				$newPiece = rtrim(substr($newlines[$k], 0, 255));
+				$newged .= $newPiece."\r\n";
+				$newlines[$k] = substr($newlines[$k], strlen($newPiece));
 				$newlines[$k] = "2 CONC ".$newlines[$k];
 			}
 			$newged .= trim($newlines[$k])."\r\n";
@@ -890,8 +751,8 @@ else if ($action=="update") {
 				else {
 					$filename = $MEDIA_DIRECTORY.$folder.basename($upload['name']);
 					$uploaded_files[] = $MEDIA_DIRECTORY.$folder.basename($upload['name']);
-					if (!is_dir($MEDIA_DIRECTORY.$folder."thumbs")) mkdir($MEDIA_DIRECTORY.$folder."thumbs");
-					$thumbnail = $MEDIA_DIRECTORY.$folder."thumbs/".basename($upload['name']);
+					if (!is_dir($MEDIA_DIRECTORY."thumbs/".$folder)) mkdir($MEDIA_DIRECTORY."thumbs/".$folder);
+					$thumbnail = $MEDIA_DIRECTORY."thumbs/".$folder.basename($upload['name']);
 					generate_thumbnail($filename, $thumbnail);
 					if (!empty($error)) {
 						print "<span class=\"error\">".$error."</span>";
@@ -956,7 +817,14 @@ else if ($action=="addchildaction") {
 			$BIRT_DATE = check_input_date($BIRT_DATE);
 			$gedrec .= "2 DATE $BIRT_DATE\r\n";
 		}
-		if (!empty($BIRT_PLAC)) $gedrec .= "2 PLAC $BIRT_PLAC\r\n";
+		if (!empty($BIRT_PLAC)) {
+			$gedrec .= "2 PLAC $BIRT_PLAC\r\n";
+			if ((!empty($BIRT_LATI))||(!empty($BIRT_LONG))) {
+				$gedrec .= "3 MAP\r\n";
+				$gedrec .= "4 LATI $BIRT_LATI\r\n";
+				$gedrec .= "4 LONG $BIRT_LONG\r\n";
+			}
+		}
 	}
 	if ((!empty($DEAT_DATE))||(!empty($DEAT_PLAC))) {
 		$gedrec .= "1 DEAT\r\n";
@@ -964,7 +832,14 @@ else if ($action=="addchildaction") {
 			$DEAT_DATE = check_input_date($DEAT_DATE);
 			$gedrec .= "2 DATE $DEAT_DATE\r\n";
 		}
-		if (!empty($DEAT_PLAC)) $gedrec .= "2 PLAC $DEAT_PLAC\r\n";
+		if (!empty($DEAT_PLAC)) {
+			$gedrec .= "2 PLAC $DEAT_PLAC\r\n";
+			if ((!empty($DEAT_LATI))||(!empty($DEAT_LONG))) {
+				$gedrec .= "3 MAP\r\n";
+				$gedrec .= "4 LATI $DEAT_LATI\r\n";
+				$gedrec .= "4 LONG $DEAT_LONG\r\n";
+			}
+		}
 	}
 	if (!empty($famid)) $gedrec .= "1 FAMC @$famid@\r\n";
 
@@ -1007,7 +882,14 @@ else if ($action=="addspouseaction") {
 			$BIRT_DATE = check_input_date($BIRT_DATE);
 			$gedrec .= "2 DATE $BIRT_DATE\r\n";
 		}
-		if (!empty($BIRT_PLAC)) $gedrec .= "2 PLAC $BIRT_PLAC\r\n";
+		if (!empty($BIRT_PLAC)) {
+			$gedrec .= "2 PLAC $BIRT_PLAC\r\n";
+			if ((!empty($BIRT_LATI))||(!empty($BIRT_LONG))) {
+				$gedrec .= "3 MAP\r\n";
+				$gedrec .= "4 LATI $BIRT_LATI\r\n";
+				$gedrec .= "4 LONG $BIRT_LONG\r\n";
+			}
+		}
 	}
 	if ((!empty($DEAT_DATE))||(!empty($DEAT_PLAC))) {
 		$gedrec .= "1 DEAT\r\n";
@@ -1015,7 +897,14 @@ else if ($action=="addspouseaction") {
 			$DEAT_DATE = check_input_date($DEAT_DATE);
 			$gedrec .= "2 DATE $DEAT_DATE\r\n";
 		}
-		if (!empty($DEAT_PLAC)) $gedrec .= "2 PLAC $DEAT_PLAC\r\n";
+		if (!empty($DEAT_PLAC)) {
+			$gedrec .= "2 PLAC $DEAT_PLAC\r\n";
+			if ((!empty($DEAT_LATI))||(!empty($DEAT_LONG))) {
+				$gedrec .= "3 MAP\r\n";
+				$gedrec .= "4 LATI $DEAT_LATI\r\n";
+				$gedrec .= "4 LONG $DEAT_LONG\r\n";
+			}
+		}
 	}
 	$gedrec = handle_updates($gedrec);
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
@@ -1041,7 +930,14 @@ else if ($action=="addspouseaction") {
 				$MARR_DATE = check_input_date($MARR_DATE);
 				$famrec .= "2 DATE $MARR_DATE\r\n";
 			}
-			if (!empty($MARR_PLAC)) $famrec .= "2 PLAC $MARR_PLAC\r\n";
+			if (!empty($MARR_PLAC)) {
+				$famrec .= "2 PLAC $MARR_PLAC\r\n";
+				if ((!empty($MARR_LATI))||(!empty($MARR_LONG))) {
+					$famrec .= "3 MAP\r\n";
+					$famrec .= "4 LATI $MARR_LATI\r\n";
+					$famrec .= "4 LONG $MARR_LONG\r\n";
+				}
+			}
 		}
 		if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 		$famid = append_gedrec($famrec);
@@ -1058,7 +954,14 @@ else if ($action=="addspouseaction") {
 					$MARR_DATE = check_input_date($MARR_DATE);
 					$famrec .= "2 DATE $MARR_DATE\r\n";
 				}
-				if (!empty($MARR_PLAC)) $famrec .= "2 PLAC $MARR_PLAC\r\n";
+				if (!empty($MARR_PLAC)) {
+					$famrec .= "2 PLAC $MARR_PLAC\r\n";
+					if ((!empty($MARR_LATI))||(!empty($MARR_LONG))) {
+						$famrec .= "3 MAP\r\n";
+						$famrec .= "4 LATI $MARR_LATI\r\n";
+						$famrec .= "4 LONG $MARR_LONG\r\n";
+					}
+				}
 			}
 			if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 			replace_gedrec($famid, $famrec);
@@ -1109,7 +1012,14 @@ else if ($action=="linkspouseaction") {
 						$MARR_DATE = check_input_date($MARR_DATE);
 						$famrec .= "2 DATE $MARR_DATE\r\n";
 					}
-					if (!empty($MARR_PLAC)) $famrec .= "2 PLAC $MARR_PLAC\r\n";
+					if (!empty($MARR_PLAC)) {
+						$famrec .= "2 PLAC $MARR_PLAC\r\n";
+						if ((!empty($MARR_LATI))||(!empty($MARR_LONG))) {
+							$famrec .= "3 MAP\r\n";
+							$famrec .= "4 LATI $MARR_LATI\r\n";
+							$famrec .= "4 LONG $MARR_LONG\r\n";
+						}
+					}
 				}
 				if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 				$famid = append_gedrec($famrec);
@@ -1152,7 +1062,14 @@ else if ($action=="addnewparentaction") {
 			$BIRT_DATE = check_input_date($BIRT_DATE);
 			$gedrec .= "2 DATE $BIRT_DATE\r\n";
 		}
-		if (!empty($BIRT_PLAC)) $gedrec .= "2 PLAC $BIRT_PLAC\r\n";
+		if (!empty($BIRT_PLAC)) {
+			$gedrec .= "2 PLAC $BIRT_PLAC\r\n";
+			if ((!empty($BIRT_LATI))||(!empty($BIRT_LONG))) {
+				$gedrec .= "3 MAP\r\n";
+				$gedrec .= "4 LATI $BIRT_LATI\r\n";
+				$gedrec .= "4 LONG $BIRT_LONG\r\n";
+			}
+		}
 	}
 	if ((!empty($DEAT_DATE))||(!empty($DEAT_PLAC))) {
 		$gedrec .= "1 DEAT\r\n";
@@ -1160,7 +1077,14 @@ else if ($action=="addnewparentaction") {
 			$DEAT_DATE = check_input_date($DEAT_DATE);
 			$gedrec .= "2 DATE $DEAT_DATE\r\n";
 		}
-		if (!empty($DEAT_PLAC)) $gedrec .= "2 PLAC $DEAT_PLAC\r\n";
+		if (!empty($DEAT_PLAC)) {
+			$gedrec .= "2 PLAC $DEAT_PLAC\r\n";
+			if ((!empty($DEAT_LATI))||(!empty($DEAT_LONG))) {
+				$gedrec .= "3 MAP\r\n";
+				$gedrec .= "4 LATI $DEAT_LATI\r\n";
+				$gedrec .= "4 LONG $DEAT_LONG\r\n";
+			}
+		}
 	}
 	$gedrec = handle_updates($gedrec);
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
@@ -1178,6 +1102,22 @@ else if ($action=="addnewparentaction") {
 			$famrec .= "1 WIFE @$xref@\r\n";
 			$famrec .= "1 CHIL @$pid@\r\n";
 		}
+		if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
+			$famrec .= "1 MARR\r\n";
+			if (!empty($MARR_DATE)) {
+				$MARR_DATE = check_input_date($MARR_DATE);
+				$famrec .= "2 DATE $MARR_DATE\r\n";
+			}
+			if (!empty($MARR_PLAC)) {
+				$famrec .= "2 PLAC $MARR_PLAC\r\n";
+				if ((!empty($MARR_LATI))||(!empty($MARR_LONG))) {
+					$famrec .= "3 MAP\r\n";
+					$famrec .= "4 LATI $MARR_LATI\r\n";
+					$famrec .= "4 LONG $MARR_LONG\r\n";
+				}
+			}
+		}
+
 		if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 		$famid = append_gedrec($famrec);
 	}
@@ -1187,6 +1127,21 @@ else if ($action=="addnewparentaction") {
 		if (!empty($famrec)) {
 			$famrec = trim($famrec);
 			$famrec .= "\r\n1 $famtag @$xref@\r\n";
+			if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
+				$famrec .= "1 MARR\r\n";
+				if (!empty($MARR_DATE)) {
+					$MARR_DATE = check_input_date($MARR_DATE);
+					$famrec .= "2 DATE $MARR_DATE\r\n";
+				}
+				if (!empty($MARR_PLAC)) {
+					$famrec .= "2 PLAC $MARR_PLAC\r\n";
+					if ((!empty($MARR_LATI))||(!empty($MARR_LONG))) {
+						$famrec .= "3 MAP\r\n";
+						$famrec .= "4 LATI $MARR_LATI\r\n";
+						$famrec .= "4 LONG $MARR_LONG\r\n";
+					}
+				}
+			}
 			if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 			replace_gedrec($famid, $famrec);
 		}
@@ -1440,14 +1395,22 @@ else if ($action=="addname") {
 	print_indi_form("update", "", "new", "NEW");
 }
 else if ($action=="copy") {
-	$gedlines = preg_split("/\n/", trim($gedrec));
-	$fields = preg_split("/\s/", $gedlines[$linenum]);
-	$glevel = $fields[0];
-	$i = $linenum+1;
-	$factrec = $gedlines[$linenum];
-	while(($i<count($gedlines))&&($gedlines[$i]{0}>$glevel)) {
-		$factrec.="\n".$gedlines[$i];
-		$i++;
+	//-- handle media differently now :P
+	if ($linenum=='media') {
+		$factrec = "1 OBJE @".$pid."@";
+		$type="all";
+		print "<br />";
+	}
+	else {
+		$gedlines = preg_split("/\n/", trim($gedrec));
+		$fields = preg_split("/\s/", $gedlines[$linenum]);
+		$glevel = $fields[0];
+		$i = $linenum+1;
+		$factrec = $gedlines[$linenum];
+		while(($i<count($gedlines))&&($gedlines[$i]{0}>$glevel)) {
+			$factrec.="\n".$gedlines[$i];
+			$i++;
+		}
 	}
 	if (!isset($_SESSION["clipboard"])) $_SESSION["clipboard"] = array();
 	$ft = preg_match("/1 (_?[A-Z]{3,5})(.*)/", $factrec, $match);
@@ -1576,17 +1539,17 @@ else if ($action=="changefamily") {
 			if (!is_null($father)) {
 			?>
 				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $father->getLabel(); ?></b><input type="hidden" name="HUSB" value="<?php print $father->getXref();?>" /></td>
-				<td id="HUSBName" class="optionbox <?php print $TEXT_DIRECTION; ?>"><?php print PrintReady($father->getName()); ?></td>
+				<td id="HUSBName" class="optionbox wrap <?php print $TEXT_DIRECTION; ?>"><?php print PrintReady($father->getName()); ?></td>
 			<?php
 			}
 			else {
 			?>
 				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $pgv_lang["spouse"]; ?></b><input type="hidden" name="HUSB" value="" /></td>
-				<td id="HUSBName" class="optionbox <?php print $TEXT_DIRECTION; ?>"></td>
+				<td id="HUSBName" class="optionbox wrap <?php print $TEXT_DIRECTION; ?>"></td>
 			<?php
 			}
 			?>
-				<td class="optionbox <?php print $TEXT_DIRECTION; ?>">
+				<td class="optionbox wrap <?php print $TEXT_DIRECTION; ?>">
 					<a href="javascript:;" id="husbrem" style="display: <?php print is_null($father) ? 'none':'block'; ?>;" onclick="document.changefamform.HUSB.value=''; document.getElementById('HUSBName').innerHTML=''; this.style.display='none'; return false;"><?php print $pgv_lang["remove"]; ?></a>
 					<a href="javascript:;" onclick="nameElement = document.getElementById('HUSBName'); remElement = document.getElementById('husbrem'); return findIndi(document.changefamform.HUSB);"><?php print $pgv_lang["change"]; ?></a><br />
 				</td>
@@ -1596,17 +1559,17 @@ else if ($action=="changefamily") {
 			if (!is_null($mother)) {
 			?>
 				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $mother->getLabel(); ?></b><input type="hidden" name="WIFE" value="<?php print $mother->getXref();?>" /></td>
-				<td id="WIFEName" class="optionbox <?php print $TEXT_DIRECTION; ?>"><?php print PrintReady($mother->getName()); ?></td>
+				<td id="WIFEName" class="optionbox wrap <?php print $TEXT_DIRECTION; ?>"><?php print PrintReady($mother->getName()); ?></td>
 			<?php
 			}
 			else {
 			?>
 				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $pgv_lang["spouse"]; ?></b><input type="hidden" name="WIFE" value="" /></td>
-				<td id="WIFEName" class="optionbox <?php print $TEXT_DIRECTION; ?>"></td>
+				<td id="WIFEName" class="optionbox wrap <?php print $TEXT_DIRECTION; ?>"></td>
 			<?php
 			}
 			?>
-				<td class="optionbox <?php print $TEXT_DIRECTION; ?>">
+				<td class="optionbox wrap <?php print $TEXT_DIRECTION; ?>">
 					<a href="javascript:;" id="wiferem" style="display: <?php print is_null($mother) ? 'none':'block'; ?>;" onclick="document.changefamform.WIFE.value=''; document.getElementById('WIFEName').innerHTML=''; this.style.display='none'; return false;"><?php print $pgv_lang["remove"]; ?></a>
 					<a href="javascript:;" onclick="nameElement = document.getElementById('WIFEName'); remElement = document.getElementById('wiferem'); return findIndi(document.changefamform.WIFE);"><?php print $pgv_lang["change"]; ?></a><br />
 				</td>
@@ -1618,8 +1581,8 @@ else if ($action=="changefamily") {
 				?>
 			<tr>
 				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $child->getLabel(); ?></b><input type="hidden" name="CHIL<?php print $i; ?>" value="<?php print $child->getXref();?>" /></td>
-				<td id="CHILName<?php print $i; ?>" class="optionbox"><?php print PrintReady($child->getName()); ?></td>
-				<td class="optionbox <?php print $TEXT_DIRECTION; ?>">
+				<td id="CHILName<?php print $i; ?>" class="optionbox wrap"><?php print PrintReady($child->getName()); ?></td>
+				<td class="optionbox wrap <?php print $TEXT_DIRECTION; ?>">
 					<a href="javascript:;" id="childrem<?php print $i; ?>" style="display: block;" onclick="document.changefamform.CHIL<?php print $i; ?>.value=''; document.getElementById('CHILName<?php print $i; ?>').innerHTML=''; this.style.display='none'; return false;"><?php print $pgv_lang["remove"]; ?></a>
 					<a href="javascript:;" onclick="nameElement = document.getElementById('CHILName<?php print $i; ?>'); remElement = document.getElementById('childrem<?php print $i; ?>'); return findIndi(document.changefamform.CHIL<?php print $i; ?>);"><?php print $pgv_lang["change"]; ?></a><br />
 				</td>
@@ -1631,8 +1594,8 @@ else if ($action=="changefamily") {
 				?>
 			<tr>
 				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $pgv_lang["add_child"]; ?></b><input type="hidden" name="CHIL<?php print $i; ?>" value="" /></td>
-				<td id="CHILName<?php print $i; ?>" class="optionbox"></td>
-				<td class="optionbox <?php print $TEXT_DIRECTION; ?>">
+				<td id="CHILName<?php print $i; ?>" class="optionbox wrap"></td>
+				<td class="optionbox wrap <?php print $TEXT_DIRECTION; ?>">
 					<a href="javascript:;" id="childrem<?php print $i; ?>" style="display: none;" onclick="document.changefamform.CHIL<?php print $i; ?>.value=''; document.getElementById('CHILName<?php print $i; ?>').innerHTML=''; this.style.display='none'; return false;"><?php print $pgv_lang["remove"]; ?></a>
 					<a href="javascript:;" onclick="nameElement = document.getElementById('CHILName<?php print $i; ?>'); remElement = document.getElementById('childrem<?php print $i; ?>'); return findIndi(document.changefamform.CHIL<?php print $i; ?>);"><?php print $pgv_lang["change"]; ?></a><br />
 				</td>
@@ -1853,6 +1816,15 @@ else if ($action=="reorder_fams_update") {
 	if ($GLOBALS["DEBUG"]) print "<pre>$newgedrec</pre>";
 	$success = (replace_gedrec($pid, $newgedrec));
 	if ($success) print "<br /><br />".$pgv_lang["update_successful"];
+}
+//-- the following section provides a hook for modules
+//-- for reuse of editing functions from forms
+else if ($action=="mod_edit_fact") {
+	include_once('modules/'.$mod.'/'.$mod.'.php');
+   $module = new $mod();
+   if (method_exists($module, "edit_fact")) {
+   		$module->edit_fact();
+   }
 }
 
 // autoclose window when update successful

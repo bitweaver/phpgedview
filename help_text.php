@@ -24,14 +24,15 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: help_text.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
-require $PGV_BASE_DIRECTORY.$helptextfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE];
+require($factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
+require $helptextfile["english"];
+if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
+if (file_exists('modules/research_assistant/languages/ra_lang.en.php')) require 'modules/research_assistant/languages/ra_lang.en.php';
 
 if (!isset($help)) $help = "";
 

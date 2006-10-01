@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: functions_places.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: functions_places.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -58,7 +58,7 @@ function print_place_subfields($element_id) {
 	$plac_label = array_reverse($plac_label);
 	if ($HEAD_PLAC_FORM == $pgv_lang["default_form"]) $plac_label[0] = $factarray["CTRY"];
 	?>
-	<script type="text/javascript" src="strings.js"></script>
+	<script type="text/javascript" src="./js/strings.js"></script>
 	<script type="text/javascript">
 	<!--
 	function http_loadmap(ctry) {
@@ -125,7 +125,7 @@ function print_place_subfields($element_id) {
 			for(i=0;i<sel.length;++i) if (sel.options[i].value==ctry) sel.options[i].selected=true;
 			// refresh country flag
 			img=document.getElementsByName('PLAC_CTRY_flag')[0];
-			img.src='images/flags/'+ctry+'.gif';
+			img.src='places/flags/'+ctry+'.gif';
 			img.alt=ctry;
 			img.title=ctry;
 			// load html map file from server
@@ -139,7 +139,7 @@ function print_place_subfields($element_id) {
 				img.useMap='#'+ctry;
 			}
 			else {
-				img.src='images/pix1.gif'; // show image only if mapname exists
+				img.src='image/pix1.gif'; // show image only if mapname exists
 				document.getElementsByName('PLAC_CTRY_div')[0].style.height='auto';
 			}
 			// refresh state image
@@ -157,7 +157,7 @@ function print_place_subfields($element_id) {
 				img.useMap='#'+stae;
 			}
 			else {
-				img.src='images/pix1.gif'; // show image only if mapname exists
+				img.src='image/pix1.gif'; // show image only if mapname exists
 				document.getElementsByName('PLAC_STAE_div')[0].style.height='auto';
 			}
 			// refresh county image
@@ -175,7 +175,7 @@ function print_place_subfields($element_id) {
 				img.useMap='#'+cnty;
 			}
 			else {
-				img.src='images/pix1.gif'; // show image only if mapname exists
+				img.src='image/pix1.gif'; // show image only if mapname exists
 				document.getElementsByName('PLAC_CNTY_div')[0].style.height='auto';
 			}
 			// refresh city image
@@ -252,7 +252,7 @@ function print_place_subfields($element_id) {
 		$subtagid=$element_id."_".$i;
 		$subtagname=$element_id."_".$i;
 		$plac_label[$i]=trim($plac_label[$i]);
-		if (in_array($plac_label[$i], array("Country", "Pays", "Land", "Zeme", "Ülke", "País", "Ország", "Nazione", "Kraj", "Maa", $factarray["CTRY"]))) {
+		if (in_array($plac_label[$i], array("Country", "Pays", "Land", "Zeme", "ï¿½lke", "Paï¿½s", "Orszï¿½g", "Nazione", "Kraj", "Maa", $factarray["CTRY"]))) {
 			$cols="8";
 			$subtagname="PLAC_CTRY";
 			$icountry=$i;
@@ -302,7 +302,7 @@ function print_place_subfields($element_id) {
 		}
 		// clickable map
 		if ($i<$icountry or $i>$icounty) print "<br />\n";
-		else print "<div id='".$subtagname."_div' name='".$subtagname."_div' style='overflow:hidden; height:32px; width:auto; border-width:thin; border-style:none;'><img name='".$subtagname."_img' src='images/spacer.gif' usemap='usemap' border='0' alt='' title='' style='height:inherit; width:inherit;' /></div>";
+		else print "<div id='".$subtagname."_div' name='".$subtagname."_div' style='overflow:hidden; height:32px; width:auto; border-width:thin; border-style:none;'><img name='".$subtagname."_img' src='image/spacer.gif' usemap='usemap' border='0' alt='' title='' style='height:inherit; width:inherit;' /></div>";
 	}
 	print "</div>";
 }

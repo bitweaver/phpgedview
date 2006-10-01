@@ -25,12 +25,12 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: viewconnections.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: viewconnections.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 require('config.php');
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
-require("includes/functions_edit.php");
+require_once("includes/functions_print_lists.php");
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
 print_simple_header('View Connections');
 
@@ -51,7 +51,6 @@ if (!empty($_REQUEST["selectedServer"])){
   $serverID = $_REQUEST["selectedServer"];
   //$server_split = explode(" - ", $server_gedcomid);
   //$server = $server_split[0];
-  //$serverID = server_exists($server, $server_split[1]);
   $Links = search_indis("1 RFN ".$serverID.":");
   $famLinks = search_fams("1 RFN ".$serverID.":");
   }

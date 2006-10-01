@@ -23,15 +23,15 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: inverselink.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: inverselink.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
+require($factsfile["english"]);
 
 //-- page parameters and checking
 $paramok = true;
-if (!isset($mediaid)) {$mediaid = ""; $paramok = false;}
+if (!isset($mediaid)) $mediaid = ""; 
 if (!isset($linkto)) {$linkto = ""; $paramok = false;}
 if (!isset($action)) $action = "choose";
 if ($linkto == "person") $toitems = $pgv_lang["to_person"];
@@ -42,31 +42,30 @@ else {
 	$paramok = false;
 }
 
-//-- evil script protection
-if ( preg_match("/M\d{4,8}/",$mediaid, $matches) == 1 ) {
-	$mediaid=$matches[0];
+if (!empty($mediaid)) {
+	//-- evil script protection
+	if ( preg_match("/M\d{4,8}/",$mediaid, $matches) == 1 ) {
+		$mediaid=$matches[0];
+	}
+	else $paramok = false;
 }
-else $paramok = false;
+else if (empty($linktoid)) $paramok = false;
 
 
 print_simple_header($pgv_lang["link_media"]." ".$toitems);
 
 //-- check for admin
-$paramok =  userIsAdmin(getUserName());
+$paramok =  userCanEdit(getUserName());
+if (!empty($linktoid)) $paramok = displayDetails(find_gedcom_record($linktoid));
 
 if ($action == "choose" && $paramok) {
 	?>
 	<script language="JavaScript" type="text/javascript">
+	<!--
 	var pastefield;
 	var language_filter, magnify;
 	language_filter = "";
 	magnify = "";
-
-	function addnewsource(field) {
-		pastefield = field;
-		window.open('edit_interface.php?action=addnewsource&amp;pid=newsour', '', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
-		return false;
-	}
 
 	function openerpasteid(id) {
 		window.opener.paste_id(id);
@@ -82,42 +81,89 @@ if ($action == "choose" && $paramok) {
 		language_filter = lang;
 		magnify = mag;
 	}
+	//-->
 	</script>
-	<script src="phpgedview.js" language="JavaScript" type="text/javascript"></script>
+	<script src="./js/phpgedview.js" language="JavaScript" type="text/javascript"></script>
 
 	<?php
-	if (!isset($linktoid)) $linktoid = "";
 	print "<form name=\"link\" method=\"post\" action=\"inverselink.php\">\n";
 	print "<input type=\"hidden\" name=\"action\" value=\"update\" />\n";
-	print "<input type=\"hidden\" name=\"mediaid\" value=\"$mediaid\" />\n";
-	print "<input type=\"hidden\" name=\"linkto\" value=\"$linkto\" />\n";
-	print "<input type=\"hidden\" name=\"ged\" value=\"$GEDCOM\" />\n";
-	print "<table class=\"facts_table center $TEXT_DIRECTION\">";
+	if (!empty($mediaid)) print "<input type=\"hidden\" name=\"mediaid\" value=\"".$mediaid."\" />\n";
+	if (!empty($linktoid)) print "<input type=\"hidden\" name=\"linktoid\" value=\"".$linktoid."\" />\n";
+	print "<input type=\"hidden\" name=\"linkto\" value=\"".$linkto."\" />\n";
+	print "<input type=\"hidden\" name=\"ged\" value=\"".$GEDCOM."\" />\n";
+	print "<table class=\"facts_table center ".$TEXT_DIRECTION."\">";
 	print "\n\t<tr><td class=\"topbottombar\" colspan=\"2\">";
-	print_help_link("admin_link_media_help","qm", "link_media");
+	print_help_link("add_media_linkid","qm", "link_media");
 	print $pgv_lang["link_media"]." ".$toitems."</td></tr>";
-	print "<tr><td class=\"descriptionbox width20 wrap\">".$pgv_lang["media_id"]."</td><td class=\"optionbox\">".$mediaid."</td></tr>";
+	print "<tr><td class=\"descriptionbox width20 wrap\">".$pgv_lang["media_id"]."</td>";
+	if (!empty($mediaid)) {
+		//-- Get the title of this existing Media item
+		$sql = "SELECT * FROM ".$TBLPREFIX."media where m_media = '".$mediaid."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
+		$tempsql = dbquery($sql);
+		$res =& $tempsql;
+		$row =& $res->fetchRow(DB_FETCHMODE_ASSOC);
+		if (trim($row["m_titl"])=="") {
+			print "<td class=\"optionbox wrap\"><b>".$mediaid."</b></td></tr>";
+		} else {
+			print "<td class=\"optionbox wrap\"><b>".PrintReady($row["m_titl"])."</b>&nbsp;&nbsp;&nbsp;";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			print "(".$mediaid.")";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			print "</td></tr>";
+		}
+		$res->free();
+ 	} else {
+		print "<td class=\"optionbox wrap\"><input type=\"text\" name=\"mediaid\" id=\"mediaid\" size=\"5\" />";
+		print_findmedia_link("mediaid","1media");
+		print "</td></tr>";
+	}
 
+	if (!isset($linktoid)) $linktoid = "";
 	print "<tr><td class=\"descriptionbox\">";
 	if ($linkto == "person") {
 		print $pgv_lang["enter_pid"]."</td>";
-		print "<td class=\"optionbox\">";
-		print "<input class=\"pedigree_form\" type=\"text\" name=\"linktoid\" id=\"linktoid\" size=\"3\" value=\"$linktoid\" />";
-		print_findindi_link("linktoid","");
+		print "<td class=\"optionbox wrap\">";
+		if ($linktoid=="") {
+			print "<input class=\"pedigree_form\" type=\"text\" name=\"linktoid\" id=\"linktoid\" size=\"3\" value=\"$linktoid\" />";
+			print_findindi_link("linktoid","");
+		} else {
+			print "<b>".PrintReady(get_person_name($linktoid))."</b>";
+			print "&nbsp;&nbsp;&nbsp;";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			print "(".$linktoid.")";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+		}
 	}
-
+    
 	if ($linkto == "family") {
 		print $pgv_lang["enter_famid"]."</td>";
-		print "<td class=\"optionbox\">";
-		print "<input class=\"pedigree_form\" type=\"text\" name=\"linktoid\" id=\"linktoid\" size=\"3\" value=\"$linktoid\" />";
-		print_findfamily_link("linktoid");
+		print "<td class=\"optionbox wrap\">";
+		if ($linktoid=="") {
+			print "<input class=\"pedigree_form\" type=\"text\" name=\"linktoid\" id=\"linktoid\" size=\"3\" value=\"$linktoid\" />";
+			print_findfamily_link("linktoid");
+		} else {
+			print "<b>".PrintReady(get_family_descriptor($linktoid))."</b>";
+			print "&nbsp;&nbsp;&nbsp;";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			print "(".$linktoid.")";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+		}
 	}
-
+    
 	if ($linkto == "source") {
 		print $pgv_lang["source"]."</td>";
-		print "<td  class=\"optionbox\">";
-		print "<input class=\"pedigree_form\" type=\"text\" name=\"linktoid\" id=\"linktoid\" size=\"3\" value=\"$linktoid\" />";
-		print_findsource_link("linktoid");
+		print "<td  class=\"optionbox wrap\">";
+		if ($linktoid=="") {
+			print "<input class=\"pedigree_form\" type=\"text\" name=\"linktoid\" id=\"linktoid\" size=\"3\" value=\"$linktoid\" />";
+			print_findsource_link("linktoid");
+		} else {
+			print "<b>".PrintReady(get_source_descriptor($linktoid))."</b>";
+			print "&nbsp;&nbsp;&nbsp;";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			print "(".$linktoid.")";
+			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+		}
 	}
 	print "</td></tr>";
 	print "<tr><td class=\"topbottombar\" colspan=\"2\"><input type=\"submit\" value=\"".$pgv_lang["set_link"]."\" /></td></tr>";
@@ -128,28 +174,7 @@ if ($action == "choose" && $paramok) {
 
 }
 elseif ($action == "update" && $paramok) {
-	// find indi
-	$indirec = find_gedcom_record($linktoid);
-
-	if ($indirec) {
-		$mediarec = "1 OBJE @".$mediaid."@\r\n";
-		$newrec = trim($indirec."\r\n".$mediarec);
-
-		// update the database
-		if (update_db_link($mediaid, $linktoid, $mediarec, $ged, -1)) {
-			AddToChangeLog("Database link update is OK");
-			// TODO: Add variable
-			print "DB update OK";
-		}
-		else {
-			// TODO: Add variable
-			AddToChangeLog("There was an error updating the database link");
-			print "DB upate KO";
-		}
-		replace_gedrec($linktoid, $newrec);
-
-	}
-	else print "<br /><center>".$pgv_lang["invalid_id"]."</center>";
+	linkMedia($mediaid, $linktoid);
 	print "<br/><br/><center><a href=\"javascript:;\" onclick=\"if (window.opener.showchanges) window.opener.showchanges(); window.close();\">".$pgv_lang["close_window"]."</a><br /></center>\n";
 	print_simple_footer();
 }

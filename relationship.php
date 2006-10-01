@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: relationship.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: relationship.php,v 1.2 2006/10/01 22:44:00 lsces Exp $
  */
 
 // -- include config file
 require("config.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require($factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 if (!isset($show_full)) $show_full=$PEDIGREE_FULL_DETAILS;
 if (!isset($path_to_find)){
@@ -122,7 +122,7 @@ if ($view!="preview") {
 	<table class="list_table <?php print $TEXT_DIRECTION ?>" align="
 		<?php
 	if ($TEXT_DIRECTION == "ltr") print "right";
-	else print "left";?>" \>
+	else print "left";?>" >
 
 	<!-- // Relationship header -->
 	<tr><td colspan="2" class="topbottombar center">
@@ -190,7 +190,7 @@ if ($view!="preview") {
 	</td>
 	<td class="optionbox">
 	<input tabindex="5" type="checkbox" name="pretty" value="2"
-	<?php 
+	<?php
 	if ($pretty) print " checked=\"checked\"";
 	print " onclick=\"expand_layer('oldtop1'); expand_layer('oldtop2');\"" ?> />
 	</td></tr>
@@ -204,7 +204,7 @@ if ($view!="preview") {
 
 	<!-- // Show oldest top -->
 	<td class="descriptionbox">
-	<div id="oldtop1" style="display: 
+	<div id="oldtop1" style="display:
 	<?php
 	if ($pretty) print "block";
 	else print "none";
@@ -224,7 +224,7 @@ if ($view!="preview") {
 	if ($asc==-1) print " checked=\"checked\"";?>
 	/>
 	</div></td></tr>
-	
+
 	<!-- // Show path -->
 	<tr><td class="descriptionbox">
 	<?php $pass = false;
@@ -278,7 +278,7 @@ if ($view!="preview") {
 	print_help_link("follow_spouse_help", "qm");
 	print $pgv_lang["follow_spouse"];?>
 	</td>
-	<td class="optionbox">
+	<td class="optionbox" id="followspousebox">
 	<input tabindex="6" type="checkbox" name="followspouse" value="1"
 	<?php
 	if ($followspouse) print " checked=\"checked\"";
@@ -287,7 +287,19 @@ if ($view!="preview") {
 	<?php
 	if ((!empty($pid1))&&(!empty($pid2))&&($disp)){
 		print "</tr><tr>";
-		if (($disp)&&(!$check_node)) print "<td class=\"topbottombar wrap vmiddle center\" colspan=\"2\"><span class=\"error\">".(isset($_SESSION["relationships"])?$pgv_lang["no_link_found"]:"")."</span></td>";
+		if (($disp)&&(!$check_node)) {
+			print "<td class=\"topbottombar wrap vmiddle center\" colspan=\"2\">";
+			if (isset($_SESSION["relationships"])) print "<span class=\"error\">".$pgv_lang["no_link_found"]."</span><br />";
+			if (!$followspouse) {
+				?>
+				<script language="JavaScript" type="text/javascript">
+				document.getElementById("followspousebox").className='facts_valuered';
+				</script>
+				<?php
+				print "<input class=\"error\" type=\"submit\" value=\"".$pgv_lang["follow_spouse"]."\" onclick=\"people.followspouse.checked='checked';\"/>";
+			}
+			print "</td>";
+		}
 		else print "<td class=\"topbottombar vmiddle center\" colspan=\"2\"><input type=\"submit\" value=\"".$pgv_lang["next_path"]."\" onclick=\"document.people.path_to_find.value='".($path_to_find+1)."';\" /></td>\n";
 		$pass = true;
 	}
@@ -497,8 +509,9 @@ if ((!empty($pid1))&&(!empty($pid2))) {
 					}
 					print "</div>\n";
 				}
-				print "<div id=\"box$pid.0\" style=\"position:absolute; ".($TEXT_DIRECTION=="ltr"?"left":"right").":".$pxoffset."px; top:".$yoffset."px; width:".$Dbwidth."px; height:".$Dbheight."px; z-index:".(count($node["path"])-$index)."; \"><table><tr><td colspan=\"2\" width=\"$Dbwidth\" height=\"$Dbheight\">";
-				print_pedigree_person($pid, 1, ($view!="preview"));
+				$iref = rand();
+				print "<div id=\"box$pid.1.$iref\" style=\"position:absolute; ".($TEXT_DIRECTION=="ltr"?"left":"right").":".$pxoffset."px; top:".$yoffset."px; width:".$Dbwidth."px; height:".$Dbheight."px; z-index:".(count($node["path"])-$index)."; \"><table><tr><td colspan=\"2\" width=\"$Dbwidth\" height=\"$Dbheight\">";
+				print_pedigree_person($pid, 1, ($view!="preview"), $iref);
 				print "</td></tr></table></div>\n";
 			}
 			print "</div>\n";

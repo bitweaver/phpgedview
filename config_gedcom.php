@@ -27,7 +27,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig_gedcom.php
- * @version $Id: config_gedcom.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: config_gedcom.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 if (preg_match("/\Wconfig_gedcom\.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -125,10 +125,12 @@ $WEBMASTER_EMAIL = "webmaster@yourdomain.com";		// -- this is who the user shoul
 $SUPPORT_METHOD = "messaging2";						// -- the method to allow users to contact you. options are: mailto, messaging, messaging2
 $HOME_SITE_URL   = "http://www.phpgedview.net";     // -- url for your home page
 $HOME_SITE_TEXT  = "About PhpGedView";                     // -- name of your site
-$FAVICON = "images/favicon.ico";                          // -- change to point to your favicon, either relative or absolute
+$SHOW_FACT_ICONS = true;					//-- Show Fact icons on Indi page
+$FAVICON = "image/favicon.ico";                          // -- change to point to your favicon, either relative or absolute
 $THEME_DIR = "themes/standard/";					// -- directory where display theme files are kept
 if (substr ($THEME_DIR, -1) != "/") $THEME_DIR = $THEME_DIR . "/";
 $ALLOW_THEME_DROPDOWN = false; 					//-- allows the themes to display theme change dropdown
+$SECURITY_CHECK_GEDCOM_DOWNLOADABLE = true;	//-- check for downloadability of GEDCOM
 
 $SHOW_STATS = false;					//-- Show execution stats at the bottom of the page
 $SHOW_COUNTER = false;        //-- Show hit counters on portal and individual pages
@@ -153,7 +155,7 @@ $META_SURNAME_KEYWORDS	= true;		//-- option to use the most common surnames in t
 $CHART_BOX_TAGS		= "";		//-- optional comma seperated gedcom tags to show in chart boxes
 $USE_QUICK_UPDATE	= true;		//-- whether or not to use the quick update form
 $SHOW_QUICK_RESN	= false;	//-- whether or not to show RESN tags on the quick update form
-$QUICK_ADD_FACTS	= "BIRT,CHR,DEAT,BURI,CREM,ADOP,BAPM,BARM,BASM,BLES,CHRA,CONF,FCOM,ORDN,NATU,EMIG,IMMI,GRAD,BAPL,CONL,ENDL,SLGC";		//-- comma delimited list of facts that can be added on the quick update form
+$QUICK_ADD_FACTS	= "BIRT,CHR,DEAT,BURI,CREM,ADOP,BAPM,BARM,BASM,BLES,CHRA,CONF,FCOM,ORDN,NATU,EMIG,IMMI,GRAD,BAPL,CONL,ENDL,SLGC,RELI";		//-- comma delimited list of facts that can be added on the quick update form
 $QUICK_REQUIRED_FACTS	= "BIRT,DEAT";	//-- comma delimited list of facts that will be required by default on the quick update
 $QUICK_ADD_FAMFACTS		= "MARR,DIV,SLGS";		//-- comma delimited list of facts that can be added on the quick update form for families
 $QUICK_REQUIRED_FAMFACTS	= "MARR";	//-- comma delimited list of facts that will be required by on the quick update for families
@@ -174,7 +176,9 @@ $INDI_FACTS_UNIQUE = "";
 $INDI_FACTS_ADD = "ADDR,AFN,BIRT,CHR,DEAT,BURI,CREM,ADOP,BAPM,BARM,BASM,BLES,CHRA,CONF,_EMAIL,FAX,FCOM,ORDN,NATU,EMIG,IMMI,CENS,PROB,WILL,GRAD,RETI,CAST,DSCR,EDUC,IDNO,NATI,NCHI,NMR,OCCU,PROP,RELI,RESI,SSN,TITL,BAPL,CONL,ENDL,SLGC,_MILI";
 $FAM_FACTS_UNIQUE = "NCHI,MARL,DIV,ANUL,DIVF,ENGA,MARB,MARC,MARS";
 $FAM_FACTS_ADD = "CENS,MARR,RESI,SLGS,MARR_CIVIL,MARR_RELIGIOUS,MARR_PARTNERS";
+$GENERATE_UIDS = false;		//-- automatically generate _UID fields for records that do not already have them
 
+$ENABLE_RSS = true;
 $RSS_FORMAT = "RSS1.0"; //-- format of RSS to use.
 // -- amount of time to execute before quitting in seconds
 // -- set this to 0 to remove all time limits

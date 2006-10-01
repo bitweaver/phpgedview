@@ -19,10 +19,11 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: aliveinyear.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: aliveinyear.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
+require_once("includes/functions_print_lists.php");
 
 /**
  * is the person alive in the given year

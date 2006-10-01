@@ -26,12 +26,12 @@
  * 
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: client.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: client.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
 
-require $PGV_BASE_DIRECTORY."includes/functions_edit.php";
+require "includes/functions_edit.php";
 header("Content-Type: text/plain; charset=$CHARACTER_SET");
 
 $pgv_user = getUserName();
@@ -453,19 +453,19 @@ else if ($action=="uploadmedia") {
 }
 else if ($action=="getchanges") {
 	if (empty($date)) {
-		addDebugLog($action." ERROR 20: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.");
-		print "ERROR 20: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.\n";
+		addDebugLog($action." ERROR 23: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.");
+		print "ERROR 23: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.\n";
 	}
 	else {
 		$lastdate = parse_date($date);
 		
 		if (empty($date) || empty($lastdate[0]['year']) || empty($lastdate[0]['month']) || empty($lastdate[0]['day'])) {
-			addDebugLog($action." ERROR 20: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.");
-			print "ERROR 20: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.\n";
+			addDebugLog($action." ERROR 23: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.");
+			print "ERROR 23: Invalid date parameter.  Please use a valid date in the GEDCOM format DD MMM YYYY.\n";
 		}
 		else {
 			print "SUCCESS\n";
-			$timestamp = mktime(1, 0, 0, $date[0]['mon'], $date[0]['day'], $date[0]['year']);
+			$timestamp = mktime(1, 0, 0, (int)$date[0]['mon'], (int)$date[0]['day'], $date[0]['year']);
 			if ($timestamp<time()-(60*60*24*180)) return new SOAP_Fault('checkUpdates', 'You cannot retrieve updates for more than 180 days.');
 					
 			$changes = get_recent_changes($date[0]['day'], $date[0]['mon'], $date[0]['year']);

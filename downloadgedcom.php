@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 
 require "config.php";
@@ -38,20 +38,31 @@ if (!isset($privatize_export)) $privatize_export = "";
 
 if ($action=="download" && $zip == "yes") {
 	require "includes/pclzip.lib.php";
-	require "includes/adodb-time.inc.php";
-	$zipname = "dl".adodb_date("YmdHis").".zip";
+	$temppath = $INDEX_DIRECTORY."tmp/";
+	$zipname = "dl".adodb_date("YmdHis").$ged.".zip";
 	$zipfile = $INDEX_DIRECTORY.$zipname;
-	$gedname = $INDEX_DIRECTORY.$ged;
-	$gedout = fopen($gedname, "w");
+	$gedname = $temppath.$ged;
+	
+	$removeTempDir = false;
+	if (!is_dir(filename_decode($temppath))) {
+		$res = mkdir(filename_decode($temppath));
+		if ($res !== true) {
+			print "Error : Could not create temporary path!";
+			exit;
+		}
+		$removeTempDir = true;
+	}
+	$gedout = fopen(filename_decode($gedname), "w");
 	print_gedcom();
 	fclose($gedout);
 	$comment = "Created by PhpGedView ".$VERSION." ".$VERSION_RELEASE." on ".adodb_date("r").".";
-	$archive = new PclZip($zipfile);
-	$v_list = $archive->create($gedname, PCLZIP_OPT_COMMENT, $comment);
+	$archive = new PclZip(filename_decode($zipfile));
+	$v_list = $archive->create(filename_decode($gedname), PCLZIP_OPT_COMMENT, $comment, PCLZIP_OPT_REMOVE_PATH, filename_decode($temppath));
 	if ($v_list == 0) print "Error : ".$archive->errorInfo(true);
 	else {
-		unlink($gedname);
-		header("Location: downloadbackup.php?fname=$zipname");
+		unlink(filename_decode($gedname));
+		if ($removeTempDir) rmdir(filename_decode($temppath));
+		header("Location: downloadbackup.php?fname=".rawurlencode($zipname));
 		exit;
 	}
 	exit;
@@ -71,6 +82,7 @@ else {
 	<br />
 	<form name="convertform" method="post">
 		<input type="hidden" name="action" value="download" />
+		<input type="hidden" name="ged" value="<?php print $ged; ?>" />
 		<table class="list_table" border="0" align="center" valign="top">
 		<tr><td colspan="2" class="facts_label03" style="text-align:center;">
 		<?php print $pgv_lang["options"]; ?>
@@ -107,8 +119,9 @@ else {
 }
 
 function print_gedcom() {
-	GLOBAL $GEDCOM, $ged, $convert, $remove, $zip, $VERSION, $VERSION_RELEASE, $pgv_lang, $gedout;
-	GLOBAL $privatize_export, $privatize_export_level;
+	global $GEDCOMS, $GEDCOM, $ged, $convert, $remove, $zip, $VERSION, $VERSION_RELEASE, $pgv_lang, $gedout;
+	global $privatize_export, $privatize_export_level;
+	global $TBLPREFIX;
 
 	if ($privatize_export == "yes") {
 		create_export_user($privatize_export_level);
@@ -123,13 +136,13 @@ function print_gedcom() {
 	}
 	
 	$GEDCOM = $ged;
-	$indilist = get_indi_list();
-	$famlist = get_fam_list();
-	$sourcelist = get_source_list();
-	$otherlist = get_other_list();
+	//$indilist = get_indi_list();
+	//$famlist = get_fam_list();
+	//$sourcelist = get_source_list();
+	//$otherlist = get_other_list();
 
-	if (isset($otherlist["HEAD"])) {
-		$head = $otherlist["HEAD"]["gedcom"];
+	$head = find_gedcom_record("HEAD");
+	if (!empty($head)) {
 		$pos1 = strpos($head, "1 SOUR");
 		if ($pos1!==false) {
 			$pos2 = strpos($head, "\n1", $pos1+1);
@@ -168,33 +181,49 @@ function print_gedcom() {
 	$head = preg_replace(array("/(\r\n)+/", "/\r+/", "/\n+/"), array("\r\n", "\r", "\n"), $head);
 	if ($zip == "yes") fwrite($gedout, $head);
 	else print $head;
-	foreach($indilist as $indexval => $indi) {
-		$rec = trim($indi["gedcom"])."\r\n";
+	
+	$sql = "SELECT i_gedcom FROM ".$TBLPREFIX."individuals WHERE i_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY i_id";
+	$res = dbquery($sql); 
+	while($row = $res->fetchRow()) {
+		$rec = trim($row['i_gedcom'])."\r\n";
 		$rec = remove_custom_tags($rec, $remove);
 		if ($privatize_export == "yes") $rec = privatize_gedcom($rec);
 		if ($convert=="yes") $rec = utf8_decode($rec);
 		if ($zip == "yes") fwrite($gedout, $rec);
 		else print $rec;
 	}
-	foreach($famlist as $indexval => $fam) {
-		$rec = trim($fam["gedcom"])."\r\n";
+	$res->free();
+	
+	$sql = "SELECT f_gedcom FROM ".$TBLPREFIX."families WHERE f_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY f_id";
+	$res = dbquery($sql); 
+	while($row = $res->fetchRow()) {
+		$rec = trim($row['f_gedcom'])."\r\n";
 		$rec = remove_custom_tags($rec, $remove);
 		if ($privatize_export == "yes") $rec = privatize_gedcom($rec);
 		if ($convert=="yes") $rec = utf8_decode($rec);
 		if ($zip == "yes") fwrite($gedout, $rec);
 		else print $rec;
 	}
-	foreach($sourcelist as $indexval => $source) {
-		$rec = trim($source["gedcom"])."\r\n";
+	$res->free();
+	
+	$sql = "SELECT s_gedcom FROM ".$TBLPREFIX."sources WHERE s_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY s_id";
+	$res = dbquery($sql); 
+	while($row = $res->fetchRow()) {
+		$rec = trim($row['s_gedcom'])."\r\n";
 		$rec = remove_custom_tags($rec, $remove);
 		if ($privatize_export == "yes") $rec = privatize_gedcom($rec);
 		if ($convert=="yes") $rec = utf8_decode($rec);
 		if ($zip == "yes") fwrite($gedout, $rec);
 		else print $rec;
 	}
-	foreach($otherlist as $key=>$other) {
+	$res->free();
+	
+	$sql = "SELECT o_gedcom, o_type FROM ".$TBLPREFIX."other WHERE o_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY o_id";
+	$res = dbquery($sql); 
+	while($row = $res->fetchRow()) {
+		$rec = trim($row['o_gedcom'])."\r\n";
+		$key = $row['o_type'];
 		if (($key!="HEAD")&&($key!="TRLR")) {
-			$rec = trim($other["gedcom"])."\r\n";
 			$rec = remove_custom_tags($rec, $remove);
 			if ($privatize_export == "yes") $rec = privatize_gedcom($rec);
 			if ($convert=="yes") $rec = utf8_decode($rec);
@@ -202,6 +231,20 @@ function print_gedcom() {
 			else print $rec;
 		}
 	}
+	$res->free();
+	
+	$sql = "SELECT o_gedcom FROM ".$TBLPREFIX."media WHERE m_gedfile=".$GEDCOMS[$GEDCOM]['id']." ORDER BY m_media";
+	$res = dbquery($sql); 
+	while($row = $res->fetchRow()) {
+		$rec = trim($row['o_gedcom'])."\r\n";
+		$rec = remove_custom_tags($rec, $remove);
+		if ($privatize_export == "yes") $rec = privatize_gedcom($rec);
+		if ($convert=="yes") $rec = utf8_decode($rec);
+		if ($zip == "yes") fwrite($gedout, $rec);
+		else print $rec;
+	}
+	$res->free();
+	
 	if ($zip == "yes") fwrite($gedout, "0 TRLR\r\n");
 	else print "0 TRLR\r\n";
 	

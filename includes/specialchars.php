@@ -39,10 +39,10 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: specialchars.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: specialchars.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 $specialchar_languages = array(
 	"af" => "Afrikaans",
@@ -70,7 +70,8 @@ $specialchar_languages = array(
 	"tr" => $pgv_lang["lang_name_turkish"], // Turkish
 	"he" => $pgv_lang["lang_name_hebrew"],
 	"ar" => $pgv_lang["lang_name_arabic"],
-	"ru" => $pgv_lang["lang_name_russian"]
+	"ru" => $pgv_lang["lang_name_russian"],
+	"vi" => $pgv_lang["lang_name_vietnamese"], // Vietnamese
 );
 
 switch ($language_filter) {
@@ -943,6 +944,144 @@ $ucspecialchars = array(
 		"я" => "я"
 	);
 	break;
+	case "vi": // vietnamese
+    $ucspecialchars = array(
+        "À" => "À", // A with grave
+        "Á" => "Á", // A with acute
+        "Â" => "Â", // A with circumflex
+        "Ã" => "Ã", // A with tilde
+        "� " => "� ", // A with dot below
+        "Ả" => "Ả", // A with hook above
+        "Ă" => "Ă", // A with breve
+        "Ấ" => "Ấ", // A with circumflex and acute
+        "Ầ" => "Ầ", // A with circumflex and grave
+        "Ẫ" => "Ẫ", // A with circumflex and tilde
+        "Ậ" => "Ậ", // A with circumflex and dot below
+        "Ắ" => "Ắ", // A with breve and acute
+        "Ằ" => "Ằ", // A with breve and grave
+        "Ẳ" => "Ẳ", // A with breve and hook above
+        "Ẵ" => "Ẵ", // A with breve and tilde
+        "Ặ" => "Ặ", // A with breve and dot below
+        "Đ" => "Đ", // D with stroke
+        "È" => "È", // E with grave
+        "É" => "É", // E with acute
+        "Ê" => "Ê", // E with circumflex
+        "Ẹ" => "Ẹ", // E with dot below
+        "Ẻ" => "Ẻ", // E with hook above
+        "Ẽ" => "Ẽ", // E with tilde
+        "Ế" => "Ế", // E with circumflex and acute
+        "Ề" => "Ề", // E with circumflex and grave
+        "Ể" => "Ể", // E with circumflex and hook above
+        "Ễ" => "Ễ", // E with circumflex and tilde
+        "Ệ" => "Ệ", // E with circumflex and dot below
+        "Ì" => "Ì", // I with grave
+        "Í" => "Í", // I with acute
+        "Ĩ" => "Ĩ", // I with tilde
+        "Ỉ" => "Ỉ", // I with hook above
+        "Ị" => "Ị", // I with dot below
+        "Ò" => "Ò", // O with grave
+        "Ó" => "Ó", // O with acute
+        "Ô" => "Ô", // O with circumflex
+        "Õ" => "Õ", // O with tilde
+        "� " => "� ", // O with horn
+        "Ọ" => "Ọ", // O with dot below
+        "Ỏ" => "Ỏ", // O with hook above
+        "Ố" => "Ố", // O with circumflex and acute
+        "Ồ" => "Ồ", // O with circumflex and grave
+        "Ổ" => "Ổ", // O with circumflex and hook above
+        "Ỗ" => "Ỗ", // O with circumflex and tilde
+        "Ộ" => "Ộ", // O with circumflex and dot below
+        "Ớ" => "Ớ", // O with horn and acute
+        "Ờ" => "Ờ", // O with horn and grave
+        "Ở" => "Ở", // O with horn and hook above
+        "� " => "� ", // O with horn and tilde
+        "Ợ" => "Ợ", // O with horn and dot below
+        "Ù" => "Ù", // U with grave
+        "Ú" => "Ú", // U with acute
+        "Ũ" => "Ũ", // U with tilde
+        "Ư" => "Ư", // U with horn
+        "Ụ" => "Ụ", // U with dot below
+        "Ủ" => "Ủ", // U with hook above
+        "Ứ" => "Ứ", // U with horn and acute
+        "Ừ" => "Ừ", // U with horn and grave
+        "Ử" => "Ử", // U with horn and hook above
+        "Ữ" => "Ữ", // U with horn and tilde
+        "Ự" => "Ự", // U with horn and dot below
+        "Ý" => "Ý", // Y with acute
+        "Ỳ" => "Ỳ", // Y with grave
+        "Ỵ" => "Ỵ", // Y with dot below
+        "Ỷ" => "Ỷ", // Y with hook above
+        "Ỹ" => "Ỹ", // Y with tilde
+	);
+	$lcspecialchars = array(
+        "� " => "� ", // a with grave
+        "á" => "á", // a with acute
+        "â" => "â", // a with circumflex
+        "ã" => "ã", // a with tilde
+        "ạ" => "ạ", // a with dot below
+        "ả" => "ả", // a with hook above
+        "ă" => "ă", // a with breve
+        "ấ" => "ấ", // a with circumflex and acute
+        "ầ" => "ầ", // a with circumflex and grave
+        "ẫ" => "ẫ", // a with circumflex and tilde
+        "ậ" => "ậ", // a with circumflex and dot below
+        "ắ" => "ắ", // a with breve and acute
+        "ằ" => "ằ", // a with breve and grave
+        "ẳ" => "ẳ", // a with breve and hook above
+        "ẵ" => "ẵ", // a with breve and tilde
+        "ặ" => "ặ", // a with breve and dot below
+        "đ" => "đ", // d with stroke
+        "è" => "è", // e with grave
+        "é" => "é", // e with acute
+        "ê" => "ê", // e with circumflex
+        "ẹ" => "ẹ", // e with dot below
+        "ẻ" => "ẻ", // e with hook above
+        "ẽ" => "ẽ", // e with tilde
+        "ế" => "ế", // e with circumflex and acute
+        "ề" => "ề", // e with circumflex and grave
+        "ể" => "ể", // e with circumflex and hook above
+        "ễ" => "ễ", // e with circumflex and tilde
+        "ệ" => "ệ", // e with circumflex and dot below
+        "ì" => "ì", // i with grave
+        "í" => "í", // i with acute
+        "ĩ" => "ĩ", // i with tilde
+        "ỉ" => "ỉ", // i with hook above
+        "ị" => "ị", // i with dot below
+        "ò" => "ò", // o with grave
+        "ó" => "ó", // o with acute
+        "ô" => "ô", // o with circumflex
+        "õ" => "õ", // o with tilde
+        "ơ" => "ơ", // o with horn
+        "ọ" => "ọ", // o with dot below
+        "ỏ" => "ỏ", // o with hook above
+        "ố" => "ố", // o with circumflex and acute
+        "ồ" => "ồ", // o with circumflex and grave
+        "ổ" => "ổ", // o with circumflex and hook above
+        "ỗ" => "ỗ", // o with circumflex and tilde
+        "ộ" => "ộ", // o with circumflex and dot below
+        "ớ" => "ớ", // o with horn and acute
+        "ờ" => "ờ", // o with horn and grave
+        "ở" => "ở", // o with horn and hook above
+        "ỡ" => "ỡ", // o with horn and tilde
+        "ợ" => "ợ", // o with horn and dot below
+        "ù" => "ù", // u with grave
+        "ú" => "ú", // u with acute
+        "ũ" => "ũ", // u with tilde
+        "ư" => "ư", // u with horn
+        "ụ" => "ụ", // u with dot below
+        "ủ" => "ủ", // u with hook above
+        "ứ" => "ứ", // u with horn and acute
+        "ừ" => "ừ", // u with horn and grave
+        "ử" => "ử", // u with horn and hook above
+        "ữ" => "ữ", // u with horn and tilde
+        "ự" => "ự", // u with horn and dot below
+        "ý" => "ý", // y with acute
+        "ỳ" => "ỳ", // y with grave
+        "ỵ" => "ỵ", // y with dot below
+        "ỷ" => "ỷ", // y with hook above
+        "ỹ" => "ỹ", // y with tilde
+	);
+break;
 
 
 default: // list all

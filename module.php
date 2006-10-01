@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: module.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: module.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  * @author Patrick Kellum
  */
 
@@ -31,8 +31,10 @@ require_once 'config.php';
 define('PGV_MOD_SIMPLE', 1);
 // More advanced OO module system
 define('PGV_MOD_OO', 2);
+// Module system version 2, enhanced security and better output control
+define('PGV_MOD_V2', 3);
 
-if (!isset ($_REQUEST['mod']))
+if(!isset($_REQUEST['mod']))
 {
 	// PGV_MOD_NUKE
 	if (isset ($_REQUEST['name']))
@@ -40,9 +42,14 @@ if (!isset ($_REQUEST['mod']))
 		$_REQUEST['mod'] = $_REQUEST['name'];
 	}
 }
-if (file_exists('modules/'.$_REQUEST['mod'].'.php'))
+if(file_exists('modules/'.$_REQUEST['mod'].'.php'))
 {
 	$modinfo = parse_ini_file('modules/'.$_REQUEST['mod'].'.php', true);
+}
+// v2 modules
+elseif(file_exists("modules/{$_REQUEST['mod']}/pgv_version.php"))
+{
+	$modinfo = parse_ini_file("modules/{$_REQUEST['mod']}/pgv_version.php", true);
 }
 else
 {
@@ -50,7 +57,7 @@ else
 	print ' ';
 	exit;
 }
-switch ($modinfo['Module']['type'])
+switch($modinfo['Module']['type'])
 {
 	case PGV_MOD_SIMPLE:
 	{
@@ -76,7 +83,7 @@ switch ($modinfo['Module']['type'])
 			$_REQUEST['class'] = $_REQUEST['mod'];
 		}
 		include_once 'modules/'.$_REQUEST['mod'].'/'.$_REQUEST['class'].'.php';
-		$mod = new $_REQUEST['mod']();
+		$mod = new $_REQUEST['class']();
 		if (!method_exists($mod, $_REQUEST['method']))
 		{
 			$_REQUEST['method'] = 'main';
@@ -88,9 +95,129 @@ switch ($modinfo['Module']['type'])
 		}
 		break;
 	}
+	case PGV_MOD_V2:
+	{
+		/*
+		 * Module Security
+		 *	1. Test if module is active.
+		 *	2. Only Admins can view an inactive module.
+		 */
+		if((!isset($modinfo['Config']['active']) || $modinfo['Config']['active'] === false) && !userIsAdmin(getUserName()))
+		{
+			header("Location: {$SERVER_URL}index.php");print ' ';exit;
+		}
+		/*
+		 * Class Security
+		 * 	1. Remove any directories that might have been passed.
+		 *	2. Test if class file actually exists.
+		 *	3. Ignore any filename that starts with an underscore.
+		 */
+		if(isset($_REQUEST['class'])){$_REQUEST['class'] = basename($_REQUEST['class'], '.php');}
+		if(
+			!isset($_REQUEST['class']) ||
+			!file_exists("modules/{$_REQUEST['mod']}/{$_REQUEST['class']}.php") ||
+			$_REQUEST['class'][0] == '_'
+		){$_REQUEST['class'] = $_REQUEST['mod'];}
+		/*
+		 * Load Language
+		 *	1. Load english language if exists.
+		 *	2. Load current language if exists.
+		 */
+		if(file_exists("modules/{$_REQUEST['mod']}/pgvlang/lang_{$modinfo['Module']['default_language']}.php")){include_once "modules/{$_REQUEST['mod']}/pgvlang/lang_{$modinfo['Module']['default_language']}.php";}
+		if($deflang != $modinfo['Module']['default_language'] && file_exists("modules/{$_REQUEST['mod']}/pgvlang/lang_{$deflang}.php")){include_once "modules/{$_REQUEST['mod']}/pgvlang/lang_{$deflang}.php";}
+
+		/*
+		 * Load & Initialize
+		 * 	1. Load the class file.
+		 *	2. Create a module object.
+		 *	3. Initialize the module if needed.
+		 */
+		include_once "modules/{$_REQUEST['mod']}/{$_REQUEST['class']}.php";
+		$mod = new $_REQUEST['class']();
+		if(method_exists($mod, 'init')){$mod->init();}
+		/*
+		 * Method Security
+		 *	1. Test if method actually exists in this object.
+		 *	2. Ignore any method that starts with an underscore.
+		 */
+		if(
+			!isset($_REQUEST['method']) ||
+			!method_exists($mod, $_REQUEST['method']) ||
+			$_REQUEST['method'][0] == '_'
+		){$_REQUEST['method'] = 'main';}
+		/*
+		 * Execute Method
+		 *	1. Execute the requested method.
+		 *	2. Act upon the result of the method call.
+		 */
+		$results = $mod->$_REQUEST['method']();
+		switch($results[0])
+		{
+			/*
+			 * Action: Display Raw Output
+			 *	'content':	Raw content to display on the page.
+			 */
+			case 'display':
+			{
+				print $results['content'];
+				break;
+			}
+			/*
+			 * Action: Wrap Output In Header & Footer
+			 *	'title'		Title of the page. [optional]
+			 *	'head'		Additional header content. [optional]
+			 *	'content'	Content to display on the page.
+			 */
+			case 'wrap':
+			{
+				if(!isset($results['title']))
+				{
+					if(isset($modinfo['Config']['title'])){$results['title'] = $modinfo['Config']['title'];}
+					else{$results['title'] = $GEDCOMS[$GEDCOM]['title'];}
+				}
+				if(!isset($results['head'])){$results['head'] = '';}
+				print_header($results['title'], $results['head']);
+				print $results['content'];
+				print_footer();
+				break;
+			}
+			/*
+			 * Action: Redirect Browser
+			 *	'url'		URL to redirect the browser to.
+			 */
+			case 'redirect':
+			{
+				// fully qualified url is recomended.
+				if(!stristr($results['url'], '://')){$results['url'] = "{$SERVER_URL}{$results['url']}";}
+				header("Location: {$results['url']}");
+				print ' '; // for some older browsers.
+				exit;
+			}
+			/*
+			 * Action: Exit
+			 */
+			case 'exit':
+			{
+				exit;
+			}
+			/*
+			 * Action: Error
+			 */
+			default:
+			{
+				print_header($results['title'], $results['head']);
+				print str_replace('[action]', $results['action'], $pgv_lang['module_error_unknown_action_v2']);
+				print_footer();
+				exit;
+			}
+		}
+		break;
+	}
 	default:
 	{
-		print 'Error: Unknown module type.';
+		print_header($GEDCOMS[$GEDCOM]['title']);
+		print $pgv_lang['module_error_unknown_type'];
+		print_footer();
 		break;
 	}
 }

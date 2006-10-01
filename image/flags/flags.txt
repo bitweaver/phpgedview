@@ -1,0 +1,49 @@
+The images in the flags folder were created from larger, more detailed, 
+versions that you can download from the Developer section on the PhpGedView 
+home site.  These larger images are all at 300px high, with varying widths.  
+
+You can download a 1.2 Mb ZIP file of the large flags from here:
+    http://www.phpgedview.net/devdocs/
+
+The original set of large flag images were, for the most part, downloaded 
+from the CIA site at
+    http://www.cia.gov/cia/publications/factbook/docs/flagsoftheworld.html
+and are in the public domain.
+
+Other sites with a comprehensive collection of flag images are
+    http://www.theodora.com/flags/flags.html
+and 
+    http://w3f.com/gifs/index.html
+
+Other Internet sites were used for reference material when none of the three 
+sites listed above had useful material.  For example, the United Nations flag 
+came from the UN site, while the Arab League flag came from another site that 
+had extensive material on the Arab League.
+
+The CIA site was used as the authority for flag widths, and for stripe widths 
+of most flags.  Unfortunately, the CIA site's flag images use white as the 
+Transparent GIF colour.  This, as well as inconsistent stripe widths, caused 
+some interesting problems when the reduced flag images were displayed in the 
+various PhpGedView themes.
+
+Cleanup of the large flag images was done using ImageForge from CursorArts 
+and also IrfanView.
+
+The small images were created from the large versions by first changing all
+large images to 500px constant width, sometimes quite easily using IrfanView,
+and at other times through some cut-and-paste using ImageForge.  Nepal,
+Switzerland, and Vatican couldn't be enlarged.  Instead, these flags were
+centered in a transparent field of 500px.  The constant-width flags were then
+re-sized to 25x15 with IrfanView.
+
+Special note on the USA flag:
+Please note that the small USA flag CANNOT be made to appear exactly as it is 
+in real life.  Because it has 13 equal stripes of alternate color, its reduced 
+height has to be a multiple of 13 pixels.  When the height is set to 26, the 
+width has to be 52, and that's much too large for display at the top of the
+pages that use flags.  A compromise was made:  The USA flag is 13px high and
+25px wide.  There's a 1px transparent border at the top and bottom, giving a
+total height of 15.  Unfortunately, this height doesn't leave enough room for
+all 50 stars.
+
+Please don't complain about the USA flag -- there's nothing that can be done.

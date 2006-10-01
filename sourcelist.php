@@ -19,12 +19,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: sourcelist.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: sourcelist.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
 require("config.php");
-
+require_once("includes/functions_print_lists.php");
 $addsourcelist = get_source_add_title_list();  //-- array of additional source titlesadd
 $sourcelist = get_source_list();               //-- array of regular source titles 
 
@@ -42,13 +42,20 @@ print "\n\t<table class=\"list_table $TEXT_DIRECTION\">\n\t\t<tr><td class=\"lis
 if($ca>0 || $cs>12)	print " colspan=\"2\"";
 print "><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["source"]["small"]."\" border=\"0\" title=\"".$pgv_lang["sources"]."\" alt=\"".$pgv_lang["sources"]."\" />&nbsp;&nbsp;";
 print $pgv_lang["titles_found"];
-print "</td></tr><tr><td class=\"$TEXT_DIRECTION list_value_wrap\"><ul>";
+print_help_link("sourcelist_listbox_help", "qm");
+print "</td></tr><tr><td class=\"$TEXT_DIRECTION list_value_wrap";
+if($ca>0 || $cs>12)	print " width50";
+print "\"><ul>";
 $i=1;
 if ($cs>0){
 	// -- print the array
 	foreach ($sourcelist as $key => $value) {
 		print_list_source($key, $value);
-		if ($i==ceil($ctot/2) && $ctot>12) print "</ul></td><td class=\"list_value_wrap\"><ul>\n";
+		if ($i==ceil($ctot/2) && $ctot>12) {
+			print "</ul></td><td class=\"list_value_wrap";
+			if($ca>0 || $cs>12)	print " width50";
+			print "\"><ul>\n";
+		}
 		$i++;
 	}
 	$tot_sources = count($source_total);
@@ -58,22 +65,25 @@ if ($cs>0){
 		// -- print the additional array
 		foreach ($addsourcelist as $key => $value) {
 		print_list_source($key, $value);
-		if ($i==ceil($ctot/2) && $ctot>12) print "</ul></td><td class=\"list_value_wrap\"><ul>\n";
+		if ($i==ceil($ctot/2) && $ctot>12) {
+			print "</ul></td><td class=\"list_value_wrap";
+			if($ca>0 || $cs>12)	print " width50";
+			print "\"><ul>\n";
+		}
 		$i++;
 		}
 	}
 
 	print "\n\t\t</ul></td>\n\t\t";
  
-	print "</tr><tr><td>".$pgv_lang["total_sources"]." ".$tot_sources;
-	if (count($source_total) != 0) print "&nbsp;&nbsp;(".$pgv_lang["titles_found"]."&nbsp;".(count($source_total)+$tot_sources).")";
+	print "</tr><tr><td class=\"center\" colspan=\"2\">".$pgv_lang["total_sources"]." ".$tot_sources."<br />";
+	if (count($source_total) != 0) print $pgv_lang["titles_found"]."&nbsp;".(count($source_total)+$tot_sources);
 	if (count($source_hide)>0) print "  --  ".$pgv_lang["hidden"]." ".count($source_hide);
 }
 else print "<span class=\"warning\"><i>".$pgv_lang["no_results"]."</span>";
 
 print "</td>\n\t\t</tr>\n\t</table>";
 
-print_help_link("sourcelist_listbox_help", "qm");
 print "</div>";
 print "<br /><br />";
 print_footer();

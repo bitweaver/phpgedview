@@ -32,13 +32,13 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: patriarchlist.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: patriarchlist.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
 
 require("config.php");
-
+require_once("includes/functions_print_lists.php");
 $patrilist = array();
 $patrialpha = array();
 

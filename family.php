@@ -23,23 +23,23 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: family.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: family.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require_once 'includes/controllers/family_ctrl.php';
 
 print_header($controller->getPageTitle());
 ?>
-
+<?php if ($controller->family->isMarkedDeleted()) print "<span class=\"error\">".$pgv_lang["record_marked_deleted"]."</span>"; ?>
 <script language="JavaScript" type="text/javascript">
 <!--
 	function show_gedcom_record(shownew) {
 		fromfile="";
 		if (shownew=="yes") fromfile='&fromfile=1';
-		var recwin = window.open("gedrecord.php?pid=<?php print $controller->getFamilyID(); ?>"+fromfile, "", "top=50,left=50,width=300,height=400,scrollbars=1,scrollable=1,resizable=1");
+		var recwin = window.open("gedrecord.php?pid=<?php print $controller->getFamilyID(); ?>"+fromfile, "_blank", "top=50,left=50,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");
 	}
 	function showchanges() {
-		window.location = '<?php if (empty($SCRIPT_NAME)) $SCRIPT_NAME = $_SERVER['SCRIPT_FILENAME']; print $SCRIPT_NAME."?".preg_replace("/&amp;/", "&", $QUERY_STRING)."&show_changes=yes"; ?>';
+		window.location = 'family.php?famid=<?php print $controller->famid; ?>&show_changes=yes';
 	}
 //-->
 </script>
@@ -61,7 +61,7 @@ print_header($controller->getPageTitle());
 		<?php }
 		}
 		?></td>
-		<td valign="top">
+		<td valign="top" class="noprint">
 			<div class="accesskeys">
 				<a class="accesskeys" href="<?php print 'timeline.php?pids[0]=' . $controller->parents['HUSB'].'&amp;pids[1]='.$controller->parents['WIFE'];?>" title="<?php print $pgv_lang['parents_timeline'] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_parents_timeline']; ?>"><?php print $pgv_lang['parents_timeline'] ?></a>
 				<a class="accesskeys" href="<?php print 'timeline.php?' . $controller->getChildrenUrlTimeline();?>" title="<?php print $pgv_lang["children_timeline"] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_children_timeline']; ?>"><?php print $pgv_lang['children_timeline'] ?></a>
@@ -120,7 +120,7 @@ print_header($controller->getPageTitle());
 		</td>
 	</tr>
 </table>
-<table class="width95">
+<table class="width90">
 	<tr>
 		<td valign="top" style="width: <?php print $pbwidth?>px;">
 			<?php print_family_children($controller->getFamilyID());?>

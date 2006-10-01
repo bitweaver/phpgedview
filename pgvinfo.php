@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
-	$Id: pgvinfo.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+	$Id: pgvinfo.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
@@ -30,8 +30,8 @@ if (!userGedcomAdmin(getUserName())) {
 exit;
 }
 
-require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+require  $confighelpfile["english"];
+if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
 if (!isset($action)) $action = "";
 
@@ -82,7 +82,7 @@ if ($action == "phpinfo") {
 
 if ($action=="confighelp") {
 
-	require $PGV_BASE_DIRECTORY."includes/functions_editlang.php";
+	require "includes/functions_editlang.php";
 	$helpindex = "config_help_help";
 	print_header($pgv_lang["config_help"]);
 	print "<h2 class=\"center\">".str2upper($pgv_lang["config_help"])."</h2><br />";

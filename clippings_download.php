@@ -19,17 +19,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: clippings_download.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: clippings_download.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
 require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 header("Content-Type: text/plain");
 header("Content-Disposition: attachment; filename=clipping.ged");
+header("Content-length: ".strlen($_SESSION['clippings']));
 
 print_r ($_SESSION["clippings"]);
+
 
 ?>

@@ -22,14 +22,17 @@
  * @package PhpGedView
  * @subpackage Help
  * @author John Finlay & Jans Luder
- * @version $Id: help_text_vars.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: help_text_vars.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 // The variables in this file are used to glue together other var's in the help_text.xx.php
 // Do NOT put any var's, that need to be translated, in this file
-
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+if (strstr($_SERVER["SCRIPT_NAME"],"help_text_vars")) {
+	print "Now, why would you want to do that.  You're not hacking are you?";
+	exit;
+}
+require_once($confighelpfile["english"]);
+if (file_exists($confighelpfile[$LANGUAGE])) require_once($confighelpfile[$LANGUAGE]);
 
 $pgv_lang["help_manageservers.php"]	= "#pgv_lang[help_managesites]#";
 $pgv_lang["edit_RESN_help"]			= "#pgv_lang[RESN_help]#";
@@ -189,6 +192,8 @@ $pgv_lang["h34"]	= "def_help_items,definitions";
 $pgv_lang["h35"]	= "accesskey_viewing_advice_help,accesskeys";
 $pgv_lang["h36"]	= "help_faq.php,faq_list";
 $pgv_lang["h37"]	= "hs_title_help,hs_title";
+$pgv_lang["h38"]	= "help_hourglass.php,hourglass_chart";
+$pgv_lang["h39"]	= "help_familybook.php,familybook_chart";
 
 $pgv_lang["help_contents_help"] = "";
 $i=1;

@@ -22,7 +22,7 @@
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
  * @package PhpGedView
- * @version $Id: searchhelp.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: searchhelp.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 
 require "config.php";
@@ -110,20 +110,20 @@ if ((!empty($searchtext)) && (($searchuser == "yes") || ($searchconfig == "yes")
 	
 	// Load the factarray: Help text requires it
 	if (!isset($factarray)) {
-		require $PGV_BASE_DIRECTORY . $factsfile["english"];
-		if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+		require  $factsfile["english"];
+		if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 	}
 	
 	// Load the user help if chosen
 	if ($searchuser == "yes") {
-		require $PGV_BASE_DIRECTORY . $helptextfile["english"];
-		if (file_exists($PGV_BASE_DIRECTORY . $helptextfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $helptextfile[$LANGUAGE];
+		require  $helptextfile["english"];
+		if (file_exists( $helptextfile[$LANGUAGE])) require  $helptextfile[$LANGUAGE];
 	}
 
 	// Load the config help if chosen
 	if ($searchconfig == "yes") {
-		require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-		if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+		require  $confighelpfile["english"];
+		if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 	}
 
 	// Find all helpvars, so we know what vars to check after the lang.xx file has been reloaded
@@ -133,10 +133,9 @@ if ((!empty($searchtext)) && (($searchuser == "yes") || ($searchconfig == "yes")
 	}
 
 	// Reload lang.xx file
-	require $PGV_BASE_DIRECTORY . $pgv_language["english"];
-	if (file_exists($PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $pgv_language[$LANGUAGE];
-	require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-	if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+	loadLanguage($LANGUAGE, true);
+	require $confighelpfile["english"];
+	if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
 	// Split the search criteria if all or any is chosen. Otherwise, just fill the array with the sentence
 	$criteria = array();

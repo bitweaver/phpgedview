@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_date_hebrew.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: functions_date_hebrew.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
 
 /**
@@ -324,7 +324,7 @@ function jewishGedcomDateToGregorian($datearray){
 function jewishGedcomDateToCurrentGregorian($datearray){
 	global $monthtonum, $month, $year, $hMonth, $hYear; 
 	$dates = array();
-	
+	//debug_print_backtrace();
      if (empty($hYear)) {
 	    if (isset($_SESSION["timediff"])) $time = time()-$_SESSION["timediff"];
         else $time = time();
@@ -348,9 +348,10 @@ function jewishGedcomDateToCurrentGregorian($datearray){
 	foreach($datearray as $date) {
 			if (empty($date["mon"])) $date["mon"] = 13;
 			if (empty($date["day"])) $date["day"] = 30;
-
+			$date["day"] = trim($date["day"]);
+//print $date["mon"].", ".$date["day"].", ".$hYear;
  			$julianDate1 = jewishtojd ( $date["mon"], $date["day"], $hYear );
-			$gregdate1   = jdtogregorian ( $julianDate1 );
+ 			$gregdate1   = jdtogregorian ( $julianDate1 );
 			$pieces1     = preg_split("~/~", $gregdate1);
 			$julianDate2 = jewishtojd ( $date["mon"], $date["day"], $hYear+$altyr );
 			$gregdate2   = jdtogregorian ( $julianDate2 );
@@ -360,6 +361,7 @@ function jewishGedcomDateToCurrentGregorian($datearray){
 			else $dates[] = array("mon"=>$pieces2[0], "day"=>$pieces2[1], "year"=>$pieces2[2], "month"=>array_search($pieces2[0], $monthtonum), "ext"=>"converted jewish");
 
 	}
+	//print_r($dates);
 	return $dates;
 }
 
@@ -393,9 +395,94 @@ function gregorianToJewishGedcomDate($datearray){
 		        break;
        		}
     	}
-        $dates[] = array("mon"=>$hMon, "day"=>$hDay, "year"=>$hYear, "month"=>$hMonth, "ext"=>"converted gregorian");
+        $dates[] = array("mon"=>trim($hMon), "day"=>trim($hDay), "year"=>trim($hYear), "month"=>trim($hMonth), "ext"=>"converted gregorian");
     }
 
 	return $dates;
+}
+
+/**
+ * function to split up a date into parts for a url for hebrew dates
+ * called from get_date_url in functions_date.php when RTL_PROCESSING is 
+ * on and a date has the #DHEBREW# marking
+ * @param string $datestr
+ */
+function get_date_url_hebrew($datestr) {
+	global $monthtonum;
+	$cm = preg_match_all("/([a-zA-Z]{2,4})?\s?([a-zA-Z]{7})?\s?(\d{1,2}\s)?([a-zA-Z]{3})?\s?(\d{3,4})?/", trim($datestr), $match_bet, PREG_SET_ORDER);
+	$dateheb = array();
+
+	    //from date
+	    if (isset($match_bet[5][3]) && $match_bet[5][3]!="") $date[0]["day"]   = $match_bet[5][3];
+	    else if (trim($match_bet[5][0])==trim($match_bet[5][4]) && trim($match_bet[11][0])==trim($match_bet[11][4]))
+	    							$date[0]["day"]   = '30';
+	    else               			$date[0]["day"]   = '01';
+	    if ($match_bet[5][4]!="")   $date[0]["mon"]   = $monthtonum[str2lower($match_bet[5][4])];
+		else               			$date[0]["mon"]   = '01';
+		if (isset($match_bet[5][5]) && $match_bet[5][5]!="") $date[0]["year"]  = $match_bet[5][5];
+		$date[0]["month"] = "";
+
+	    if (isset($match_bet[12][3]) && $match_bet[12][3]!="")
+	         $date[1]["day"]   = $match_bet[12][3];
+	    else if (isset($match_bet[11][3]) && $match_bet[11][3]!="")
+	         $date[1]["day"]   = $match_bet[11][3];
+	    else $date[1]["day"]   = '30';
+	    if (isset($match_bet[12][4]) && $match_bet[12][4]!="rew" && $match_bet[12][4]!="")
+	         $date[1]["mon"]   = $monthtonum[str2lower($match_bet[12][4])];
+	    else if (isset($match_bet[11][4]) && $match_bet[11][4]!="rew" && $match_bet[11][4]!="")
+	         $date[1]["mon"]   = $monthtonum[str2lower($match_bet[11][4])];
+		else $date[1]["mon"]   = '13';
+		if (isset($match_bet[12][5]) && $match_bet[12][5]!="")
+		     $date[1]["year"]  = $match_bet[12][5];
+		else if (isset($match_bet[11][5]) && $match_bet[11][5]!="")
+		     $date[1]["year"]  = $match_bet[11][5];
+		$date[1]["month"] = "";
+		if (isset($date[1]["year"]) && $date[1]["year"] !="" && !isset($date[0]["year"]))
+		     $date[0]["year"] = $date[1]["year"];
+		if (isset($date[0]["year"]) && $date[0]["year"] !="" && !isset($date[1]["year"]))
+		     $date[1]["year"] = $date[0]["year"];
+
+		if ((isset($match_bet[5][5]) && isset($match_bet[12][5]) && $match_bet[5][5]>$match_bet[12][5]) ||
+		    (isset($match_bet[5][5]) && isset($match_bet[11][5]) && $match_bet[5][5]>$match_bet[11][5])) {
+			$date[2] = $date[0];
+			$date[0] = $date[1];
+			$date[1] = $date[2];
+		}
+
+		if (!empty($date[0]["year"]) && !empty($date[1]["year"])) {
+                            		$dateheb = jewishGedcomDateToGregorian($date);
+                            		$action = "year";
+        }
+        else {
+        							$dateheb = jewishGedcomDateToCurrentGregorian($date);
+                            		$action = "today";
+             }
+        if (trim($match_bet[5][0])==trim($match_bet[5][4]) && trim($match_bet[11][0])==trim($match_bet[11][4])) {
+				  $action = "calendar";
+		}
+
+		if (!empty($dateheb[0]["day"]))
+									$start_day 		= $dateheb[0]["day"];
+		else                        $start_day     	= "";
+		if (!empty($dateheb[0]["month"]))
+									$start_month   	= $dateheb[0]["month"];
+		else                        $start_month   	= "";
+		if (!empty($dateheb[0]["year"]))
+									$start_year    	= $dateheb[0]["year"];
+		else                        $start_year    	= "";
+
+		if (!empty($dateheb[1]["day"]))
+									$end_day 		= $dateheb[1]["day"];
+		else                        $end_day     	= "";
+		if (!empty($dateheb[1]["month"]))
+									$end_month   	= $dateheb[1]["month"];
+		else                        $end_month   	= "";
+		if (!empty($dateheb[1]["year"]))
+									$end_year    	= $dateheb[1]["year"];
+		else                        $end_year    	= "";
+		
+		return array("action"=>$action, "start_day"=>$start_day, "end_day"=>$end_day, 
+			"start_month"=>$start_month, "end_month"=>$end_month, "start_year"=>$start_year,
+			"end_year"=>$end_year);
 }
 ?>

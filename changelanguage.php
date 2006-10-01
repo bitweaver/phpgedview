@@ -21,12 +21,12 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: changelanguage.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: changelanguage.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
  
 require "config.php";
-require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+require  $confighelpfile["english"];
+if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
 //-- make sure that they have admin status before they can use this page
 //-- otherwise have them login again
@@ -57,7 +57,7 @@ print "\twindow.location = '$PHP_SELF';\n";
 print "}\n";
 print "function helpPopup03(which) {\n";
 // print "alert(which);";
-// print "if ((!helpWin)||(helpWin.closed)){helpWin = window.open('editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value, '' , 'left=50, top=30, width=700, height=600, resizable=1, scrollbars=1'); helpWin.focus();}\n";
+// print "if ((!helpWin)||(helpWin.closed)){helpWin = window.open('editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value, '_blank' , 'left=50, top=30, width=600, height=500, resizable=1, scrollbars=1'); helpWin.focus();}\n";
 // print "else helpWin.location = 'editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value;\n";
 print "location.href = 'editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value;\n";
 print "return false;\n";
@@ -122,7 +122,7 @@ switch ($action) {
 		print $pgv_lang["add_new_language"];
 		print "</td></tr>";
 
-		require($PGV_BASE_DIRECTORY . "includes/lang_codes_std.php");
+		require( "includes/lang_codes_std.php");
     	print "<form name=\"new_lang_form\" method=\"get\" action=\"$SCRIPT_NAME\">";
       	print "<input type=\"hidden\" name=\"" . session_name() . "\" value=\"" . session_id() . "\" />";
       	print "<input type=\"hidden\" name=\"action\" value=\"new_lang\" />";

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportpdf.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: reportpdf.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
 
 //-- do not allow direct access to this file
@@ -33,6 +33,24 @@ if (strstr($_SERVER["SCRIPT_NAME"],"reportpdf.php")) {
 }
 
 define('FPDF_FONTPATH','fonts/');
+
+/**
+ * page sizes
+ *
+ * an array map of common page sizes
+ * Page sizes should be specified in inches
+ * @global array $pageSizes
+ */
+$pageSizes["A4"]["width"] = "8.27";		// 210 mm
+$pageSizes["A4"]["height"] = "11.73";	// 297 mm
+$pageSizes["A3"]["width"] = "11.73";	// 297 mm
+$pageSizes["A3"]["height"] = "16.54";	// 420 mm
+$pageSizes["A5"]["width"] = "5.83";		// 148 mm
+$pageSizes["A5"]["height"] = "8.27";	// 210 mm
+$pageSizes["letter"]["width"] = "8.5";	// 216 mm
+$pageSizes["letter"]["height"] = "11";	// 279 mm
+$pageSizes["legal"]["width"] = "8.5";	// 216 mm
+$pageSizes["legal"]["height"] = "14";	// 356 mm
 
 $ascii_langs = array("english", "danish", "dutch", "french", "german", "norwegian", "spanish", "spanish-ar");
 
@@ -73,22 +91,60 @@ class PGVReport {
 	var $pdf;
 	var $processing;
 
-	function setup($pw, $ph, $o, $m) {
-		global $pgv_lang, $VERSION;
+	function setup($pw, $ph, $pageSize, $o, $m, $showGenText=true) {
+		global $pgv_lang, $VERSION, $vars, $pageSizes;
 
-		$this->pagew = $pw;
-		$this->pageh = $ph;
-		$this->orientation = $o;
+		// Determine the page dimensions
+		$this->pageFormat = strtoupper($pageSize);
+		if ($this->pageFormat == "LETTER") $this->pageFormat = "letter";
+		if ($this->pageFormat == "LEGAL") $this->pageFormat = "legal";
+
+		if (isset($pageSizes[$this->pageFormat]["width"])) {
+			$this->pagew = $pageSizes[$this->pageFormat]["width"];
+			$this->pageh = $pageSizes[$this->pageFormat]["height"];
+		} else {
+			if ($pw==0 || $ph==0) {
+				$this->pageFormat = "A4";
+				$this->pagew = $pageSizes["A4"]["width"];
+				$this->pageh = $pageSizes["A4"]["height"];
+			} else {
+				$this->pageFormat = "";
+				$this->pagew = $pw;
+				$this->pageh = $ph;
+			}
+		}
+
+		$this->orientation = strtoupper($o);
+		if ($this->orientation == "L") {
+			$temp = $this->pagew;
+			$this->pagew = $this->pageh;
+			$this->pageh = $temp;
+		} else {
+			$this->orientation = "P";
+		}
+
 		$this->margin = $m;
-		$this->pdf = new PGVRPDF('P', 'pt', array($pw*72,$ph*72));
+		$vars['pageWidth']['id'] = $this->pagew*72;
+		$vars['pageHeight']['id'] = $this->pageh*72;
+
+		if (empty($this->pageFormat)) {		//-- send a custom size
+			$this->pdf = new PGVRPDF($this->orientation, 'pt', array($pw*72,$ph*72));
+		} else {							//-- send a known size
+			$this->pdf = new PGVRPDF($this->orientation, 'pt', $this->pageFormat);
+		}
+
 		$this->pdf->setMargins($m, $m);
 		$this->pdf->SetCompression(true);
 		$this->pdf->setReport($this);
 		$this->processing = "H";
-		$element = new PGVRCell(0,10, "C", "");
-		$element->addText("$pgv_lang[generated_by] PhpGedView $VERSION");
-		$element->setUrl("http://www.phpgedview.net/");
-		$this->pdf->addFooter($element);
+		if ($showGenText) {
+			$element = new PGVRCell(0,10, "C", "");
+			$element->addText("$pgv_lang[generated_by] PhpGedView $VERSION");
+			$element->setUrl("http://www.phpgedview.net/");
+			$this->pdf->addFooter($element);
+		}
+		$this->pdf->SetAutoPageBreak(false);
+		$this->pdf->SetAutoLineWrap(false);
 	}
 
 	function setProcessing($p) {
@@ -107,7 +163,10 @@ class PGVReport {
 	}
 
 	function getStyle($s) {
-		if (!isset($this->PGVRStyles[$s])) $s = $this->pdf->getCurrentStyle();
+		if (!isset($this->PGVRStyles[$s])) {
+			$s = $this->pdf->getCurrentStyle();
+			$this->PGVRStyles[$s] = $s;
+		}
 		return $this->PGVRStyles[$s];
 	}
 
@@ -116,6 +175,7 @@ class PGVReport {
 
 		$this->pdf->SetEmbedFonts($embed_fonts);
 		if ($embed_fonts) $this->pdf->AddFont('LucidaSansUnicode', '', 'LucidaSansRegular.php');
+		$this->pdf->setCurrentStyle(key($this->PGVRStyles));
 		$this->pdf->AliasNbPages();
 		$this->pdf->Body();
 		header("Expires:");
@@ -127,12 +187,12 @@ class PGVReport {
 	}
 
 	function getMaxWidth() {
-		$w = (($this->pagew * 72) - ($this->margin+10)) - $this->pdf->GetX();
+		$w = (($this->pagew * 72) - ($this->margin)) - $this->pdf->GetX();
 		return $w;
 	}
 
 	function getPageHeight() {
-		return ($this->pageh*72)-72;
+		return ($this->pageh*72)-$this->margin;
 	}
 
 	function clearPageHeader() {
@@ -173,12 +233,14 @@ class PGVRPDF extends UFPDF {
 		if (!isset($this->currentStyle)) $this->currentStyle = "";
 		$temp = $this->currentStyle;
 		foreach($this->headerElements as $indexval => $element) {
-			if ($element=="footnotetexts") $this->Footnotes();
+			if (is_string($element) && $element=="footnotetexts") $this->Footnotes();
+			else if (is_string($element) && $element=="addpage") $this->AddPage();
 			else $element->render($this);
 		}
 		foreach($this->pageHeaderElements as $indexval => $element) {
-			if ($element=="footnotetexts") $this->Footnotes();
-			else $element->render($this);
+			if (is_string($element) && $element=="footnotetexts") $this->Footnotes();
+			else if (is_string($element) && $element=="addpage") $this->AddPage();
+			else if (is_object($element)) $element->render($this);
 		}
 		$this->currentStyle = $temp;
 	}
@@ -187,8 +249,9 @@ class PGVRPDF extends UFPDF {
 		$this->SetY(-36);
 		$this->currentStyle = "";
 		foreach($this->footerElements as $indexval => $element) {
-			if ($element=="footnotetexts") $this->Footnotes();
-			else $element->render($this);
+			if (is_string($element) && $element=="footnotetexts") $this->Footnotes();
+			else if (is_string($element) && $element=="addpage") $this->AddPage();
+			else if (is_object($element)) $element->render($this);
 		}
 	}
 
@@ -197,8 +260,9 @@ class PGVRPDF extends UFPDF {
 		$this->AddPage();
 		$this->currentStyle = "";
 		foreach($this->bodyElements as $indexval => $element) {
-			if ($element=="footnotetexts") $this->Footnotes();
-			else $element->render($this);
+			if (is_string($element) && $element=="footnotetexts") $this->Footnotes();
+			else if (is_string($element) && $element=="addpage") $this->AddPage();
+			else if (is_object($element)) $element->render($this);
 		}
 	}
 
@@ -268,6 +332,7 @@ class PGVRPDF extends UFPDF {
 	function setCurrentStyle($s) {
 		$this->currentStyle = $s;
 		$style = $this->pgvreport->getStyle($s);
+		//print_r($style);
 		$this->SetFont($style["font"], $style["style"], $style["size"]);
 	}
 
@@ -446,12 +511,13 @@ class PGVRTextBox extends PGVRElement {
 	var $top;
 	var $left;
 	var $elements = array();
+	var $pagecheck;
 
 	function get_type() {
 		return "PGVRTextBox";
 	}
 
-	function PGVRTextBox($width, $height, $border, $fill, $newline, $left=".", $top=".") {
+	function PGVRTextBox($width, $height, $border, $fill, $newline, $left=".", $top=".", $pagecheck="true") {
 		$this->width = $width;
 		$this->height = $height;
 		$this->border = $border;
@@ -461,6 +527,8 @@ class PGVRTextBox extends PGVRElement {
 		else $this->style = "";
 		$this->top = $top;
 		$this->left = $left;
+		if ($pagecheck=="true") $this->pagecheck = true;
+		else $this->pagecheck = false;
 	}
 
 	function render(&$pdf) {
@@ -491,15 +559,15 @@ class PGVRTextBox extends PGVRElement {
 		//-- collapse duplicate elements
 		for($i=0; $i<count($this->elements); $i++) {
 			$element = $this->elements[$i];
-			if ($element!="footnotetexts") {
+			if (is_object($element)) {
 				if ($element->get_type()=="PGVRText") {
-					if ($lastelement == "") $lastelement = $element;
+					if (empty($lastelement)) $lastelement = $element;
 					else {
 						if ($element->getStyleName()==$lastelement->getStyleName()) {
 							$lastelement->addText(preg_replace("/\n/", "<br />", $element->getValue()));
 						}
 						else {
-							if ($lastelement != "") {
+							if (!empty($lastelement)) {
 								$newelements[] = $lastelement;
 								$lastelement = $element;
 							}
@@ -508,7 +576,7 @@ class PGVRTextBox extends PGVRElement {
 				}
 				//-- do not keep empty footnotes
 				else if (($element->get_type()!="PGVRFootnote")||(trim($element->getValue())!="")) {
-					if ($lastelement != "") {
+					if (!empty($lastelement)) {
 						$newelements[] = $lastelement;
 						$lastelement = "";
 					}
@@ -516,21 +584,21 @@ class PGVRTextBox extends PGVRElement {
 				}
 			}
 			else {
-				if ($lastelement != "") {
+				if (!empty($lastelement)) {
 					$newelements[] = $lastelement;
 					$lastelement = "";
 				}
 				$newelements[] = $element;
 			}
 		}
-		if ($lastelement!="") $newelements[] = $lastelement;
+		if (!empty($lastelement)) $newelements[] = $lastelement;
 		$this->elements = $newelements;
 
 		//-- calculate the text box height
 		$h = 0;
 		$w = 0;
 		for($i=0; $i<count($this->elements); $i++) {
-			if ($this->elements[$i]!="footnotetexts") {
+			if (is_object($this->elements[$i])) {
 				$ew = $this->elements[$i]->setWrapWidth($this->width-$w, $this->width);
 				if ($ew==$this->width) $w=0;
 				//-- $lw is an array 0=>last line width, 1=1 if text was wrapped, 0 if text did not wrap
@@ -565,26 +633,28 @@ class PGVRTextBox extends PGVRElement {
 		}
 
 		$newpage = false;
-		$ph = $pdf->getPageHeight();
-		if ($pdf->GetY()+$this->height > $ph) {
-			if ($this->border==1) {
-				//print "HERE2";
-				$pdf->AddPage();
-				$newpage = true;
-				$startX = $pdf->GetX();
-				$startY = $pdf->GetY();
-			}
-			else if ($pdf->GetY()>$ph-36) {
-				//print "HERE1";
-				$pdf->AddPage();
-				$startX = $pdf->GetX();
-				$startY = $pdf->GetY();
-			}
-			else {
-				//print "HERE3";
-				$th = $this->height;
-				$this->height = ($ph - $pdf->GetY())+36;
-				$newpage = true;
+		if ($this->pagecheck) {
+			$ph = $pdf->getPageHeight();
+			if ($pdf->GetY()+$this->height > $ph) {
+				if ($this->border==1) {
+					//print "HERE2";
+					$pdf->AddPage();
+					$newpage = true;
+					$startX = $pdf->GetX();
+					$startY = $pdf->GetY();
+				}
+				else if ($pdf->GetY()>$ph-36) {
+					//print "HERE1";
+					$pdf->AddPage();
+					$startX = $pdf->GetX();
+					$startY = $pdf->GetY();
+				}
+				else {
+					//print "HERE3";
+					$th = $this->height;
+					$this->height = ($ph - $pdf->GetY())+36;
+					$newpage = true;
+				}
 			}
 		}
 
@@ -592,7 +662,8 @@ class PGVRTextBox extends PGVRElement {
 		$pdf->SetXY($pdf->GetX(), $pdf->GetY()+1);
 		$curx = $pdf->GetX();
 		foreach($this->elements as $indexval => $element) {
-			if ($element=="footnotetexts") $pdf->Footnotes();
+			if (is_string($element) && $element=="footnotetexts") $pdf->Footnotes();
+			else if (is_string($element) && $element=="addpage") $pdf->AddPage();
 			else $element->render($pdf, $curx);
 		}
 		if ($curn != $pdf->PageNo()) $cury = $pdf->GetY();
@@ -632,8 +703,9 @@ class PGVRText extends PGVRElement {
 		return "PGVRText";
 	}
 
-	function PGVRText($style) {
+	function PGVRText($style, $color) {
 		$this->text = "";
+		$this->color = $color;
 		$this->wrapWidth = 0;
 		$this->styleName = $style;
 	}
@@ -645,12 +717,24 @@ class PGVRText extends PGVRElement {
 		//print $this->text;
 		$x = $pdf->GetX();
 		$cury = $pdf->GetY();
+
+		if (!empty($this->color)) {
+			$ct = preg_match("/#?(..)(..)(..)/", $this->color, $match);
+			if ($ct>0) {
+				//$this->style .= "F";
+				$r = hexdec($match[1]);
+				$g = hexdec($match[2]);
+				$b = hexdec($match[3]);
+				$pdf->SetTextColor($r, $g, $b);
+			}
+		}
+
 		$lines = preg_split("/\n/", $temptext);
 		$styleh = $pdf->getCurrentStyleHeight();
 		if (count($lines)>0) {
 			foreach($lines as $indexval => $line) {
 				$pdf->SetXY($x, $cury);
-				//print "[$x $cury $line]";
+//				print "[$x $cury $line]";
 				$pdf->Write($styleh,$line);
 				$cury+=$styleh+1;
 				if ($cury>$pdf->getPageHeight()) $cury = $pdf->getY()+$styleh+1;
@@ -975,7 +1059,8 @@ $elementHandler["PGVRList"]["end"] 		= "PGVRListEHandler";
 $elementHandler["PGVRListTotal"]["start"]       = "PGVRListTotalSHandler";
 $elementHandler["PGVRRelatives"]["start"] 		= "PGVRRelativesSHandler";
 $elementHandler["PGVRRelatives"]["end"] 		= "PGVRRelativesEHandler";
-$elementHandler["PGVRGeneration"]["start"]       = "PGVRGenerationSHandler";
+$elementHandler["PGVRGeneration"]["start"]      = "PGVRGenerationSHandler";
+$elementHandler["PGVRNewPage"]["start"]			= "PGVRNewPageSHandler";
 
 $pgvreport = new PGVReport();
 $pgvreportStack = array();
@@ -1013,15 +1098,6 @@ $processIfs = 0;
 $processGedcoms = 0;
 
 /**
- * page sizes
- *
- * an array map of common page sizes
- * @global array $pageSizes
- */
-$pageSizes["A4"]["width"] = "8.5";
-$pageSizes["A4"]["height"] = "11";
-
-/**
  * xml start element handler
  *
  * this function is called whenever a starting element is reached
@@ -1035,7 +1111,6 @@ function startElement($parser, $name, $attrs) {
 	$newattrs = array();
 	$temp = "";
 	foreach($attrs as $key=>$value) {
-//		$ct = preg_match("/^\\$([a-zA-Z0-9\-_]+)$/", $value, $match);
 		$ct = preg_match("/^\\$(\w+)$/", $value, $match);
 		if ($ct>0) {
 			if ((isset($vars[$match[1]]["id"]))&&(!isset($vars[$match[1]]["gedcom"]))) $value = $vars[$match[1]]["id"];
@@ -1105,20 +1180,14 @@ function PGVRDocSHandler($attrs) {
 
 	$pageSize = $attrs["pageSize"];
 	$orientation = $attrs["orientation"];
-
-	if (!isset($pageSizes[$pageSize])) $pageSize="A4";
-	$pagew = $pageSizes[$pageSize]["width"];
-	$pageh = $pageSizes[$pageSize]["height"];
-
-	if ($orientation=="L") {
-		$pagew = $pageSizes[$pageSize]["height"];
-		$pageh = $pageSizes[$pageSize]["width"];
-	}
+	$showGenText = true;
+	if (isset($attrs['showGeneratedBy'])) $showGenText = $attrs['showGeneratedBy'];
 
 	$margin = "";
 	$margin = $attrs["margin"];
 
-	$pgvreport->setup($pagew, $pageh, $orientation, $margin);
+//	$pgvreport->setup($pagew, $pageh, $pageSize, $orientation, $margin);
+	$pgvreport->setup(0, 0, $pageSize, $orientation, $margin, $showGenText);
 }
 
 function PGVRDocEHandler() {
@@ -1280,10 +1349,11 @@ function PGVRGedcomSHandler($attrs) {
 		}
 	}
 	if (!empty($newgedrec)) {
-		$newgedrec = privatize_gedcom($newgedrec);
+		//$newgedrec = privatize_gedcom($newgedrec);
+		$gedObj = new GedcomRecord($newgedrec);
 		array_push($gedrecStack, array($gedrec, $fact, $desc));
 		//print "[$newgedrec]";
-		$gedrec = $newgedrec;
+		$gedrec = $gedObj->getGedcomRecord();
 		$ct = preg_match("/(\d+) (_?[A-Z0-9]+) (.*)/", $gedrec, $match);
 		if ($ct>0) {
 			$ged_level = $match[1];
@@ -1322,6 +1392,7 @@ function PGVRTextBoxSHandler($attrs) {
 	$style = "D";
 	$left = ".";
 	$top = ".";
+	$pagecheck="true";
 
 	if (isset($attrs["width"])) $width = $attrs["width"];
 	if (isset($attrs["height"])) $height = $attrs["height"];
@@ -1330,12 +1401,13 @@ function PGVRTextBoxSHandler($attrs) {
 	if (isset($attrs["fill"])) $fill = $attrs["fill"];
 	if (isset($attrs["left"])) $left = $attrs["left"];
 	if (isset($attrs["top"])) $top = $attrs["top"];
+	if (isset($attrs["pagecheck"])) $pagecheck = $attrs["pagecheck"];
 
 	array_push($printDataStack, $printData);
 	$printData = false;
 
 	array_push($pgvreportStack, $pgvreport);
-	$pgvreport = new PGVRTextBox($width, $height, $border, $fill, $newline, $left, $top);
+	$pgvreport = new PGVRTextBox($width, $height, $border, $fill, $newline, $left, $top, $pagecheck);
 }
 
 function PGVRTextBoxEHandler() {
@@ -1356,11 +1428,12 @@ function PGVRTextSHandler($attrs) {
 	$printData = true;
 
 	$style = "";
+	if (isset($attrs["style"])) $style = $attrs["style"];
 
-	if (isset($attrs["style"])) {
-		$style = $attrs["style"];
-	}
-	$currentElement = new PGVRText($style);
+	$color = "#000000";
+	if (isset($attrs["color"])) $color = $attrs["color"];
+
+	$currentElement = new PGVRText($style, $color);
 }
 
 function PGVRTextEHandler() {
@@ -1744,11 +1817,16 @@ function PGVRSetVarSHandler($attrs) {
 		if ($gt > 0) $value = preg_replace("/@/", "", trim($gmatch[1]));
 	}
 
+	if ((substr($value, 0, 10) == "\$pgv_lang[") || (substr($value, 0, 11) == "\$factarray[")) {
+		$var = preg_replace(array("/\[/","/\]/"), array("['","']"), $value);
+		eval("\$value = $var;");
+	}
+
 	$ct = preg_match_all("/\\$(\w+)/", $value, $match, PREG_SET_ORDER);
 	for($i=0; $i<$ct; $i++) {
-		//print $match[$i][1];
+		// print $match[$i][1]."<br />";
 		$t = $vars[$match[$i][1]]["id"];
-		$value = preg_replace("/\\$".$match[$i][1]."/", $t, $value);
+		$value = preg_replace("/\\$".$match[$i][1]."/", $t, $value, 1);
 	}
 
 	$ct = preg_match("/(\d+)\s*([\-\+\*\/])\s*(\d+)/", $value, $match);
@@ -1772,7 +1850,7 @@ function PGVRSetVarSHandler($attrs) {
 				break;
 		}
 	}
-	//print "[$value]";
+//	print "$name=[$value] ";
 	if (strstr($value, "@")!==false) $value="";
 	$vars[$name]["id"]=$value;
 }
@@ -1809,14 +1887,14 @@ function PGVRifSHandler($attrs) {
 			$temp = preg_split("/\s+/", trim($gedrec));
 			$level = $temp[0];
 			if ($level==0) $level++;
-			$value = get_gedcom_value($id, $level, $gedrec);
+			$value = get_gedcom_value($id, $level, $gedrec, "", false);
 			//print "level:$level id:$id value:$value ";
 			if (empty($value)) {
 				$level++;
-				$value = get_gedcom_value($id, $level, $gedrec);
+				$value = get_gedcom_value($id, $level, $gedrec, "", false);
 				//print "level:$level id:$id value:$value gedrec:$gedrec<br />\n";
 			}
-			$value = "'".$value."'";
+			$value = "'".preg_replace("/'/", "\\'", $value)."'";
 		}
 		$condition = preg_replace("/@$id/", $value, $condition);
 	}
@@ -1894,7 +1972,7 @@ function PGVRHighlightedImageSHandler($attrs) {
 		if (!empty($media["file"])) {
 			if (preg_match("/(jpg)|(jpeg)|(png)$/i", $media["file"])>0) {
 				if (file_exists($media["file"])) {
-					$size = getimagesize($media["file"]);
+					$size = findImageSize($media["file"]);
 					if (($width>0)&&($size[0]>$size[1])) {
 						$perc = $width / $size[0];
 						$height= round($size[1]*$perc);
@@ -1943,7 +2021,7 @@ function PGVRImageSHandler($attrs) {
 			if (!empty($filename)) {
 				if (preg_match("/(jpg)|(jpeg)|(png)$/i", $filename)>0) {
 					if (file_exists($filename)) {
-						$size = getimagesize($filename);
+						$size = findImageSize($filename);
 						if (($width>0)&&($height==0)) {
 							$perc = $width / $size[0];
 							$height= round($size[1]*$perc);
@@ -1961,9 +2039,10 @@ function PGVRImageSHandler($attrs) {
 		}
 	}
 	else {
+		$filename = $file;
 		if (preg_match("/(jpg)|(jpeg)|(png)$/i", $filename)>0) {
 			if (file_exists($filename)) {
-				$size = getimagesize($filename);
+				$size = findImageSize($filename);
 				if (($width>0)&&($size[0]>$size[1])) {
 					$perc = $width / $size[0];
 					$height= round($size[1]*$perc);
@@ -2077,9 +2156,11 @@ function PGVRListSHandler($attrs) {
 		}
 	}
 	switch($listname) {
-	/*	case "family":
-			$list = get_family_list();
+		case "family":
+			if (count($filters)>0) $list = search_fams($filters);
+			else $list = get_fam_list();
 			break;
+		/*
 		case "source":
 			$list = get_source_list();
 			break;
@@ -2268,24 +2349,37 @@ function PGVRRelativesSHandler($attrs) {
 	if ($processRepeats>1) return;
 
 	$sortby = "NAME";
-	$group = "child-family";
-	$id = "";
 	if (isset($attrs["sortby"])) $sortby = $attrs["sortby"];
 	if (preg_match("/\\$(\w+)/", $sortby, $vmatch)>0) {
 		$sortby = $vars[$vmatch[1]]["id"];
 		$sortby = trim($sortby);
 	}
+
+	$maxgen = -1;
+	if (isset($attrs["maxgen"])) $maxgen = $attrs["maxgen"];
+	if ($maxgen=="*") $maxgen = -1;
+
+	$group = "child-family";
 	if (isset($attrs["group"])) $group = $attrs["group"];
 	if (preg_match("/\\$(\w+)/", $group, $vmatch)>0) {
 		$group = $vars[$vmatch[1]]["id"];
-		$group = trim($sortby);
+		$group = trim($group);
 	}
 
+	$id = "";
 	if (isset($attrs["id"])) $id = $attrs["id"];
 	if (preg_match("/\\$(\w+)/", $id, $vmatch)>0) {
 		$id = $vars[$vmatch[1]]["id"];
 		$id = trim($id);
 	}
+	
+	$showempty = false;
+	if (isset($attrs["showempty"])) $showempty = $attrs["showempty"];
+	if (preg_match("/\\$(\w+)/", $showempty, $vmatch)>0) {
+		$showempty = $vars[$vmatch[1]]["id"];
+		$showempty = trim($showempty);
+	}
+	
 
 	$list = array();
 	$indirec = find_person_record($id);
@@ -2329,17 +2423,18 @@ function PGVRRelativesSHandler($attrs) {
 				}
 				break;
 			case "direct-ancestors":
-				add_ancestors($id);
+				add_ancestors($id,false,$maxgen, $showempty);
 				break;
 			case "ancestors":
-				add_ancestors($id,true);
+				add_ancestors($id,true,$maxgen,$showempty);
 				break;
 			case "descendants":
-				add_descendancy($id);
+				$list[$id]["generation"] = 1;
+				add_descendancy($id,false,$maxgen);
 				break;
 			case "all":
-				add_ancestors($id,true);
-				add_descendancy($id,true);
+				add_ancestors($id,true,$maxgen,$showempty);
+				add_descendancy($id,true,$maxgen);
 				break;
 		}
 	}
@@ -2347,6 +2442,21 @@ function PGVRRelativesSHandler($attrs) {
 	if ($sortby!="none") {
 		if ($sortby=="NAME") uasort($list, "itemsort");
 		else if ($sortby=="ID") uasort($list, "idsort");
+		else if ($sortby=="generation") {
+			$newarray = array();
+			reset($list);
+			$genCounter = 1;
+			while (count($newarray) < count($list)) {
+		        	foreach ($list as $key => $value) {
+			                $generation = $value["generation"];
+			                if ($generation == $genCounter) {
+						$newarray[$key]["generation"]=$generation;
+					}
+				}
+				$genCounter++;
+			}
+			$list = $newarray;
+		}
 		else uasort($list, "compare_date");
 	}
 //	print count($list);
@@ -2389,7 +2499,7 @@ function PGVRRelativesEHandler() {
 	$list_private = 0;
 	foreach($list as $key=>$value) {
 		if (isset($value["generation"])) $generation = $value["generation"];
-		if (displayDetailsById($key)) {
+//KN		if (displayDetailsById($key)) {
 			$gedrec = find_gedcom_record($key);
 			//-- start the sax parser
 			$repeat_parser = xml_parser_create();
@@ -2407,8 +2517,8 @@ function PGVRRelativesEHandler() {
 				exit;
 			}
 			xml_parser_free($repeat_parser);
-		}
-		else $list_private++;
+//KN		}
+//KN		else $list_private++;
 	}
 	$parser = array_pop($parserStack);
 
@@ -2424,5 +2534,11 @@ function PGVRGenerationSHandler($attrs) {
 	if (empty($generation)) $generation = 1;
 
 	$currentElement->addText($generation);
+}
+
+function PGVRNewPageSHandler($attrs) {
+	global $pgvreport;
+	$temp = "addpage";
+	$pgvreport->addElement($temp);
 }
 ?>

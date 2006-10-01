@@ -24,17 +24,17 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Privacy
- * @version $Id: edit_privacy.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: edit_privacy.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
 require_once("includes/gedcomrecord.php");
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
-require $PGV_BASE_DIRECTORY.$helptextfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE];
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
+require $helptextfile["english"];
+if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
 if (empty($ged)) $ged = $GEDCOM;
 
@@ -116,18 +116,18 @@ function search_ID_details($checkVar, $outputVar) {
 		}
 		if ($type=="INDI") {
 			$name = get_person_name($pid);
-			print "\n<span class=\"list_item\">$name";
+			print "\n<span class=\"list_item\">".PrintReady($name);
 			print_first_major_fact($pid);
 			print "</span>\n";
 		}
 		else if ($type=="SOUR") {
 			$name = get_source_descriptor($pid);
-			print "\n<span class=\"list_item\">$name";
+			print "\n<span class=\"list_item\">".PrintReady($name);
 			print "</span>\n";
 		}
 		else if ($type=="FAM") {
 			$name = get_family_descriptor($pid);
-			print "\n<span class=\"list_item\">$name";
+			print "\n<span class=\"list_item\">".PrintReady($name);
 			print "</span>\n";
 		}
 		else print "$type $pid";
@@ -155,7 +155,7 @@ print_header($pgv_lang["privacy_header"]);
 	<tr>
 		<td colspan="2" class="facts_label"><?php
 			print "<h2>".$pgv_lang["edit_privacy_title"]." - ".$GEDCOMS[$ged]["title"]. "</h2>";
-			print "(".$PRIVACY_MODULE . ")";
+			print "(&lrm;".$PRIVACY_MODULE.")";
 			print "<br /><br /><a href=\"editgedcoms.php\"><b>";
 			print $pgv_lang["lang_back_manage_gedcoms"];
 			print "</b></a><br /><br />";?>
@@ -293,8 +293,9 @@ if ($action=="update") {
 	}
 	// NOTE: load the new variables
 	include $INDEX_DIRECTORY.$GEDCOM."_priv.php";
-	AddToChangeLog("Privacy file $PRIVACY_MODULE updated by >".getUserName()."<");
-	
+	$logline = AddToLog("Privacy file $PRIVACY_MODULE updated by >".getUserName()."<");
+ 	$gedcomprivname = $GEDCOM."_priv.php";
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, $gedcomprivname, $INDEX_DIRECTORY);	
 }
 
 ?>
@@ -306,7 +307,7 @@ if ($action=="update") {
 	}
 	var helpWin;
 	function helpPopup(which) {
-		if ((!helpWin)||(helpWin.closed)) helpWin = window.open('editconfig_help.php?help='+which,'','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');
+		if ((!helpWin)||(helpWin.closed)) helpWin = window.open('editconfig_help.php?help='+which,'_blank','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');
 		else helpWin.location = 'editconfig_help.php?help='+which;
 		return false;
 	}
@@ -364,7 +365,7 @@ if ($action=="update") {
         </td>
       </tr>
       
-      <?php if (file_exists("modules/researchlog.php")) { ?>
+      <?php if (file_exists("modules/research_assistant.php")) { ?>
 	      <tr>
 	        <td class="descriptionbox wrap"><?php print_help_link("SHOW_RESEARCH_ASSISTANT_help", "qm", "SHOW_RESEARCH_ASSISTANT"); print $pgv_lang["SHOW_RESEARCH_ASSISTANT"]; ?>
 	        </td>
@@ -473,6 +474,7 @@ if ($action=="update") {
 			 print_findindi_link("v_new_person_privacy_access_ID","");
 			 print_findfamily_link("v_new_person_privacy_access_ID");
 			 print_findsource_link("v_new_person_privacy_access_ID");
+			 print_findmedia_link("v_new_person_privacy_access_ID", "1media");
                 ?>
               </td>
               <td class="optionbox">
@@ -568,6 +570,7 @@ if ($action=="update") {
 			 print_findindi_link("v_new_user_privacy_access_ID","");
 			 print_findfamily_link("v_new_user_privacy_access_ID");
 			 print_findsource_link("v_new_user_privacy_access_ID");
+			 print_findmedia_link("v_new_person_privacy_access_ID", "1media");
                 ?>
               </td>
               <td class="optionbox">
@@ -728,10 +731,10 @@ if ($action=="update") {
             <?php //--Start--add person_facts for individuals----------------------------------------------- 
             ?>
             <tr>
-              <td class="topbottombar" colspan="4"><b><?php print $pgv_lang["add_new_pf_setting_indi"]; ?></b></td>
+              <td class="topbottombar" colspan="4"><b><?php print $pgv_lang["add_new_pf_setting"]; ?></b></td>
             </tr>
             <tr>
-              <td class="descriptionbox"><?php print $pgv_lang["privacy_indi_id"]; ?></td>
+              <td class="descriptionbox"><?php print $pgv_lang["id"]; ?></td>
               <td class="descriptionbox"><?php print $pgv_lang["name_of_fact"]; ?></td>
               <td class="descriptionbox"><?php print $pgv_lang["choice"]; ?></td>
               <td class="descriptionbox"><?php print $pgv_lang["accessible_by"]; ?></td>

@@ -23,11 +23,11 @@
  * @author Boudewijn Sjouke	sjouke@users.sourceforge.net
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: usermigrate.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: usermigrate.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 //-- make sure that they have admin status before they can use this page
 //-- otherwise have them login again
@@ -148,7 +148,6 @@ if ($proceed == "backup") {
 
 	if (count($flist) > 0) {
 		require "includes/pclzip.lib.php";
-		require "includes/adodb-time.inc.php";
 		$buname = adodb_date("YmdHis").".zip";
 		$fname = $INDEX_DIRECTORY.$buname;
 		$comment = "Created by PhpGedView ".$VERSION." ".$VERSION_RELEASE." on ".adodb_date("r").".";
@@ -158,9 +157,7 @@ if ($proceed == "backup") {
 		if ($v_list == 0) print "Error : ".$archive->errorInfo(true)."</td></tr>";
 		else {
 			print $pgv_lang["um_zip_succ"]."</td></tr>";
-			$url = $SERVER_URL;
-			if (substr($url,-1,1)!="/") $url .= "/";
-			print "<tr><td class=\"list_value\" style=\"padding: 5px;\" ><a href=".$url."downloadbackup.php?fname=".$buname." target=_blank>".$pgv_lang["um_zip_dl"]." ".$fname."</a>  (";
+			print "<tr><td class=\"list_value\" style=\"padding: 5px;\" ><a href=\"downloadbackup.php?fname=".$buname."\" target=\"_blank\">".$pgv_lang["um_zip_dl"]." ".$fname."</a>  (";
 			printf("%.0f Kb", (filesize($fname)/1024));
 			print")</td></tr>";
 		}
@@ -223,9 +220,9 @@ function um_export() {
 	$authtext = "<?php\n\n\$users = array();\n\n";
 	$users = GetUsers();
 	foreach($users as $key=>$user) {
-		$user["firstname"] = $DBCONN->escapeSimple($user["firstname"]);
-		$user["lastname"] = $DBCONN->escapeSimple($user["lastname"]);
-		$user["comment"] = $DBCONN->escapeSimple($user["comment"]);
+		$user["firstname"] = $DBCONN->escape($user["firstname"]);
+		$user["lastname"] = $DBCONN->escape($user["lastname"]);
+		$user["comment"] = $DBCONN->escape($user["comment"]);
 		$authtext .= "\$user = array();\n";
 		foreach($user as $ukey=>$value) {
 			if (!is_array($value)) {
@@ -251,6 +248,8 @@ function um_export() {
 		if ($fp) {
 			fwrite($fp, $authtext);
 			fclose($fp);
+			$logline = AddToLog("authenticate.php updated by >".getUserName()."<");
+ 			if (!empty($COMMIT_COMMAND)) check_in($logline, "authenticate.php", $INDEX_DIRECTORY);	
 			if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." authenticate.php<br /><br />";
 		}
 		else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."authenticate.php. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
@@ -285,6 +284,8 @@ $res =& $tempsql;
 			if ($fp) {
 				fwrite($fp, $mstring);
 				fclose($fp);
+				$logline = AddToLog("messages.dat updated by >".getUserName()."<");
+ 				if (!empty($COMMIT_COMMAND)) check_in($logline, "messages.dat", $INDEX_DIRECTORY);	
 				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." messages.dat<br /><br />";
 			}
 		else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."messages.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
@@ -325,6 +326,8 @@ $res =& $tempsql;
 			if ($fp) {
 				fwrite($fp, $mstring);
 				fclose($fp);
+				$logline = AddToLog("favorites.dat updated by >".getUserName()."<");
+ 				if (!empty($COMMIT_COMMAND)) check_in($logline, "favorites.dat", $INDEX_DIRECTORY);	
 				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." favorites.dat<br /><br />";
 			}
 			else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."favorites.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
@@ -360,6 +363,8 @@ $res =& $tempsql;
 			if ($fp) {
 				fwrite($fp, $mstring);
 				fclose($fp);
+				$logline = AddToLog("news.dat updated by >".getUserName()."<");
+ 				if (!empty($COMMIT_COMMAND)) check_in($logline, "news.dat", $INDEX_DIRECTORY);	
 				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." news.dat<br /><br />";
 			}
 			else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."news.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
@@ -397,6 +402,8 @@ $res =& $tempsql;
 			if ($fp) {
 				fwrite($fp, $mstring);
 				fclose($fp);
+				$logline = AddToLog("blocks.dat updated by >".getUserName()."<");
+ 				if (!empty($COMMIT_COMMAND)) check_in($logline, "blocks.dat", $INDEX_DIRECTORY);	
 				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." blocks.dat<br /><br />";
 			}
 			else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."blocks.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
@@ -467,6 +474,24 @@ $res =& $tempsql;
 		else $user["visibleonline"] = true;
 		if ($user["editaccount"] == "1") $user["editaccount"] = false;
 		else $user["editaccount"] = true;
+		//-- make sure fields are set for v4.0 DB
+		if (!isset($user["firstname"])) {
+			if (isset($user["fullname"])) {
+				$parts = preg_split("/ /", trim($user["fullname"]));
+				$user["lastname"] = array_pop($parts);
+				$user["firstname"] = implode(" ", $parts);
+			}
+			else {
+				$user["firstname"] = '';
+				$user["lastname"] = '';
+			}
+		}
+		if (!isset($user["comment"])) $user["comment"] = '';
+		if (!isset($user["comment_exp"])) $user["comment_exp"] = '';
+		if (!isset($user["sync_gedcom"])) $user["sync_gedcom"] = 'N';
+		if (!isset($user["relationship_privacy"])) $user["relationship_privacy"] = 'N';
+		if (!isset($user["max_relation_path"])) $user["max_relation_path"] = '2';
+		if (!isset($user["auto_accept"])) $user["auto_accept"] = 'N';
 		addUser($user, "imported");
 	}
 	$countnew = count(getUsers());
@@ -497,7 +522,7 @@ $res =& $tempsql;
 		fclose($fp);
 		$messages = unserialize($mstring);
 		foreach($messages as $newid => $message) {
-			$sql = "INSERT INTO ".$TBLPREFIX."messages VALUES ($newid, '".$DBCONN->escapeSimple($message["from"])."','".$DBCONN->escapeSimple($message["to"])."','".$DBCONN->escapeSimple($message["subject"])."','".$DBCONN->escapeSimple($message["body"])."','".$DBCONN->escapeSimple($message["created"])."')";
+			$sql = "INSERT INTO ".$TBLPREFIX."messages VALUES ($newid, '".$DBCONN->escape($message["from"])."','".$DBCONN->escape($message["to"])."','".$DBCONN->escape($message["subject"])."','".$DBCONN->escape($message["body"])."','".$DBCONN->escape($message["created"])."')";
 			$tempsql = dbquery($sql);
 $res =& $tempsql;
 			if (!$res) {
@@ -585,7 +610,7 @@ $res =& $tempsql;
 		$allblocks = unserialize($mstring);
 		foreach($allblocks as $bid => $blocks) {
 			$username = $blocks["username"];
-			$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($bid, '".$DBCONN->escapeSimple($blocks["username"])."', '".$blocks["location"]."', '".$blocks["order"]."', '".$DBCONN->escapeSimple($blocks["name"])."', '".$DBCONN->escapeSimple(serialize($blocks["config"]))."')";
+			$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($bid, '".$DBCONN->escape($blocks["username"])."', '".$blocks["location"]."', '".$blocks["order"]."', '".$DBCONN->escape($blocks["name"])."', '".$DBCONN->escape(serialize($blocks["config"]))."')";
 			$tempsql = dbquery($sql);
 $res =& $tempsql;
 			if (!$res) {

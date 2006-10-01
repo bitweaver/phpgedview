@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_merge.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: edit_merge.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
 require("includes/functions_edit.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
 if (empty($action)) $action="choose";
 if (empty($gid1)) $gid1="";
@@ -178,11 +178,24 @@ if ($action!="choose") {
 					$records = preg_split("/\n0/", $fcontents);
 					foreach($records as $indexval => $record) {
 						$ct = preg_match("/ @(.+)@ (.*)/", $record, $match);
-						if ($ct>0) $gid = trim($match[1]);
+						if ($ct>0) {
+							$gid = trim($match[1]);
+							$type = trim($match[2]);
+						}
 						if (strstr($record, "@$gid2@")!==false) {
 							print $pgv_lang["updating_linked"]." $gid<br />\n";
 							$newrec = "0".$record;
 							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $newrec);
+							if ($type=="FAM") {
+								//-- preven the merge from adding duplicate children to the family
+								$ct = preg_match_all("/1 CHIL @$gid1@/", $newrec, $matches);
+								if ($ct>1) {
+									$pos1 = strpos($newrec, "1 CHIL @$gid1@");
+									$pos2 = strpos($newrec, "\n", $pos1+1);
+									if ($pos2===false) $pos2 = strlen($newrec);
+									$newrec = substr($newrec, 0, $pos1).substr($newrec, $pos2);
+								}
+							}
 							replace_gedrec($gid, $newrec);
 						}
 					}
@@ -203,17 +216,17 @@ if ($action=="choose") {
 	function iopen_find(textbox, gedselect) {
 		pasteto = textbox;
 		ged = gedselect.options[gedselect.selectedIndex].value;
-		findwin = window.open('find.php?type=indi&ged='+ged, '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=indi&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	function fopen_find(textbox, gedselect) {
 		pasteto = textbox;
 		ged = gedselect.options[gedselect.selectedIndex].value;
-		findwin = window.open('find.php?type=fam&ged='+ged, '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=fam&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	function sopen_find(textbox, gedselect) {
 		pasteto = textbox;
 		ged = gedselect.options[gedselect.selectedIndex].value;
-		findwin = window.open('find.php?type=source&ged='+ged, '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('find.php?type=source&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	function paste_id(value) {
 		pasteto.value=value;

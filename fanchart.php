@@ -23,12 +23,12 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: fanchart.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: fanchart.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 require("config.php");
-require("includes/functions_charts.php");
-require($PGV_BASE_DIRECTORY . $factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require_once("includes/functions_charts.php");
+require( $factsfile["english"]);
+if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 /**
  * split and center text by lines
@@ -323,6 +323,7 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 				print "<br /><a href=\"descendancy.php?pid=$pid\" >".$pgv_lang["descend_chart"]."</a>\n";
 				if ($reltome)  print "<br /><a href=\"relationship.php?pid1=".$tuser["gedcomid"][$GEDCOM]."&amp;pid2=".$pid."&amp;ged=$GEDCOM\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["relationship_to_me"]."</a>\n";
 				print "<br /><a href=\"ancestry.php?rootid=$pid\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["ancestry_chart"]."</a>\n";
+				print "<br /><a href=\"compact.php?rootid=$pid\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["compact_chart"]."</a>\n";
 				print "<br /><a href=\"fanchart.php?rootid=$pid&amp;PEDIGREE_GENERATIONS=$PEDIGREE_GENERATIONS&amp;fan_width=$fan_width&amp;fan_style=$fan_style\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["fan_chart"]."</a>\n";
 				print "<br /><a href=\"hourglass.php?pid=$pid\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["hourglass_chart"]."</a>\n";
 				if ($sosa>=1) {
@@ -434,8 +435,9 @@ if ($PEDIGREE_GENERATIONS > $MAX_PEDIGREE_GENERATIONS) {
 	$max_generation = true;
 }
 
-if ($PEDIGREE_GENERATIONS < 3) {
-	$PEDIGREE_GENERATIONS = 3;
+$MIN_FANCHART_GENERATIONS = 3;
+if ($PEDIGREE_GENERATIONS < $MIN_FANCHART_GENERATIONS) {
+	$PEDIGREE_GENERATIONS = $MIN_FANCHART_GENERATIONS;
 	$min_generation = true;
 }
 $OLD_PGENS = $PEDIGREE_GENERATIONS;
@@ -484,7 +486,7 @@ if ($view != "preview") {
 	if (isset($min_generation) == true) print "<span class=\"error\">" . $pgv_lang["min_generation"] . "</span>";
 	print "\n\t</td><td><form name=\"people\" method=\"get\" action=\"?\">";
 	print "\n\t\t<table class=\"list_table $TEXT_DIRECTION\">\n\t\t<tr>";
-	
+
 	// NOTE: rootid
 	print "<td class=\"descriptionbox\">";
 	print_help_link("rootid_help", "qm");
@@ -493,7 +495,7 @@ if ($view != "preview") {
 	print "<input class=\"pedigree_form\" type=\"text\" name=\"rootid\" id=\"rootid\" size=\"3\" value=\"$rootid\" />";
      print_findindi_link("rootid","");
 	print "</td>";
-	
+
 	// NOTE: fan style
 	print "<td rowspan=\"3\" class=\"descriptionbox\">";
 	print_help_link("fan_style_help", "qm");
@@ -508,20 +510,20 @@ if ($view != "preview") {
 	print "<br /><input type=\"radio\" name=\"fan_style\" value=\"4\"";
 	if ($fan_style==4) print " checked=\"checked\"";
 	print " /> 4/4";
-	
+
 	// NOTE: submit
 	print "</td><td rowspan=\"3\" class=\"topbottombar vmiddle\">";
 	print "<input type=\"submit\" value=\"" . $pgv_lang["view"] . "\" />";
 	print "</td></tr>\n";
-	
+
 	// NOTE: generations
 	print "<tr><td class=\"descriptionbox\">";
-	print_help_link("PEDIGREE_GENERATIONS_help", "qm");	
+	print_help_link("PEDIGREE_GENERATIONS_help", "qm");
 	print $pgv_lang["generations"]."</td>";
 	print "<td class=\"optionbox\">";
 //	print "<input type=\"text\" name=\"PEDIGREE_GENERATIONS\" size=\"3\" value=\"$OLD_PGENS\" /> ";
 	print "<select name=\"PEDIGREE_GENERATIONS\">";
-	for ($i=2; $i<=$MAX_PEDIGREE_GENERATIONS; $i++) {
+	for ($i=$MIN_FANCHART_GENERATIONS; $i<=$MAX_PEDIGREE_GENERATIONS; $i++) {
 	print "<option value=\"".$i."\"" ;
 	if ($i == $OLD_PGENS) print "selected=\"selected\" ";
 		print ">".$i."</option>";
@@ -538,7 +540,7 @@ if ($view != "preview") {
 	print "</td>";
 	print "</tr></table>";
 	print "\n\t\t</form><br />";
-} 
+}
 else {
 	print "<script language='JavaScript' type='text/javascript'>";
 	print "if (IE) document.write('<span class=\"warning\">".str_replace("'", "\'", $pgv_lang["fanchart_IE"])."</span>');";

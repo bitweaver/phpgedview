@@ -19,16 +19,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: editlang_edit.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: editlang_edit.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  * @package PhpGedView
  * @subpackage EditLang
  */
 require "config.php";
-require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+require  $confighelpfile["english"];
+if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
-require $PGV_BASE_DIRECTORY . "includes/functions_editlang.php";
-if (file_exists($PGV_BASE_DIRECTORY . "rs_functions.php")) require $PGV_BASE_DIRECTORY . "rs_functions.php";
+require  "includes/functions_editlang.php";
+if (file_exists( "rs_functions.php")) require  "rs_functions.php";
 
 //-- make sure that they have admin status before they can use this page
 //-- otherwise have them login again
@@ -98,7 +98,8 @@ if ($action != "save")
         print "</tr>";
         print "<tr>";
           print "<td class=\"facts_value\" style=\"text-align:center; color: #0000FF\" >";
-            print "<strong style=\"color: red\">|</strong>" . stripslashes(mask_all(find_in_file($ls01, $lang_filename_orig))) . "<strong style=\"color: red\">|</strong>";
+//            print "<strong style=\"color: red\">|</strong>" . stripslashes(mask_all(find_in_file($ls01, $lang_filename_orig))) . "<strong style=\"color: red\">|</strong>";
+            print "<strong style=\"color: red\">|</strong>" . mask_all(find_in_file($ls01, $lang_filename_orig)) . "<strong style=\"color: red\">|</strong>";
           print "</td>";
         print "</tr>";
       print "</table>";
@@ -112,7 +113,8 @@ if ($action != "save")
         print "<tr>";
           print "<td class=\"facts_value\" style=\"text-align:center; \" >";
             print "<textarea rows=\"10\" name=\"new_message\" cols=\"75\" style=\"color: #FF0000\" >";
-              if ($ls02>0) print stripslashes(mask_all(find_in_file($ls02, $lang_filename)));
+//              if ($ls02>0) print stripslashes(mask_all(find_in_file($ls02, $lang_filename)));
+              if ($ls02>0) print mask_all(find_in_file($ls02, $lang_filename));
             print "</textarea>";
           print "</td>";
         print "</tr>";
@@ -153,7 +155,7 @@ if ($action == "save")
         			  $english_language_array = read_complete_file_into_array($pgv_language["english"], "pgv_lang[");
         			  // read the chosen lang.xx.php file into array
         			  $new_language_array = array();
-        			  $new_language_file = $PGV_BASE_DIRECTORY . $pgv_language[$language2];
+        			  $new_language_file =  $pgv_language[$language2];
         			  $new_language_array = read_complete_file_into_array($new_language_file, "pgv_lang[");
         			  break;
     case "facts"		: // read the english lang.en.php file into array
@@ -161,7 +163,7 @@ if ($action == "save")
         			  $english_language_array = read_complete_file_into_array($factsfile["english"], "factarray[");
         			  // read the chosen lang.xx.php file into array
         			  $new_language_array = array();
-        			  $new_language_file = $PGV_BASE_DIRECTORY . $factsfile[$language2];
+        			  $new_language_file =  $factsfile[$language2];
         			  $new_language_array = read_complete_file_into_array($new_language_file, "factarray[");
         			  break;
     case "configure_help"	: // read the english lang.en.php file into array
@@ -169,7 +171,7 @@ if ($action == "save")
         			  $english_language_array = read_complete_file_into_array($confighelpfile["english"], "pgv_lang[");
         			  // read the chosen lang.xx.php file into array
         			  $new_language_array = array();
-        			  $new_language_file = $PGV_BASE_DIRECTORY . $confighelpfile[$language2];
+        			  $new_language_file =  $confighelpfile[$language2];
         			  $new_language_array = read_complete_file_into_array($new_language_file, "pgv_lang[");
         			  break;
     case "help_text"	: // read the english lang.en.php file into array
@@ -177,13 +179,14 @@ if ($action == "save")
         			  $english_language_array = read_complete_file_into_array($helptextfile["english"], "pgv_lang[");
         			  // read the chosen lang.xx.php file into array
         			  $new_language_array = array();
-        			  $new_language_file = $PGV_BASE_DIRECTORY . $helptextfile[$language2];
+        			  $new_language_file =  $helptextfile[$language2];
         			  $new_language_array = read_complete_file_into_array($new_language_file, "pgv_lang[");
         			  break;
   }
 
-  $new_message = add_backslash_before_dollarsign($new_message);
-  $new_message = preg_replace(array("/&amp;/","/&lt;/","/&gt;/"), array("&","<",">"), $new_message);
+//  $new_message = add_backslash_before_dollarsign($new_message);
+//  $new_message = preg_replace(array("/&amp;/","/&lt;/","/&gt;/"), array("&","<",">"), $new_message);
+  $new_message = unmask_all(stripslashes($new_message));
   $new_message_line = (-1);
   if (isset($new_language_array[$ls02])) $dummyArray = $new_language_array[$ls02];
   else $dummyArray = array();
@@ -243,7 +246,8 @@ if ($action == "save")
       {
       print "<tr>";
         print "<td class=\"facts_value\" style=\"text-align:center; color: #0000FF\" >";
-          print "<strong style=\"color: red\">|</strong>".stripslashes(mask_all(find_in_file($ls01, $lang_filename_orig)))."<strong style=\"color: red\">|</strong>";
+//          print "<strong style=\"color: red\">|</strong>".stripslashes(mask_all(find_in_file($ls01, $lang_filename_orig)))."<strong style=\"color: red\">|</strong>";
+          print "<strong style=\"color: red\">|</strong>".mask_all(find_in_file($ls01, $lang_filename_orig))."<strong style=\"color: red\">|</strong>";
         print "</td>";
       print "</tr>";
       }
@@ -262,7 +266,8 @@ if ($action == "save")
 
       print "<tr>";
         print "<td class=\"facts_value\" style=\"text-align:center; color: #0000FF\" >";
-          print "<strong style=\"color: red; \">|</strong>" . stripslashes(mask_all($new_message)) . "<strong style=\"color: red\">|</strong>";
+//          print "<strong style=\"color: red; \">|</strong>" . stripslashes(mask_all($new_message)) . "<strong style=\"color: red\">|</strong>";
+          print "<strong style=\"color: red; \">|</strong>" . mask_all($new_message) . "<strong style=\"color: red\">|</strong>";
         print "</td>";
       print "</tr>";
     print "</table>";

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: functions_editlang.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: functions_editlang.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions_editlang.php")) {
@@ -46,37 +46,16 @@ function crlf_lf_to_br($dstring)
 }
 
 //-----------------------------------------------------------------
-function mask_lt($dstring)
-{
-  $dummy = str_replace("<", "&lt;", $dstring);
-  return $dummy;
-}
-
-//-----------------------------------------------------------------
-function mask_gt($dstring)
-{
-  $dummy = str_replace(">", "&gt;", $dstring);
-  return $dummy;
-}
-
-//-----------------------------------------------------------------
-function mask_quot($dstring)
-{
-  $dummy = str_replace("\"", "&quot;", $dstring);
-  return $dummy;
-}
-
-//-----------------------------------------------------------------
-function mask_amp($dstring)
-{
-  $dummy = str_replace("&", "&amp;", $dstring);
-  return $dummy;
-}
-
-//-----------------------------------------------------------------
 function mask_all($dstring)
 {
-  $dummy = mask_lt(mask_gt(mask_quot(mask_amp($dstring))));
+  $dummy = str_replace(array('&', '<', '>', '"'), array('&amp;', '&lt;', '&gt;', '&quot;'), $dstring);
+  return $dummy;
+}
+
+//-----------------------------------------------------------------
+function unmask_all($dstring)
+{
+  $dummy = str_replace(array('&lt;', '&gt;', '&quot;', '&amp;'), array('<', '>', '"', '&'), $dstring);
   return $dummy;
 }
 
@@ -100,9 +79,9 @@ function UnLockFile($Temp_Filename)
 //-----------------------------------------------------------------
 function read_complete_file_into_array($dFileName, $string_needle)
 {
-  global $file_type, $language2, $PGV_BASE_DIRECTORY, $lang_shortcut;
+  global $file_type, $language2, $lang_shortcut;
 
-  $Filename = $PGV_BASE_DIRECTORY . $dFileName;
+  $Filename =  $dFileName;
   LockFile($Filename);
 
   $LineCounter = 0;
@@ -114,98 +93,69 @@ function read_complete_file_into_array($dFileName, $string_needle)
     $dUserName = getUserName();
     $dUser = getUser($dUserName);
     $dUserRealName = $dUser["firstname"]." ".$dUser["lastname"];
-
-    $dFound = ($fp = @fopen($Filename, "w"));
-    fwrite($fp, "<?php\r\n");
+    $Language2 = ucfirst($language2);
 
     switch ($file_type)
     {
-      case "lang"		: fwrite($fp, "/*=============================================================" . "\r\n");
-      			  	  fwrite($fp, "   charset=utf-8" . "\r\n");
-      			  	  fwrite($fp, "   Project:	phpGedView" . "\r\n");
-      			  	  fwrite($fp, "   File:	" . $dFileName . "\r\n");
-      			  	  fwrite($fp, "   Author:	John Finlay" . "\r\n");
-      			  	  fwrite($fp, "   Translation:	" . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   Comments:	" . $language2 . " Language file for PHPGedView" . "\r\n");
-      			  	  fwrite($fp, "   Change Log:	" . date("Y") . "-" . date("m") . "-" . date("d") . " - File created by " . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   		For other changes read:" . "\r\n");
-      			  	  fwrite($fp, "   		languages/LANG_CHANGELOG.txt" . "\r\n");
-      			  	  fwrite($fp, "=============================================================*/" . "\r\n");
-      			  	  fwrite($fp, "# \$Id\$" . "\r\n");
-      			  	  fwrite($fp, "if (preg_match(\"/lang\\...\\.php\$/\", \$_SERVER[\"SCRIPT_NAME\"])>0) {" . "\r\n");
-      			  	  fwrite($fp, "	print \"You cannot access a language file directly.\";" . "\r\n");
-      			  	  fwrite($fp, "	exit;" . "\r\n");
-      			  	  fwrite($fp, "}" . "\r\n");
-      			  	  fwrite($fp, "//-- GENERAL HELP MESSAGES" . "\r\n");
-      			  	  break;
-      case "facts"		: fwrite($fp, "/*=============================================================" . "\r\n");
-      			  	  fwrite($fp, "   charset=utf-8" . "\r\n");
-      			  	  fwrite($fp, "   Project:	phpGedView" . "\r\n");
-      			  	  fwrite($fp, "   File:	" . $dFileName . "\r\n");
-      			  	  fwrite($fp, "   Author:	John Finlay" . "\r\n");
-      			  	  fwrite($fp, "   Translation:	" . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   Comments:	Defines an array of GEDCOM codes and the " . $language2 . " name facts that they represent." . "\r\n");
-      			  	  fwrite($fp, "   Change Log:	" . date("Y") . "-" . date("m") . "-" . date("d") . " - File created by " . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   		For other changes read:" . "\r\n");
-      			  	  fwrite($fp, "   		languages/LANG_CHANGELOG.txt" . "\r\n");
-      			  	  fwrite($fp, "=============================================================*/" . "\r\n");
-      			  	  fwrite($fp, "# \$Id\$" . "\r\n");
-      			  	  fwrite($fp, "if (preg_match(\"/facts\\...\\.php\$/\", \$_SERVER[\"SCRIPT_NAME\"])>0) {" . "\r\n");
-      			  	  fwrite($fp, "	print \"You cannot access a language file directly.\";" . "\r\n");
-      			  	  fwrite($fp, "	exit;" . "\r\n");
-      			  	  fwrite($fp, "}" . "\r\n");
-      			  	  fwrite($fp, "// -- Define a fact array to map Gedcom tags with their " . $language2 . " values" . "\r\n");
-      			  	  break;
-      case "configure_help"	: fwrite($fp, "/*=============================================================" . "\r\n");
-      			  	  fwrite($fp, "   charset=utf-8" . "\r\n");
-      			  	  fwrite($fp, "   Project:	phpGedView" . "\r\n");
-      			  	  fwrite($fp, "   File:	" . $dFileName . "\r\n");
-      			  	  fwrite($fp, "   Author:	John Finlay" . "\r\n");
-      			  	  fwrite($fp, "   Translation:	" . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   Comments:	" . $language2 . " Language Configure Help file for PHPGedView" . "\r\n");
-      			  	  fwrite($fp, "   Change Log:	" . date("Y") . "-" . date("m") . "-" . date("d") . " - File created by " . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   		For other changes read:" . "\r\n");
-      			  	  fwrite($fp, "   		languages/LANG_CHANGELOG.txt" . "\r\n");
-      			  	  fwrite($fp, "=============================================================*/" . "\r\n");
-      			  	  fwrite($fp, "# \$Id\$" . "\r\n");
-      			  	  fwrite($fp, "if (preg_match(\"/configure_help\\...\\.php\$/\", \$_SERVER[\"SCRIPT_NAME\"])>0) {" . "\r\n");
-      			  	  fwrite($fp, "	print \"You cannot access a language file directly.\";" . "\r\n");
-      			  	  fwrite($fp, "	exit;" . "\r\n");
-      			  	  fwrite($fp, "}" . "\r\n");
-      			  	  fwrite($fp, "//-- CONFIGURE FILE MESSAGES" . "\r\n");
-      			  	  break;
-      case "help_text"		: fwrite($fp, "/*=============================================================" . "\r\n");
-      			  	  fwrite($fp, "   charset=utf-8" . "\r\n");
-      			  	  fwrite($fp, "   Project:	phpGedView" . "\r\n");
-      			  	  fwrite($fp, "   File:	" . $dFileName . "\r\n");
-      			  	  fwrite($fp, "   Author:	John Finlay" . "\r\n");
-      			  	  fwrite($fp, "   Translation:	" . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   Comments:	" . $language2 . " Language Help-file for PHPGedView" . "\r\n");
-      			  	  fwrite($fp, "   Change Log:	" . date("Y") . "-" . date("m") . "-" . date("d") . " - File created by " . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   		For other changes read:" . "\r\n");
-      			  	  fwrite($fp, "   		languages/LANG_CHANGELOG.txt" . "\r\n");
-      			  	  fwrite($fp, "=============================================================*/" . "\r\n");
-      			  	  fwrite($fp, "# \$Id\$" . "\r\n");
-      			  	  fwrite($fp, "\r\n");
-      			  	  fwrite($fp, "//-- GENERAL HELP HEADER" . "\r\n");
-      			  	  break;
-      case "rs_lang"		: fwrite($fp, "/*=============================================================" . "\r\n");
-      			  	  fwrite($fp, "   charset=utf-8" . "\r\n");
-      			  	  fwrite($fp, "   Project:	phpGedView" . "\r\n");
-      			  	  fwrite($fp, "   File:	" . $dFileName . "\r\n");
-      			  	  fwrite($fp, "   Author:	John Finlay" . "\r\n");
-      			  	  fwrite($fp, "   Developer:	Roland Dalmulder" . "\r\n");
-      			  	  fwrite($fp, "   Translation:	" . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   Comments:	" . $language2 . " Language file for PHPGedView Researchlog" . "\r\n");
-      			  	  fwrite($fp, "   Change Log:	" . date("Y") . "-" . date("m") . "-" . date("d") . " - File created by " . $dUserRealName . "\r\n");
-      			  	  fwrite($fp, "   		For other changes read:" . "\r\n");
-      			  	  fwrite($fp, "   		languages/LANG_CHANGELOG.txt" . "\r\n");
-      			  	  fwrite($fp, "=============================================================*/" . "\r\n");
-      			  	  fwrite($fp, "# \$Id\$" . "\r\n");
-      			  	  fwrite($fp, "\r\n");
-      			  	  fwrite($fp, "// -- RS GENERAL MESSAGES" . "\r\n");
-      			  	  break;
+      case "lang":
+        $comment1 = $Language2 ." Language file for PhpGedView";
+        $comment2 = "//-- GENERAL HELP MESSAGES";
+        break;
+      case "facts":
+        $comment1 = "Defines an array of GEDCOM codes and the " . $Language2 . " name facts that they represent.";
+        $comment2 = "// -- Define a fact array to map GEDCOM tags with their " . $Language2 . " values";
+        break;
+      case "configure_help":
+        $comment1 = $Language2 . " language Configure Help file for PhpGedView";
+        $comment2 = "//-- CONFIGURE FILE MESSAGES";
+        break;
+      case "help_text":
+        $comment1 = $Language2 . " Help file for PhpGedView";
+        $comment2 = "//-- GENERAL HELP HEADER";
+        break;
+      case "rs_lang":
+        $comment1 = $Language2 . " Language file for PhpGedView Researchlog";
+        $comment2 = '// -- RS GENERAL MESSAGES';
+        break;
+      default:
+        $comment1 = 'This should never happen';
+        $comment2 = '';
+        break;
     }
+        
+    $dFound = ($fp = @fopen($Filename, "w"));
+    fwrite($fp, "<?php\r\n");
+    fwrite($fp, "/**" . "\r\n");
+    fwrite($fp, " * " . $comment1 . "\r\n");
+    fwrite($fp, " *" . "\r\n");
+    fwrite($fp, " * PhpGedView: Genealogy Viewer" . "\r\n");
+    fwrite($fp, " * Copyright (C) 2002 to 2005  PGV Development Team" . "\r\n");
+    fwrite($fp, " *" . "\r\n");
+    fwrite($fp, " * This program is free software; you can redistribute it and/or modify" . "\r\n");
+    fwrite($fp, " * it under the terms of the GNU General Public License as published by" . "\r\n");
+    fwrite($fp, " * the Free Software Foundation; either version 2 of the License, or" . "\r\n");
+    fwrite($fp, " * (at your option) any later version." . "\r\n");
+    fwrite($fp, " *" . "\r\n");
+    fwrite($fp, " * This program is distributed in the hope that it will be useful," . "\r\n");
+    fwrite($fp, " * but WITHOUT ANY WARRANTY; without even the implied warranty of" . "\r\n");
+    fwrite($fp, " * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" . "\r\n");
+    fwrite($fp, " * GNU General Public License for more details." . "\r\n");
+    fwrite($fp, " *" . "\r\n");
+    fwrite($fp, " * You should have received a copy of the GNU General Public License" . "\r\n");
+    fwrite($fp, " * along with this program; if not, write to the Free Software" . "\r\n");
+    fwrite($fp, " * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA" . "\r\n");
+    fwrite($fp, " *" . "\r\n");
+    fwrite($fp, " * @package PhpGedView" . "\r\n");
+    fwrite($fp, " * @author " . $dUserRealName . "\r\n");
+    fwrite($fp, " * @created " . date("Y") . "-" . date("m") . "-" . date("d") . "\r\n");
+    fwrite($fp, " * @version \$Id\$" . "\r\n");
+    fwrite($fp, " */" . "\r\n");
+    fwrite($fp, "if (strstr(\$_SERVER[\"SCRIPT_NAME\"],\"" . $file_type . "\")) {" . "\r\n");
+    fwrite($fp, "  print \"You cannot access a language file directly.\";" . "\r\n");
+    fwrite($fp, "  exit;" . "\r\n");
+    fwrite($fp, "}" . "\r\n");
+    fwrite($fp, "\r\n");
+    fwrite($fp, $comment2 . "\r\n");
     fwrite($fp, "\r\n");
     fwrite($fp, "?>");
     fclose($fp);
@@ -261,7 +211,7 @@ function read_complete_file_into_array($dFileName, $string_needle)
 function find_in_file($MsgNr, $dlang_file)
 {
   global $PGV_BASE_DIRECTORY;
-  $openfilename = $PGV_BASE_DIRECTORY . $dlang_file;
+  $openfilename =  $dlang_file;
   $my_array = @file($openfilename);
 
   $my_Dummy = $my_array[$MsgNr];
@@ -291,8 +241,8 @@ function write_array_into_file($dFileName01, $writeArray, $add_new_message_at_li
 {
   global $PGV_BASE_DIRECTORY;
 
-  $Filename = $PGV_BASE_DIRECTORY . $dFileName01;
-  # $Filename = $PGV_BASE_DIRECTORY . "languages/test.php";
+  $Filename =  $dFileName01;
+  # $Filename =  "languages/test.php";
   LockFile($Filename);
 
   $LineCounter = 0;
@@ -334,20 +284,7 @@ function write_array_into_file($dFileName01, $writeArray, $add_new_message_at_li
       fwrite($fp, substr($var[3], 0, $var[2]));
       # print "substr= -" . substr($var[3], 0, $var[2])."-<br />";
 
-      // Hier irgendwo auf den zu schreibenden string stripslashes anwenden um danach
-      // $text = preg_replace('/("\)/', '\', $text); anzuwenden und nur \ und " zu escapen
-
-      $d_Var_01 = stripslashes($var[1]);
-      # print "dvar_01= -" . $d_Var_01."-<br />";
-      # print "var[1]= -" . $var[1]."-<br />";
-
-      $d_Var_01 = addcslashes($d_Var_01,"\\\"\$");
-      # print "dvar_01= -" . $d_Var_01."-<br />";
-      # print "var[1]= -" . $var[1]."-<br />";
-      # exit;
-
-      # fwrite($fp, $var[1]);
-      fwrite($fp, $d_Var_01);
+      fwrite($fp, $var[1]);
       # print "var[1]= -" . $var[1]."-<br />";
 
       fwrite($fp, "\";\r\n");
@@ -389,7 +326,7 @@ function read_export_file_into_array($dFileName, $string_needle)
           $line_mine = $line;
           $line = trim($line);
           $key = trim(substr($line, 0, strpos($line, "]") + 1));
-          $ct = preg_match("/=\s*\"(.*)\"/", $line, $match);
+          $ct = preg_match("/=\s*\"(.*)\";/", $line, $match);
           if ($ct>0) $content = $match[1];
           else $content = "";
           $InfoArray[$LineCounter][0] = $key;				// keystring
@@ -400,7 +337,6 @@ function read_export_file_into_array($dFileName, $string_needle)
     }
     fclose($fp);
   }
-
   return $InfoArray;
 }
 //-----------------------------------------------------------------

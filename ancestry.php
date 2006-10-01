@@ -26,7 +26,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: ancestry.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: ancestry.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require_once("includes/controllers/ancestry_ctrl.php");
@@ -147,8 +147,8 @@ if ($view != "preview") {
 	<td class="optionbox vmiddle">
 	<input type="checkbox" value="
 	<?php
-	if ($controller->show_full) print "1\" checked=\"checked\" onclick=\"document.people.show_full.value='0';\"";
-	else print "0\" onclick=\"document.people.show_full.value='1';\"";?>"
+	if ($controller->show_full) print "1\" checked=\"checked\" onclick=\"document.people.show_full.value='0';";
+	else print "0\" onclick=\"document.people.show_full.value='1';";?>"
 	/>
 	</td></tr>
 	</table>
@@ -174,11 +174,16 @@ END;
 	for ($i = 0; $i < $treesize; $i++) {
 		$pid = $treeid[$i];
 		if ($pid) {
-			$famids = find_family_ids($pid);
-			$parents = @find_parents($famids[0]);
-			if ($parents) print_sosa_family($famids[0], $pid, $i + 1);
-			// show empty family only if it is the first and only one
-			else if ($i == 0) print_sosa_family("", $pid, $i + 1);
+			$person = Person::getInstance($pid);
+			if (!is_null($person)) {
+				$famids = $person->getChildFamilies();
+				foreach($famids as $famid=>$family) {
+					$parents = find_parents_in_record($family->getGedcomRecord());
+					if ($parents) print_sosa_family($famid, $pid, $i + 1);
+					// 	show empty family only if it is the first and only one
+					else if ($i == 0) print_sosa_family("", $pid, $i + 1);
+				}
+			}
 		}
 	}
 }

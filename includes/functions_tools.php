@@ -2,7 +2,7 @@
 /**
  * Functions used Tools to cleanup and manipulate Gedcoms before they are imported
  *
- * $Id: functions_tools.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * $Id: functions_tools.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003  John Finlay and Others
@@ -120,7 +120,7 @@ function need_place_cleanup()
 	global $fcontents;
 	//$ct = preg_match("/SOUR.+(Family Tree Maker|FTW)/", $fcontents);
 	//if ($ct==0) return false;
-	$ct = preg_match_all ("/^1 (CAST|DSCR|EDUC|IDNO|NATI|NCHI|NMR|OCCU|PROP|RELI|SSN|TITL|_MILI|_FA1|_FA2|_FA3|_FA4|_FA5|_FA6)(\s*)$[\s]+(^2 TYPE(.*)[\s]+)?(^2 DATE(.*)[\s]+)?^2 PLAC (.*)$/m",$fcontents,$matches, PREG_SET_ORDER);
+	$ct = preg_match_all ("/^1 (CAST|DSCR|IDNO|NATI|NCHI|NMR|OCCU|PROP|RELI|SSN|TITL|_FA1|_FA2|_FA3|_FA4|_FA5|_FA6)(\s*)$[\s]+(^2 TYPE(.*)[\s]+)?(^2 DATE(.*)[\s]+)?^2 PLAC (.*)$/m",$fcontents,$matches, PREG_SET_ORDER);
 	if($ct>0)
 	  return $matches[0];
 	return false;
@@ -135,12 +135,12 @@ function place_cleanup()
 {
 	global $fcontents;
 
-//searchs for '1 CAST|DSCR|EDUC|IDNO|NATI|NCHI|NMR|OCCU|PROP|RELI|SSN|TITL #chars\n'
+//searchs for '1 CAST|DSCR|IDNO|NATI|NCHI|NMR|OCCU|PROP|RELI|SSN|TITL #chars\n'
 //				    'optional 2 TYPE #chars\n'
 //						'optional 2 DATE #chars\n'
 //						'2 PLAC #chars'
 // and replaces the 1 level #chars with the PLAC #chars and blanks out the PLAC
-$fcontents = preg_replace("/^1 (CAST|DSCR|EDUC|IDNO|NATI|NCHI|NMR|OCCU|PROP|RELI|SSN|TITL|_MILI|_FA1|_FA2|_FA3|_FA4|_FA5|_FA6)(\s*)$[\s]+(^2 TYPE(.*)[\s]+)?(^2 DATE(.*)[\s]+)?^2 PLAC (.*)$/m",
+$fcontents = preg_replace("/^1 (CAST|DSCR|IDNO|NATI|NCHI|NMR|OCCU|PROP|RELI|SSN|TITL|_FA1|_FA2|_FA3|_FA4|_FA5|_FA6)(\s*)$[\s]+(^2 TYPE(.*)[\s]+)?(^2 DATE(.*)[\s]+)?^2 PLAC (.*)$/m",
 					 fixreplaceval('$1','$7','$3','$5'),$fcontents);
 return true;
 }
@@ -179,27 +179,27 @@ function fixreplaceval($val1,$val7,$val3,$val5)
 function need_date_cleanup()
 {
 	global $fcontents;
-  $ct = preg_match_all ("/DATE[^\d]+(\d\d\d\d)[\/\\\\\-\.](\d\d)[\/\\\\\-\.](\d\d)/",$fcontents,$matches, PREG_SET_ORDER);
+  $ct = preg_match_all ("/\n\d DATE[^\d]+(\d\d\d\d)[\/\\\\\-\.](\d\d)[\/\\\\\-\.](\d\d)/",$fcontents,$matches, PREG_SET_ORDER);
 	if($ct>0) {
 		//print_r($matches);
 	  	return $matches[0];
   	}
 	else
 	{
-  		$ct = preg_match_all ("/DATE[^\d]+(\d\d)[\/\\\\\-\.](\d\d)[\/\\\\\-\.](\d\d\d\d)/",$fcontents,$matches, PREG_SET_ORDER);
+  		$ct = preg_match_all ("/\n\d DATE[^\d]+(\d\d)[\/\\\\\-\.](\d\d)[\/\\\\\-\.](\d\d\d\d)/",$fcontents,$matches, PREG_SET_ORDER);
 		if($ct>0) {
 			//print_r($matches);
 			$matches[0]["choose"] = true;
 			return $matches[0];
 		}
 		else {
-			$ct = preg_match_all ("/DATE ([^\d]+) [0-9]{1,2}, (\d\d\d\d)/",$fcontents,$matches, PREG_SET_ORDER);
+			$ct = preg_match_all ("/\n\d DATE ([^\d]+) [0-9]{1,2}, (\d\d\d\d)/",$fcontents,$matches, PREG_SET_ORDER);
 			if($ct>0) {
 				//print_r($matches);
 				return $matches[0];
 			}
 			else {
-				$ct = preg_match_all("/DATE (\d\d)[^\s]([^\d]+)[^\s](\d\d\d\d)/", $fcontents, $matches, PREG_SET_ORDER);
+				$ct = preg_match_all("/\n\d DATE (\d\d)[^\s]([^\d]+)[^\s](\d\d\d\d)/", $fcontents, $matches, PREG_SET_ORDER);
 				if($ct>0) {
 					//print_r($matches);
 					return $matches[0];

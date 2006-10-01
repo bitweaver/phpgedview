@@ -19,15 +19,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: editconfig_help.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: editconfig_help.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Admin
  */
 require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
-require $PGV_BASE_DIRECTORY.$helptextfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$helptextfile[$LANGUAGE];
+require $confighelpfile["english"];
+require $confighelpfile[$LANGUAGE];
+require $helptextfile["english"];
+if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
 require ("help_text_vars.php");
 print_simple_header($pgv_lang["config_help"]);
 print '<span class="helpheader">';

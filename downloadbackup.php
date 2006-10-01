@@ -21,12 +21,15 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadbackup.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: downloadbackup.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
 
-if ((!userIsAdmin(getUserName()))||(empty($fname))) exit;
+if ((!userGedcomAdmin(getUserName()))||(empty($fname))) {
+	print $pgv_lang['access_denied'];
+	exit;
+}
 
 if(ini_get('zlib.output_compression')) @ini_set('zlib.output_compression', 'Off');
 

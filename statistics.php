@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: statistics.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: statistics.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -348,6 +348,8 @@ global $pgv_lang;
 	fwrite($FP, serialize($key2ind));
 	fwrite($FP, '}');
 	fclose($FP);
+	$logline = AddToLog($GEDCOM."_statistiek.php updated by >".getUserName()."<");
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, $GEDCOM."_statistiek.php", $INDEX_DIRECTORY);	
 }
 
 //--	========= start of main program =========
@@ -376,9 +378,9 @@ global $match1,$match2;
 //-- Check if GD library is loaded
 	if (!extension_loaded('gd')) {$GDcheck= 0;}
 //-- Check if JPgraph modules are available
-	if ((!file_exists($PGV_BASE_DIRECTORY . "jpgraph/jpgraph.php")) or
-	    (!file_exists($PGV_BASE_DIRECTORY . "jpgraph/jpgraph_line.php")) or
-	    (!file_exists($PGV_BASE_DIRECTORY . "jpgraph/jpgraph_bar.php")))
+	if ((!file_exists( "jpgraph/jpgraph.php")) or
+	    (!file_exists( "jpgraph/jpgraph_line.php")) or
+	    (!file_exists( "jpgraph/jpgraph_bar.php")))
 		{$JPcheck= 0;}
 
 	if (($GDcheck == 0) or ($JPcheck == 0))
@@ -425,7 +427,7 @@ global $match1,$match2;
 	{
 		pasteto = textbox;
 //--<?php print "textbox".textbox."<br>"; ?>
-		findwin = window.open('statistiekplot.php', '', 'left=50,top=50,width=450,height=450,resizable=1,scrollbars=1');
+		findwin = window.open('statistiekplot.php', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	function paste_id(value)
 	{
@@ -442,10 +444,10 @@ if (!isset($plottype)) $plottype=0;
 	<form method="post" name="form" action="statisticsplot.php?action=newform">
 	<input type="hidden" name="action" value="update">
 
-	<table ALIGN=bottom BORDER= 2 width=600>
+	<table class="facts_table">
 	<tr>
-	<td width= 180> <?php print $pgv_lang["statlxa"]; ?> </td>
-	<td> <select name="x-as">
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statlxa"]; ?> </td>
+	<td class="optionbox"> <select name="x-as">
 		<option value= "11" selected="selected"><?php print $pgv_lang["stat_11_mb"]; ?>
 		<option value= "12"> <?php print $pgv_lang["stat_12_md"]; ?>
 		<option value= "13"> <?php print $pgv_lang["stat_13_mm"]; ?>
@@ -459,16 +461,16 @@ if (!isset($plottype)) $plottype=0;
 		<option value= "21"> <?php print $pgv_lang["stat_21_nok"] . "<i>" . $pgv_lang["stat_gnx"] ."</i>";  ?>
 	</select>
 	<tr>
-	<td> <?php print $pgv_lang["statlya"]; ?>  </td>
-	<td> <select name="y-as">
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statlya"]; ?>  </td>
+	<td class="optionbox"> <select name="y-as">
 		<option value= "201" selected="selected"> <?php print $pgv_lang["stat_201_num"]; ?>
 		<option value= "202"> <?php print $pgv_lang["stat_202_perc"]; ?>
 	</select>
 	</td>
 	</tr>
 	<tr>
-	<td> <?php print $pgv_lang["statlza"]; ?>  </td>
-	<td> <select name="z-as">
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statlza"]; ?>  </td>
+	<td class="optionbox"> <select name="z-as">
 		<option value= "300"> <?php print $pgv_lang["stat_300_none"]; ?>
 		<option value= "301"> <?php print $pgv_lang["stat_301_mf"]; ?>
 		<option value= "302" selected="selected"> <?php print $pgv_lang["stat_302_cgp"]; ?>
@@ -490,28 +492,28 @@ print "<h3>" . $pgv_lang["statmess1"] . "</h3>";
 */
 ?>
 
-	<table ALIGN=bottom BORDER= 2 width=600>
+	<table class="facts_table">
 	<tr>
-	<td width= 180> <?php print $pgv_lang["statar_xgl"]; ?> </td>
-	<td> <input type="text" name="xas-grenzen-leeftijden" value="1,5,10,20,30,40,50,60,70,80,90"
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_xgl"]; ?> </td>
+	<td class="optionbox"> <input type="text" name="xas-grenzen-leeftijden" value="1,5,10,20,30,40,50,60,70,80,90"
 			size="60" onfocus="getHelp('periode_help');">
 	</td>
 	</tr>
 	<tr>
-	<td width= 180> <?php print $pgv_lang["statar_xgm"]; ?> </td>
-	<td> <input type="text" name="xas-grenzen-maanden" value="-24,-12,0,8,12,18,24,48"
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_xgm"]; ?> </td>
+	<td class="optionbox"> <input type="text" name="xas-grenzen-maanden" value="-24,-12,0,8,12,18,24,48"
 			size="60" onfocus="getHelp('periode_help');">
 	</td>
 	</tr>
 	<tr>
-	<td> <?php print $pgv_lang["statar_xga"]; ?> </td>
-	<td> <input type="text" name="xas-grenzen-aantallen" value="1,2,3,4,5,6,7,8,9,10"
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_xga"]; ?> </td>
+	<td class="optionbox"> <input type="text" name="xas-grenzen-aantallen" value="1,2,3,4,5,6,7,8,9,10"
 			size="60" onfocus="getHelp('periode_help');">
 	</td>
 	</tr>
 	<tr>
-	<td> <?php print $pgv_lang["statar_zgp"]; ?> </td>
-	<td> <input type="text" name="zas-grenzen-periode" value="1800,1900,1950,1980"
+	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_zgp"]; ?> </td>
+	<td class="optionbox"> <input type="text" name="zas-grenzen-periode" value="1800,1850,1900,1950,1980"
 			size="60" onfocus="getHelp('periode_help');">
 	</td>
 	</tr>

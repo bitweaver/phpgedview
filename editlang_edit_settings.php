@@ -21,12 +21,12 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editlang_edit_settings.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: editlang_edit_settings.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 
 require "config.php";
-require $PGV_BASE_DIRECTORY . $confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $confighelpfile[$LANGUAGE];
+require  $confighelpfile["english"];
+if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
 if (!isset($ln)) $ln = "";
 if (!isset($action)) $action = "";
@@ -96,7 +96,7 @@ function write_td_with_textdir_check(){
 /* ------------------------------------------------------------------------------------- */
 
 if ($action == "new_lang") {
-  require($PGV_BASE_DIRECTORY . "includes/lang_codes_std.php");
+  require( "includes/lang_codes_std.php");
   $ln = strtolower($lng_codes[$new_shortcut][0]);
 
   $d_LangName      = "lang_name_" . $ln;
@@ -112,12 +112,12 @@ if ($action == "new_lang") {
 
   // Suggest a suitable flag file
   $temp = strtolower($lng_codes[$new_shortcut][1]).".gif";
-  if (file_exists("images/flags/".$temp)) {
+  if (file_exists("image/flags/".$temp)) {
     $flag = $temp;						// long name takes precedence
-  } else if (file_exists("images/flags/".$new_shortcut.".gif")) {
+  } else if (file_exists("image/flags/".$new_shortcut.".gif")) {
 	$flag = $new_shortcut.".gif";		// use short name if long name doesn't exist
   } else $flag = "new.gif";				// default if neither a long nor a short name exist
-  $flagsfile[$ln] = "images/flags/" . $flag;
+  $flagsfile[$ln] = "image/flags/" . $flag;
 
   $factsfile[$ln]    = "languages/facts.".$new_shortcut.".php";
   $DATE_FORMAT_array[$ln]  = "D M Y";
@@ -127,6 +127,8 @@ if ($action == "new_lang") {
   $NAME_REVERSE_array[$ln]  = false;
   $ALPHABET_upper[$ln]    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   $ALPHABET_lower[$ln]    = "abcdefghijklmnopqrstuvwxyz";
+  $MULTI_LETTER_ALPHABET[$ln] = "";
+  $DICTIONARY_SORT[$ln]   = true;
 
   $pgv_lang[$d_LangName]  = $lng_codes[$new_shortcut][0];
 }
@@ -137,7 +139,7 @@ if ($action != "save" and $action != "toggleActive") {
   print "<script language=\"JavaScript\" type=\"text/javascript\">\n";
   print "var helpWin;\n";
   print "function helpPopup(which) {\n";
-  print "if ((!helpWin)||(helpWin.closed)) helpWin = window.open('editconfig_help.php?help='+which,'','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');\n";
+  print "if ((!helpWin)||(helpWin.closed)) helpWin = window.open('editconfig_help.php?help='+which,'_blank','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');\n";
   print "else helpWin.location = 'editconfig_help.php?help='+which;\n";
   print "return false;\n";
   print "}\n";
@@ -241,7 +243,7 @@ if ($action != "save" and $action != "toggleActive") {
   print " <a href=\"javascript:;\" onclick=\"return helpPopup('flagsfile_help'); \"><b style=\"color: red; cursor: help; \">?</b></a>";
   print "</td>";
   write_td_with_textdir_check();
-  $dire = "images/flags";
+  $dire = "image/flags";
   if ($handle = opendir($dire)) {
     $flagfiles = array();
     $sortedflags = array();
@@ -414,6 +416,43 @@ if ($action != "save" and $action != "toggleActive") {
   print "</td>";
   print "</tr>";
 
+  print "<tr>";
+  if (!isset($v_multi_letter_alphabet)) $v_multi_letter_alphabet = $MULTI_LETTER_ALPHABET[$ln];
+  print "<td class=\"facts_label\" >";
+  print $pgv_lang["multi_letter_alphabet"];
+  print " <a href=\"javascript:;\" onclick=\"return helpPopup('multi_letter_alphabet_help'); \"><b style=\"color: red; cursor: help; \">?</b></a>";
+  print "</td>";
+  write_td_with_textdir_check();
+  print "<input type=\"text\" name=\"v_multi_letter_alphabet\" size=\"50\" value=\"" . $v_multi_letter_alphabet . "\" />";
+  print "</td>";
+  print "</tr>";
+
+  print "<tr>";
+  if (!isset($v_dictionary_sort)) $v_dictionary_sort = $DICTIONARY_SORT[$ln];
+  print "<td class=\"facts_label\" >";
+  print $pgv_lang["dictionary_sort"];
+  print " <a href=\"javascript:;\" onclick=\"return helpPopup('dictionary_sort_help'); \"><b style=\"color: red; cursor: help; \">?</b></a>";
+  print "</td>";
+  write_td_with_textdir_check();
+  print "<select size=\"1\" name=\"v_dictionary_sort\">";
+  print "<option";
+  if (!$v_dictionary_sort) print " selected=\"selected\"";
+  print " value=\"";
+  print "0";
+  print "\">";
+  print $pgv_lang["no"];
+  print "</option>";
+  print "<option";
+  if ($v_dictionary_sort) print " selected=\"selected\"";
+  print " value=\"";
+  print "1";
+  print "\">";
+  print $pgv_lang["yes"];
+  print "</option>";
+  print "</select>";
+  print "</td>";
+  print "</tr>";
+
   if (!isset($v_lang_filename)) $v_lang_filename = "languages/lang.".$v_lang_shortcut.".php";
   if (!isset($v_config_filename)) $v_config_filename = "languages/configure_help.".$v_lang_shortcut.".php";
   if (!isset($v_factsfile)) $v_factsfile = "languages/facts.".$v_lang_shortcut.".php";
@@ -489,6 +528,8 @@ if ($action == "save") {
 
   $ALPHABET_upper[$ln]  = $_POST["v_alphabet_upper"];
   $ALPHABET_lower[$ln]  = $_POST["v_alphabet_lower"];
+  $MULTI_LETTER_ALPHABET[$ln]  = $_POST["v_multi_letter_alphabet"];
+  $DICTIONARY_SORT[$ln]  = $_POST["v_dictionary_sort"];
   $DATE_FORMAT_array[$ln]  = $_POST["v_date_format"];
   $TIME_FORMAT_array[$ln]  = $_POST["v_time_format"];
   $WEEK_START_array[$ln]  = $_POST["v_week_start"];
@@ -537,6 +578,10 @@ if ($action == "save" or $action=="toggleActive") {
         fwrite($fp, ";\r\n");
         fwrite($fp, "\$lang[\"ALPHABET_upper\"]    = \"" . $ALPHABET_upper[$key] . "\";\r\n");
         fwrite($fp, "\$lang[\"ALPHABET_lower\"]    = \"" . $ALPHABET_lower[$key] . "\";\r\n");
+        fwrite($fp, "\$lang[\"MULTI_LETTER_ALPHABET\"]    = \"" . $MULTI_LETTER_ALPHABET[$key] . "\";\r\n");
+        fwrite($fp, "\$lang[\"DICTIONARY_SORT\"]    = ");
+        if ($DICTIONARY_SORT[$key]) fwrite($fp, "true"); else fwrite($fp, "false");
+        fwrite($fp, ";\r\n");
         fwrite($fp, "\$language_settings[\"" . $languages[$key] . "\"]  = \$lang;\r\n");
       }
 /*
@@ -552,6 +597,8 @@ if ($action == "save" or $action=="toggleActive") {
       fwrite($fp, "\r\n");
       fwrite($fp, "?>");
       fclose($fp);
+	  $logline = AddToLog("lang_settings.php updated by >".getUserName()."<");
+ 	  if (!empty($COMMIT_COMMAND)) check_in($logline, $Filename, $INDEX_DIRECTORY);	
     } else $error = "lang_config_write_error";
   } else $error = "lang_set_file_read_error";
 

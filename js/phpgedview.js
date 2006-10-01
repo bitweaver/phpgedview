@@ -20,7 +20,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: phpgedview.js,v 1.1 2005/12/29 18:21:27 lsces Exp $
+ * @version $Id: phpgedview.js,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
 if (!document.getElementById)	// Check if browser supports the getElementByID function
 {
@@ -31,7 +31,7 @@ if (!document.getElementById)	// Check if browser supports the getElementByID fu
 var helpWin;
 function helpPopup(which) {
 	if (which==null) which = "help_contents_help";
-	if ((!helpWin)||(helpWin.closed)) helpWin = window.open('help_text.php?help='+which,'','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');
+	if ((!helpWin)||(helpWin.closed)) helpWin = window.open('help_text.php?help='+which,'_blank','left=50,top=50,width=500,height=320,resizable=1,scrollbars=1');
 	else helpWin.location = 'help_text.php?help='+which;
 	return false;
 }
@@ -48,8 +48,8 @@ function openImage(filename, width, height) {
 	 	screenH = screen.height;
 	 	if (width>screenW-100) width=screenW-100;
 	 	if (height>screenH-110) height=screenH-120;
-		if ((filename.search(/\.je?pg$/gi)!=-1)||(filename.search(/\.gif$/gi)!=-1)||(filename.search(/\.png$/gi)!=-1)||(filename.search(/\.bmp$/gi)!=-1)) window.open('imageview.php?filename='+filename,'','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
-		else window.open(unescape(filename),'','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
+		if ((filename.search(/\.je?pg$/gi)!=-1)||(filename.search(/\.gif$/gi)!=-1)||(filename.search(/\.png$/gi)!=-1)||(filename.search(/\.bmp$/gi)!=-1)) window.open('imageview.php?filename='+filename,'_blank','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
+		else window.open(unescape(filename),'_blank','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
 		return false;
 	}
 
@@ -127,13 +127,15 @@ function MM_showHideLayers() { //v6.0
 }
 
 var show = false;
-	function togglechildrenbox() {
+	function togglechildrenbox(pid) {
+		if (!pid) pid='';
+		else pid = '.'+pid;
 		if (show) {
-			MM_showHideLayers('childbox', ' ', 'hide',' ');
+			MM_showHideLayers('childbox'+pid, ' ', 'hide',' ');
 			show=false;
 		}
 		else {
-			MM_showHideLayers('childbox', ' ', 'show', ' ');
+			MM_showHideLayers('childbox'+pid, ' ', 'show', ' ');
 			show=true;
 		}
 		return false;
@@ -162,6 +164,7 @@ var show = false;
 			famlinks = document.getElementById("I"+boxid+"links");
 			divbox = document.getElementById("out-"+boxid);
 			parentbox = document.getElementById("box"+boxid);
+			//alert(famlinks+" "+divbox+" "+parentbox);
 			if (famlinks && divbox && parentbox) {
 				famlinks.style.top = "0px";
 				if (textDirection=="ltr") famleft = parseInt(divbox.style.width)+15;
@@ -250,7 +253,8 @@ var show = false;
 				if (sbox_img) sbox_img.src = plusminus[0].src;
 			}
 		}
-		if (window.resize_content_div) resize_content_div(lasttab+1);
+		//if (!lasttab) lasttab=0;
+		//if (window.resize_content_div) resize_content_div(lasttab+1);
 		return false;
 	}
 
@@ -281,12 +285,12 @@ function getMouseXY(e) {
 }
 
 function edit_record(pid, linenum) {
-	window.open('edit_interface.php?action=edit&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=edit&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function edit_raw(pid) {
-	window.open('edit_interface.php?action=editraw&pid='+pid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=550,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=editraw&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=400,height=400,resizable=1,scrollbars=1');
 	return false;
 }
 
@@ -294,85 +298,85 @@ function add_record(pid, fact) {
 	factfield = document.getElementById(fact);
 	if (factfield) {
 		factvalue = factfield.options[factfield.selectedIndex].value;
-		if (factvalue.substr(0, 10)=="clipboard_") window.open('edit_interface.php?action=paste&pid='+pid+'&fact='+factvalue.substr(10)+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
-		else if (factvalue == "OBJE") window.open('addmedia.php?action=showmediaform&pid='+pid, '', 'top=50,left=50,width=900,height=650,resizable=1,scrollbars=1');
-		else window.open('edit_interface.php?action=add&pid='+pid+'&fact='+factvalue+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+		if (factvalue.substr(0, 10)=="clipboard_") window.open('edit_interface.php?action=paste&pid='+pid+'&fact='+factvalue.substr(10)+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+		else if (factvalue == "OBJE") window.open('addmedia.php?action=showmediaform&linkid='+pid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+		else window.open('edit_interface.php?action=add&pid='+pid+'&fact='+factvalue+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	return false;
 }
 
 function add_new_record(pid, fact) {
-		window.open('edit_interface.php?action=add&pid='+pid+'&fact='+fact+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+		window.open('edit_interface.php?action=add&pid='+pid+'&fact='+fact+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
-function addnewchild(famid) {
-	window.open('edit_interface.php?action=addchild&famid='+famid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+function addnewchild(famid,sex) {
+	window.open('edit_interface.php?action=addchild&sex='+sex+'&famid='+famid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewspouse(famid, famtag) {
-	window.open('edit_interface.php?action=addspouse&famid='+famid+'&famtag='+famtag+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addspouse&famid='+famid+'&famtag='+famtag+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addspouse(pid, famtag) {
-	window.open('edit_interface.php?action=addspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function linkspouse(pid, famtag) {
-	window.open('edit_interface.php?action=linkspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=linkspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function add_famc(pid) {
-	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag=CHIL'+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag=CHIL'+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function add_fams(pid, famtag) {
-	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag='+famtag+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag='+famtag+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function edit_name(pid, linenum) {
-	window.open('edit_interface.php?action=editname&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=editname&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function add_name(pid) {
-	window.open('edit_interface.php?action=addname&pid='+pid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addname&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewparent(pid, famtag) {
-	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid=new'+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid=new'+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewparentfamily(pid, famtag, famid) {
-	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid='+famid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid='+famid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function copy_record(pid, linenum) {
-	window.open('edit_interface.php?action=copy&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=copy&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function reorder_children(famid) {
-	window.open('edit_interface.php?action=reorder_children&pid='+famid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=reorder_children&pid='+famid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function reorder_families(pid) {
-	window.open('edit_interface.php?action=reorder_fams&pid='+pid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=710,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=reorder_fams&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function quickEdit(pid, act) {
-	window.open('edit_quickupdate.php?pid='+pid+"&"+sessionname+"="+sessionid+"&action="+act, '', 'top=50,left=50,width=750,height=600,resizable=1,scrollbars=1');
+	window.open('edit_quickupdate.php?pid='+pid+"&"+sessionname+"="+sessionid+"&action="+act, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
@@ -382,33 +386,50 @@ function chat(username) {
 }
 
 function reply(username, subject) {
-	window.open('message.php?to='+username+'&subject='+subject+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=650,height=500,resizable=1,scrollbars=1');
+	window.open('message.php?to='+username+'&subject='+subject+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function delete_message(id) {
-	window.open('message.php?action=delete&id='+id+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=650,height=500,resizable=1,scrollbars=1');
+	window.open('message.php?action=delete&id='+id+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function delete_family(famid) {
-	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&action=deletefamily", '', 'top=50,left=50,width=750,height=600,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&action=deletefamily", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function deletesource(pid) {
-	 window.open('edit_interface.php?action=deletesource&pid='+pid+"&"+sessionname+"="+sessionid, '', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	 window.open('edit_interface.php?action=deletesource&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	 return false;
 }
 
 function change_family_members(famid) {
-	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&action=changefamily", '', 'top=50,left=50,width=750,height=600,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&action=changefamily", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
+
+function addnewsource(field) {
+	pastefield = field;
+	window.open('edit_interface.php?action=addnewsource&amp;pid=newsour', '_blank', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function valid_date(datefield) {
-	date = new Date(datefield.value);
 	months = new Array("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC");
+	// quarter format [ 1509083 ]
+	// e.g. Q1 1900
+	var qsearch = /^Q(\d) (\d\d\d\d)$/i;
+ 	var found = qsearch.exec(datefield.value);
+ 	if (found) {
+	 	q = RegExp.$1;
+	 	y = RegExp.$2;
+	 	m = (q-1)*3;
+		if (0<q && q<5) datefield.value = "BET "+months[m]+" "+y+" AND "+months[(m+2)]+" "+y;
+	}
+	// other format
+	date = new Date(datefield.value);
 	if (date && date.toString()!="NaN" && date.getDate().toString()!="NaN") {
 		day = date.getDate();
 		if (day<10) day = "0"+day;
@@ -706,7 +727,7 @@ language_filter = "";
 magnify = "";
 function findSpecialChar(field) {
 	pastefield = field;
-	window.open('find.php?type=specialchar&language_filter='+language_filter+'&magnify='+magnify, '', 'top=55,left=55,width=200,height=500,scrollbars=1,resizeable=1');
+	window.open('find.php?type=specialchar&language_filter='+language_filter+'&magnify='+magnify, '_blank', 'top=55,left=55,width=200,height=500,scrollbars=1,resizeable=1');
 	return false;
 }
 
@@ -979,104 +1000,43 @@ var monthLabels = new Array();
   	cal_toggleDate(dateDivId, dateFieldId);
   	return false;
   }
-function findIndi(field, indiname) {
+function findIndi(field, indiname, multiple, ged) {
         pastefield = field;
-        window.open('find.php?type=indi', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+        nameElement = indiname;
+        window.open('find.php?type=indi&multiple='+multiple+'&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
         return false;
 }
 
-function findPlace(field) {
+function findPlace(field, ged) {
 	pastefield = field;
-	window.open('find.php?type=place', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+	window.open('find.php?type=place&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
-function findFamily(field) {
+function findFamily(field, ged) {
 	pastefield = field;
-	window.open('find.php?type=fam', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+	window.open('find.php?type=fam&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
-function findMedia(field) {
+function findMedia(field, choose, ged) {
 	pastefield = field;
-	window.open('find.php?type=media', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+	if (!choose) choose="0all";
+	window.open('find.php?type=media&choose='+choose+'&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
-function findSource(field) {
+function findSource(field, sourcename, ged) {
 	pastefield = field;
-	window.open('find.php?type=source', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+	nameElement = sourcename;
+	window.open('find.php?type=source&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
-function findRepository(field) {
+function findRepository(field, ged) {
 	pastefield = field;
-	window.open('find.php?type=repo', '', 'left=50,top=50,width=850,height=450,resizable=1,scrollbars=1');
+	window.open('find.php?type=repo&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 function findSpecialChar(field) {
 	pastefield = field;
-	window.open('find.php?type=specialchar&amp;language_filter='+language_filter+'&amp;magnify='+magnify, '', 'top=55,left=55,scrollbars=1,resizeable=1');
+	window.open('find.php?type=specialchar', '_blank', 'top=55,left=55,width=400,height=450,scrollbars=1,resizeable=1');
 	return false;
-}
-
-// Functions for source search
-function openSourceSearch(){
-	window.open('sourcesearch.php?search=sources', '', 'top=50,left=50,width=800,height=550,resizable=1,scrollbars=1');
-}
-function addToParentList(sourceList){
-	destinationList = window.document.getElementById("sourcesSelect");
-	for(var count = destinationList.options.length - 1; count >= 0; count--) {
-		destinationList.options[count] = null;
-	}
-	for(var i = 0; i < sourceList.options.length; i++) {
-		if (sourceList.options[i] != null)
-			destinationList.options[i] = new Option(sourceList.options[i].text, sourceList.options[i].value);
-	}
-}
-function selectList(sourceList){
-	sourceList = window.document.getElementById("sourcesSelect");
-	for(var i = 0; i < sourceList.options.length; i++) {
-		if (sourceList.options[i] != null)
-			sourceList.options[i].selected = true;
-	}
-	return true;
-}
-function deleteSelectedItemsFromList(sourceList){
-	sourceList = window.document.getElementById("sourcesSelect");
-	var maxCnt = sourceList.options.length;
-	for(var i = maxCnt - 1; i >= 0; i--) {
-		if ((sourceList.options[i] != null) && (sourceList.options[i].selected == true)) {
-			sourceList.options[i] = null;
-	  	}
-	}		
-}
-
-// Functions for people search
-function openPeopleSearch(){
-	window.open('sourcesearch.php?search=people', '', 'top=50,left=50,width=800,height=550,resizable=1,scrollbars=1');
-}
-function addToParentPeopleList(sourceList){
-	destinationList = window.document.getElementById("peopleSelect");
-	for(var count = destinationList.options.length - 1; count >= 0; count--) {
-		destinationList.options[count] = null;
-	}
-	for(var i = 0; i < sourceList.options.length; i++) {
-		if (sourceList.options[i] != null)
-			destinationList.options[i] = new Option(sourceList.options[i].text, sourceList.options[i].value);
-	}
-}
-function selectPeopleList(sourceList){
-	sourceList = window.document.getElementById("peopleSelect");
-	for(var i = 0; i < sourceList.options.length; i++) {
-		if (sourceList.options[i] != null)
-			sourceList.options[i].selected = true;
-	}
-	return true;
-}
-function deleteSelectedItemsFromPeopleList(sourceList){
-	sourceList = window.document.getElementById("peopleSelect");
-	var maxCnt = sourceList.options.length;
-	for(var i = maxCnt - 1; i >= 0; i--) {
-		if ((sourceList.options[i] != null) && (sourceList.options[i].selected == true)) {
-			sourceList.options[i] = null;
-		 }
-	}		
 }

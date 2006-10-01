@@ -7,7 +7,7 @@
     This and other information can be found online at
     http://www.PhpGedView.net
 
-    # $Id: readme.txt,v 1.1 2005/12/29 18:25:56 lsces Exp $
+    # $Id: readme.txt,v 1.2 2006/10/01 22:44:01 lsces Exp $
 =======================================================
 
 CONTENTS
@@ -309,7 +309,9 @@ version.
 1.  Upload the new 4.0 files to your server replacing the old files with the 
 	new files.  Do not replace the config.php file or the index directory.
 2.  Go to upgrade33-40.php in your browser.
-3.  SQLite users will need to reimport their GEDCOM files.
+3.  In order to create the data required for the new version, you will
+    have to re-import your GEDCOM. Please see the section on UPDATING
+    GEDCOMS below.
 4.  You can now use your upgraded site.  One change with this version splits
     user's full names into first and last name fields.  If you have users
     who only entered a single name then their first and last name will be the
@@ -464,11 +466,11 @@ using an iFrame.
 
 You can also specify a module that you want to output (only 1) so that only 
 that module will be output.  This is done via the module parameter.  For 
-example, /phpGedView/rss.php?module=GEDCOMStats will only output the GEDCOM 
+example, /phpGedView/rss.php?module=gedcomStats will only output the GEDCOM 
 Stats block.  
 
 These parameters can be chained so that
-/phpGedView/rss.php?lang=hebrew&module=GEDCOMStats&rssStyle=HTML 
+/phpGedView/rss.php?lang=hebrew&module=gedcomStats&rssStyle=HTML 
 will output the GEDCOM Stats module in Hebrew in HTML.
 
 
@@ -560,7 +562,8 @@ Following is a more detailed description of each table:
 
   pgv_blocks:
     b_id INT(11)           # Record ID
-    b_username VARCHAR(100) # User name whom block belongs to
+    b_username 			   # User name whom block belongs to
+    		   VARCHAR(100)#
     b_location VARCHAR(30) # Location of the block.  
                            #   Main column or right column
     b_order INT(11)        # Position of the block within the column
@@ -569,7 +572,8 @@ Following is a more detailed description of each table:
 
   pgv_favorites:
     fv_id INT(11)          # Record ID
-    fv_username VARCHAR(30) # User name whom the favorite belongs to
+    fv_username  		   # User name whom the favorite belongs to
+    		   VARCHAR(30) #
     fv_gid VARCHAR(10)     # ID of the favorite
     fv_type VARCHAR(10)    # Type of favorite (currently only INDI)
     fv_file VARCHAR(100)   # File that this favorite belongs to
@@ -588,7 +592,7 @@ Following is a more detailed description of each table:
             
   pgv_news:
     n_id INT(11)           # Unique identifier
-    n_username VARCHAR(100) # User name or GEDCOM the News item belongs to
+    n_username VARCHAR(100)# User name or GEDCOM the News item belongs to
     n_date INT(11)         # Time stamp of last update
     n_title VARCHAR(255)   # Title of the article
     n_text TEXT            # Body text of the article
@@ -801,7 +805,7 @@ PhpGedView.  PhpGedView's Translator Tools section has a utility program
 for removing these BOMs.
 
 You should obtain a flag file from http://w3f.com/gifs/index.html and size 
-it to match the other flags in the images/flags directory.
+it to match the other flags in the image/flags directory.
 
 To help maintain languages, a language change log is provided in the 
 languages directory.  This change log is named LANG_CHANGELOG.txt.  All 

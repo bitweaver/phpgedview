@@ -25,32 +25,58 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: addmedia.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 /**
  * load config file
  */
 require("config.php");
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY . $factsfile[$LANGUAGE];
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require $factsfile[$LANGUAGE];
 
-require("includes/functions_edit.php");
+require_once("includes/functions_print_lists.php");
+require_once("includes/functions_edit.php");
 
 if (empty($ged)) $ged = $GEDCOM;
 $GEDCOM = $ged;
 
-print_simple_header($pgv_lang["add_media_tool"]);
-
-//-- only allow users with edit privileges to access script.
-if (!userIsAdmin(getUserName())) {
-	print $pgv_lang["access_denied"];
-	print_simple_footer();
+if ($_SESSION["cookie_login"]) {
+	header("Location: login.php?ged=$GEDCOM&url=addmedia.php");
 	exit;
 }
 
-if ($_SESSION["cookie_login"]) {
-	header("Location: login.php?ged=$GEDCOM&url=addmedia.php");
+print_simple_header($pgv_lang["add_media_tool"]);
+$disp = true;
+if (!empty($pid)) {
+	$pid = clean_input($pid);
+	if (!isset($pgv_changes[$pid."_".$GEDCOM])) $gedrec = find_media_record($pid);
+	else $gedrec = find_record_in_file($pid);
+	if (empty($gedrec)) $gedrec =  find_record_in_file($pid);
+	$disp = displayDetails($pid, "OBJE");
+}
+if ($action=="update" || $action=="newentry") {
+	if (!isset($linktoid) || $linktoid=="new") $linktoid="";
+	if (empty($linktoid) && !empty($gid)) $linktoid = $gid;
+	if (!empty($linktoid)) {
+		$linktoid = clean_input($linktoid);
+		$disp = displayDetails(find_gedcom_record($linktoid));
+	}
+}
+
+if ((!userCanEdit(getUserName()))||(!$disp)||(!$ALLOW_EDIT_GEDCOM)) {
+	//print "pid: $pid<br />";
+	//print "gedrec: $gedrec<br />";
+	print $pgv_lang["access_denied"];
+	//-- display messages as to why the editing access was denied
+	if (!userCanEdit(getUserName())) print "<br />".$pgv_lang["user_cannot_edit"];
+	if (!$ALLOW_EDIT_GEDCOM) print "<br />".$pgv_lang["gedcom_editing_disabled"];
+	if (!$disp) {
+		print "<br />".$pgv_lang["privacy_prevented_editing"];
+		if (!empty($pid)) print "<br />".$pgv_lang["privacy_not_granted"]." pid $pid.";
+	}
+	print "<br /><br /><div class=\"center\"><a href=\"javascript: ".$pgv_lang["close_window"]."\" onclick=\"if (window.opener.showchanges) window.opener.showchanges(); window.close();\">".$pgv_lang["close_window"]."</a></div>\n";
+	print_simple_footer();
 	exit;
 }
 
@@ -81,136 +107,429 @@ if ($_SESSION["cookie_login"]) {
 <?php
 if (empty($action)) $action="showmediaform";
 
+if (isset($filename)) {
+	$filename = stripslashes($filename);
+} else {
+	$filename = "";
+}
+
 if (!isset($m_ext)) $m_ext="";
 if (!isset($m_titl)) $m_titl="";
 if (!isset($m_file)) $m_file="";
 
 // NOTE: Store the entered data
 if ($action=="newentry") {
-	// NOTE: Setting the pid
-	if (isset($gid)) $pid = $gid;
+	if (empty($level)) $level = 1;
 	
-	// NOTE: Check for file upload
-	if (count($_FILES)>0) {
-		$uploaded_files = array();
+	$error = "";
+	$mediaFile = "";
+	$thumbFile = "";
+	if (!empty($_FILES['mediafile']["name"]) || !empty($_FILES['thumbnail']["name"])) {
+		// NOTE: Check for file upload
 		$upload_errors = array($pgv_lang["file_success"], $pgv_lang["file_too_big"], $pgv_lang["file_too_big"],$pgv_lang["file_partial"], $pgv_lang["file_missing"]);
-		if (!empty($folder)) {
-			if (substr($folder,0,1) == "/") $folder = substr($folder,1);
-			if (substr($folder,-1,1) != "/") $folder .= "/";
-		}
-		foreach($_FILES as $upload) {
-			$filename = check_media_depth($folder.basename($upload['name']));
-			$thumbnail = thumbnail_file($folder.basename($upload['name']));
-			if (!empty($upload['tmp_name'])) {
-				if (!move_uploaded_file($upload['tmp_name'], $filename)) {
-					$error .= "<br />".$gm_lang["upload_error"]."<br />".$upload_errors[$upload['error']];
-					$uploaded_files[] = "";
+		$folderName = "";
+		if (!empty($_POST["folder"])) $folderName = $_POST["folder"];
+		// Validate and correct folder names
+		$folderName = check_media_depth($folderName."/y.z", "BACK");
+		$folderName = dirname($folderName)."/";
+		$thumbFolderName = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $folderName);
+
+		if (!empty($folderName)) $_SESSION["upload_folder"] = $folderName;
+
+		$error = "";
+		
+		// Determine file name on server
+		if (!empty($text[0])) {
+			$parts = pathinfo($text[0]);
+			$mediaFile = $parts["basename"];
+			if (empty($parts["extension"]) || !in_array(strtolower($parts["extension"]), $MEDIATYPE)) {
+				if (!empty($_FILES["mediafile"]["name"])) {
+					$parts = pathinfo($_FILES["mediafile"]["name"]);
+				} else {
+					$parts = pathinfo($_FILES["thumbnail"]["name"]);
 				}
-				else {
-					$uploaded_files[] = $filename;
-					if (!is_dir($MEDIA_DIRECTORY.$folder."thumbs")) mkdir($MEDIA_DIRECTORY.$folder."thumbs");
-					if (!empty($error)) {
-						print "<span class=\"error\">".$error."</span>";
+				$mediaFile .= ".".$parts["extension"];
+			}
+		} else {
+			if (!empty($_FILES["mediafile"]["name"])) {
+				$parts = pathinfo($_FILES["mediafile"]["name"]);
+			} else {
+				$parts = pathinfo($_FILES["thumbnail"]["name"]);
+			}
+			$mediaFile = $parts["basename"];
+		}
+
+		if (!empty($_FILES["mediafile"]["name"])) {
+			$newFile = $folderName.$mediaFile;
+			$fileExists = file_exists(filename_decode($newFile));
+			// Copy main media file into the destination directory
+			if ($fileExists) {
+				$error .= $pgv_lang["media_exists"]."&nbsp;&nbsp;".$newFile."<br />";
+			} else {
+				if (!move_uploaded_file($_FILES["mediafile"]["tmp_name"], filename_decode($newFile))) { 
+					// the file cannot be copied
+					$error .= $pgv_lang["upload_error"]."<br />".$upload_errors[$_FILES["mediafile"]["error"]]."<br />";
+				} else {
+					// Set file permission to read/write for everybody
+//					@chmod(filename_decode($folderName.$mediaFile), 0644);
+					AddToLog("Media file ".$folderName.$mediaFile." uploaded by >".getUserName()."<");
+				}
+			}
+		}
+		if ($error=="" && !empty($_FILES["thumbnail"]["name"])) {
+			$newThum = $thumbFolderName.$mediaFile;
+			$thumExists = file_exists(filename_decode($newThum));
+			// Copy user-supplied thumbnail file into the destination directory
+			if ($thumExists) {
+				$error .= $pgv_lang["media_thumb_exists"]."&nbsp;&nbsp;".$newThum."<br />";
+			} else {
+				if (!move_uploaded_file($_FILES["thumbnail"]["tmp_name"], filename_decode($newThum))) { 
+					// the file cannot be copied
+					$error .= $pgv_lang["upload_error"]."<br />".$upload_errors[$_FILES["thumbnail"]["error"]]."<br />";
+				} else {
+					// Set file permission to read/write for everybody
+//					@chmod(filename_decode($thumbFolderName.$mediaFile), 0644);
+					AddToLog("Media file ".$thumbFolderName.$mediaFile." uploaded by >".getUserName()."<");
+				}
+			}
+		}
+		if ($error=="" && empty($_FILES["mediafile"]["name"]) && !empty($_FILES["thumbnail"]["name"])) {
+			// Copy user-supplied thumbnail file into the main destination directory
+			if (!copy(filename_decode($thumbFolderName.$mediaFile), filename_decode($folderName.$mediaFile))) { 
+				// the file cannot be copied
+				$error .= $pgv_lang["upload_error"]."<br />".$upload_errors[$_FILES["thumbnail"]["error"]]."<br />";
+			} else {
+				// Set file permission to read/write for everybody
+//				@chmod(filename_decode($folderName.$mediaFile), 0644);
+				AddToLog("Media file ".$folderName.$mediaFile." uploaded by >".getUserName()."<");
+			}
+		}
+		if ($error=="" && !empty($_FILES["mediafile"]["name"]) && empty($_FILES["thumbnail"]["name"])) {
+			if (!empty($_POST['genthumb']) && ($_POST['genthumb']=="yes")) {
+				// Generate thumbnail from main image
+				$ct = preg_match("/\.([^\.]+)$/", $mediaFile, $match);
+				if ($ct>0) {
+					$ext = strtolower(trim($match[1]));
+					if ($ext=="jpg" || $ext=="jpeg" || $ext=="gif" || $ext=="png") {
+						$okThumb = generate_thumbnail($folderName.$mediaFile, $thumbFolderName.$mediaFile, "OVERWRITE");
+						$thumbnail = $thumbFolderName.$mediaFile;
+						if (!$okThumb) {
+							$error .= print_text("thumbgen_error",0,1);
+						} else {
+							// Set file permission on thumbnail to read/write for everybody
+//							@chmod(filename_decode($thumbFolderName.$mediaFile), 0644);
+							print_text("thumb_genned");
+							print "<br />";
+							AddToLog("Media thumbnail ".$thumbFolderName.$mediaFile." generated by >".getUserName()."<");
+						}
 					}
 				}
 			}
-			else $uploaded_files[] = "";
+		}
+		// Let's see if there are any errors generated and print it
+		if (!empty($error)) {
+			print "<span class=\"largeError\">".$error."</span><br />\n";
+			$mediaFile = "";
+			$finalResult = false;
+		} else $finalResult = true;
+	}
+	if ($mediaFile=="") {
+		// No upload: should be an existing file on server
+		if ($tag[0]=="FILE") {
+			if (!empty($text[0])) {
+				$isExternal = strstr($text[0], "://");
+				if ($isExternal) {
+					$fileName = $text[0];
+					$mediaFile = $fileName;
+					$folderName = "";
+				} else {
+					$fileName = check_media_depth($text[0], "BACK");
+					$mediaFile = basename($fileName);
+					$folderName = dirname($fileName)."/";
+				}
+			}
+			if ($mediaFile=="") {
+				print "<span class=\"largeError\">".$pgv_lang["illegal_chars"]."</span><br />\n";
+				$finalResult = false;
+			} else $finalResult = true;
+		} else {
+			//-- check if the file is used in more than one gedcom
+			//-- do not allow it to be moved or renamed if it is
+			$myFile = str_replace($MEDIA_DIRECTORY, "", $oldFolder.$oldFilename);
+			$sql = "SELECT * FROM ".$TBLPREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
+			$res = dbquery($sql);
+			$onegedcom = true;
+			while($row=$res->fetchRow(DB_FETCHMODE_ASSOC)) {
+				if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
+			}
+			$res->free();
+			
+			// Handle Admin request to rename or move media file
+			if ($filename!=$oldFilename) {
+				$parts = pathinfo($filename);
+				if (empty($parts["extension"]) || !in_array(strtolower($parts["extension"]), $MEDIATYPE)) {
+					$parts = pathinfo($oldFilename);
+					$filename .= ".".$parts["extension"];
+				}
+			}
+			if (substr($folder,-1)!="/") $folder .= "/";
+			if ($folder=="/") $folder = "";
+			$folder = check_media_depth($folder."y.z", "BACK");
+			$folder = dirname($folder)."/";
+			if (substr($oldFolder,-1)!="/") $oldFolder .= "/";
+			if ($oldFolder=="/") $oldFolder = "";
+			$oldFolder = check_media_depth($oldFolder."y.z", "BACK");
+			$oldFolder = dirname($oldFolder)."/";
+			
+			$finalResult = true;
+			if ($filename!=$oldFilename || $folder!=$oldFolder) {
+				if (!$onegedcom) {
+					print "<span class=\"largeError\">".$pgv_lang["multiple_gedcoms"]."<br /><br /><b>";
+					if ($filename!=$oldFilename) print $pgv_lang["media_file_not_renamed"];
+					else print $pgv_lang["media_file_not_moved"];
+					print "</b></span><br />";
+					$finalResult = false;
+				} else {
+					$oldMainFile = $oldFolder.$oldFilename;
+					$newMainFile = $folder.$filename;
+					$oldThumFile = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $oldMainFile);
+					$newThumFile = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $newMainFile);
+					$isMain = file_exists(filename_decode($oldMainFile));
+					$okMain = !file_exists(filename_decode($newMainFile));
+					$isThum = file_exists(filename_decode($oldThumFile));
+					$okThum = !file_exists(filename_decode($newThumFile));
+					if ($okMain && $okThum) {
+						if ($isMain) $okMain = @rename(filename_decode($oldMainFile), filename_decode($newMainFile));
+						if ($isThum) $okThum = @rename(filename_decode($oldThumFile), filename_decode($newThumFile));
+					}
+                	
+					// Build text to tell Admin about the success or failure of the requested operation
+					$GLOBALS["oldMediaName"] = $oldFilename;
+					$GLOBALS["newMediaName"] = $filename;
+					$GLOBALS["oldMediaFolder"] = $oldFolder;
+					$GLOBALS["newMediaFolder"] = $folder;
+					$GLOBALS["oldThumbFolder"] = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $oldFolder);
+					$GLOBALS["newThumbFolder"] = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $folder);
+					$mediaAction = 0;
+					if ($filename!=$oldFilename) $mediaAction = 1;
+					if ($folder!=$oldFolder) $mediaAction = $mediaAction + 2;
+                	
+					if (!$isMain) {
+						print_text("main_media_fail0");
+					} else {
+						if ($okMain) print_text("main_media_ok".$mediaAction);
+						else {
+							$finalResult = false;
+							print "<span class=\"largeError\">";
+							print_text("main_media_fail".$mediaAction);
+							print "</span>"; 
+						}
+					}
+					print "<br />";
+        			
+					if (!$isThum) {
+						print_text("thumb_media_fail0");
+					} else {
+						if ($okThum) print_text("thumb_media_ok".$mediaAction); 
+						else {
+							$finalResult = false;
+							print "<span class=\"largeError\">";
+							print_text("thumb_media_fail".$mediaAction);
+							print "</span>"; 
+						}
+					}
+					print "<br />";
+					
+					unset($GLOBALS["oldMediaName"]);
+					unset($GLOBALS["newMediaName"]);
+					unset($GLOBALS["oldMediaFolder"]);
+					unset($GLOBALS["newMediaFolder"]);
+					unset($GLOBALS["oldThumbFolder"]);
+					unset($GLOBALS["newThumbFolder"]);
+				}
+			}
+			
+			// Insert the 1 FILE xxx record into the arrays used by function handle_updates()
+ 			$glevels = array_merge(array("1"), $glevels);
+ 			$tag = array_merge(array("FILE"), $tag);
+ 			$islink = array_merge(array(0), $islink);
+ 			$text = array_merge(array($folder.$filename), $text);
+    		
+			$mediaFile = $filename;
+			$folderName = $folder;
 		}
 	}
 	
-	// NOTE: Build the gedcom record
-	// NOTE: Level 0
-	$media_id = get_new_xref("OBJE");
-	$newged = "0 @".$media_id."@ OBJE\r\n";
-	
-	// NOTE: File record
-	$newged .= "1 FILE ";
-	if (isset($filename) && !empty($filename)) $newged .= $folder.basename($filename);
-	else $newged .= $text[0];
-	$newged .= "\r\n";
-	$newged .= "2 FORM ".$text[1]."\r\n";
-	if (!empty($text[2])) $newged .= "3 TYPE ".$text[2]."\r\n";
-	if (!empty($text[3])) $newged .= "2 TITL ".$text[3]."\r\n";
-	
-	// NOTE: Reference record
-	if (!empty($text[4])) {
-		$newged .= "1 REFN ".$text[4]."\r\n";
-		if (!empty($text[5])) $newged .= "2 TYPE ".$text[5]."\r\n"; 
+	if ($finalResult && $mediaFile!="") {
+		// NOTE: Build the gedcom record
+		// NOTE: Level 0
+		$media_id = get_new_xref("OBJE");
+		$newged = "0 @".$media_id."@ OBJE\r\n";
+		//-- set the FILE text to the correct file location
+		$text[0] = $folderName.$mediaFile;
+    	
+		$newged = handle_updates($newged);
+		
+		require_once 'includes/media_class.php';
+		$media_obje = new Media($newged);
+		$mediaid = Media::in_obje_list($media_obje);
+		if (!$mediaid) $mediaid = append_gedrec($newged, $linktoid);
+		if ($mediaid) {
+			AddToChangeLog("Media ID ".$mediaid." successfully added.");
+			if ($linktoid!="") $link = linkMedia($mediaid, $linktoid, $level);
+			else $link = false;
+			if ($link) {
+				AddToChangeLog("Media ID ".$media_id." successfully added to $linktoid.");
+			} else {
+				print "<a href=\"javascript:// OBJE $mediaid\" onclick=\"openerpasteid('$mediaid'); return false;\">".$pgv_lang["paste_id_into_field"]." <b>$mediaid</b></a><br /><br />\n";
+				print "<script language=\"JavaScript\" type=\"text/javascript\">\n";
+				print "openerpasteid('".$mediaid."');\n";
+				print "</script>\n";
+			}
+		}
+		print $pgv_lang["update_successful"];
 	}
-	
-	// NOTE: Record ID record
-	if (!empty($text[6])) $newged .= "1 RIN ".$text[6]."\r\n";
-	
-	// NOTE: Note record
-	if (!empty($text[7])) $newged .= trim(textblock_to_note(1,$text[7]))."\r\n";
-	
-	// NOTE: Source record
-	if (!empty($text[8])) $newged .= "1 SOUR @".$text[8]."@\r\n";
-	
-	// NOTE: Primary record
-	if (!empty($text[9])) $newged .= "1 _PRIM ".$text[9]."\r\n";
-	
-	// NOTE: Thumbnail record
-	if (!empty($text[10])) $newged .= "1 _THUMB ".$text[10]."\r\n";
-	
-	// NOTE: Change record
-	$newged .= "1 CHAN\r\n2 DATE ".date("d M Y")."\r\n";
-	$newged .= "3 TIME ".date("H:i:s")."\r\n";
-	$newged .= "2 _PGVU ".getUserName()."\r\n";
-	
-	$xref = append_gedrec($newged);
-	// NOTE: Add media item to change file
-	if (replace_gedrec($media_id, $newged, true, $pid)) AddToChangeLog("Media ID ".$media_id." successfully added.");
-	
-	$type = $pid{0};
-	if ($type == $GEDCOM_ID_PREFIX) {
-		$indilist = get_indi_list();
-		$newrec = $indilist[$pid]["gedcom"];
-		$newrec .= "\r\n1 OBJE @".$media_id."@\r\n";
-	}
-	if ($type == $FAM_ID_PREFIX) {
-		$famlist = get_fam_list();
-		$newrec = $famlist[$pid]["gedcom"];
-		$newrec .= "\r\n1 OBJE @".$media_id."@\r\n";
-	}
-	if ($type == $SOURCE_ID_PREFIX) {
-		$sourcelist = get_source_list();
-		$newrec = $sourcelist[$pid]["gedcom"];
-		$newrec .= "\r\n1 OBJE @".$media_id."@\r\n";
-	}
-	if ($type == $MEDIA_ID_PREFIX) {
-		$medialist = get_media_list();
-		$newrec = $medialist[$pid]["gedcom"];
-		$newrec .= "\r\n1 OBJE @".$media_id."@\r\n";
-	}
-	// NOTE: Update record where media is added to
-	if (replace_gedrec($pid, $newrec, true, $media_id)) AddToChangeLog("Media ID ".$media_id." successfully added to $pid.");
-	print $pgv_lang["update_successful"];
 }
 
 if ($action == "update") {
-	// $medialist = get_media_list();
-	$newrec = "0 @$pid@ OBJE\r\n";
-	$newrec = handle_updates($newrec);
-	//print("[".$newrec."]");
-	//-- look for the old record media in the file
-	//-- if the old media record does not exist that means it was 
-	//-- generated at import and we need to append it
-	$oldrec = find_record_in_file($pid);
-	if (!empty($oldrec)) {
-		//print "old record found";
-		if (replace_gedrec($pid, $newrec)) AddToChangeLog("Media ID ".$pid." successfully added to $pid.");
+	if (empty($level)) $level = 1;
+	//-- check if the file is used in more than one gedcom
+	//-- do not allow it to be moved or renamed if it is
+	$myFile = str_replace($MEDIA_DIRECTORY, "", $oldFolder.$oldFilename);
+	$sql = "SELECT * FROM ".$TBLPREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
+	$res = dbquery($sql);
+	$onegedcom = true;
+	while($row=$res->fetchRow(DB_FETCHMODE_ASSOC)) {
+		if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
 	}
-	else {
-		//print "old record not found";
-		if (append_gedrec($newrec)) AddToChangeLog("Media ID ".$pid." successfully added to $pid.");
+	$res->free();
+	
+	$isExternal = strstr($oldFilename, "://") || strstr($filename, "://");
+	$finalResult = true;
+		
+	// Handle Admin request to rename or move media file
+	if (!$isExternal) {
+		if ($filename!=$oldFilename) {
+			$parts = pathinfo($filename);
+			if (empty($parts["extension"]) || !in_array(strtolower($parts["extension"]), $MEDIATYPE)) {
+				$parts = pathinfo($oldFilename);
+				$filename .= ".".$parts["extension"];
+			}
+		}
+		if (substr($folder,-1)!="/") $folder .= "/";
+		if ($folder=="/") $folder = "";
+		$folder = check_media_depth($folder."y.z", "BACK");
+		$folder = dirname($folder)."/";
+		if (substr($oldFolder,-1)!="/") $oldFolder .= "/";
+		if ($oldFolder=="/") $oldFolder = "";
+		$oldFolder = check_media_depth($oldFolder."y.z", "BACK");
+		$oldFolder = dirname($oldFolder)."/";
 	}
-	print $pgv_lang["update_successful"];
+		
+	if ($filename!=$oldFilename || $folder!=$oldFolder) {
+		if (!$onegedcom) {
+			print "<span class=\"largeError\">".$pgv_lang["multiple_gedcoms"]."<br /><br /><b>";
+			if ($filename!=$oldFilename) print $pgv_lang["media_file_not_renamed"];
+			else print $pgv_lang["media_file_not_moved"];
+			print "</b></span><br />";
+			$finalResult = false;
+		} else if (!$isExternal) {
+			$oldMainFile = $oldFolder.$oldFilename;
+			$newMainFile = $folder.$filename;
+			$oldThumFile = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $oldMainFile);
+			$newThumFile = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $newMainFile);
+			$isMain = file_exists(filename_decode($oldMainFile));
+			$okMain = !file_exists(filename_decode($newMainFile));
+			$isThum = file_exists(filename_decode($oldThumFile));
+			$okThum = !file_exists(filename_decode($newThumFile));
+			if ($okMain && $okThum) {
+				if ($isMain) $okMain = @rename(filename_decode($oldMainFile), filename_decode($newMainFile));
+				if ($isThum) $okThum = @rename(filename_decode($oldThumFile), filename_decode($newThumFile));
+			}
+			
+			// Build text to tell Admin about the success or failure of the requested operation
+			$GLOBALS["oldMediaName"] = $oldFilename;
+			$GLOBALS["newMediaName"] = $filename;
+			$GLOBALS["oldMediaFolder"] = $oldFolder;
+			$GLOBALS["newMediaFolder"] = $folder;
+			$GLOBALS["oldThumbFolder"] = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $oldFolder);
+			$GLOBALS["newThumbFolder"] = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $folder);
+			$mediaAction = 0;
+			if ($filename!=$oldFilename) $mediaAction = 1;
+			if ($folder!=$oldFolder) $mediaAction = $mediaAction + 2;
+        	
+			if (!$isMain) {
+				print_text("main_media_fail0");
+			} else {
+				if ($okMain) print_text("main_media_ok".$mediaAction);
+				else {
+					$finalResult = false;
+					print "<span class=\"largeError\">";
+					print_text("main_media_fail".$mediaAction);
+					print "</span>"; 
+				}
+			}
+			print "<br />";
+        	
+			if (!$isThum) {
+				print_text("thumb_media_fail0");
+			} else {
+				if ($okThum) print_text("thumb_media_ok".$mediaAction); 
+				else {
+					$finalResult = false;
+					print "<span class=\"largeError\">";
+					print_text("thumb_media_fail".$mediaAction);
+					print "</span>"; 
+				}
+			}
+			print "<br />";
+			
+			unset($GLOBALS["oldMediaName"]);
+			unset($GLOBALS["newMediaName"]);
+			unset($GLOBALS["oldMediaFolder"]);
+			unset($GLOBALS["newMediaFolder"]);
+			unset($GLOBALS["oldThumbFolder"]);
+			unset($GLOBALS["newThumbFolder"]);
+		}
+	}
+	
+	if ($finalResult) {
+		// Insert the 1 FILE xxx record into the arrays used by function handle_updates()
+ 		$glevels = array_merge(array("1"), $glevels);
+ 		$tag = array_merge(array("FILE"), $tag);
+ 		$islink = array_merge(array(0), $islink);
+ 		$text = array_merge(array($folder.$filename), $text);
+ 		
+		$newrec = "0 @$pid@ OBJE\r\n";
+		$newrec = handle_updates($newrec);
+		//print("[".$newrec."]");
+		//-- look for the old record media in the file
+		//-- if the old media record does not exist that means it was 
+		//-- generated at import and we need to append it
+		$oldrec = find_record_in_file($pid);
+		if (!empty($oldrec)) {
+			if (replace_gedrec($pid, $newrec)) AddToChangeLog("Media ID ".$pid." successfully updated.");
+		} else {
+			$pid = append_gedrec($newrec);
+			if ($pid) AddToChangeLog("Media ID ".$pid." successfully added.");
+		}
+    	
+		if ($pid && $linktoid!="") {
+			$link = linkMedia($pid, $linktoid, $level);
+			if ($link) {
+				AddToChangeLog("Media ID ".$pid." successfully added to $linktoid.");
+			}
+		}
+	}
+
+	if ($finalResult) print $pgv_lang["update_successful"];
 }
 
 if ($action=="delete") {
-	if (delete_gedrec($pid)) AddToChangeLog("Media ID ".$pid." successfully deleted.");
-	print $pgv_lang["update_successful"];
+	if (delete_gedrec($pid)) {
+		AddToChangeLog("Media ID ".$pid." successfully deleted.");
+		print $pgv_lang["update_successful"];
+	}
 }
 
 if ($action=="showmedia") {
@@ -240,60 +559,16 @@ if ($action=="showmedia") {
 
 if ($action=="showmediaform") {
 	if (!isset($pid)) $pid = "";
-	show_media_form($pid);
+	if (empty($level)) $level = 1;
+	show_media_form($pid, "newentry", $filename, $linktoid, $level);
 }
 
 if ($action=="editmedia") {
-	show_media_form($pid, "update");
+	if (!isset($pid)) $pid = "";
+	if (empty($level)) $level = 1;
+	show_media_form($pid, "update", $filename, $linktoid, $level);
 }
 
-if ($action=="injectmedia") {
-	// NOTE: Inject media is used to put multimedia records into indi/fam/source records.
-	$medialist = get_db_media_list();
-	
-	// check for already imported media
-	$test = find_record_in_file($medialist[0]["XREF"]);
-	if ($test) {
-		print "<div align=\"center\" class=\"error\" ><h2>This gedcom has already had the media information inserted into it, operation aborted</h3></div>";
-	} else {
-
-		$ct = 0;
-		$nct = 0;
-		foreach($medialist as $indexval => $media) {
-			$mediarec = "\r\n0 @".$media["XREF"]."@ OBJE";
-			$mediarec .= "\r\n1 FILE ".$media["FILE"];
-			$mediarec .= "\r\n1 TITL ".$media["TITL"];
-			$mediarec .= "\r\n1 FORM ".$media["FORM"];
-			if (strlen($media["NOTE"])>0) {$mediarec .= "\r\n".$media["NOTE"]; $nct++;};
-			$pos1 = strrpos($fcontents, "0");
-			$fcontents = substr($fcontents, 0, $pos1).trim($mediarec)."\r\n".substr($fcontents, $pos1);
-			write_file();
-			$ct++;
-		}
-		print "<center>$ct media items added, $nct with notes</center>";
-
-		$ct = 0;
-		$nct = 0;
-		$mappinglist = get_db_mapping_list();
-		$oldindi = "";
-		for ($i=0; $i < count($mappinglist); $i++) {
-			$media = $mappinglist[$i];
-			$indi = $media["INDI"];
-			if ($indi != $oldindi) {
-				if ($i > 0) { db_replace_gedrec($oldindi, $indirec);};
-				$oldindi = $indi;
-				$indirec = find_record_in_file($indi);
-			}
-		    if (strlen($media["NOTE"])>0) {$indirec .= "\r\n".trim($media["NOTE"]); $nct++;};
-
-		}
-		db_replace_gedrec($indi, $indirec);
-
-		print "<center>$ct link items added, $nct with notes</center>";
-		print "<p><center>".$pgv_lang["adds_completed"]."<center></p><br /><br />\n";
-	}
-	print "<p><center><a href=\"#\" onclick=\"window.close();\">".$pgv_lang["close_window"]."</a></center></p><br /><br />\n";
-} 
 print "<br />";
 print "<div class=\"center\"><a href=\"#\" onclick=\"if (window.opener.showchanges) window.opener.showchanges(); window.close();\">".$pgv_lang["close_window"]."</a></div>\n";
 print "<br />";

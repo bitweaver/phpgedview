@@ -20,7 +20,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: localclient_class.php,v 1.1 2005/12/29 19:36:21 lsces Exp $
+ * @version $Id: localclient_class.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
  */
 
 require_once 'includes/serviceclient_class.php';
@@ -43,28 +43,48 @@ class LocalClient extends ServiceClient {
 	}
 	
 	/**
+	 * Get a record from the remote site
+	 * @param string $remoteid	the id of the record to get
+	 */
+	function getRemoteRecord($remoteid) {
+		$rec = find_gedcom_record($remoteid, $this->gedfile);
+		$rec = preg_replace("/@(.*)@/", "@".$this->xref.":$1@", $rec);
+		return $rec;
+	}
+	
+	/**
 	 * merge a local gedcom record with the information from the remote site
 	 */
-	function mergeGedcomRecord($xref, $localrec) {
+	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
 		global $FILE, $GEDCOM, $indilist, $famlist, $sourcelist, $otherlist;
 		global $TBLPREFIX, $GEDCOMS;
 		
-		//print "HERE";
 		$localkey = $this->xref.":".$xref;
-		//print "looking for ".$localkey."<br />";
 		//-- check the memory cache
 		if (!empty($indilist[$localkey]["gedcom"])) return $indilist[$localkey]["gedcom"];
 		if (!empty($famlist[$localkey]["gedcom"])) return $famlist[$localkey]["gedcom"];
 		if (!empty($otherlist[$localkey]["gedcom"])) return $otherlist[$localkey]["gedcom"];
 		if (!empty($sourcelist[$localkey]["gedcom"])) return $sourcelist[$localkey]["gedcom"];
-		//print $xref."<br />";
 		//-- get the record from the database
 		$gedrec = find_gedcom_record($xref, $this->gedfile);
-		//print "gedrec=".$gedrec;
 		$gedrec = preg_replace("/@(.*)@/", "@".$this->xref.":$1@", $gedrec);
+		$gedrec = $this->checkIds($gedrec);
 		if (empty($localrec)) return $gedrec;
-		//$gedrec = $this->checkIds($gedrec);
 		$localrec = $this->_merge($localrec, $gedrec);
+		
+		//-- used to force an update on the first time linking a person
+		if ($firstLink) {
+			include_once("includes/functions_edit.php");
+			$ct=preg_match("/0 @(.*)@/", $localrec, $match);
+			if ($ct>0)
+			{
+				$pid = trim($match[1]);
+				$localrec = $this->UpdateFamily($localrec,$gedrec);
+				$localrec = preg_replace("/0 @(.*)@/", "0 @$pid@", $localrec);
+//				print $localrec;
+				replace_gedrec($pid,$localrec);
+			}
+		}
 		
 		if (!empty($localrec)) {
 			$gid=$localkey;
@@ -99,6 +119,7 @@ class LocalClient extends ServiceClient {
 				$sourcelist[$localkey] = $indi;
 			}
 		}
+//		print "<pre>$localrec</pre>";
 		return $localrec;
 	}
 	
@@ -147,5 +168,4 @@ class LocalClient extends ServiceClient {
 		return $return;
 	}
 }
-
 ?>

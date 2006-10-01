@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: timeline.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: timeline.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 
 require_once("includes/controllers/timeline_ctrl.php");
@@ -238,7 +238,7 @@ document.onmouseup = MU;
 //-->
 </script>
 <h2><?php print $pgv_lang["timeline_chart"]; ?></h2>
-<form name="people" action="timeline.php">
+<?php if (!$controller->isPrintPreview()) { ?><form name="people" action="timeline.php"><?php } ?>
 <?php
 $controller->checkPrivacy();
 ?>
@@ -339,7 +339,7 @@ $controller->checkPrivacy();
 	<?php } ?>
 	</tr>
 </table>
-</form>
+<?php if (!$controller->isPrintPreview()) { ?></form><?php } ?>
 <?php
 if (count($controller->people)>0) {
 	?>

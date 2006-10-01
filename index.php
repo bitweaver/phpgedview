@@ -1,89 +1,36 @@
 <?php
 /**
- * $Header: /cvsroot/bitweaver/_bit_phpgedview/index.php,v 1.3 2005/12/31 12:52:02 lsces Exp $
+ * MyGedView page allows a logged in user the abilty
+ * to keep bookmarks, see a list of upcoming events, etc.
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2005  PGV Development Team
- * Copyright (c) 2004 bitweaver.org
- * All Rights Reserved. See copyright.txt for details and a complete list of authors.
- * Licensed under the GNU LESSER GENERAL PUBLIC LICENSE. See license.txt for details
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @subpackage functions
+ * @subpackage Display
+ * @version $Id: index.php,v 1.4 2006/10/01 22:44:01 lsces Exp $
  */
 
-/**
- * required setup
- */
-require_once( '../bit_setup_inc.php' );
-
-$gBitSystem->verifyPackage( 'phpgedview' );
-
-// $gBitSystem->verifyFeature( 'feature_listGEDCOM' );
-
-// Now check permissions to access this page
-$gBitSystem->verifyPermission( 'bit_p_view_phpgedview' );
-
-require_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
-require_once( PHPGEDVIEW_PKG_PATH.'includes/session.php' );
-//vd($_REQUEST);
-
-if ( empty( $_REQUEST["sort_mode"] ) ) {
-	$sort_mode = 'last_modified_desc';
-} else {
-	$sort_mode = $_REQUEST["sort_mode"];
-}
-$gBitSmarty->assign_by_ref('sort_mode', $sort_mode);
-// If offset is set use it if not then use offset =0
-// use the maxRecords php variable to set the limit
-// if sortMode is not set then use last_modified_desc
-if (!isset($_REQUEST["offset"])) {
-	$offset = 0;
-} else {
-	$offset = $_REQUEST["offset"];
-}
-if (isset($_REQUEST['page'])) {
-	$page = &$_REQUEST['page'];
-	$offset = ($page - 1) * $maxRecords;
-}
-$gBitSmarty->assign_by_ref('offset', $offset);
-if (isset($_REQUEST["find"])) {
-	$find = $_REQUEST["find"];
-// If we leave $_REQUEST["find"] set, it also seems to affect other places
-// like the shoutbox.
-	$_REQUEST["find"] = "";
-} else {
-	$find = '';
-}
-$gBitSmarty->assign_by_ref('find', $find);
-// Get a list of last changes to the Wiki database
-$Content = new BitGEDCOM();
-$sort_mode = preg_replace( '/^user_/', 'creator_user_', $sort_mode );
-$listgedcom = $Content->getList( $offset, $maxRecords, $sort_mode, $find, NULL, TRUE );
-// If there're more records then assign next_offset
-$cant_pages = ceil($listgedcom["cant"] / $maxRecords);
-$gBitSmarty->assign_by_ref('cant_pages', $cant_pages);
-$gBitSmarty->assign_by_ref('pagecount', $listgedcom['cant']);
-$gBitSmarty->assign('actual_page', 1 + ($offset / $maxRecords));
-if ($listgedcom["cant"] > ($offset + $maxRecords)) {
-	$gBitSmarty->assign('next_offset', $offset + $maxRecords);
-} else {
-	$gBitSmarty->assign('next_offset', -1);
-}
-// If offset is > 0 then prev_offset
-if ($offset > 0) {
-	$gBitSmarty->assign('prev_offset', $offset - $maxRecords);
-} else {
-	$gBitSmarty->assign('prev_offset', -1);
+if (isset ($_REQUEST['mod']))
+{
+	require_once 'module.php';
+	exit;
 }
 
-$gBitSmarty->assign_by_ref('listgedcom', $listgedcom["data"]);
-//print_r($listgedcom["data"]);
-
-// Display the template
-$gBitSystem->display( 'bitpackage:phpgedview/list_gedcom.tpl');
-
-/*
 require("config.php");
 
 if (!isset($CONFIGURED)) {
@@ -91,8 +38,33 @@ if (!isset($CONFIGURED)) {
 	exit;
 }
 
-require($PGV_BASE_DIRECTORY.$factsfile["english"]);
-if (file_exists($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE])) require($PGV_BASE_DIRECTORY.$factsfile[$LANGUAGE]);
+require($factsfile["english"]);
+if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
+
+/**
+ * Block definition array
+ *
+ * The following block definition array defines the
+ * blocks that can be used to customize the portals
+ * their names and the function to call them
+ * "name" is the name of the block in the lists
+ * "descr" is the name of a $pgv_lang variable to describe this block
+ * - eg: "whatever" here means that $pgv_lang["whatever"] describes this block
+ * "type" the options are "user" or "gedcom" or undefined
+ * - The type determines which lists the block is available in.
+ * - Leaving the type undefined allows it to be on both the user and gedcom portal
+ * @global $PGV_BLOCKS
+ */
+$PGV_BLOCKS = array();
+
+//-- load all of the blocks
+//$d = dir("blocks");
+//while (false !== ($entry = $d->read())) {
+//	if (strstr($entry, ".")==".php") {
+//		include_once("blocks/".$entry);
+//	}
+//}
+//$d->close();
 
 if (isset($_SESSION["timediff"])) $time = time()-$_SESSION["timediff"];
 else $time = time();
@@ -259,10 +231,10 @@ else {
 		window.location = 'index.php?command=<?php print $command; ?>';
 	}
 	function addnews(uname) {
-		window.open('editnews.php?uname='+uname, '', 'top=50,left=50,width=800,height=500,resizable=1,scrollbars=1');
+		window.open('editnews.php?username='+uname, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	function editnews(news_id) {
-		window.open('editnews.php?news_id='+news_id, '', 'top=50,left=50,width=800,height=500,resizable=1,scrollbars=1');
+		window.open('editnews.php?news_id='+news_id, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	var pastefield;
 	function paste_id(value) {
@@ -314,15 +286,16 @@ print "</td></tr></table><br />";		// Close off that table
 if (($command=="user") and (!$welcome_block_present)) {
 	print "<div align=\"center\" style=\"width: 99%;\">";
 	print_help_link("mygedview_customize_help", "qm");
-	print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=".getUserName()."&amp;command=user', '', 'top=50,left=10,width=1000,height=400,scrollbars=1,resizable=1');\">".$pgv_lang["customize_page"]."</a>\n";
+	print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=".getUserName()."&amp;command=user', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_page"]."</a>\n";
 	print "</div>";
 }
 if (($command=="gedcom") and (!$gedcom_block_present)) {
 	if (userIsAdmin(getUserName())) {
 		print "<div align=\"center\" style=\"width: 99%;\">";
-		print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=$GEDCOM&amp;command=gedcom', '', 'top=50,left=10,width=1000,height=400,scrollbars=1,resizable=1');\">".$pgv_lang["customize_gedcom_page"]."</a>\n";
+		print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=$GEDCOM&amp;command=gedcom', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_gedcom_page"]."</a>\n";
 		print "</div>";
 	}
 }
-*/
+
+print_footer();
 ?>

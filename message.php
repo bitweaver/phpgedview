@@ -21,11 +21,11 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: message.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: message.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  */
 require("config.php");
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 if (!isset($action)) $action="compose";
 
 print_simple_header($pgv_lang["phpgedview_message"]);
@@ -128,7 +128,12 @@ if (($action=="send")&&(isset($_SESSION["good_to_send"]))&&($_SESSION["good_to_s
 			$message["method"] = $method;
 			$message["url"] = $url;
 			if ($i>0) $message["no_from"] = true;
-			if (addMessage($message)) print $pgv_lang["message_sent"]." - ".$to;
+			if (addMessage($message)){
+				$touser = getUser($to);
+				if ($touser) {
+					print str_replace("#TO_USER#", "<b>".$touser["firstname"]." ".$touser["lastname"]."</b>", $pgv_lang["message_sent"]);
+				}
+			}
 			$i++;
 		}
 	}

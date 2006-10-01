@@ -19,13 +19,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: imageview.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: imageview.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
 require("config.php");
 
 if (!isset($filename)) $filename = "";
+$filename = stripslashes($filename);
 
 print_simple_header($pgv_lang["imageview"]);
 ?>
@@ -159,32 +160,25 @@ print_simple_header($pgv_lang["imageview"]);
 </script>
 <?php
 print "<form name=\"zoomform\" onsubmit=\"setzoom(document.getElementById('zoomval').value); return false;\" action=\"imageview.php\">";
-if (strstr($filename, "://")) $filename = preg_replace("/ /", "%20", $filename);
-if ((empty($filename))||(!@fclose(@fopen(filename_decode($filename),"r")))) {
+$isExternal = strstr($filename, "://");
+if (!$isExternal && (empty($filename) || (!@fclose(@fopen(filename_decode($filename),"r"))))) {
 	print "<span class=\"error\">".$pgv_lang["file_not_found"]."&nbsp;".$filename."</span>";
 	print "<br /><br /><div class=\"center\"><a href=\"javascript:;\" onclick=\"self.close();\">".$pgv_lang["close_window"]."</a></div>\n";
-}
-else {
-	print "<font size=\"6\"><a href=\"javascript:;\" onclick=\"zoomin(); return false;\">+</a> <a href=\"javascript:;\" onclick=\"zoomout();\">-</a> </font>";
+} else {
+	print "<center><font size=\"6\"><a href=\"javascript:;\" onclick=\"zoomin(); return false;\">+</a> <a href=\"javascript:;\" onclick=\"zoomout();\">&ndash;</a> </font>";
 	print "<input type=\"text\" size=\"2\" name=\"zoomval\" id=\"zoomval\" value=\"100\" />%\n";
-	print "<input type=\"button\" value=\"".$pgv_lang["reset"]."\" onclick=\"resetimage(); return false;\" />\n";
-	$imgsize = @getimagesize(filename_decode($filename));
-	if ($imgsize) {
-		$imgwidth = $imgsize[0]+2;
-		$imgheight = $imgsize[1]+2;
-	}
-	else {
-		$imgwidth = 50;
-		$imgheight = 50;
-	}
+	print "<input type=\"button\" value=\"".$pgv_lang["reset"]."\" onclick=\"resetimage(); return false;\" /></center>\n";
+	$imgsize = findImageSize($filename);
+	$imgwidth = $imgsize[0]+2;
+	$imgheight = $imgsize[1]+2;
 	print "<script language=\"JavaScript\" type=\"text/javascript\">\n";
 	print "var imgwidth = $imgwidth-5;\n var imgheight = $imgheight-5;\n";
 	print "var landscape = false;\n";
 	print "if (imgwidth > imgheight) landscape = true;\n";
 	print "</script>\n";
-	print '<br /><div id="imagecropper" style="position: relative; border: outset white 3px; background-color: black; overflow: auto; vertical-align: middle; text-align: center; width: '.$imgwidth.'px; height: '.$imgheight.'px; ">';
+	print '<br /><center><div id="imagecropper" style="position: relative; border: outset white 3px; background-color: black; overflow: auto; vertical-align: middle; text-align: center; width: '.$imgwidth.'px; height: '.$imgheight.'px; ">';
 	print "\n<img id=\"theimage\" src=\"$filename\" style=\"position: absolute; left: 1px; top: 1px; cursor: move;\" onmousedown=\"panimage(); return false;\" alt=\"\" />\n";
-	print '</div>';
+	print '</div></center>';
 }
 print "</form>\n";
 print "<div style=\"position: relative; \">\n";

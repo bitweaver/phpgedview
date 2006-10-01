@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: descendancy.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: descendancy.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 // -- include config file
@@ -52,8 +52,7 @@ if ($view!="preview") {
 	$show_famlink = true;
 ?>
 	</td><td><form method="get" name="people" action="?">
-	<!-- 	print_help_link("descendancy_help", "page_help"); -->
-	<table class=<?php print "\"list_table".$TEXT_DIRECTION."\"" ?>>
+	<table class="<?php print "list_table".$TEXT_DIRECTION ?>">
 	
 		<!-- NOTE: rootid -->
 	<tr><td class="descriptionbox">
@@ -124,11 +123,11 @@ if ($view!="preview") {
 	?>
 	</td>
 	<td class="optionbox vmiddle">
-	<input type="checkbox" value=""
+	<input type="checkbox" value="
 	<?php
-	if ($controller->show_full) print "1\" checked=\"checked\" onclick=\"document.people.show_full.value='0';\"";
-	else print "0\" onclick=\"document.people.show_full.value='1';\"";
-	?>
+	if ($controller->show_full) print "1\" checked=\"checked\" onclick=\"document.people.show_full.value='0';";
+	else print "0\" onclick=\"document.people.show_full.value='1';";
+	?>"
 	/>
 	</td></tr>
 
@@ -136,10 +135,10 @@ if ($view!="preview") {
 	</form>
 <?php } ?>
 </td></tr></table>
-
-
 <?php
-
+if (is_null($controller->descPerson)) {
+	print "<span class=\"error\">".$pgv_lang["record_not_found"]."</span>";
+}
 // descendancy booklet
 if ($controller->chart_style) {
 	$show_cousins = true;

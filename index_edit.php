@@ -24,7 +24,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_edit.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: index_edit.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require("config.php");
@@ -44,8 +44,8 @@ require("config.php");
  * @global $PGV_BLOCKS
  */
 
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 global $pgv_lang, $PGV_USE_HELPIMG, $PGV_IMAGES, $PGV_IMAGE_DIR, $TEXT_DIRECTION;
 global $GEDCOM_TITLE;
@@ -225,6 +225,7 @@ if ($action=="update") {
 	$ublocks = $newublocks;
 	setBlocks($name, $ublocks, $setdefault);
 	if (isset($_POST["nextaction"])) $action = $_POST["nextaction"];
+	?><script language="JavaScript" type="text/javascript">parentrefresh();</script><?php
 }
 
 if ($action=="configure" && isset($ublocks[$side][$index])) {
@@ -250,7 +251,7 @@ if ($action=="configure" && isset($ublocks[$side][$index])) {
 		eval($block[0]."_config(\$block[1]);");
 		print "<tr><td colspan=\"2\" class=\"topbottombar\">";
 		print_help_link("click_here_help", "qm");
-		print "<input type=\"button\" value=\"".$pgv_lang["click_here"]."\" onclick=\"document.block.submit(); parentrefresh();\" />";
+		print "<input type=\"button\" value=\"".$pgv_lang["click_here"]."\" onclick=\"document.block.submit();\" />";
 		print "&nbsp&nbsp;<input type =\"button\" value=\"".$pgv_lang["cancel"]."\" onclick=\"window.close()\" />";
 		print "</td></tr>";
 	}
@@ -393,7 +394,6 @@ else {
 
 	function save_form(){
 		document.config_setup.submit();
-		parentrefresh();
 	}
 	//-->
 	</script>

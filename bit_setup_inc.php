@@ -4,11 +4,17 @@ global $gBitSystem;
 $registerHash = array(
 	'package_name' => 'phpgedview',
 	'package_path' => dirname( __FILE__ ).'/',
+	'homeable' => TRUE,
 );
 $gBitSystem->registerPackage( $registerHash );
 
 if( $gBitSystem->isPackageActive( PHPGEDVIEW_PKG_NAME ) ) {
-	$gBitSystem->registerAppMenu( PHPGEDVIEW_PKG_DIR, 'Genealogy', PHPGEDVIEW_PKG_URL.'index.php', 'bitpackage:phpgedview/menu_phpgedview.tpl', PHPGEDVIEW_PKG_NAME );
+		$menuHash = array(
+			'package_name'  => PHPGEDVIEW_PKG_NAME,
+			'index_url'     => PHPGEDVIEW_PKG_URL.'index.php',
+			'menu_template' => 'bitpackage:phpgedview/menu_phpgedview.tpl',
+		);
+	$gBitSystem->registerAppMenu( $menuHash );
 }
 
 if( !defined( 'PHPGEDVIEW_DB_PREFIX' ) ) {

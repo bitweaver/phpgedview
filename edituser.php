@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: edituser.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: edituser.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
  */
 
 require "config.php";
-require $PGV_BASE_DIRECTORY.$confighelpfile["english"];
-if (file_exists($PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE])) require $PGV_BASE_DIRECTORY.$confighelpfile[$LANGUAGE];
-include "includes/functions_edit.php";
+require $confighelpfile["english"];
+if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
+require_once("includes/functions_print_lists.php");
 
 if (!isset($action)) $action="";
 if (isset($firstname)) $firstname = stripslashes($firstname);
@@ -91,6 +91,8 @@ if ($action=="edituser2") {
 			else $newuser["visibleonline"] = false;
 			if (isset($new_default_tab)) $newuser["default_tab"] = $new_default_tab;
 			updateUser($oldusername, $newuser, "changed");
+			//-- if the username changed update the user's session
+			if ($oldusername == getUserName()) $_SESSION['pgv_user'] = $newuser["username"];
 			$user = $newuser;
 			
 			//-- update Gedcom record with new email address
@@ -98,6 +100,7 @@ if ($action=="edituser2") {
 				$oldged = $GEDCOM;
 				foreach($user["gedcomid"] as $gedc=>$gedid) {
 					if (!empty($gedid)) {
+						include_once("includes/functions_edit.php");
 						$GEDCOM = $gedc;
 						$indirec = find_person_record($gedid);
 						if (!empty($indirec)) {
@@ -236,6 +239,7 @@ if ($action=="edituser2") {
 				<option value="2" <?php if ($user['default_tab']==2) print "selected=\"selected\""; ?>><?php print $pgv_lang["ssourcess"];?></option>
 				<option value="3" <?php if ($user['default_tab']==3) print "selected=\"selected\""; ?>><?php print $pgv_lang["media"];?></option>
 				<option value="4" <?php if ($user['default_tab']==4) print "selected=\"selected\""; ?>><?php print $pgv_lang["relatives"];?></option>
+				<option value="-1" <?php if ($user['default_tab']==-1) print "selected=\"selected\""; ?>><?php print $pgv_lang["all"];?></option>
 			</select>
 		</td>
 	</tr>
