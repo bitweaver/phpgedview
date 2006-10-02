@@ -3,13 +3,13 @@
  * MySQL User and Authentication functions
  *
  * This file contains the MySQL specific functions for working with users and authenticating them.
- * It also handles the internal mail messages, favorites, news/journal, and storage of MyGedView
+ * It also handles the internal mail messages, favorites, journal, and storage of MyGedView
  * customizations.  Assumes that a database connection has already been established.
  *
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * $Id: authentication.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -555,8 +555,6 @@ function updateUser($username, $newuser, $msg = "updated") {
 			$sql = "UPDATE ".$TBLPREFIX."messages SET m_from='".$DBCONN->escape($newuser["username"])."' WHERE m_from='".$DBCONN->escape($username)."'";
 			$res = dbquery($sql);
 			$sql = "UPDATE ".$TBLPREFIX."messages SET m_to='".$DBCONN->escape($newuser["username"])."' WHERE m_to='".$DBCONN->escape($username)."'";
-			$res = dbquery($sql);
-			$sql = "UPDATE ".$TBLPREFIX."news SET n_username='".$DBCONN->escape($newuser["username"])."' WHERE n_username='".$DBCONN->escape($username)."'";
 			$res = dbquery($sql);
 		}
 		if($res)
@@ -1213,114 +1211,6 @@ function setBlocks($username, $ublocks, $setdefault=false) {
 			$res = dbquery($sql);
 
 		}
-	}
-}
-
-/**
- * Adds a news item to the database
- *
- * This function adds a news item represented by the $news array to the database.
- * If the $news array has an ["id"] field then the function assumes that it is
- * as update of an older news item.
- *
- * @author John Finlay
- * @param array $news a news item array
- */
-function addNews($news) {
-	global $TBLPREFIX, $DBCONN;
-
-	if (!isset($news["date"])) $news["date"] = time()-$_SESSION["timediff"];
-	//$sql = "CREATE TABLE ".$TBLPREFIX."news (n_id INT NOT NULL auto_increment, n_username VARCHAR(100), n_date INT, n_text TEXT, PRIMARY KEY(n_id))";
-	if (!empty($news["id"])) {
-		// In case news items are added from usermigrate, it will also contain an ID.
-		// So we check first if the ID exists in the database. If not, insert instead of update.
-		$sql = "SELECT * FROM ".$TBLPREFIX."news where n_id=".$news["id"];
-		$res = dbquery($sql);
-
-		if ($res->numRows() == 0) {
-			$sql = "INSERT INTO ".$TBLPREFIX."news VALUES (".$news["id"].", '".$DBCONN->escape($news["username"])."','".$DBCONN->escape($news["date"])."','".$DBCONN->escape($news["title"])."','".$DBCONN->escape($news["text"])."')";
-		}
-		else {
-			$sql = "UPDATE ".$TBLPREFIX."news SET n_date='".$DBCONN->escape($news["date"])."', n_title='".$DBCONN->escape($news["title"])."', n_text='".$DBCONN->escape($news["text"])."' WHERE n_id=".$news["id"];
-		}
-		$res->free();
-	}
-	else {
-		$newid = get_next_id("news", "n_id");
-		$sql = "INSERT INTO ".$TBLPREFIX."news VALUES ($newid, '".$DBCONN->escape($news["username"])."','".$DBCONN->escape($news["date"])."','".$DBCONN->escape($news["title"])."','".$DBCONN->escape($news["text"])."')";
-	}
-	$res = dbquery($sql);
-
-	if ($res) return true;
-	else return false;
-}
-
-/**
- * Deletes a news item from the database
- *
- * @author John Finlay
- * @param int $news_id the id number of the news item to delete
- */
-function deleteNews($news_id) {
-	global $TBLPREFIX;
-
-	$sql = "DELETE FROM ".$TBLPREFIX."news WHERE n_id=".$news_id;
-	$res = dbquery($sql);
-
-	if ($res) return true;
-	else return false;
-}
-
-/**
- * Gets the news items for the given user or gedcom
- *
- * @param String $username the username or gedcom file name to get news items for
- */
-function getUserNews($username) {
-	global $TBLPREFIX, $DBCONN;
-
-	$news = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."news WHERE n_username='".$DBCONN->escape($username)."' ORDER BY n_date DESC";
-	$res = dbquery($sql);
-
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$n = array();
-		$n["id"] = $row["n_id"];
-		$n["username"] = $row["n_username"];
-		$n["date"] = $row["n_date"];
-		$n["title"] = stripslashes($row["n_title"]);
-		$n["text"] = stripslashes($row["n_text"]);
-		$n["anchor"] = "article".$row["n_id"];
-		$news[$row["n_id"]] = $n;
-	}
-	$res->free();
-	return $news;
-}
-
-/**
- * Gets the news item for the given news id
- *
- * @param int $news_id the id of the news entry to get
- */
-function getNewsItem($news_id) {
-	global $TBLPREFIX;
-
-	$news = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."news WHERE n_id='$news_id'";
-	$res = dbquery($sql);
-
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$n = array();
-		$n["id"] = $row["n_id"];
-		$n["username"] = $row["n_username"];
-		$n["date"] = $row["n_date"];
-		$n["title"] = stripslashes($row["n_title"]);
-		$n["text"] = stripslashes($row["n_text"]);
-		$n["anchor"] = "article".$row["n_id"];
-		$res->free();
-		return $n;
 	}
 }
 

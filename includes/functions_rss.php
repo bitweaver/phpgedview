@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_rss.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: functions_rss.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  */
@@ -520,55 +520,6 @@ function getGedcomStats() {
 
 	$data = strip_tags($data, '<a><br><b>');
 	$dataArray[2] = $data;
-	return $dataArray;
-}
-
-/**
- * Returns the gedcom news for the RSS feed
- *
- * @return array of GEDCOM news arrays. Each GEDCOM news array contains $itemArray[0] = title, $itemArray[1] = date,
- * 				$itemArray[2] = data, $itemArray[3] = anchor (so that the link will load the proper part of the PGV page)
- * @TODO prepend relative URL's in news items with $SERVER_URL
- */
-function getGedcomNews() {
-	global $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION, $GEDCOM, $command, $TIME_FORMAT, $VERSION, $SERVER_URL;
-
-	$usernews = getUserNews($GEDCOM);
-
-	$dataArray = array();
-	foreach($usernews as $key=>$news) {
-
-		$day = date("j", $news["date"]);
-		$mon = date("M", $news["date"]);
-		$year = date("Y", $news["date"]);
-		$data = "";
-		$ct = preg_match("/#(.+)#/", $news["title"], $match);
-		if ($ct>0) {
-			if (isset($pgv_lang[$match[1]])) $news["title"] = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $news["title"]);
-		}
-		$itemArray[0] = $news["title"];
-
-		$itemArray[1] = iso8601_date($news["date"]);
-		$ct = preg_match("/#(.+)#/", $news["text"], $match);
-		if ($ct>0) {
-			if (isset($pgv_lang[$match[1]])) $news["text"] = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $news["text"]);
-		}
-		$ct = preg_match("/#(.+)#/", $news["text"], $match);
-		if ($ct>0) {
-			if (isset($pgv_lang[$match[1]])) $news["text"] = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $news["text"]);
-			$varname = $match[1];
-			if (isset($$varname)) $news["text"] = preg_replace("/$match[0]/", $$varname, $news["text"]);
-		}
-		$trans = get_html_translation_table(HTML_SPECIALCHARS);
-		$trans = array_flip($trans);
-		$news["text"] = strtr($news["text"], $trans);
-		$news["text"] = nl2br($news["text"]);
-		$data .= $news["text"];
-		$itemArray[2] = $data;
-		$itemArray[3] = $news["anchor"];
-		$dataArray[] = $itemArray;
-
-	}
 	return $dataArray;
 }
 

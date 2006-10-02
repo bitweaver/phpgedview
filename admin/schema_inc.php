@@ -96,14 +96,6 @@ PHPGEDVIEW_DB_PREFIX.'messages' => "
 	m_created C(250)
 ",
 
-PHPGEDVIEW_DB_PREFIX.'news' => "
-	n_id I4 PRIMARY,
-	n_username C(100),
-	n_date I4,
-	n_title C(250),
-	n_note X
-",
-
 PHPGEDVIEW_DB_PREFIX.'places' => "
 	p_id I4 PRIMARY,
 	p_place C(150),

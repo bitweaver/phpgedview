@@ -23,7 +23,7 @@
  * @author Boudewijn Sjouke	sjouke@users.sourceforge.net
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: usermigrate.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: usermigrate.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  */
 require "config.php";
 require $confighelpfile["english"];
@@ -74,7 +74,6 @@ if ($proceed == "backup") {
 		// If in pure DB mode, we must first create new .dat files and authenticate.php
 		// First delete the old files
 		if (file_exists($INDEX_DIRECTORY."authenticate.php")) unlink($INDEX_DIRECTORY."authenticate.php");
-		if (file_exists($INDEX_DIRECTORY."news.dat")) unlink($INDEX_DIRECTORY."news.dat");
 		if (file_exists($INDEX_DIRECTORY."messages.dat")) unlink($INDEX_DIRECTORY."messages.dat");
 		if (file_exists($INDEX_DIRECTORY."blocks.dat")) unlink($INDEX_DIRECTORY."blocks.dat");
 		if (file_exists($INDEX_DIRECTORY."favorites.dat")) unlink($INDEX_DIRECTORY."favorites.dat");
@@ -84,7 +83,6 @@ if ($proceed == "backup") {
 		
 		// Make filelist for files to ZIP
 		if (file_exists($INDEX_DIRECTORY."authenticate.php")) $flist[] = $INDEX_DIRECTORY."authenticate.php";
-		if (file_exists($INDEX_DIRECTORY."news.dat")) $flist[] = $INDEX_DIRECTORY."news.dat";
 		if (file_exists($INDEX_DIRECTORY."messages.dat")) $flist[] = $INDEX_DIRECTORY."messages.dat";
 		if (file_exists($INDEX_DIRECTORY."blocks.dat")) $flist[] = $INDEX_DIRECTORY."blocks.dat";
 		if (file_exists($INDEX_DIRECTORY."favorites.dat")) $flist[] = $INDEX_DIRECTORY."favorites.dat";
@@ -165,7 +163,6 @@ if ($proceed == "backup") {
 
 			// Remove temporary files again
 			if (file_exists($INDEX_DIRECTORY."authenticate.php")) unlink($INDEX_DIRECTORY."authenticate.php");
-			if (file_exists($INDEX_DIRECTORY."news.dat")) unlink($INDEX_DIRECTORY."news.dat");
 			if (file_exists($INDEX_DIRECTORY."messages.dat")) unlink($INDEX_DIRECTORY."messages.dat");
 			if (file_exists($INDEX_DIRECTORY."blocks.dat")) unlink($INDEX_DIRECTORY."blocks.dat");
 			if (file_exists($INDEX_DIRECTORY."favorites.dat")) unlink($INDEX_DIRECTORY."favorites.dat");
@@ -337,43 +334,6 @@ $res =& $tempsql;
 		if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_nofav"]." ".$pgv_lang["um_file_not_created"]."<br /><br />";
 	}
 
-	// Get news and create news.dat 
-	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"news.dat\"<br /><br />";
-	$allnews = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."news ORDER BY n_date DESC";
-	$tempsql = dbquery($sql);
-$res =& $tempsql;
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$news = array();
-		$news["id"] = $row["n_id"];
-		$news["username"] = $row["n_username"];
-		$news["date"] = $row["n_date"];
-		$news["title"] = stripslashes($row["n_title"]);
-		$news["text"] = stripslashes($row["n_text"]);
-		$allnews[$row["n_id"]] = $news;
-	}
-	if (count($allnews) > 0) {
-		$mstring = serialize($allnews);
-		if (file_exists($INDEX_DIRECTORY."news.dat")) {
-			print $pgv_lang["um_file_create_fail1"].$INDEX_DIRECTORY."news.dat<br /><br />";
-			}
-		else {
-			$fp = fopen($INDEX_DIRECTORY."news.dat", "wb");
-			if ($fp) {
-				fwrite($fp, $mstring);
-				fclose($fp);
-				$logline = AddToLog("news.dat updated by >".getUserName()."<");
- 				if (!empty($COMMIT_COMMAND)) check_in($logline, "news.dat", $INDEX_DIRECTORY);	
-				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." news.dat<br /><br />";
-			}
-			else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."news.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
-		}
-	}
-	else {
-		if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_nonews"]." ".$pgv_lang["um_file_not_created"]."<br /><br />";
-	}
-
 	// Get blocks and create blocks.dat 
 	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"blocks.dat\"<br /><br />";
 	$allblocks = array();
@@ -423,7 +383,6 @@ if (($proceed == "export") || ($proceed == "exportovr")) {
 	if ($proceed == "export") {
 		$i = 0;
 		if (file_exists($INDEX_DIRECTORY."authenticate.php")) $i = $i + 1;
-		if (file_exists($INDEX_DIRECTORY."news.dat")) $i = $i + 1;
 		if (file_exists($INDEX_DIRECTORY."messages.dat")) $i = $i + 1;
 		if (file_exists($INDEX_DIRECTORY."blocks.dat")) $i = $i + 1;
 		if (file_exists($INDEX_DIRECTORY."favorites.dat")) $i = $i + 1;
@@ -444,7 +403,6 @@ if (($proceed == "export") || ($proceed == "exportovr")) {
 
 	if ($proceed = "exportovr") {
 		if (file_exists($INDEX_DIRECTORY."authenticate.php")) unlink($INDEX_DIRECTORY."authenticate.php");
-		if (file_exists($INDEX_DIRECTORY."news.dat")) unlink($INDEX_DIRECTORY."news.dat");
 		if (file_exists($INDEX_DIRECTORY."messages.dat")) unlink($INDEX_DIRECTORY."messages.dat");
 		if (file_exists($INDEX_DIRECTORY."blocks.dat")) unlink($INDEX_DIRECTORY."blocks.dat");
 		if (file_exists($INDEX_DIRECTORY."favorites.dat")) unlink($INDEX_DIRECTORY."favorites.dat");
@@ -556,34 +514,6 @@ $res =& $tempsql;
 			$res = addFavorite($favorite);
 			if (!$res) {
 				print "<span class=\"error\">Unable to update <i>Favorites</i> table.</span><br />\n";
-				exit;
-			}
-		}
-		print $pgv_lang["um_imp_succ"]."<br /><br />";
-	}
-
-	// Get news and import it
-	print $pgv_lang["um_imp_news"]."<br />";
-	$sql = "DELETE FROM ".$TBLPREFIX."news";
-	$tempsql = dbquery($sql);
-$res =& $tempsql;
-	if (!$res) {
-		print "<span class=\"error\">Unable to update <i>News</i> table.</span><br />\n";
-		exit;
-	}
-	if ((file_exists($INDEX_DIRECTORY."news.dat")) == false) {
-		print $pgv_lang["um_nonews"]."<br /><br />";
-	}
-	else {
-		$allnews = array();
-		$fp = fopen($INDEX_DIRECTORY."news.dat", "rb");
-		$mstring = fread($fp, filesize($INDEX_DIRECTORY."news.dat"));
-		fclose($fp);
-		$allnews = unserialize($mstring);
-		foreach($allnews as $newid => $news) {
-			$res = addNews($news);
-			if (!$res) {
-				print "<span class=\"error\">Unable to update <i>News</i> table.</span><br />\n";
 				exit;
 			}
 		}

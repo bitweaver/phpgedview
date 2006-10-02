@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Help
  * @author John Finlay & Jans Luder
- * @version $Id: help_text_vars.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: help_text_vars.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  */
 
 // The variables in this file are used to glue together other var's in the help_text.xx.php
@@ -90,9 +90,6 @@ $pgv_lang["index_login_register_help"]		= "#pgv_lang[index_login_help]#<br />#pg
 
 //Add Facts
 $pgv_lang["add_new_facts_help"]			= "#pgv_lang[multiple_help]#<br />#pgv_lang[add_facts_help]#<br />#pgv_lang[add_custom_facts_help]#<br />#pgv_lang[add_from_clipboard_help]#<br />#pgv_lang[def_gedcom_date_help]#<br />#pgv_lang[add_facts_general_help]#";
-
-//Admin Help News Block
-$pgv_lang["index_gedcom_news_ahelp"]		= "#pgv_lang[index_gedcom_news_help]##pgv_lang[start_ahelp]##pgv_lang[index_gedcom_news_adm_help]##pgv_lang[end_ahelp]#";
 
 //Admin Help Advanced HTML Block
 $pgv_lang["index_htmlplus_ahelp"]		= "#pgv_lang[index_htmlplus_help]##pgv_lang[start_ahelp]##pgv_lang[index_htmlplus_content_help]##pgv_lang[end_ahelp]#";

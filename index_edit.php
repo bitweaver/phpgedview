@@ -24,7 +24,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_edit.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: index_edit.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  */
 
 require("config.php");
@@ -142,7 +142,6 @@ else {
 	if (($action=="reset") or ((count($ublocks["main"])==0) and (count($ublocks["right"])==0))) {
 		$ublocks["main"] = array();
 		$ublocks["main"][] = array("print_gedcom_stats", "");
-		$ublocks["main"][] = array("print_gedcom_news", "");
 		$ublocks["main"][] = array("print_gedcom_favorites", "");
 		$ublocks["main"][] = array("review_changes_block", "");
 

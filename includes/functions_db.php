@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.3 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: functions_db.php,v 1.4 2006/10/02 09:56:43 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -2434,9 +2434,6 @@ function delete_gedcom($ged) {
 	$res = dbquery($sql);
 
 	$sql = "DELETE FROM ".$TBLPREFIX."names WHERE n_file='".$DBCONN->escape($dbged)."'";
-	$res = dbquery($sql);
-
-	$sql = "DELETE FROM ".$TBLPREFIX."news WHERE n_username='".$DBCONN->escape($ged)."'";
 	$res = dbquery($sql);
 
 	$sql = "DELETE FROM ".$TBLPREFIX."nextid WHERE ni_gedfile='".$DBCONN->escape($dbged)."'";

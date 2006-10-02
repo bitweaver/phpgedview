@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: editconfig_gedcom.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  */
 
 require "config.php";
@@ -413,26 +413,7 @@ if ($action=="update") {
 	$logline = AddToLog("Gedcom configuration ".$INDEX_DIRECTORY.$FILE."_conf.php"." updated by >".getUserName()."<", $FILE);
  	$gedcomconfname = $FILE."_conf.php";
  	if (!empty($COMMIT_COMMAND)) check_in($logline, $gedcomconfname, $INDEX_DIRECTORY);
-	if (!$errors) {
-		$gednews = getUserNews($FILE);
-		if (count($gednews)==0) {
-			$news = array();
-			$news["title"] = "#default_news_title#";
-			$news["username"] = $FILE;
-			$news["text"] = "#default_news_text#";
-			$news["date"] = time()-$_SESSION["timediff"];
-			addNews($news);
-		}
-		if ($source == "upload_form") $check = "upload";
-		else if ($source == "add_form") $check = "add";
-		else if ($source == "add_new_form") $check = "add_new";
-		if (!isset($bakfile)) $bakfile = "";
-		if ($source !== "") header("Location: uploadgedcom.php?action=$source&check=$check&step=2&GEDFILENAME=$GEDFILENAME&path=$path&verify=verify_gedcom&bakfile=$bakfile");
-		else {
-			header("Location: editgedcoms.php");
-		}
-		exit;
-	}
+
 }
 else if ($action=="replace") {
 	header("Location: uploadgedcom.php?action=upload_form&GEDFILENAME=$GEDFILENAME&path=$path&verify=validate_form");

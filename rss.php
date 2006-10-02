@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: rss.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * $Id: rss.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  * @TODO add Basic HTTP authentication to allow RSS agrigators to "log on"
@@ -141,8 +141,6 @@ if($ENABLE_RSS) {
 					$printUpcoming = true;
 				} else if($value[0] == "print_gedcom_stats"){
 					$printGedcomStats = true;
-				} else if($value[0] == "print_gedcom_news"){
-					$printGedcomNews = true;
 				} else if($value[0] == "print_block_name_top10"){
 					$printTop10Surnames = true;
 				} else if($value[0] == "print_recent_changes"){
@@ -162,8 +160,6 @@ if($ENABLE_RSS) {
 					$printUpcoming = true;
 				} else if($value[0] == "print_gedcom_stats"){
 					$printGedcomStats = true;
-				} else if($value[0] == "print_gedcom_news"){
-					$printGedcomNews = true;
 				} else if($value[0] == "print_block_name_top10"){
 					$printTop10Surnames = true;
 				} else if($value[0] == "print_recent_changes"){
@@ -253,30 +249,6 @@ if($ENABLE_RSS) {
 			$item->author = $author;
 
 			$rss->addItem($item);
-		}
-	}
-
-	if($printGedcomNews){
-		$gedcomNews = getGedcomNews();
-
-		$numElements = count($gedcomNews); //number of news items
-		for($i=0; $i < $numElements; $i++) {
-			$newsItem = $gedcomNews[$i];
-			if (! empty($newsItem[1])) {
-				$item = new FeedItem();
-				$item->title = $newsItem[0];
-				$item->link = $SERVER_URL . "index.php?command=gedcom#" . $newsItem[3];
-				$item->description = $newsItem[2];
-
-				//optional
-				$item->descriptionTruncSize = 500;
-				$item->descriptionHtmlSyndicated = true;
-
-				$item->date = $newsItem[1];
-				$item->source = $SERVER_URL ;
-				$item->author = $author;
-				$rss->addItem($item);
-			}
 		}
 	}
 

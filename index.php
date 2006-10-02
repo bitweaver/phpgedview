@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.4 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: index.php,v 1.5 2006/10/02 09:56:43 lsces Exp $
  */
 
 if (isset ($_REQUEST['mod']))
@@ -165,9 +165,6 @@ if (!empty($uname)) {
 			}
 		}
 	}
-	else if (($action=="deletenews")&&(isset($news_id))) {
-		deleteNews($news_id);
-	}
 }
 
 //-- get the blocks list
@@ -188,7 +185,6 @@ else {
 	$ublocks = getBlocks($GEDCOM);
 	if ((count($ublocks["main"])==0) and (count($ublocks["right"])==0)) {
 		$ublocks["main"][] = array("print_gedcom_stats", "");
-		$ublocks["main"][] = array("print_gedcom_news", "");
 		$ublocks["main"][] = array("print_gedcom_favorites", "");
 		$ublocks["main"][] = array("review_changes_block", "");
 
@@ -229,12 +225,6 @@ else {
 <!--
 	function refreshpage() {
 		window.location = 'index.php?command=<?php print $command; ?>';
-	}
-	function addnews(uname) {
-		window.open('editnews.php?username='+uname, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
-	}
-	function editnews(news_id) {
-		window.open('editnews.php?news_id='+news_id, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	var pastefield;
 	function paste_id(value) {
