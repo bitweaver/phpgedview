@@ -67,15 +67,6 @@ PHPGEDVIEW_DB_PREFIX.'dates' => "
 	d_type C(13)
 ",
 
-PHPGEDVIEW_DB_PREFIX.'blocks' => "
-	b_id I4 PRIMARY,
-	b_username C(100),
-	b_location C(30),
-	b_order I,
-	b_name C(250),
-	b_config X
-",
-
 PHPGEDVIEW_DB_PREFIX.'favorites' => "
 	fv_id I4 PRIMARY,
 	fv_username C(30),

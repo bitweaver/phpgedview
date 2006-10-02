@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: admin.php,v 1.3 2006/10/02 10:03:55 lsces Exp $
+ * @version $Id: admin.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
  */
 
 /**
@@ -180,7 +180,6 @@ foreach($users as $indexval => $user) {
    	<td class="optionbox"><?php print_help_link("help_useradmin.php", "qm"); ?><a href="useradmin.php"><?php print $pgv_lang["user_admin"];?></a></td>
    </tr>
    <tr>
-   	<td class="optionbox"><?php print_help_link("help_faq.php", "qm"); ?><a href="faq.php"><?php print $pgv_lang["faq_list"];?></a></td>
 	<td class="optionbox"><?php print_help_link("help_managesites", "qm"); ?><a href="manageservers.php"><?php print $pgv_lang["link_manage_servers"];?></a></td>
    </tr>
    <tr>

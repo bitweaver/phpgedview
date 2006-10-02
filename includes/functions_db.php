@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.4 2006/10/02 09:56:43 lsces Exp $
+ * @version $Id: functions_db.php,v 1.5 2006/10/02 10:33:26 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -2412,9 +2412,6 @@ function delete_gedcom($ged) {
 	if (!isset($GEDCOMS[$ged])) return;
 	$dbged = $GEDCOMS[$ged]["id"];
 
-	$sql = "DELETE FROM ".$TBLPREFIX."blocks WHERE b_username='".$DBCONN->escape($ged)."'";
-	$res = dbquery($sql);
-
 	$sql = "DELETE FROM ".$TBLPREFIX."dates WHERE d_file='".$DBCONN->escape($dbged)."'";
 	$res = dbquery($sql);
 
@@ -2590,28 +2587,6 @@ function get_server_list(){
 	}
 
 	return $sitelist;
-}
-
-/**
- * Retrieve the array of faqs from the DB table blocks
- * @param int $id		The FAQ ID to retrieven
- * @return array $faqs	The array containing the FAQ items
- */
-function get_faq_data($id='') {
-	global $TBLPREFIX, $GEDCOM;
-
-	$faqs = array();
-	// Read the faq data from the DB
-	$sql = "SELECT b_id, b_location, b_order, b_config FROM ".$TBLPREFIX."blocks WHERE b_username='$GEDCOM' AND (b_location='header' OR b_location = 'body')";
-	if ($id != '') $sql .= "AND b_order='".$id."'";
-	$res = dbquery($sql);
-
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$faqs[$row["b_order"]][$row["b_location"]]["text"] = unserialize($row["b_config"]);
-		$faqs[$row["b_order"]][$row["b_location"]]["pid"] = $row["b_id"];
-	}
-	ksort($faqs);
-	return $faqs;
 }
 
 function delete_fact($linenum, $pid, $gedrec) {

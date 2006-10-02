@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: rss.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
+ * $Id: rss.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  * @TODO add Basic HTTP authentication to allow RSS agrigators to "log on"
@@ -109,9 +109,6 @@ if($ENABLE_RSS) {
 	$printTop10Surnames = false;
 	$printRecentChanges = false;
 
-
-	$blocks=  getBlocks($GEDCOM);
-	$main = $blocks["main"];
 
 	if(!empty($module)){
 		if($module == "today"){

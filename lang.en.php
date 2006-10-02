@@ -1197,9 +1197,6 @@ $pgv_lang["block_top10"]			= "Top 10 Surnames";
 $pgv_lang["block_top10_descr"]		= "This block shows a table of the 10 most frequently occurring surnames in the database.  The actual number of surnames shown in this block is configurable.  You can configure the GEDCOM to remove names from this list.";
 
 $pgv_lang["article_text"]			= "Entry Text:";
-$pgv_lang["main_section"]			= "Main Section Blocks";
-$pgv_lang["right_section"]			= "Right Section Blocks";
-$pgv_lang["available_blocks"]		= "Available Blocks";
 $pgv_lang["move_up"]				= "Move Up";
 $pgv_lang["move_down"]				= "Move Down";
 $pgv_lang["move_right"] 			= "Move Right";

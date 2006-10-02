@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
+ * $Id: authentication.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -548,8 +548,6 @@ function updateUser($username, $newuser, $msg = "updated") {
 
 		//-- update all reference tables if username changed
 		if ($newuser["username"]!=$username) {
-			$sql = "UPDATE ".$TBLPREFIX."blocks SET b_username='".$DBCONN->escape($newuser["username"])."' WHERE b_username='".$DBCONN->escape($username)."'";
-			$res = dbquery($sql);
 			$sql = "UPDATE ".$TBLPREFIX."favorites SET fv_username='".$DBCONN->escape($newuser["username"])."' WHERE fv_username='".$DBCONN->escape($username)."'";
 			$res = dbquery($sql);
 			$sql = "UPDATE ".$TBLPREFIX."messages SET m_from='".$DBCONN->escape($newuser["username"])."' WHERE m_from='".$DBCONN->escape($username)."'";
@@ -1126,92 +1124,6 @@ function getUserFavorites($username) {
 	}
 	$res->free();
 	return $favorites;
-}
-
-/**
- * get blocks for the given username
- *
- * retrieve the block configuration for the given user
- * if no blocks have been set yet, and the username is a valid user (not a gedcom) then try and load
- * the defaultuser blocks.
- * @param string $username	the username or gedcom name for the blocks
- * @return array	an array of the blocks.  The two main indexes in the array are "main" and "right"
- */
-function getBlocks($username) {
-	global $TBLPREFIX, $GEDCOMS, $DBCONN;
-
-	$blocks = array();
-	$blocks["main"] = array();
-	$blocks["right"] = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."blocks WHERE b_username='".$DBCONN->escape($username)."' ORDER BY b_location, b_order";
-	$res = dbquery($sql);
-
-	if ($res->numRows() > 0) {
-		while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-			$row = db_cleanup($row);
-			if (!isset($row["b_config"])) $row["b_config"]="";
-			if ($row["b_location"]=="main") $blocks["main"][$row["b_order"]] = array($row["b_name"], unserialize($row["b_config"]));
-			if ($row["b_location"]=="right") $blocks["right"][$row["b_order"]] = array($row["b_name"], unserialize($row["b_config"]));
-		}
-	}
-	else {
-		$user = getUser($username);
-		if ($user) {
-			//-- if no blocks found, check for a default block setting
-			$sql = "SELECT * FROM ".$TBLPREFIX."blocks WHERE b_username='defaultuser' ORDER BY b_location, b_order";
-			$res2 =& dbquery($sql);
-			while($row =& $res2->fetchRow(DB_FETCHMODE_ASSOC)){
-				$row = db_cleanup($row);
-				if (!isset($row["b_config"])) $row["b_config"]="";
-				if ($row["b_location"]=="main") $blocks["main"][$row["b_order"]] = array($row["b_name"], unserialize($row["b_config"]));
-				if ($row["b_location"]=="right") $blocks["right"][$row["b_order"]] = array($row["b_name"], unserialize($row["b_config"]));
-			}
-			$res2->free();
-		}
-	}
-	$res->free();
-	return $blocks;
-}
-
-/**
- * Set Blocks
- *
- * Sets the blocks for a gedcom or user portal
- * the $setdefault parameter tells the program to also store these blocks as the blocks used by default
- * @param String $username the username or gedcom name to update the blocks for
- * @param array $ublocks the new blocks to set for the user or gedcom
- * @param boolean $setdefault	if true tells the program to also set these blocks as the blocks for the defaultuser
- */
-function setBlocks($username, $ublocks, $setdefault=false) {
-	global $TBLPREFIX, $DBCONN;
-
-	$sql = "DELETE FROM ".$TBLPREFIX."blocks WHERE b_username='".$DBCONN->escape($username)."'";
-	$res = dbquery($sql);
-
-	foreach($ublocks["main"] as $order=>$block) {
-		$newid = get_next_id("blocks", "b_id");
-		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, '".$DBCONN->escape($username)."', 'main', '$order', '".$DBCONN->escape($block[0])."', '".$DBCONN->escape(serialize($block[1]))."')";
-		$res = dbquery($sql);
-
-		if ($setdefault) {
-			$newid = get_next_id("blocks", "b_id");
-			$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, 'defaultuser', 'main', '$order', '".$DBCONN->escape($block[0])."', '".$DBCONN->escape(serialize($block[1]))."')";
-			$res = dbquery($sql);
-
-		}
-	}
-	foreach($ublocks["right"] as $order=>$block) {
-		$newid = get_next_id("blocks", "b_id");
-		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, '".$DBCONN->escape($username)."', 'right', '$order', '".$DBCONN->escape($block[0])."', '".$DBCONN->escape(serialize($block[1]))."')";
-		$res = dbquery($sql);
-
-		if ($setdefault) {
-			$newid = get_next_id("blocks", "b_id");
-			$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, 'defaultuser', 'right', '$order', '".$DBCONN->escape($block[0])."', '".$DBCONN->escape(serialize($block[1]))."')";
-			$res = dbquery($sql);
-
-		}
-	}
 }
 
 ?>

@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: menu.php,v 1.3 2006/10/02 10:33:26 lsces Exp $
  */
 
 class Menu
@@ -947,14 +947,6 @@ class MenuBar
 		$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
 		$submenu->addOnclick("return helpPopup('help_contents_help');");
 		$menu->addSubmenu($submenu);
-		//-- faq sub menu
-		if (file_exists("faq.php")) {
-			$submenu = new Menu($pgv_lang["faq_list"], "faq.php");
-			if (!empty($PGV_IMAGES["menu_help"]["small"]))
-				$submenu->addIcon($PGV_IMAGE_DIR."/".$PGV_IMAGES["menu_help"]["small"]);
-			$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
-			$menu->addSubmenu($submenu);
-		}
 		//-- searchhelp sub menu
 		if (file_exists("searchhelp.php")) {
 			$submenu = new Menu($pgv_lang["hs_title"], "#");

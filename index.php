@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.5 2006/10/02 09:56:43 lsces Exp $
+ * @version $Id: index.php,v 1.6 2006/10/02 10:33:26 lsces Exp $
  */
 
 if (isset ($_REQUEST['mod']))
@@ -40,31 +40,6 @@ if (!isset($CONFIGURED)) {
 
 require($factsfile["english"]);
 if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
-
-/**
- * Block definition array
- *
- * The following block definition array defines the
- * blocks that can be used to customize the portals
- * their names and the function to call them
- * "name" is the name of the block in the lists
- * "descr" is the name of a $pgv_lang variable to describe this block
- * - eg: "whatever" here means that $pgv_lang["whatever"] describes this block
- * "type" the options are "user" or "gedcom" or undefined
- * - The type determines which lists the block is available in.
- * - Leaving the type undefined allows it to be on both the user and gedcom portal
- * @global $PGV_BLOCKS
- */
-$PGV_BLOCKS = array();
-
-//-- load all of the blocks
-//$d = dir("blocks");
-//while (false !== ($entry = $d->read())) {
-//	if (strstr($entry, ".")==".php") {
-//		include_once("blocks/".$entry);
-//	}
-//}
-//$d->close();
 
 if (isset($_SESSION["timediff"])) $time = time()-$_SESSION["timediff"];
 else $time = time();
@@ -167,52 +142,6 @@ if (!empty($uname)) {
 	}
 }
 
-//-- get the blocks list
-if ($command=="user") {
-	$ublocks = getBlocks($uname);
-	if ((count($ublocks["main"])==0) and (count($ublocks["right"])==0)) {
-		$ublocks["main"][] = array("print_todays_events", "");
-		$ublocks["main"][] = array("print_user_messages", "");
-		$ublocks["main"][] = array("print_user_favorites", "");
-
-		$ublocks["right"][] = array("print_welcome_block", "");
-		$ublocks["right"][] = array("print_random_media", "");
-		$ublocks["right"][] = array("print_upcoming_events", "");
-		$ublocks["right"][] = array("print_logged_in_users", "");
-	}
-}
-else {
-	$ublocks = getBlocks($GEDCOM);
-	if ((count($ublocks["main"])==0) and (count($ublocks["right"])==0)) {
-		$ublocks["main"][] = array("print_gedcom_stats", "");
-		$ublocks["main"][] = array("print_gedcom_favorites", "");
-		$ublocks["main"][] = array("review_changes_block", "");
-
-		$ublocks["right"][] = array("print_gedcom_block", "");
-		$ublocks["right"][] = array("print_random_media", "");
-		$ublocks["right"][] = array("print_todays_events", "");
-		$ublocks["right"][] = array("print_logged_in_users", "");
-	}
-}
-
-//-- Set some behaviour controls that depend on which blocks are selected
-$welcome_block_present = false;
-$gedcom_block_present = false;
-$top10_block_present = false;
-$login_block_present = false;
-foreach($ublocks["right"] as $block) {
-	if ($block[0]=="print_welcome_block") $welcome_block_present = true;
-	if ($block[0]=="print_gedcom_block") $gedcom_block_present = true;
-	if ($block[0]=="print_block_name_top10") $top10_block_present = true;
-	if ($block[0]=="print_login_block") $login_block_present = true;
-}
-foreach($ublocks["main"] as $block) {
-	if ($block[0]=="print_welcome_block") $welcome_block_present = true;
-	if ($block[0]=="print_gedcom_block") $gedcom_block_present = true;
-	if ($block[0]=="print_block_name_top10") $top10_block_present = true;
-	if ($block[0]=="print_login_block") $login_block_present = true;
-}
-
 if ($command=="user") {
 	$helpindex = "index_myged_help";
 	print_header($pgv_lang["mygedview"]);
@@ -241,45 +170,17 @@ if ($command=="user") {
 	print $pgv_lang["mygedview_desc"];
 	print "<br /><br /></div>\n";
 }
-if (count($ublocks["main"])!=0) {
-	if (count($ublocks["right"])!=0) {
-		print "\t<div id=\"index_main_blocks\">\n";
-	} else {
-		print "\t<div id=\"index_full_blocks\">\n";
-	}
-
-	foreach($ublocks["main"] as $bindex=>$block) {
-		if (isset($DEBUG)&&($DEBUG==true)) print_execution_stats();
-		if (function_exists($block[0])) eval($block[0]."(false, \$block[1], \"main\", $bindex);");
-	}
-	print "</div>\n";
-}
 //-- end of main content section
-
-//-- start of blocks section
-if (count($ublocks["right"])!=0) {
-	if (count($ublocks["main"])!=0) {
-		print "\t<div id=\"index_small_blocks\">\n";
-	} else {
-		print "\t<div id=\"index_full_blocks\">\n";
-	}
-	foreach($ublocks["right"] as $bindex=>$block) {
-		if (isset($DEBUG)&&($DEBUG==true)) print_execution_stats();
-		if (function_exists($block[0])) eval($block[0]."(true, \$block[1], \"right\", $bindex);");
-	}
-	print "\t</div>\n";
-}
-//-- end of blocks section
 
 print "</td></tr></table><br />";		// Close off that table
 
-if (($command=="user") and (!$welcome_block_present)) {
+if (($command=="user")) {
 	print "<div align=\"center\" style=\"width: 99%;\">";
 	print_help_link("mygedview_customize_help", "qm");
 	print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=".getUserName()."&amp;command=user', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_page"]."</a>\n";
 	print "</div>";
 }
-if (($command=="gedcom") and (!$gedcom_block_present)) {
+if (($command=="gedcom")) {
 	if (userIsAdmin(getUserName())) {
 		print "<div align=\"center\" style=\"width: 99%;\">";
 		print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=$GEDCOM&amp;command=gedcom', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_gedcom_page"]."</a>\n";

@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Help
  * @author John Finlay & Jans Luder
- * @version $Id: help_text_vars.php,v 1.4 2006/10/02 10:03:55 lsces Exp $
+ * @version $Id: help_text_vars.php,v 1.5 2006/10/02 10:33:26 lsces Exp $
  */
 
 // The variables in this file are used to glue together other var's in the help_text.xx.php
@@ -106,9 +106,6 @@ $pgv_lang["help_admin.php"]			="~#pgv_lang[administration]#~</b><br /><br />#pgv
 $pgv_lang["help_editlang.php"]			="#pgv_lang[lang_edit_help]#<br /><br />#pgv_lang[translation_forum_help]#<br /><br />#pgv_lang[bom_check_help]#<br /><br />#pgv_lang[edit_lang_utility_help]#<br /><br />#pgv_lang[export_lang_utility_help]#<br /><br />#pgv_lang[compare_lang_utility_help]#<br /><br />#pgv_lang[add_new_language_help]#<br /><br />#pgv_lang[more_help]#";
 $pgv_lang["help_changelanguage.php"]			="#pgv_lang[config_lang_utility_help]##pgv_lang[more_help]#";
 
-//-- FAQ List editing tool
-$pgv_lang["faq_page_help"]	=	"#pgv_lang[help_faq.php]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[preview_faq_item_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[restore_faq_edits_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[add_faq_item_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[edit_faq_item_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[delete_faq_item_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[moveup_faq_item_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[movedown_faq_item_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[add_faq_header_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[add_faq_body_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[add_faq_order_help]#";
-
 //--				G E D C O M
 //-- Gedcom Info
 $pgv_lang["gedcom_info_help"]			= "<div class=\"name_head center\"><b>#pgv_lang[help_contents_gedcom_info]#</b></div><br />#pgv_lang[def_gedcom_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[def_gedcom_date_help]#<br /><a href=\"#top\">$UpArrow </a>#pgv_lang[ppp_levels_help]#";
@@ -184,7 +181,6 @@ $pgv_lang["h32"]	= "help_fanchart.php,fan_chart";
 $pgv_lang["h33"]	= "help_reportengine.php,reports";
 $pgv_lang["h34"]	= "def_help_items,definitions";
 $pgv_lang["h35"]	= "accesskey_viewing_advice_help,accesskeys";
-$pgv_lang["h36"]	= "help_faq.php,faq_list";
 $pgv_lang["h37"]	= "hs_title_help,hs_title";
 $pgv_lang["h38"]	= "help_hourglass.php,hourglass_chart";
 $pgv_lang["h39"]	= "help_familybook.php,familybook_chart";
