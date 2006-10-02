@@ -22,24 +22,27 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.6 2006/10/02 10:33:26 lsces Exp $
+ * @version $Id: index.php,v 1.7 2006/10/02 22:05:51 lsces Exp $
  */
 
-if (isset ($_REQUEST['mod']))
-{
-	require_once 'module.php';
-	exit;
-}
+// Initialization
+require_once( '../bit_setup_inc.php' );
 
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
-
 if (!isset($CONFIGURED)) {
 	print "Unable to include the config.php file.  Make sure that . is in your PHP include path in the php.ini file.";
 	exit;
 }
 
-require($factsfile["english"]);
-if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
+require(PHPGEDVIEW_PKG_PATH.'languages/lang.en.php');
 
 if (isset($_SESSION["timediff"])) $time = time()-$_SESSION["timediff"];
 else $time = time();
@@ -67,10 +70,8 @@ if ($USE_RTL_FUNCTIONS) {
 
 if (!isset($action)) $action="";
 
-//-- make sure that they have user status before they can use this page
-//-- otherwise have them login again
-$uname = getUserName();
-if (empty($uname)) {
+$uname = $gBitUser->mUsername;
+if ( !$gBitUser->isValid() ) {
 	if (!empty($command)) {
 		if ($command=="user") {
 			header("Location: login.php?help_message=mygedview_login_help&url=".urlencode("index.php?command=user"));
@@ -79,7 +80,7 @@ if (empty($uname)) {
 	}
 	$command="gedcom";
 }
-else $user = getUser($uname);
+// else $user = fillUser($gBitUser);
 
 if (empty($command)) $command="user";
 
@@ -177,11 +178,11 @@ print "</td></tr></table><br />";		// Close off that table
 if (($command=="user")) {
 	print "<div align=\"center\" style=\"width: 99%;\">";
 	print_help_link("mygedview_customize_help", "qm");
-	print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=".getUserName()."&amp;command=user', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_page"]."</a>\n";
+	print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=".$gBitUser->mUsername."&amp;command=user', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_page"]."</a>\n";
 	print "</div>";
 }
 if (($command=="gedcom")) {
-	if (userIsAdmin(getUserName())) {
+	if ( $gBitUser->isAdmin() ) {
 		print "<div align=\"center\" style=\"width: 99%;\">";
 		print "<a href=\"javascript:;\" onclick=\"window.open('index_edit.php?name=$GEDCOM&amp;command=gedcom', '_blank', 'top=50,left=10,width=600,height=500,scrollbars=1,resizable=1');\">".$pgv_lang["customize_gedcom_page"]."</a>\n";
 		print "</div>";

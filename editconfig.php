@@ -24,155 +24,25 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: editconfig.php,v 1.3 2006/10/02 22:05:51 lsces Exp $
  */
 
+// Initialization
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+// leave manual config until we can move it to bitweaver table 
 require "config.php";
 require $confighelpfile["english"];
 if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 require $helptextfile["english"];
 if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
-if (!defined("DB_ERROR")) require_once('../util/adodb/adodb-pear.inc.php');
+
 if (empty($action)) $action="";
 if (!isset($LOGIN_URL)) $LOGIN_URL = "";
 if (!isset($COMMIT_COMMAND)) $COMMIT_COMMAND="";
-if ($CONFIGURED) {
-if (check_db(true)) {
-	//-- check if no users have been defined and create the main admin user
-	if (!adminUserExists()) {
-		print_header($pgv_lang["configure_head"]);
-		print "<span class=\"subheaders\">".$pgv_lang["configure"]."</span><br />";
-		print $pgv_lang["welcome_new"]."<br />";
-		if ($action=="createadminuser") {
-			if ($pass1==$pass2) {
-				$user = array();
-				$user["username"]=$username;
-				$user["firstname"]=$firstname;
-				$user["lastname"]=$lastname;
-				$user["password"]=crypt($pass1);
-				$user["canedit"] = array();
-				$user["rootid"] = array();
-				$user["gedcomid"] = array();
-				$user["canadmin"]=true;
-				$user["email"]=$emailadress;
-				$user["verified"] = "yes";
-				$user["verified_by_admin"] = "yes";
-				$user["pwrequested"] = "";
-				$user["theme"] = "";
-				$user["theme"] = "Y";
-				$user["language"] = $LANGUAGE;
-				$user["reg_timestamp"] = date("U");
-				$user["reg_hashcode"] = "";
-				$user["loggedin"] = "Y";
-				$user["sessiontime"] = 0;
-				$user["contactmethod"] = "messaging2";
-				$user["visibleonline"] = true;
-				$user["editaccount"] = true;
-				$user["default_tab"] = 0;
-				$user["comment"] = "";
-				$user["comment_exp"] = "";
-				$user["sync_gedcom"] = "N";
-				$user["relationship_privacy"] = "N";
-				$user["max_relation_path"] = 2;
-				$user["auto_accept"]=false;
-				$au = addUser($user);
-				if ($au) {
-					print $pgv_lang["user_created"];
-					print "<br />";
-					print "<a href=\"editgedcoms.php\">";
-					print $pgv_lang["click_here_to_continue"];
-					print "</a><br />";
-					$_SESSION["pgv_user"]=$username;
-					print_footer();
-					exit;
-				}
-				else {
-					print "<span class=\"error\">";
-					print $pgv_lang["user_create_error"];
-					print "<br /></span>";
-					print_footer();
-					exit;
-				}
-			}
-			else {
-				print "<span class=\"error\">";
-				print $pgv_lang["password_mismatch"];
-				print "<br /></span>";
-				print_footer();
-				exit;
-			}
-		}
-		else {
-			?>
-			<script language="JavaScript" type="text/javascript">
-				function checkform(frm) {
-					if (frm.username.value=="") {
-						alert("<?php print $pgv_lang["enter_username"]; ?>");
-						frm.username.focus();
-						return false;
-					}
-					if (frm.firstname.value=="") {
-						alert("<?php print $pgv_lang["enter_fullname"]; ?>");
-						frm.firstname.focus();
-						return false;
-					}
-					if (frm.lastname.value=="") {
-						alert("<?php print $pgv_lang["enter_fullname"]; ?>");
-						frm.lastname.focus();
-						return false;
-					}
-					if (frm.pass1.value=="") {
-						alert("<?php print $pgv_lang["enter_password"]; ?>");
-						frm.pass1.focus();
-						return false;
-					}
-					if (frm.pass2.value=="") {
-						alert("<?php print $pgv_lang["confirm_password"]; ?>");
-						frm.pass2.focus();
-						return false;
-					}
-					return true;
-				}
-			</script>
-			<form method="post" onsubmit="return checkform(this);">
-			<input type="hidden" name="action" value="createadminuser" />
-			<b><?php print $pgv_lang["default_user"];?></b><br />
-			<?php print $pgv_lang["about_user"];?><br /><br />
-			<table>
-				<tr><td align="right"><?php print $pgv_lang["username"];?></td><td><input type="text" name="username" /></td></tr>
-				<tr><td align="right"><?php print $pgv_lang["firstname"];?></td><td><input type="text" name="firstname" /></td></tr>
-				<tr><td align="right"><?php print $pgv_lang["lastname"];?></td><td><input type="text" name="lastname" /></td></tr>
-				<tr><td align="right"><?php print $pgv_lang["password"];?></td><td><input type="password" name="pass1" /></td></tr>
-				<tr><td align="right"><?php print $pgv_lang["confirm"];?></td><td><input type="password" name="pass2" /></td></tr>
-				<tr><td align="right"><?php print $pgv_lang["emailadress"];?></td><td><input type="text" name="emailadress" size="45" /></td></tr>
-			</table>
-			<input type="submit" value="<?php print $pgv_lang["create_user"]; ?>" />
-			</form>
-			<?php
-			print_footer();
-			exit;
-		}
-	}
-	if (!userIsAdmin(getUserName())) {
-		require_once("includes/functions_import.php");
-//		//-- upgrade the database
-//		setup_database(1);
-//		cleanup_database();
-   		header("Location: login.php?url=editconfig.php");
-		exit;
-	}
-}
-}
-else {
-	//-- set the default to sqlite for php 5+
-    if (empty($action) && !function_exists('mysql_connect')) {
-		if (phpversion()>=5) {
-			$DBTYPE="sqlite";
-			$DBNAME="index/phpgedview.db";
-        }
-     }
- }
-
 
 print_header($pgv_lang["configure_head"]);
 if ($action=="update" && !isset($security_user)) {

@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.5 2006/10/02 10:59:00 lsces Exp $
+ * $Id: authentication.php,v 1.6 2006/10/02 22:05:51 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -436,7 +436,7 @@ function addUser($newuser, $msg = "added") {
 //		}
 //		if (!isset($newuser["max_relation_path"])) $newuser["max_relation_path"] = $MAX_RELATION_PATH_LENGTH;
 //		if (!isset($newuser["auto_accept"])) $newuser["auto_accept"] = "N";
-		$newuser = db_prep($newuser);
+//		$newuser = db_prep($newuser);
 		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
 		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
 		$sql = "INSERT INTO ".$TBLPREFIX."users VALUES('".$DBCONN->escape($newuser["username"])."','".$DBCONN->escape($newuser["password"])."','".$DBCONN->escape($newuser["firstname"])."','".$DBCONN->escape($newuser["lastname"])."','".$DBCONN->escape(serialize($newuser["gedcomid"]))."','".$DBCONN->escape(serialize($newuser["rootid"]))."'";
@@ -495,7 +495,7 @@ function updateUser($username, $newuser, $msg = "updated") {
 	global $TBLPREFIX, $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
 
 	if (checkTableExists()) {
-		$newuser = db_prep($newuser);
+//		$newuser = db_prep($newuser);
 		$newuser['previous_username'] = $username;
 		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
 		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
@@ -562,7 +562,7 @@ function updateUser($username, $newuser, $msg = "updated") {
 function deleteUser($username, $msg = "deleted") {
 	global $TBLPREFIX, $users;
 	unset($users[$username]);
-	$username = db_prep($username);
+//	$username = db_prep($username);
 	$sql = "DELETE FROM ".$TBLPREFIX."users WHERE u_username='$username'";
 	$res = dbquery($sql);
 
@@ -640,16 +640,16 @@ function getUser($username) {
 
 	if (empty($username)) return false;
 	if (isset($users[$username])) return $users[$username];
-	$username = db_prep($username);
+//	$username = db_prep($username);
 	$sql = "SELECT * FROM ".$TBLPREFIX."users WHERE ";
 	if (stristr($DBTYPE, "mysql")!==false) $sql .= "BINARY ";
 	$sql .= "u_username='".$username."'";
 	$res = dbquery($sql, false);
 
-	if ($res===false || DB::isError($res)) return false;
+	if ($res===false) return false;
 	if ($res->numRows()==0) return false;
 	if ($res) {
-		while($user_row =& $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+		while($user_row =& $res->fetchRow()) {
 			if ($user_row) {
 				$user = array();
 				$user["username"]=$user_row["u_username"];
@@ -717,12 +717,12 @@ function getUserByGedcomId($id, $gedcom) {
 	if (empty($id) || empty($gedcom)) return false;
 
 	$user = false;
-	$id = db_prep($id);
+//	$id = db_prep($id);
 	$sql = "SELECT * FROM ".$TBLPREFIX."users WHERE ";
 	$sql .= "u_gedcomid LIKE '%".$id."%'";
 	$res = dbquery($sql, false);
 
-	if (DB::isError($res)) return false;
+	if (!$res) return false;
 	if ($res->numRows()==0) return false;
 	if ($res) {
 		while($user_row =& $res->fetchRow(DB_FETCHMODE_ASSOC)) {
@@ -1076,18 +1076,15 @@ function deleteFavorite($fv_id) {
  * @param string $username		the username to get the favorites for
  */
 function getUserFavorites($username) {
-	global $TBLPREFIX, $GEDCOMS, $DBCONN, $CONFIGURED;
+	global $TBLPREFIX, $GEDCOMS, $gGedcom, $CONFIGURED;
 
 	$favorites = array();
 	//-- make sure we don't try to look up favorites for unconfigured sites
-	if (!$CONFIGURED || DB::isError($DBCONN)) return $favorites;
+	if (!$CONFIGURED) return $favorites;
+	$sql = "SELECT * FROM ".$TBLPREFIX."favorites WHERE fv_username=?";
+	$result = $gGedcom->mDb->query($sql, array($username));
 
-	$sql = "SELECT * FROM ".$TBLPREFIX."favorites WHERE fv_username='".$DBCONN->escape($username)."'";
-	$res = dbquery($sql);
-
-	if (!$res) return $favorites;
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
+	while( $row = $result->fetchRow()){
 		if (isset($GEDCOMS[$row["fv_file"]])) {
 			$favorite = array();
 			$favorite["id"] = $row["fv_id"];
@@ -1101,7 +1098,6 @@ function getUserFavorites($username) {
 			$favorites[] = $favorite;
 		}
 	}
-	$res->free();
 	return $favorites;
 }
 

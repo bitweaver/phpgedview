@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.4 2006/10/02 10:59:00 lsces Exp $
+ * @version $Id: functions.php,v 1.5 2006/10/02 22:05:51 lsces Exp $
  */
 
 /**
@@ -52,34 +52,20 @@ if (isset($DEBUG)) $ERROR_LEVEL = 2;
  * @return boolean true if database successfully connected, false if there was an error
  */
 function check_db($ignore_previous=false) {
-	global $DBTYPE, $DBHOST, $DBUSER, $DBPASS, $DBNAME, $DBCONN, $TOTAL_QUERIES, $PHP_SELF, $DBPERSIST, $CONFIGURED;
+	global $gGedcom, $DBCONN, $TOTAL_QUERIES, $PHP_SELF, $DBPERSIST, $CONFIGURED;
 	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
 	if (!$ignore_previous) {
-		if ((is_object($DBCONN)) && (!DB::isError($DBCONN))) return true;
-		if (DB::isError($DBCONN)) {
+		if ($gGedcom->mDb->isValid()) return true;
+		if (!empty($gBitSystem->mDb->ErrorMsg )) {
 			return false;
 		}
 	}
 	//-- initialize query counter
 	$TOTAL_QUERIES = 0;
 
-	$dsn = array(
-		'phptype'  => $DBTYPE,
-		'username' => $DBUSER,
-		'password' => $DBPASS,
-		'hostspec' => $DBHOST,
-		'database' => $DBNAME
-	);
-
-	$options = array(
-		'debug' 	  => 3,
-		'portability' => DB_PORTABILITY_ALL,
-		'persistent'  => $DBPERSIST
-	);
-
-	$DBCONN = DB::connect($dsn, $options);
-	if (DB::isError($DBCONN)) {
+	$DBCONN = $gGedcom->mDb;
+	if (!empty($gGedcom->mDb->ErrorMsg )) {
 		//die($DBCONN->getMessage());
 		return false;
 	}

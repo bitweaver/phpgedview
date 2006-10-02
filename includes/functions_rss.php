@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_rss.php,v 1.3 2006/10/02 09:56:43 lsces Exp $
+ * @version $Id: functions_rss.php,v 1.4 2006/10/02 22:05:51 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  */
@@ -464,7 +464,7 @@ function getGedcomStats() {
 		//-- avg age at death
 		$sql = "select avg(death.d_year-birth.d_year) as age from ".$TBLPREFIX."dates as death, ".$TBLPREFIX."dates as birth where birth.d_gid=death.d_gid AND death.d_file='".$GEDCOMS[$GEDCOM]["id"]."' and birth.d_file=death.d_file AND birth.d_fact='BIRT' and death.d_fact='DEAT' AND birth.d_year>0 and death.d_year>0 and birth.d_type is null and death.d_type is null";
 		$tempsql = dbquery($sql, false);
-		if (!DB::isError($tempsql)) {
+		if ($tempsql) {
 			$res =& $tempsql;
 			$row =& $res->fetchRow();
 			$data .= $pgv_lang["stat_avg_age_at_death"] . " - " .sprintf("%d", $row["0"]) . "<br />\n";
@@ -477,7 +477,7 @@ function getGedcomStats() {
 		$sql = "SELECT f_numchil, f_id FROM ".$TBLPREFIX."families WHERE f_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY f_numchil DESC LIMIT 10";
 		//print $sql;
 		$tempsql = dbquery($sql);
-		if (!DB::isError($tempsql)) {
+		if ($tempsql) {
 			$res =& $tempsql;
 			$row =& $res->fetchRow();
 			$res->free();
@@ -492,7 +492,7 @@ function getGedcomStats() {
 		//-- avg number of children
 		$sql = "SELECT avg(f_numchil) from ".$TBLPREFIX."families WHERE f_file='".$GEDCOMS[$GEDCOM]["id"]."'";
 		$tempsql = dbquery($sql, false);
-		if (!DB::isError($tempsql)) {
+		if ($tempsql) {
 			$res =& $tempsql;
 			$row =& $res->fetchRow();
 			$data .= $pgv_lang["stat_average_children"]. " - " . sprintf("%.2f", $row["0"]) . "<br />\n";

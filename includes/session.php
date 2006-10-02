@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.6 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: session.php,v 1.7 2006/10/02 22:05:51 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -430,8 +430,8 @@ if (!$CONFIGURED) {
    &&(strstr($SCRIPT_NAME, "editconfig.php")===false)
    &&(strstr($SCRIPT_NAME, "config_download.php")===false)
    &&(strstr($SCRIPT_NAME, "editconfig_help.php")===false)) {
-      header("Location: editconfig.php");
-      exit;
+//      header("Location: editconfig.php");
+//     exit;
    }
 }
 //-- allow user to cancel
@@ -478,61 +478,6 @@ session_set_cookie_params($date, $pgv_path);
 if (($PGV_SESSION_TIME>0)&&(function_exists('session_cache_expire'))) session_cache_expire($PGV_SESSION_TIME/60);
 if (!empty($PGV_SESSION_SAVE_PATH)) session_save_path($PGV_SESSION_SAVE_PATH);
 if (isset($MANUAL_SESSION_START) && !empty($SID)) session_id($SID);
-
-@session_start();
-
-if((empty($SEARCH_SPIDER)) && (!empty($_SESSION['last_spider_name']))) { // user following a search engine listing in,
-	if (phpversion() >= '4.3.2') {			// so we want to give them the full page.
-		session_regenerate_id(); 		// FIX: PHP >= 4.3.2, how to do for earlier
-	}
-}
-
-if(!empty($SEARCH_SPIDER)) {
-	$spidertime = time();
-	$spiderdate = date("d.m.Y", $spidertime);
-	$_SESSION['last_spider_name'] = $SEARCH_SPIDER;
-	if(isset($_SESSION['spider_count']))
-		$spidercount = $_SESSION['spider_count'] + 1;
-	else {
-		$spidercount = 1;
-		//adds a message to the log that a new spider session is starting
-		require_once("includes/authentication.php");      // -- Loaded early so AddToLog works
-		$outstr = preg_replace('/\s\s+/', ' ', $SEARCH_SPIDER); // trim trailing whitespace
-		// Don't allow ' - ' because that is the log seperator
-		$outstr = preg_replace('/ - /', ' ', $outstr);
-		AddToLog("New search engine encountered: ->".$outstr."<-");
-	}
-	if(isset($_SESSION['last_spider_date'])) {
-		if($spiderdate != $_SESSION['last_spider_date']) {
-			//adds a message to the log that a new spider session is starting
-			require_once("includes/authentication.php");      // -- Loaded early so AddToLog works
-			$outstr = preg_replace('/\s\s+/', ' ', $SEARCH_SPIDER); // trim trailing whitespace
-			// Don't allow ' - ' because that is the log seperator
-			$outstr = preg_replace('/ - /', ' ', $outstr);
- 			AddToLog("Returning search engine last seen ".$_SESSION['spider_count']." times on ".$_SESSION['last_spider_date']." from ".$_SESSION['last_spider_ip']." ->".$outstr."<-");
-			$_SESSION['last_spider_date'] = $spiderdate;
-			$spidercount = 1;
-		}
-	}
-	$_SESSION['last_spider_date'] = $spiderdate;
-	$_SESSION['spider_count'] = $spidercount;
-	if(isset($_SERVER['REMOTE_ADDR']))
-		$_SESSION['last_spider_ip'] = $_SERVER['REMOTE_ADDR'];
-	if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE']))
-		$_SESSION['last_spider_lang'] = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
-}
-
-if((!empty($SEARCH_SPIDER)) && (!empty($_SESSION['pgv_user'])) && ($_SESSION['pgv_user'] != "")) {
-	$_SESSION['pgv_user'] = "";	// Don't allow search engine into user/admin mode.
-}
-
-if(!empty($SEARCH_SPIDER)) {
-	// FIX SANITIZE: What other data do we need to reset back to anonymous default?
-	// overkill to force a disk flush
-	$_SESSION['CLANGUAGE'] = "";	// Force language to gedcom default language.
-	session_write_close();
-	session_start();
-}
 
 //-- import the post, get, and cookie variable into the scope on new versions of php
 if (phpversion() >= '4.1') {
@@ -618,35 +563,6 @@ require_once(get_config_file());
 require_once("includes/functions_name.php");
 
 require_once("includes/authentication.php");      // -- load the authentication system
-
-/**
-  * Remote IP Address Banning
-  */
- if (file_exists($INDEX_DIRECTORY."banned.php")) {
- 	require($INDEX_DIRECTORY."banned.php");
- 	//loops through each ip in banned.php
-	foreach($banned as $key=>$value) {
-		//creates a regex foreach ip
-		$ipRegEx = '';
-		$arrayIP = explode('*', $value);
-		$ipRegEx .= $arrayIP[0];
-		if (count($arrayIP) > 1) {
-			for($i=1; $i < count($arrayIP); $i++) {
-				if($i == (count($arrayIP)))
-		 			$ipRegEx .= "\d{0,3}";
-	 			else
-	 				$ipRegEx .= "\d{0,3}".$arrayIP[$i];
-			}
-		}
-		//checks the remote ip address against each ip regex
-		if (preg_match('/^'.$ipRegEx.'/', $_SERVER['REMOTE_ADDR'])) {
-			//adds a message to the log and exits with an Access Denied header
- 			AddToLog("genservice.php blocked IP Address: ".$_SERVER['REMOTE_ADDR']." by regex: ".$ipRegEx);
- 			header("HTTP/1.1 403 Access Deniced");
- 			exit;
- 		}
-	}
- }
 
 /**
  * do not include print functions when using the gdbi protocol
@@ -829,8 +745,8 @@ if (!isset($USE_THUMBS_MAIN)) $USE_THUMBS_MAIN = false;
 if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
    &&(strstr($SCRIPT_NAME, "editconfig_help.php")===false)) {
    if ((!check_db())||(!adminUserExists())) {
-      header("Location: editconfig.php");
-      exit;
+//      header("Location: editconfig.php");
+//      exit;
    }
 
    if ((strstr($SCRIPT_NAME, "editconfig_gedcom.php")===false)
@@ -882,8 +798,8 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
 				if (stristr($url, "ged=")===false)  {
 					$url.="&ged=".$GEDCOM;
 				}
-				header("Location: login.php?url=".urlencode($url));
-				exit;
+//				header("Location: login.php?url=".urlencode($url));
+//				exit;
 			}
 		}
 	}

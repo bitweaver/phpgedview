@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.5 2006/10/02 10:33:26 lsces Exp $
+ * @version $Id: functions_db.php,v 1.6 2006/10/02 22:05:51 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -33,16 +33,13 @@ if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 	exit;
 }
 
-//-- load the PEAR:DB files
-require_once '../util/adodb/adodb-pear.inc.php';
-define("ADODB_ASSOC_CASE", 0);
-$ADODB_FETCH_MODE = ADODB_FETCH_ASSOC;
+//-- PEAR:DB replaced by ADOdb from bitweaver
 
 //-- set the REGEXP status of databases
 $REGEXP_DB = (stristr($DBTYPE,'mysql') !== false || $DBTYPE=='pgsql');
 
 //-- uncomment the following line to turn on sql query logging
-$SQL_LOG = true;
+$SQL_LOG = false;
 
 /**
  * query the database
@@ -62,10 +59,10 @@ function &dbquery($sql, $show_error=true, $count=0) {
 		return false;
 	}
 	//-- make sure a database connection has been established
-	if (DB::isError($DBCONN)) {
-		print $DBCONN->getCode()." ".$DBCONN->getMessage();
-		return $DBCONN;
-	}
+//	if (DB::isError($DBCONN)) {
+//		print $DBCONN->getCode()." ".$DBCONN->getMessage();
+//		return $DBCONN;
+//	}
 //print $TOTAL_QUERIES."-".$sql."<br />\n";
 //debug_print_backtrace()."<br /><br />";
 	if ($count == 0)
@@ -80,9 +77,9 @@ function &dbquery($sql, $show_error=true, $count=0) {
 		fwrite($fp, date("Y-m-d h:i:s")."\t".$_SERVER["SCRIPT_NAME"]."\t".$TOTAL_QUERIES."-".$sql."\r\n");
 		fclose($fp);
 	}
-	if (DB::isError($res)) {
-		if ($show_error) print "<span class=\"error\"><b>ERROR:".$res->getCode()." ".$res->getMessage()." <br />SQL:</b>".$res->getUserInfo()."</span><br /><br />\n";
-	}
+//	if (DB::isError($res)) {
+//		if ($show_error) print "<span class=\"error\"><b>ERROR:".$res->getCode()." ".$res->getMessage()." <br />SQL:</b>".$res->getUserInfo()."</span><br /><br />\n";
+//	}
 	return $res;
 }
 
@@ -102,7 +99,7 @@ function db_prep($item) {
 		return $item;
 	}
 	else {
-		if (DB::isError($DBCONN)) return $item;
+//		if (DB::isError($DBCONN)) return $item;
 		if (is_object($DBCONN)) return $DBCONN->escape($item);
 		//-- use the following commented line to convert between character sets
 		//return $DBCONN->escape(iconv("iso-8859-1", "UTF-8", $item));
@@ -140,14 +137,13 @@ function db_cleanup($item) {
  * @return bool return true if the gedcom has been imported otherwise returns false
  */
 function check_for_import($ged) {
-	global $TBLPREFIX, $BUILDING_INDEX, $DBCONN, $GEDCOMS;
+	global $TBLPREFIX, $BUILDING_INDEX, $DBCONN, $GEDCOMS, $gGedcom;
 
-	$sql = "SELECT count(i_id) FROM ".$TBLPREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$ged]["id"])."'";
-	$res = dbquery($sql, false);
+	$sql = "SELECT count(i_id) FROM ".$TBLPREFIX."individuals WHERE i_file=?";
+	$res = $gGedcom->mDb->query($sql, array($GEDCOMS[$ged]["id"]));
 
-	if (!DB::isError($res)) {
-		$row =& $res->fetchRow();
-		$res->free();
+	if ($res) {
+		$row = $res->fetchRow();
 		if ($row['count']>0) return true;
 	}
 	return false;
@@ -166,17 +162,17 @@ function check_for_import($ged) {
  */
 function find_family_record($famid, $gedfile="") {
 	global $TBLPREFIX;
-	global $GEDCOMS, $GEDCOM, $famlist, $DBCONN;
+	global $GEDCOMS, $GEDCOM, $famlist, $DBCONN, $gGedcom;
 
 	if (empty($famid)) return false;
 	if (empty($gedfile)) $gedfile = $GEDCOM;
 
 	if (isset($famlist[$famid]["gedcom"])&&($famlist[$famid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $famlist[$famid]["gedcom"];
 
-	$sql = "SELECT f_gedcom, f_file, f_husb, f_wife FROM ".$TBLPREFIX."families WHERE f_id LIKE '".$DBCONN->escape($famid)."' AND f_file='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT f_gedcom, f_file, f_husb, f_wife FROM ".$TBLPREFIX."families WHERE f_id LIKE ? AND f_file=?";
+	$res = $gGedcom->mDb->query($sql, array($famid,$GEDCOMS[$gedfile]["id"]));
 
-	$row =& $res->fetchRow();
+	$row = $res->fetchRow();
 
 	$famlist[$famid]["gedcom"] = $row['f_gedcom'];
 	$famlist[$famid]["gedfile"] = $row['f_file'];
@@ -184,7 +180,6 @@ function find_family_record($famid, $gedfile="") {
 	$famlist[$famid]["wife"] = $row['f_wife'];
 	find_person_record($row['f_husb']);
 	find_person_record($row['f_wife']);
-	$res->free();
 	return $row['f_gedcom'];
 }
 
@@ -202,7 +197,7 @@ function find_person_record($pid, $gedfile="") {
 	global $pgv_lang;
 	global $TBLPREFIX;
 	global $GEDCOM, $GEDCOMS;
-	global $BUILDING_INDEX, $indilist, $DBCONN;
+	global $BUILDING_INDEX, $indilist, $DBCONN, $gGedcom;
 
 	if (empty($pid)) return false;
 	if (empty($gedfile)) $gedfile = $GEDCOM;
@@ -212,10 +207,10 @@ function find_person_record($pid, $gedfile="") {
 	// cache is unreliable for use with different gedcoms in user favorites (sjouke)
 	if ((isset($indilist[$pid]["gedcom"]))&&($indilist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $indilist[$pid]["gedcom"];
 
-	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_letter, i_surname FROM ".$TBLPREFIX."individuals WHERE i_id LIKE '".$DBCONN->escape($pid)."' AND i_file='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_letter, i_surname FROM ".$TBLPREFIX."individuals WHERE i_id LIKE ? AND i_file=?";
+	$res = $gGedcom->mDb->query($sql, array( $pid ,$GEDCOMS[$gedfile]["id"] ));
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		if ($res->numRows()==0) {
 			return false;
 		}
@@ -385,7 +380,7 @@ function find_media_record($rid, $gedfile='') {
 
 	$sql = "SELECT * FROM ".$TBLPREFIX."media WHERE m_media LIKE '".$DBCONN->escape($rid)."' AND m_gedfile='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
 	$res = dbquery($sql);
-	if (DB::isError($res)) return false;
+	if (!$res) return false;
 	if ($res->numRows()!=0) {
 		$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
 		$row = db_cleanup($row);
@@ -413,7 +408,7 @@ function find_first_person() {
 	$sql = "SELECT i_id FROM ".$TBLPREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY i_id";
 	if ($DBTYPE!="sqlite") $sql.=" LIMIT 1";
 	$row = $DBCONN->getRow($sql);
-	if (!DB::isError($row)) return $row['i_id'];
+	if (!$row) return $row['i_id'];
 	else return "I1";
 }
 
@@ -429,12 +424,12 @@ function find_first_person() {
  * @return int	1 if the person is dead, 0 if living
  */
 function update_isdead($gid, $indi) {
-	global $TBLPREFIX, $USE_RIN, $indilist, $DBCONN;
+	global $TBLPREFIX, $USE_RIN, $indilist, $DBCONN, $gGedcom;
 	$isdead = 0;
 	$isdead = is_dead($indi["gedcom"]);
 	if (empty($isdead)) $isdead = 0;
-	$sql = "UPDATE ".$TBLPREFIX."individuals SET i_isdead=$isdead WHERE i_id LIKE '".$DBCONN->escape($gid)."' AND i_file='".$DBCONN->escape($indi["gedfile"])."'";
-	$res = dbquery($sql);
+	$sql = "UPDATE ".$TBLPREFIX."individuals SET i_isdead=$isdead WHERE i_id LIKE ? AND i_file=?";
+	$res = $gGedcom->mDb->query($sql, array($gid,$indi["gedfile"]));
 
 	if (isset($indilist[$gid])) $indilist[$gid]["isdead"] = $isdead;
 	return $isdead;
@@ -850,7 +845,7 @@ function search_indis($query, $allgeds=false, $ANDOR="AND") {
 //	print $sql;
 	$res = dbquery($sql);
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		while($row =& $res->fetchRow()){
 			$row = db_cleanup($row);
 			if (count($allgeds) > 1) {
@@ -1045,7 +1040,7 @@ function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
 	//print $sql;
 	$res = dbquery($sql);
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 			if (preg_match("/\w+:\w+/", $row['d_gid'])==0) {
 				$changes[] = $row;
@@ -1101,7 +1096,7 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 //	print $sql;
 	$res = dbquery($sql);
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		while($row =& $res->fetchRow()){
 			$row = db_cleanup($row);
 			if ($allgeds) {
@@ -1817,17 +1812,17 @@ function get_indi_alpha() {
 	global $CHARACTER_SET, $TBLPREFIX, $GEDCOM, $LANGUAGE, $SHOW_MARRIED_NAMES, $DBCONN, $GEDCOMS;
 	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
-
+	global $gGedcom;
 	$indialpha = array();
 
 	$danishex = array("OE", "AE", "AA");
 	$danishFrom = array("AA", "AE", "OE");
 	$danishTo = array("Å", "Æ", "Ø");
 
-	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".$TBLPREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY 1";
-	$res = dbquery($sql);
+	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".$TBLPREFIX."individuals WHERE i_file=? ORDER BY 1";
+	$res = $gGedcom->mDb->query($sql,array($GEDCOMS[$GEDCOM]["id"]));
 
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
 		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") $letter = str_replace($danishFrom, $danishTo, $letter);
 		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
@@ -1851,12 +1846,12 @@ function get_indi_alpha() {
 	}
 	$res->free();
 
-	$sql = "SELECT DISTINCT n_letter AS alpha FROM ".$TBLPREFIX."names WHERE n_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."'";
+	$sql = "SELECT DISTINCT n_letter AS alpha FROM ".$TBLPREFIX."names WHERE n_file=? ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= " AND n_type!='C'";
 	$sql .= " ORDER BY 1";
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql, array($GEDCOMS[$GEDCOM]["id"]));
 
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
 		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") $letter = str_replace($danishFrom, $danishTo, $letter);
 		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
@@ -1972,7 +1967,8 @@ function get_alpha_indis($letter) {
 	global $TBLPREFIX, $GEDCOM, $LANGUAGE, $indilist, $surname, $SHOW_MARRIED_NAMES, $DBCONN, $GEDCOMS;
 	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
-
+	global $gGedcom;
+	
 	$tindilist = array();
 
 	$danishex = array("OE", "AE", "AA");
@@ -1986,14 +1982,14 @@ function get_alpha_indis($letter) {
 		if ($letter == "Ø") $text = "OE";
 		else if ($letter == "Æ") $text = "AE";
 		else if ($letter == "Å") $text = "AA";
-		if (isset($text)) $sql .= "(i_letter = '".$DBCONN->escape($letter)."' OR i_letter = '".$DBCONN->escape($text)."') ";
-		else if ($letter=="A") $sql .= "i_letter LIKE '".$DBCONN->escape($letter)."' ";
-		else $sql .= "i_letter LIKE '".$DBCONN->escape($letter)."%' ";
+		if (isset($text)) $sql .= "(i_letter = '".$letter."' OR i_letter = '".$text."') ";
+		else if ($letter=="A") $sql .= "i_letter LIKE '".$letter."' ";
+		else $sql .= "i_letter LIKE '".$letter."%' ";
 		$checkDictSort = false;
 	} else if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
 		$isMultiLetter = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($isMultiLetter!==false) {
-			$sql .= "i_letter = '".$DBCONN->escape($letter)."' ";
+			$sql .= "i_letter = '".$letter."' ";
 			$checkDictSort = false;
 		}
 	}
@@ -2003,40 +1999,39 @@ function get_alpha_indis($letter) {
 			$inArray = strpos($UCDiacritStrip, $letter);
 			if ($inArray!==false) {
 				while (true) {
-					$text .= " OR i_letter = '".$DBCONN->escape(substr($UCDiacritWhole, ($inArray+$inArray), 2))."'";
+					$text .= " OR i_letter = '".substr($UCDiacritWhole, ($inArray+$inArray), 2)."'";
 					$inArray ++;
 					if ($inArray > strlen($UCDiacritStrip)) break;
 					if (substr($UCDiacritStrip, $inArray, 1)!=$letter) break;
 				}
-				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(i_letter LIKE '".$DBCONN->escape($letter)."%'".$text.") ";
-				else $sql .= "(i_letter = '".$DBCONN->escape($letter)."'".$text.") ";
+				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(i_letter LIKE '".$letter."%'".$text.") ";
+				else $sql .= "(i_letter = '".$letter."'".$text.") ";
 			} else {
 				$inArray = strpos($LCDiacritStrip, $letter);
 				if ($inArray!==false) {
 					while (true) {
-						$text .= " OR i_letter = '".$DBCONN->escape(substr($LCDiacritWhole, ($inArray+$inArray), 2))."'";
+						$text .= " OR i_letter = '".substr($LCDiacritWhole, ($inArray+$inArray), 2)."'";
 						$inArray ++;
 						if ($inArray > strlen($LCDiacritStrip)) break;
 						if (substr($LCDiacritStrip, $inArray, 1)!=$letter) break;
 					}
-					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(i_letter LIKE '".$DBCONN->escape($letter)."%'".$text.") ";
-					else $sql .= "(i_letter = '".$DBCONN->escape($letter)."'".$text.") ";
+					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(i_letter LIKE '".$letter."%'".$text.") ";
+					else $sql .= "(i_letter = '".$letter."'".$text.") ";
 				}
 			}
 		}
 		if ($text=="") {
-			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "i_letter LIKE '".$DBCONN->escape($letter)."%'";
-			else $sql .= "i_letter = '".$DBCONN->escape($letter)."'";
+			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "i_letter LIKE '".$letter."%'";
+			else $sql .= "i_letter = '".$letter."'";
 		}
 	}
 
 	//-- add some optimization if the surname is set to speed up the lists
-	if (!empty($surname)) $sql .= "AND i_surname LIKE '%".$DBCONN->escape($surname)."%' ";
-	$sql .= "AND i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY i_name";
-	$res = dbquery($sql);
+	if (!empty($surname)) $sql .= "AND i_surname LIKE '%".$surname."%' ";
+	$sql .= "AND i_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY i_name";
+	$res = $gGedcom->mDb->query($sql);
 
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
+	while( $row = $res->fetchRow() ){
 		//if (substr($row["i_letter"], 0, 1)==substr($letter, 0, 1)||(isset($text)?substr($row["i_letter"], 0, 1)==substr($text, 0, 1):FALSE)){
 			$indi = array();
 			$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], 'P'));
@@ -2057,14 +2052,14 @@ function get_alpha_indis($letter) {
 		if ($letter == "Ø") $text = "OE";
 		else if ($letter == "Æ") $text = "AE";
 		else if ($letter == "Å") $text = "AA";
-		if (isset($text)) $sql .= "(n_letter = '".$DBCONN->escape($letter)."' OR n_letter = '".$DBCONN->escape($text)."') ";
-		else if ($letter=="A") $sql .= "n_letter LIKE '".$DBCONN->escape($letter)."' ";
-		else $sql .= "n_letter LIKE '".$DBCONN->escape($letter)."%' ";
+		if (isset($text)) $sql .= "(n_letter = '".$letter."' OR n_letter = '".$text."') ";
+		else if ($letter=="A") $sql .= "n_letter LIKE '".$letter."' ";
+		else $sql .= "n_letter LIKE '".$letter."%' ";
 		$checkDictSort = false;
 	} else if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
 		$isMultiLetter = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($isMultiLetter!==false) {
-			$sql .= "n_letter = '".$DBCONN->escape($letter)."' ";
+			$sql .= "n_letter = '".$letter."' ";
 			$checkDictSort = false;
 		}
 	}
@@ -2074,40 +2069,39 @@ function get_alpha_indis($letter) {
 			$inArray = strpos($UCDiacritStrip, $letter);
 			if ($inArray!==false) {
 				while (true) {
-					$text .= " OR n_letter = '".$DBCONN->escape(substr($UCDiacritWhole, ($inArray+$inArray), 2))."'";
+					$text .= " OR n_letter = '".substr($UCDiacritWhole, ($inArray+$inArray), 2)."'";
 					$inArray ++;
 					if ($inArray > strlen($UCDiacritStrip)) break;
 					if (substr($UCDiacritStrip, $inArray, 1)!=$letter) break;
 				}
-				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(n_letter LIKE '".$DBCONN->escape($letter)."%'".$text.")";
-				else $sql .= "(n_letter = '".$DBCONN->escape($letter)."'".$text.")";
+				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(n_letter LIKE '".$letter."%'".$text.")";
+				else $sql .= "(n_letter = '".$letter."'".$text.")";
 			} else {
 				$inArray = strpos($LCDiacritStrip, $letter);
 				if ($inArray!==false) {
 					while (true) {
-						$text .= " OR n_letter = '".$DBCONN->escape(substr($LCDiacritWhole, ($inArray+$inArray), 2))."'";
+						$text .= " OR n_letter = '".substr($LCDiacritWhole, ($inArray+$inArray), 2)."'";
 						$inArray ++;
 						if ($inArray > strlen($LCDiacritStrip)) break;
 						if (substr($LCDiacritStrip, $inArray, 1)!=$letter) break;
 					}
-					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(n_letter LIKE '".$DBCONN->escape($letter)."%'".$text.")";
-					else $sql .= "(n_letter = '".$DBCONN->escape($letter)."'".$text.")";
+					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(n_letter LIKE '".$letter."%'".$text.")";
+					else $sql .= "(n_letter = '".$letter."'".$text.")";
 				}
 			}
 		}
 		if ($text=="") {
-			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "n_letter LIKE '".$DBCONN->escape($letter)."%'";
-			else $sql .= "n_letter = '".$DBCONN->escape($letter)."'";
+			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "n_letter LIKE '".$letter."%'";
+			else $sql .= "n_letter = '".$letter."'";
 		}
 	}
 	//-- add some optimization if the surname is set to speed up the lists
-	if (!empty($surname)) $sql .= "AND n_surname LIKE '%".$DBCONN->escape($surname)."%' ";
+	if (!empty($surname)) $sql .= "AND n_surname LIKE '%".$surname."%' ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= "AND n_type!='C' ";
-	$sql .= "AND i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY i_name";
-	$res = dbquery($sql);
+	$sql .= "AND i_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY i_name";
+	$res = $gGedcom->mDb->query($sql);
 
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
+	while( $row = $res->fetchRow() ){
 		//if (substr($row["n_letter"], 0, strlen($letter))==$letter||(isset($text)?substr($row["n_letter"], 0, strlen($text))==$text:FALSE)){
 			if (!isset($indilist[$row["i_id"]])) {
 				$indi = array();
@@ -2139,15 +2133,13 @@ function get_alpha_indis($letter) {
  * @see http://www.phpgedview.net/devdocs/arrays.php#indilist
  */
 function get_surname_indis($surname) {
-	global $TBLPREFIX, $GEDCOM, $LANGUAGE, $indilist, $SHOW_MARRIED_NAMES, $DBCONN, $GEDCOMS;
+	global $TBLPREFIX, $GEDCOM, $LANGUAGE, $indilist, $SHOW_MARRIED_NAMES, $DBCONN, $GEDCOMS, $gGedcom;
 
 	$tindilist = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."individuals WHERE i_surname LIKE '".$DBCONN->escape($surname)."' ";
-	$sql .= "AND i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT * FROM ".$TBLPREFIX."individuals WHERE i_surname LIKE ? AND i_file=?";
+	$res = $gGedcom->mDb->query($sql, array( $surname, $GEDCOMS[$GEDCOM]["id"] ));
 
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
+	while( $row =& $res->fetchRow() ){
 		$indi = array();
 		$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], "P"));
 		$indi["isdead"] = $row["i_isdead"];
@@ -2156,15 +2148,13 @@ function get_surname_indis($surname) {
 		$indilist[$row["i_id"]] = $indi;
 		$tindilist[$row["i_id"]] = $indilist[$row["i_id"]];
 	}
-	$res->free();
 
-	$sql = "SELECT i_id, i_name, i_file, i_isdead, i_gedcom, i_letter, i_surname, n_letter, n_name, n_surname, n_letter, n_type FROM ".$TBLPREFIX."individuals, ".$TBLPREFIX."names WHERE i_id=n_gid AND i_file=n_file AND n_surname LIKE '".$DBCONN->escape($surname)."' ";
+	$sql = "SELECT i_id, i_name, i_file, i_isdead, i_gedcom, i_letter, i_surname, n_letter, n_name, n_surname, n_letter, n_type FROM ".$TBLPREFIX."individuals, ".$TBLPREFIX."names WHERE i_id=n_gid AND i_file=n_file AND n_surname LIKE ? ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= "AND n_type!='C' ";
-	$sql .= "AND i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY n_surname";
-	$res = dbquery($sql);
+	$sql .= "AND i_file=? ORDER BY n_surname";
+	$res = $gGedcom->mDb->query($sql, array( $surname, $GEDCOMS[$GEDCOM]["id"] ));
 
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
+	while( $row = $res->fetchRow() ){
 		if (isset($indilist[$row["i_id"]])) {
 			$indilist[$row["i_id"]]["names"][] = array($row["n_name"], $row["n_letter"], $row["n_surname"], $row["n_type"]);
 			$tindilist[$row["i_id"]] = $indilist[$row["i_id"]];
@@ -2179,7 +2169,6 @@ function get_surname_indis($surname) {
 			$tindilist[$row["i_id"]] = $indilist[$row["i_id"]];
 		}
 	}
-	$res->free();
 	return $tindilist;
 }
 
@@ -2503,7 +2492,7 @@ function get_top_surnames($num) {
 	$sql = "SELECT COUNT(i_surname), i_surname FROM ".$TBLPREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' GROUP BY i_surname ORDER BY 1 DESC";
 	$res = dbquery($sql);
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		while($row =& $res->fetchRow()) {
 			if (isset($surnames[str2upper($row['i_surname'])]["match"])) $surnames[str2upper($row['i_surname'])]["match"] += $row['count'];
 			else {
@@ -2516,7 +2505,7 @@ function get_top_surnames($num) {
 	$sql = "SELECT COUNT(n_surname), n_surname FROM ".$TBLPREFIX."names WHERE n_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' AND n_type!='C' GROUP BY n_surname ORDER BY 1 DESC";
 	$res = dbquery($sql);
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		while($row =& $res->fetchRow()) {
 			if (isset($surnames[str2upper($row['n_surname'])]["match"])) $surnames[str2upper($row['n_surname'])]["match"] += $row['count'];
 			else {
@@ -2549,7 +2538,7 @@ function get_next_id($table, $field) {
 	$sql = "SELECT MAX($field) FROM ".$TBLPREFIX.$table;
 	$res = dbquery($sql);
 
-	if (!DB::isError($res)) {
+	if ($res) {
 		$row = $res->fetchRow();
 		$res->free();
 		$newid = $row['max'];

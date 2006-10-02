@@ -17,13 +17,22 @@
  * Beneath the details list is the option to skip the surname list or show it.
  * Depending on the current status of the list.
  *
- * $Id: indilist.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * $Id: indilist.php,v 1.3 2006/10/02 22:05:51 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
 
-global $SEARCH_SPIDER;
+// Initialization
+require_once( '../bit_setup_inc.php' );
 
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
 print_header($pgv_lang["individual_list"]);

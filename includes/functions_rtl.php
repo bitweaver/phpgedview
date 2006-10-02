@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_rtl.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: functions_rtl.php,v 1.3 2006/10/02 22:05:51 lsces Exp $
  */
 
 /**
@@ -245,25 +245,6 @@ function ltr_string($name) {
 }
 
 /**
- * convert HTML entities to to their original characters
- *
- * original found at http://www.php.net/manual/en/function.get-html-translation-table.php
- * @see http://www.php.net/manual/en/function.get-html-translation-table.php
- * @param string $string	the string to remove the entities from
- * @return string	the string with entities converted
- */
-function unhtmlentities ($string)  {
-	$trans_tbl = get_html_translation_table (HTML_ENTITIES);
-	$trans_tbl = array_flip ($trans_tbl);
-	$ret = strtr ($string, $trans_tbl);
-	$ret = preg_replace('/&#(\d+);/me', "chr('\\1')",$ret);
-	//- temporarily remove &lrm; until they can be better handled later
-	//$ret = preg_replace(array('/&lrm;/','/&rlm;/'), array('',''), $ret);
-	$ret = preg_replace(array('/&lrm;/','/&rlm;/'), array("\xE2\x80\x8E", "\xE2\x80\x8F"), $ret);
-	return $ret;
-} 
-
-/**
  * process a string according to bidirectional rules
  *
  * this function will take a text string and reverse it for RTL languages
@@ -279,7 +260,7 @@ function bidi_text($text) {
 		global $RTLOrd;
 		
 		// דו"ח אישי
-		//קראטוןםפ שדגכעיחלךף זסבה� מצתץ עברי איתה מאיה (אתקה) שם משפחה ‎
+		//קראטוןםפ שדגכעיחלךף זסבה� מצתץ עברי איתה מאיה (אתקה) שם משפחה ‎
 		//מספר מזהה (SSN)
 		
 		$found = false;
