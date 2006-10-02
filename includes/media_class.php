@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: media_class.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: media_class.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
  */
 
 require_once('includes/gedcomrecord.php');
@@ -47,11 +47,11 @@ class Media extends GedcomRecord {
 	 * @return mixed  returns the ID for the for the matching media or false if not found
 	 */
 	function in_obje_list(&$obje) {
-		global $TBLPREFIX, $GEDCOMS, $GEDCOM, $FILE, $DBCONN;
+		global $GEDCOMS, $GEDCOM, $FILE, $DBCONN;
 		
 		if (is_null($obje)) return false;
 		if (empty($FILE)) $FILE = $GEDCOM;
-		$sql = "SELECT m_media FROM ".$TBLPREFIX."media WHERE m_file='".$DBCONN->escape($obje->file)."' AND m_titl LIKE '".$DBCONN->escape($obje->title)."' AND m_gedfile=".$GEDCOMS[$FILE]['id'];
+		$sql = "SELECT m_media FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file='".$DBCONN->escape($obje->file)."' AND m_titl LIKE '".$DBCONN->escape($obje->title)."' AND m_gedfile=".$GEDCOMS[$FILE]['id'];
 		$res = dbquery($sql);
 	
 		if ($res->numRows()>0) {

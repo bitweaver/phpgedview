@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.3 2006/10/02 23:04:16 lsces Exp $
  */
 
 require "config.php";
@@ -121,7 +121,7 @@ else {
 function print_gedcom() {
 	global $GEDCOMS, $GEDCOM, $ged, $convert, $remove, $zip, $VERSION, $VERSION_RELEASE, $pgv_lang, $gedout;
 	global $privatize_export, $privatize_export_level;
-	global $TBLPREFIX;
+	global PHPGEDVIEW_DB_PREFIX;
 
 	if ($privatize_export == "yes") {
 		create_export_user($privatize_export_level);
@@ -182,7 +182,7 @@ function print_gedcom() {
 	if ($zip == "yes") fwrite($gedout, $head);
 	else print $head;
 	
-	$sql = "SELECT i_gedcom FROM ".$TBLPREFIX."individuals WHERE i_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY i_id";
+	$sql = "SELECT i_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY i_id";
 	$res = dbquery($sql); 
 	while($row = $res->fetchRow()) {
 		$rec = trim($row['i_gedcom'])."\r\n";
@@ -194,7 +194,7 @@ function print_gedcom() {
 	}
 	$res->free();
 	
-	$sql = "SELECT f_gedcom FROM ".$TBLPREFIX."families WHERE f_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY f_id";
+	$sql = "SELECT f_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY f_id";
 	$res = dbquery($sql); 
 	while($row = $res->fetchRow()) {
 		$rec = trim($row['f_gedcom'])."\r\n";
@@ -206,7 +206,7 @@ function print_gedcom() {
 	}
 	$res->free();
 	
-	$sql = "SELECT s_gedcom FROM ".$TBLPREFIX."sources WHERE s_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY s_id";
+	$sql = "SELECT s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY s_id";
 	$res = dbquery($sql); 
 	while($row = $res->fetchRow()) {
 		$rec = trim($row['s_gedcom'])."\r\n";
@@ -218,7 +218,7 @@ function print_gedcom() {
 	}
 	$res->free();
 	
-	$sql = "SELECT o_gedcom, o_type FROM ".$TBLPREFIX."other WHERE o_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY o_id";
+	$sql = "SELECT o_gedcom, o_type FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=".$GEDCOMS[$GEDCOM]['id']." ORDER BY o_id";
 	$res = dbquery($sql); 
 	while($row = $res->fetchRow()) {
 		$rec = trim($row['o_gedcom'])."\r\n";
@@ -233,7 +233,7 @@ function print_gedcom() {
 	}
 	$res->free();
 	
-	$sql = "SELECT o_gedcom FROM ".$TBLPREFIX."media WHERE m_gedfile=".$GEDCOMS[$GEDCOM]['id']." ORDER BY m_media";
+	$sql = "SELECT o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=".$GEDCOMS[$GEDCOM]['id']." ORDER BY m_media";
 	$res = dbquery($sql); 
 	while($row = $res->fetchRow()) {
 		$rec = trim($row['o_gedcom'])."\r\n";

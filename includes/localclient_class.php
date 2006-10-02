@@ -20,7 +20,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: localclient_class.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: localclient_class.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
  */
 
 require_once 'includes/serviceclient_class.php';
@@ -57,7 +57,7 @@ class LocalClient extends ServiceClient {
 	 */
 	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
 		global $FILE, $GEDCOM, $indilist, $famlist, $sourcelist, $otherlist;
-		global $TBLPREFIX, $GEDCOMS;
+		global $GEDCOMS;
 		
 		$localkey = $this->xref.":".$xref;
 		//-- check the memory cache

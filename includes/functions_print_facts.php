@@ -545,7 +545,7 @@ function print_fact_sources($factrec, $level) {
 
 //-- Print the links to multi-media objects
 function print_media_links($factrec, $level,$pid='') {
-	 global $MULTI_MEDIA, $TEXT_DIRECTION, $TBLPREFIX, $GEDCOMS, $MEDIATYPE;
+	 global $MULTI_MEDIA, $TEXT_DIRECTION, $GEDCOMS, $MEDIATYPE;
 	 global $pgv_lang, $factarray, $SEARCH_SPIDER, $view;
 	 global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $MEDIA_EXTERNAL, $THUMBNAIL_WIDTH;
 	 global $PGV_IMAGE_DIR, $PGV_IMAGES;
@@ -559,7 +559,7 @@ function print_media_links($factrec, $level,$pid='') {
 	 while ($objectNum < count($omatch)) {
 		$media_id = preg_replace("/@/", "", trim($omatch[$objectNum][1]));
 		if (displayDetailsById($media_id, "OBJE")) {
-			$sql = "SELECT * FROM ".$TBLPREFIX."media where m_media = '".$media_id."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
+			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$media_id."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
 			$tempsql = dbquery($sql);
 			$res =& $tempsql;
 			$row =& $res->fetchRow(DB_FETCHMODE_ASSOC);
@@ -1028,7 +1028,7 @@ function print_main_notes($factrec, $level, $pid, $linenum) {
  * @param boolean $related	Whether or not to grab media from related records
  */
 function print_main_media($pid, $level=1, $related=false) {
-	global $MULTI_MEDIA, $TBLPREFIX, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS, $MEDIA_EXTERNAL;
+	global $MULTI_MEDIA, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS, $MEDIA_EXTERNAL;
 	global $pgv_lang, $pgv_changes, $factarray, $view;
 	global $GEDCOMS, $GEDCOM, $MEDIATYPE, $pgv_changes, $DBCONN, $DBTYPE;
 	global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION;
@@ -1056,7 +1056,7 @@ function print_main_media($pid, $level=1, $related=false) {
 
 	$media_found = false;
 	$sqlmm = "SELECT ";
-	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping where ";
+	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM ".PHPGEDVIEW_DB_PREFIX."media, ".PHPGEDVIEW_DB_PREFIX."media_mapping where ";
 	$sqlmm .= "mm_gid IN (";
 	$i=0;
 	foreach($ids as $key=>$id) {

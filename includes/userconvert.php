@@ -12,7 +12,7 @@ function fillUser($gBitUser) {
 	if (empty($username)) return false;
 	if (isset($users[$username])) return $users[$username];
 //	$username = db_prep($username);
-	$sql = "SELECT * FROM ".$TBLPREFIX."users WHERE ";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
 	if (stristr($DBTYPE, "mysql")!==false) $sql .= "BINARY ";
 	$sql .= "u_username='".$username."'";
 	$res = dbquery($sql, false);

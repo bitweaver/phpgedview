@@ -25,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: addmedia.php,v 1.3 2006/10/02 23:04:16 lsces Exp $
  */
 
 /**
@@ -256,7 +256,7 @@ if ($action=="newentry") {
 			//-- check if the file is used in more than one gedcom
 			//-- do not allow it to be moved or renamed if it is
 			$myFile = str_replace($MEDIA_DIRECTORY, "", $oldFolder.$oldFilename);
-			$sql = "SELECT * FROM ".$TBLPREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
+			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
 			$res = dbquery($sql);
 			$onegedcom = true;
 			while($row=$res->fetchRow(DB_FETCHMODE_ASSOC)) {
@@ -396,7 +396,7 @@ if ($action == "update") {
 	//-- check if the file is used in more than one gedcom
 	//-- do not allow it to be moved or renamed if it is
 	$myFile = str_replace($MEDIA_DIRECTORY, "", $oldFolder.$oldFilename);
-	$sql = "SELECT * FROM ".$TBLPREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
 	$res = dbquery($sql);
 	$onegedcom = true;
 	while($row=$res->fetchRow(DB_FETCHMODE_ASSOC)) {

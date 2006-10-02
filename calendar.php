@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.3 2006/10/02 22:47:24 lsces Exp $
+ * $Id: calendar.php,v 1.4 2006/10/02 23:04:16 lsces Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -325,7 +325,7 @@ print_header($pgv_lang["anniversary_calendar"]);
 print "<div style=\" text-align: center;\" id=\"calendar_page\">\n";
 
 	//-- moved here from session.php, should probably be moved somewhere else still
-	$sql = "SELECT i_id FROM ".$TBLPREFIX."individuals where i_file='".$GEDCOMS[$GEDCOM]["id"]."' AND i_gedcom like '%@#DHEBREW@%'";
+	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals where i_file='".$GEDCOMS[$GEDCOM]["id"]."' AND i_gedcom like '%@#DHEBREW@%'";
 	$tempsql = $gGedcom->mDb->query($sql);
 	$res = $tempsql;
 	if ($res->numRows()>0) $HEBREWFOUND[$GEDCOM] = true;

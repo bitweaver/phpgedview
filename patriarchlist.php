@@ -32,7 +32,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: patriarchlist.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: patriarchlist.php,v 1.3 2006/10/02 23:04:16 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -44,7 +44,7 @@ $patrialpha = array();
 
 
 function indi2roots() {
-	//--global $TBLPREFIX, $GEDCOM;
+	//--global PHPGEDVIEW_DB_PREFIX, $GEDCOM;
 	global $ct,$patrilist,$patrialpha;
 
 	$my2indilist= array();

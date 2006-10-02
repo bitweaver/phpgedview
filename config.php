@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.3 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: config.php,v 1.4 2006/10/02 23:04:16 lsces Exp $
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -34,13 +34,7 @@ if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
 	exit;
 }
 
-$DBTYPE = "firebird";							//-- type of database to connect when using the PEAR:DB module
-$DBHOST = "localhost";							//-- Host where MySQL database is kept
-$DBUSER = "SYSDBA";								//-- MySQL database User Name
-$DBPASS = "generate";							//-- MySQL database User Password
-$DBNAME = "phpgedview";							//-- The MySQL database name where you want PHPGedView to build its tables
-$DBPERSIST = false;								//-- Use persistent database connections
-$TBLPREFIX = "pgv_";							//-- prefix to include on table names
+$DBTYPE = "firebird";
 $INDEX_DIRECTORY = "./index/";					//-- Readable and Writeable Directory to store index files (include the trailing "/")
 $AUTHENTICATION_MODULE = "authentication.php";	//-- File that contains authentication functions
 $PGV_STORE_MESSAGES = true;						//-- allow messages sent to users to be stored in the PGV system

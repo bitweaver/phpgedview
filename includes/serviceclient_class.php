@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: serviceclient_class.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: serviceclient_class.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
  */
 
 require_once('includes/gedcomrecord.php');
@@ -635,7 +635,7 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 	 * @param string $remote	the remote id that matches the $local id
 	 */
 	function setSameId($local, $remote) {
-		global $TBLPREFIX, $DBCONN, $GEDCOMS, $GEDCOM;
+		global $DBCONN, $GEDCOMS, $GEDCOM;
 		
 		if ($local == $remote) {
 			debug_print_backtrace();
@@ -644,7 +644,7 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 		//-- check if the link already exists
 		$gid = get_remote_id($remote);
 		if (empty($gid)) {
-			$sql = "INSERT INTO ".$TBLPREFIX."remotelinks VALUES ('".$DBCONN->escape($local)."','".$DBCONN->escape($remote)."','".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."')";
+			$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."remotelinks VALUES ('".$DBCONN->escape($local)."','".$DBCONN->escape($remote)."','".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."')";
 			$res = dbquery($sql);
 		}
 	}
@@ -770,7 +770,7 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 	 */
 	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
 		global $FILE, $GEDCOM, $indilist, $famlist, $sourcelist, $otherlist;
-		global $TBLPREFIX, $GEDCOMS, $pgv_changes;
+		global $GEDCOMS, $pgv_changes;
 if ($this->DEBUG) print "In mergeGedcomRecord($xref)<br />";
 		$FILE = $GEDCOM;
 		if (!$isStub) {

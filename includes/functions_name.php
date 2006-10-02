@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: functions_name.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
  */
 
 /**
@@ -60,7 +60,7 @@ function get_common_surnames_index($ged) {
  * @param int $min the number of times a surname must occur before it is added to the array
  */
 function get_common_surnames($min) {
-	global $TBLPREFIX, $GEDCOM, $indilist, $CONFIGURED, $GEDCOMS, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
+	global $GEDCOM, $indilist, $CONFIGURED, $GEDCOMS, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
 
 	$surnames = array();
 	if (!$CONFIGURED || !adminUserExists() || (count($GEDCOMS)==0) || (!check_for_import($GEDCOM))) return $surnames;
@@ -188,7 +188,7 @@ function get_name_in_record($indirec) {
  * @return string the sortable name
  */
 function get_sortable_name($pid, $alpha="", $surname="", $allnames=false) {
-	global $TBLPREFIX, $SHOW_LIVING_NAMES, $PRIV_PUBLIC;
+	global $SHOW_LIVING_NAMES, $PRIV_PUBLIC;
 	global $GEDCOM, $GEDCOMS, $indilist, $pgv_lang;
 
 	$mynames = array();
@@ -388,7 +388,7 @@ function get_source_descriptor($sid) {
  * @return string the title of the repository
  */
 function get_repo_descriptor($rid) {
-	global $TBLPREFIX, $WORD_WRAPPED_NOTES;
+	global $WORD_WRAPPED_NOTES;
 	global $GEDCOM, $repo_id_list;
 
 	if ($rid=="") return false;
@@ -411,7 +411,7 @@ function get_repo_descriptor($rid) {
  * @return string the additional title of the source
  */
 function get_add_source_descriptor($sid) {
-	global $TBLPREFIX, $WORD_WRAPPED_NOTES;
+	global $WORD_WRAPPED_NOTES;
 	global $GEDCOM, $sourcelist;
 	$title = "";
 	if ($sid=="") return false;
@@ -433,7 +433,7 @@ function get_add_source_descriptor($sid) {
  * @return string the additional title of the repository
  */
 function get_add_repo_descriptor($rid) {
-	global $TBLPREFIX, $WORD_WRAPPED_NOTES;
+	global $WORD_WRAPPED_NOTES;
 	global $GEDCOM, $repolist;
 	$title = "";
 	if ($rid=="") return false;

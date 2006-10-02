@@ -40,7 +40,7 @@ require_once ('includes/media_class.php');
  */
 function import_record($indirec, $update = false) {
 	global $DBCONN, $gid, $type, $indilist, $famlist, $sourcelist, $otherlist, $TOTAL_QUERIES, $prepared_statement;
-	global $TBLPREFIX, $GEDCOM_FILE, $FILE, $pgv_lang, $USE_RIN, $CREATE_GENDEX, $gdfp, $placecache;
+	global $GEDCOM_FILE, $FILE, $pgv_lang, $USE_RIN, $CREATE_GENDEX, $gdfp, $placecache;
 	global $ALPHABET_upper, $ALPHABET_lower, $place_id, $WORD_WRAPPED_NOTES, $GEDCOMS;
 	global $MAX_IDS, $fpnewged, $GEDCOM, $USE_RTL_FUNCTIONS, $GENERATE_UIDS;
 
@@ -122,7 +122,7 @@ function import_record($indirec, $update = false) {
 	$ct = preg_match("/1 RFN (.*)/", $indirec, $rmatch);
 	if ($ct) {
 		$rfn = trim($rmatch[1]);
-		$sql = "INSERT INTO " . $TBLPREFIX . "remotelinks VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($rfn) . "','" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "')";
+		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "remotelinks VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($rfn) . "','" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "')";
 		$res = dbquery($sql);
 	}
 
@@ -144,7 +144,7 @@ function import_record($indirec, $update = false) {
 		$j = 0;
 		foreach ($names as $indexval => $name) {
 			if ($j > 0) {
-				$sql = "INSERT INTO " . $TBLPREFIX . "names VALUES('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($name[0]) . "','" . $DBCONN->escape($name[1]) . "','" . $DBCONN->escape($name[2]) . "','" . $DBCONN->escape($name[3]) . "')";
+				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "names VALUES('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($name[0]) . "','" . $DBCONN->escape($name[1]) . "','" . $DBCONN->escape($name[2]) . "','" . $DBCONN->escape($name[3]) . "')";
 				$res = dbquery($sql);
 
 			}
@@ -164,11 +164,11 @@ function import_record($indirec, $update = false) {
 		} else
 			$indi["rin"] = $gid;
 
-		$sql = "INSERT INTO " . $TBLPREFIX . "individuals VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($indi["gedfile"]) . "','" . $DBCONN->escape($indi["rin"]) . "','" . $DBCONN->escape($names[0][0]) . "',-1,'" . $DBCONN->escape($indi["gedcom"]) . "','" . $DBCONN->escape($names[0][1]) . "','" . $DBCONN->escape($names[0][2]) . "')";
+		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "individuals VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($indi["gedfile"]) . "','" . $DBCONN->escape($indi["rin"]) . "','" . $DBCONN->escape($names[0][0]) . "',-1,'" . $DBCONN->escape($indi["gedcom"]) . "','" . $DBCONN->escape($names[0][1]) . "','" . $DBCONN->escape($names[0][2]) . "')";
 		$res = dbquery($sql);
 
 		//-- PEAR supports prepared statements in mysqli we will use this code instead of the code above
-		//if (!isset($prepared_statement)) $prepared_statement = $DBCONN->prepare("INSERT INTO ".$TBLPREFIX."individuals VALUES (?,?,?,?,?,?,?,?)");
+		//if (!isset($prepared_statement)) $prepared_statement = $DBCONN->prepare("INSERT INTO ".PHPGEDVIEW_DB_PREFIX."individuals VALUES (?,?,?,?,?,?,?,?)");
 		//$data = array($DBCONN->escape($gid), $DBCONN->escape($indi["file"]), $indi["rin"], $names[0][0], -1, $indi["gedcom"], $DBCONN->escape($names[0][1]), $names[0][2]);
 		//$res =& $DBCONN->execute($prepared_statement, $data);
 		//$TOTAL_QUERIES++;
@@ -201,7 +201,7 @@ function import_record($indirec, $update = false) {
 			$fam["gedcom"] = $indirec;
 			$fam["gedfile"] = $GEDCOMS[$FILE]["id"];
 			//$famlist[$gid] = $fam;
-			$sql = "INSERT INTO " . $TBLPREFIX . "families (f_id, f_file, f_husb, f_wife, f_chil, f_gedcom, f_numchil) VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($fam["gedfile"]) . "','" . $DBCONN->escape($fam["HUSB"]) . "','" . $DBCONN->escape($fam["WIFE"]) . "','" . $DBCONN->escape($fam["CHIL"]) . "','" . $DBCONN->escape($fam["gedcom"]) . "','" . $DBCONN->escape($ct) . "')";
+			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "families (f_id, f_file, f_husb, f_wife, f_chil, f_gedcom, f_numchil) VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($fam["gedfile"]) . "','" . $DBCONN->escape($fam["HUSB"]) . "','" . $DBCONN->escape($fam["WIFE"]) . "','" . $DBCONN->escape($fam["CHIL"]) . "','" . $DBCONN->escape($fam["gedcom"]) . "','" . $DBCONN->escape($ct) . "')";
 			$res = dbquery($sql);
 
 		} else
@@ -228,7 +228,7 @@ function import_record($indirec, $update = false) {
 							$name .= $match[$i][1];
 					}
 				}
-				$sql = "INSERT INTO " . $TBLPREFIX . "sources VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($name) . "','" . $DBCONN->escape($indirec) . "')";
+				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "sources VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($name) . "','" . $DBCONN->escape($indirec) . "')";
 				$res = dbquery($sql);
 
 			} else
@@ -244,7 +244,7 @@ function import_record($indirec, $update = false) {
 								$indirec .= "\r\n1 DATE " . date("d") . " " . date("M") . " " . date("Y");
 							}
 						}
-						$sql = "INSERT INTO " . $TBLPREFIX . "other VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($type) . "','" . $DBCONN->escape($indirec) . "')";
+						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "other VALUES ('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($type) . "','" . $DBCONN->escape($indirec) . "')";
 						$res = dbquery($sql);
 
 					}
@@ -265,12 +265,12 @@ function import_record($indirec, $update = false) {
  * @param string $letter	the letter for this name
  */
 function add_new_name($gid, $newname, $letter, $surname, $indirec) {
-	global $TBLPREFIX, $USE_RIN, $indilist, $FILE, $DBCONN, $GEDCOMS;
+	global $USE_RIN, $indilist, $FILE, $DBCONN, $GEDCOMS;
 
-	$sql = "INSERT INTO " . $TBLPREFIX . "names VALUES('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($newname) . "','" . $DBCONN->escape($letter) . "','" . $DBCONN->escape($surname) . "','C')";
+	$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "names VALUES('" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "','" . $DBCONN->escape($newname) . "','" . $DBCONN->escape($letter) . "','" . $DBCONN->escape($surname) . "','C')";
 	$res = dbquery($sql);
 
-	$sql = "UPDATE " . $TBLPREFIX . "individuals SET i_gedcom='" . $DBCONN->escape($indirec) . "' WHERE i_id='" . $DBCONN->escape($gid) . "' AND i_file='" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "'";
+	$sql = "UPDATE " . PHPGEDVIEW_DB_PREFIX . "individuals SET i_gedcom='" . $DBCONN->escape($indirec) . "' WHERE i_id='" . $DBCONN->escape($gid) . "' AND i_file='" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "'";
 	$res = dbquery($sql);
 
 	$indilist[$gid]["names"][] = array (
@@ -288,7 +288,7 @@ function add_new_name($gid, $newname, $letter, $surname, $indirec) {
  * @param string $indirec
  */
 function update_places($gid, $indirec, $update = false) {
-	global $FILE, $placecache, $TBLPREFIX, $DBCONN, $GEDCOMS;
+	global $FILE, $placecache, $DBCONN, $GEDCOMS;
 
 	if (!isset($placecache)) $placecache = array();
 	$personplace = array();
@@ -316,7 +316,7 @@ function update_places($gid, $indirec, $update = false) {
 				$parent_id = $placecache[$key];
 				if (!isset($personplace[$key])) {
 					$personplace[$key]=1;
-					$sql = 'INSERT INTO ' . $TBLPREFIX . 'placelinks VALUES('.$parent_id.', \'' . $DBCONN->escape($gid) . '\', ' . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . ')';
+					$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'placelinks VALUES('.$parent_id.', \'' . $DBCONN->escape($gid) . '\', ' . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . ')';
 					$res2 = dbquery($sql);
 				}
 				$level++;
@@ -326,7 +326,7 @@ function update_places($gid, $indirec, $update = false) {
 			//-- only search the database while we are finding places in it
 			if ($search) {
 				//-- check if this place and level has already been added
-				$sql = 'SELECT p_id FROM '.$TBLPREFIX.'places WHERE p_level='.$level.' AND p_file='.$GEDCOMS[$FILE]['id'].' AND p_parent_id='.$parent_id.' AND p_place LIKE \''.$DBCONN->escape($place).'\'';
+				$sql = 'SELECT p_id FROM '.PHPGEDVIEW_DB_PREFIX.'places WHERE p_level='.$level.' AND p_file='.$GEDCOMS[$FILE]['id'].' AND p_parent_id='.$parent_id.' AND p_place LIKE \''.$DBCONN->escape($place).'\'';
 				$res = dbquery($sql);
 				if ($res->numRows()>0) {
 					$row = $res->fetchRow();
@@ -339,11 +339,11 @@ function update_places($gid, $indirec, $update = false) {
 			//-- if we are not searching then we have to insert the place into the db
 			if (!$search) {
 				$p_id = get_next_id("places", "p_id");
-				$sql = 'INSERT INTO '.$TBLPREFIX.'places (p_id, p_place, p_level, p_parent_id, p_file) VALUES('.$p_id.', \''.$DBCONN->escape($place).'\', '.$level.', '.$parent_id.', '.$DBCONN->escape($GEDCOMS[$FILE]["id"]).')';
+				$sql = 'INSERT INTO '.PHPGEDVIEW_DB_PREFIX.'places (p_id, p_place, p_level, p_parent_id, p_file) VALUES('.$p_id.', \''.$DBCONN->escape($place).'\', '.$level.', '.$parent_id.', '.$DBCONN->escape($GEDCOMS[$FILE]["id"]).')';
 				$res2 = dbquery($sql);
 					}
 
-			$sql = 'INSERT INTO ' . $TBLPREFIX . 'placelinks VALUES('.$p_id.', \'' . $DBCONN->escape($gid) . '\', ' . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . ')';
+			$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'placelinks VALUES('.$p_id.', \'' . $DBCONN->escape($gid) . '\', ' . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . ')';
 			$res2 = dbquery($sql);
 			//-- increment the level and assign the parent id for the next place level
 			$parent_id = $p_id;
@@ -361,7 +361,7 @@ function update_places($gid, $indirec, $update = false) {
  * @param string $indirec
  */
 function update_dates($gid, $indirec) {
-	global $FILE, $TBLPREFIX, $DBCONN, $GEDCOMS;
+	global $FILE, $DBCONN, $GEDCOMS;
 
 	$count = 0;
 	$pt = preg_match("/\d DATE (.*)/", $indirec, $match);
@@ -392,7 +392,7 @@ function update_dates($gid, $indirec) {
 			if ($date[0]['day'] < 10)
 				$datestamp .= '0';
 			$datestamp .= (int) $date[0]['day'];
-			$sql = "INSERT INTO " . $TBLPREFIX . "dates VALUES('" . $DBCONN->escape($date[0]["day"]) . "','" . $DBCONN->escape(str2upper($date[0]["month"])) . " ','" . $DBCONN->escape($date[0]["mon"]) . "','" . $DBCONN->escape($date[0]["year"]) . "','" . $DBCONN->escape($datestamp) . "','" . $DBCONN->escape($fact) . "','" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "',";
+			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "dates VALUES('" . $DBCONN->escape($date[0]["day"]) . "','" . $DBCONN->escape(str2upper($date[0]["month"])) . " ','" . $DBCONN->escape($date[0]["mon"]) . "','" . $DBCONN->escape($date[0]["year"]) . "','" . $DBCONN->escape($datestamp) . "','" . $DBCONN->escape($fact) . "','" . $DBCONN->escape($gid) . "','" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "',";
 			if (isset ($date[0]["ext"])) {
 				preg_match("/@#D(.*)@/", $date[0]["ext"], $extract_type);
 				$date_types = array (
@@ -423,7 +423,7 @@ function update_dates($gid, $indirec) {
  * @return string	an updated record
  */
 function update_media($gid, $indirec, $update = false) {
-	global $GEDCOMS, $FILE, $TBLPREFIX, $DBCONN, $MEDIA_ID_PREFIX, $media_count, $found_ids;
+	global $GEDCOMS, $FILE, $DBCONN, $MEDIA_ID_PREFIX, $media_count, $found_ids;
 	global $zero_level_media, $fpnewged, $objelist, $MAX_IDS;
 
 	if (!isset ($media_count))
@@ -457,7 +457,7 @@ function update_media($gid, $indirec, $update = false) {
 		$new_media = Media :: in_obje_list($media);
 		if ($new_media === false) {
 			$objelist[$new_m_media] = $media;
-			$sql = "INSERT INTO " . $TBLPREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
+			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 			$sql .= " VALUES('" . $DBCONN->escape($m_id) . "', '" . $DBCONN->escape($new_m_media) . "', '" . $DBCONN->escape($media->ext) . "', '" . $DBCONN->escape($media->title) . "', '" . $DBCONN->escape($media->file) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "', '" . $DBCONN->escape($indirec) . "')";
 			$res = dbquery($sql);
 			$media_count++;
@@ -503,7 +503,7 @@ function update_media($gid, $indirec, $update = false) {
 					$new_media = Media :: in_obje_list($media);
 					if ($new_media === false) {
 						$m_id = get_next_id("media", "m_id");
-						$sql = "INSERT INTO " . $TBLPREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
+						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 						$sql .= " VALUES('" . $DBCONN->escape($m_id) . "', '" . $DBCONN->escape($m_media) . "', '" . $DBCONN->escape($media->ext) . "', '" . $DBCONN->escape($media->title) . "', '" . $DBCONN->escape($media->file) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "', '" . $DBCONN->escape($objrec) . "')";
 						$res = dbquery($sql);
 						$media_count++;
@@ -515,7 +515,7 @@ function update_media($gid, $indirec, $update = false) {
 					} else
 						$m_media = $new_media;
 					$mm_id = get_next_id("media_mapping", "mm_id");
-					$sql = "INSERT INTO " . $TBLPREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
+					$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
 					$sql .= " VALUES ('" . $DBCONN->escape($mm_id) . "', '" . $DBCONN->escape($m_media) . "', '" . $DBCONN->escape($gid) . "', '" . $DBCONN->escape($count) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "', '" . addslashes('' . $objlevel . ' OBJE @' . $m_media . '@') . "')";
 					$res = dbquery($sql);
 					$count++;
@@ -557,10 +557,10 @@ function update_media($gid, $indirec, $update = false) {
 				$line = preg_replace("/@(.*)@/", "@$new_mm_media@", $line);
 				// NOTE: We found an existing media reference, we only add it to the database, nothing else
 				//-- don't need to cread a media record for linked media
-				//$sql = "INSERT INTO ".$TBLPREFIX."media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec) VALUES('".$DBCONN->escape($m_id)."', '".$DBCONN->escape($new_mm_media)."', '', '', '', '".$DBCONN->escape($GEDCOMS[$FILE]["id"])."', '')";
+				//$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec) VALUES('".$DBCONN->escape($m_id)."', '".$DBCONN->escape($new_mm_media)."', '', '', '', '".$DBCONN->escape($GEDCOMS[$FILE]["id"])."', '')";
 				//$res = dbquery($sql);
 				$mm_id = get_next_id("media_mapping", "mm_id");
-				$sql = "INSERT INTO " . $TBLPREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec) VALUES ('" . $DBCONN->escape($mm_id) . "', '" . $DBCONN->escape($new_mm_media) . "', '" . $DBCONN->escape($gid) . "', '" . $DBCONN->escape($count) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "', '" . $line . "')";
+				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec) VALUES ('" . $DBCONN->escape($mm_id) . "', '" . $DBCONN->escape($new_mm_media) . "', '" . $DBCONN->escape($gid) . "', '" . $DBCONN->escape($count) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "', '" . $line . "')";
 				$res = & dbquery($sql);
 				//print "LINE ".__LINE__;
 				$count++;
@@ -577,7 +577,7 @@ function update_media($gid, $indirec, $update = false) {
 						$media = new Media($objrec);
 						$new_media = Media :: in_obje_list($media);
 						if ($new_media === false) {
-							$sql = "INSERT INTO " . $TBLPREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
+							$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 							$sql .= " VALUES('" . $DBCONN->escape($m_id) . "', '" . $DBCONN->escape($m_media) . "', '" . $DBCONN->escape($media->ext) . "', '" . $DBCONN->escape($media->title) . "', '" . $DBCONN->escape($media->file) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "', '" . $DBCONN->escape($objrec) . "')";
 							$res = dbquery($sql);
 							//-- if this is not an update then write it to the new gedcom file
@@ -589,7 +589,7 @@ function update_media($gid, $indirec, $update = false) {
 						} else
 							$m_media = $new_media;
 						$mm_id = get_next_id("media_mapping", "mm_id");
-						$sql = "INSERT INTO " . $TBLPREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
+						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
 						$sql .= " VALUES ('" . $DBCONN->escape($mm_id) . "', '" . $DBCONN->escape($m_media) . "', '" . $DBCONN->escape($gid) . "', '" . $DBCONN->escape($count) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "', '" . addslashes('' . $objlevel . ' OBJE @' . $m_media . '@') . "')";
 						$res = dbquery($sql);
 						$count++;
@@ -626,7 +626,7 @@ function update_media($gid, $indirec, $update = false) {
 								$media = new Media($objrec);
 								$new_media = Media :: in_obje_list($media);
 								if ($new_media === false) {
-									$sql = "INSERT INTO " . $TBLPREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
+									$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 									$sql .= " VALUES('" . $DBCONN->escape($m_id) . "', '" . $DBCONN->escape($m_media) . "', '" . $DBCONN->escape($media->ext) . "', '" . $DBCONN->escape($media->title) . "', '" . $DBCONN->escape($media->file) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]["id"]) . "', '" . $DBCONN->escape($objrec) . "')";
 									$res = dbquery($sql);
 									//-- if this is not an update then write it to the new gedcom file
@@ -638,7 +638,7 @@ function update_media($gid, $indirec, $update = false) {
 								} else
 									$m_media = $new_media;
 								$mm_id = get_next_id("media_mapping", "mm_id");
-								$sql = "INSERT INTO " . $TBLPREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
+								$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
 								$sql .= " VALUES ('" . $DBCONN->escape($mm_id) . "', '" . $DBCONN->escape($m_media) . "', '" . $DBCONN->escape($gid) . "', '" . $DBCONN->escape($count) . "', '" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "', '" . addslashes('' . $objlevel . ' OBJE @' . $m_media . '@') . "')";
 								$res = dbquery($sql);
 							}
@@ -647,7 +647,7 @@ function update_media($gid, $indirec, $update = false) {
 							else {
 								$oldid = preg_match("/0\s@(.*)@\sOBJE/", $objrec, $newmatch);
 								$m_media = $newmatch[1];
-								$sql = "UPDATE ".$TBLPREFIX."media SET m_ext = '".$DBCONN->escape($ext)."', m_titl = '".$DBCONN->escape($title)."', m_file = '".$DBCONN->escape($file)."', m_gedrec = '".$DBCONN->escape($objrec)."' WHERE m_media = '".$m_media."'";
+								$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."media SET m_ext = '".$DBCONN->escape($ext)."', m_titl = '".$DBCONN->escape($title)."', m_file = '".$DBCONN->escape($file)."', m_gedrec = '".$DBCONN->escape($objrec)."' WHERE m_media = '".$m_media."'";
 								$res = dbquery($sql);
 								//print "LINE ".__LINE__;
 							}
@@ -682,7 +682,7 @@ function update_media($gid, $indirec, $update = false) {
  * automatically handles version updates
  */
 function setup_database() {
-	global $TBLPREFIX, $pgv_lang, $DBCONN, $DBTYPE;
+	global $pgv_lang, $DBCONN, $DBTYPE;
 
 	//---------- Check if tables exist
 	$has_individuals = false;
@@ -712,11 +712,11 @@ function setup_database() {
 
 	$data = $DBCONN->MetaTables('TABLE');
 	foreach ($data as $indexval => $table) {
-		if (strpos($table, $TBLPREFIX) === 0) {
-			switch (substr($table, strlen($TBLPREFIX))) {
+		if (strpos($table, PHPGEDVIEW_DB_PREFIX) === 0) {
+			switch (substr($table, strlen(PHPGEDVIEW_DB_PREFIX))) {
 				case "individuals" :
 					$has_individuals = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX . "individuals");
+					$info = $DBCONN->tableInfo(PHPGEDVIEW_DB_PREFIX . "individuals");
 					foreach ($info as $indexval => $field) {
 						switch ($field["name"]) {
 							case "i_rin" :
@@ -733,7 +733,7 @@ function setup_database() {
 					break;
 				case "places" :
 					$has_places = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX . "places");
+					$info = $DBCONN->tableInfo(PHPGEDVIEW_DB_PREFIX . "places");
 					foreach ($info as $indexval => $field) {
 						switch ($field["name"]) {
 							case "p_gid" :
@@ -745,7 +745,7 @@ function setup_database() {
 					break;
 				case "families" :
 					$has_families = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX . "families");
+					$info = $DBCONN->tableInfo(PHPGEDVIEW_DB_PREFIX . "families");
 					foreach ($info as $indexval => $field) {
 						switch ($field["name"]) {
 							case "f_name" :
@@ -759,7 +759,7 @@ function setup_database() {
 					break;
 				case "names" :
 					$has_names = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX . "names");
+					$info = $DBCONN->tableInfo(PHPGEDVIEW_DB_PREFIX . "names");
 					foreach ($info as $indexval => $field) {
 						switch ($field["name"]) {
 							case "n_surname" :
@@ -776,7 +776,7 @@ function setup_database() {
 					break;
 				case "dates" :
 					$has_dates = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX . "dates");
+					$info = $DBCONN->tableInfo(PHPGEDVIEW_DB_PREFIX . "dates");
 					foreach ($info as $indexval => $field) {
 						switch ($field["name"]) {
 							case "d_mon" :
@@ -814,29 +814,29 @@ function setup_database() {
 		create_individuals_table();
 	} else { // check columns in the table
 		if (!$has_individuals_rin) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "individuals ADD i_rin VARCHAR(255)";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "individuals ADD i_rin VARCHAR(255)";
 			$res = dbquery($sql); //print "i_rin added<br/>\n";
 		}
 		if (!$has_individuals_letter) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "individuals ADD i_letter VARCHAR(5)";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "individuals ADD i_letter VARCHAR(5)";
 			$res = dbquery($sql); //print "i_letter added<br/>\n";
 
 			if (DB :: isError($res)) {
 				print $pgv_lang["created_indis_fail"] . "<br />\n";
 				exit;
 			}
-			$sql = "CREATE INDEX indi_letter ON " . $TBLPREFIX . "individuals (i_letter)";
+			$sql = "CREATE INDEX indi_letter ON " . PHPGEDVIEW_DB_PREFIX . "individuals (i_letter)";
 			$res = dbquery($sql);
 		}
 		if (!$has_individuals_surname) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "individuals ADD i_surname VARCHAR(100)";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "individuals ADD i_surname VARCHAR(100)";
 			$res = dbquery($sql); //print "i_surname added<br/>\n";
 
 			if (DB :: isError($res)) {
 				print $pgv_lang["created_indis_fail"] . "<br />\n";
 				exit;
 			}
-			$sql = "CREATE INDEX indi_surn ON " . $TBLPREFIX . "individuals (i_surname)";
+			$sql = "CREATE INDEX indi_surn ON " . PHPGEDVIEW_DB_PREFIX . "individuals (i_surname)";
 			$res = dbquery($sql);
 		}
 	}
@@ -844,11 +844,11 @@ function setup_database() {
 		create_families_table();
 	} else { // check columns in the table
 		if ($has_families_name) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "families DROP COLUMN f_name";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "families DROP COLUMN f_name";
 			$res = dbquery($sql); //print "f_name dropped<br/>\n";
 		}
 		if (!$has_families_numchil) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "families ADD f_numchil INT";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "families ADD f_numchil INT";
 			$res = dbquery($sql); //print "f_numchil added<br/>\n";
 		}
 	}
@@ -856,7 +856,7 @@ function setup_database() {
 		create_places_table();
 	} else { // check columns in the table
 		if ($has_places_gid) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "places DROP COLUMN p_gid";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "places DROP COLUMN p_gid";
 			$res = dbquery($sql); //print "p_gid dropped<br/>\n";
 		}
 	}
@@ -867,17 +867,17 @@ function setup_database() {
 		create_names_table();
 	} else { // check columns in the table
 		if (!$has_names_surname) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "names ADD n_surname VARCHAR(100)";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "names ADD n_surname VARCHAR(100)";
 			$res = dbquery($sql); //print "n_surname added<br/>\n";
 
 			if (DB :: isError($res)) {
 				exit;
 			}
-			$sql = "CREATE INDEX name_surn ON " . $TBLPREFIX . "names (n_surname)";
+			$sql = "CREATE INDEX name_surn ON " . PHPGEDVIEW_DB_PREFIX . "names (n_surname)";
 			$res = dbquery($sql);
 		}
 		if (!$has_names_type) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "names ADD n_type VARCHAR(10)";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "names ADD n_type VARCHAR(10)";
 			$res = dbquery($sql); //print "n_type added<br/>\n";
 		}
 	}
@@ -886,11 +886,11 @@ function setup_database() {
 		create_dates_table();
 	} else { // check columns in the table
 		if (!$has_dates_mon) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "dates ADD d_mon INT AFTER d_month";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "dates ADD d_mon INT AFTER d_month";
 			$res = dbquery($sql); //print "d_mon added<br/>\n";
 		}
 		if (!$has_dates_datestamp) {
-			$sql = "ALTER TABLE " . $TBLPREFIX . "dates ADD d_datestamp INT AFTER d_year";
+			$sql = "ALTER TABLE " . PHPGEDVIEW_DB_PREFIX . "dates ADD d_datestamp INT AFTER d_year";
 			$res = dbquery($sql); //print "d_datestamp added<br/>\n";
 		}
 	}
@@ -914,7 +914,7 @@ function setup_database() {
 		create_sources_table();
 	}
 	/*-- commenting out as it seems to cause more problems than it helps
-	$sql = "LOCK TABLE ".$TBLPREFIX."individuals WRITE, ".$TBLPREFIX."families WRITE, ".$TBLPREFIX."sources WRITE, ".$TBLPREFIX."other WRITE, ".$TBLPREFIX."places WRITE, ".$TBLPREFIX."users WRITE";
+	$sql = "LOCK TABLE ".PHPGEDVIEW_DB_PREFIX."individuals WRITE, ".PHPGEDVIEW_DB_PREFIX."families WRITE, ".PHPGEDVIEW_DB_PREFIX."sources WRITE, ".PHPGEDVIEW_DB_PREFIX."other WRITE, ".PHPGEDVIEW_DB_PREFIX."places WRITE, ".PHPGEDVIEW_DB_PREFIX."users WRITE";
 	$res = dbquery($sql); */
 	if (preg_match("/mysql|pgsql/", $DBTYPE) > 0)
 		$DBCONN->autoCommit(false);
@@ -994,40 +994,40 @@ function create_nextid_table() {
  * @param string $FILE	the gedcom to remove from the database
  */
 function empty_database($FILE) {
-	global $TBLPREFIX, $DBCONN, $GEDCOMS;
+	global $DBCONN, $GEDCOMS;
 
 	$FILE = $DBCONN->escape($GEDCOMS[$FILE]["id"]);
-	$sql = "DELETE FROM " . $TBLPREFIX . "individuals WHERE i_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "individuals WHERE i_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "families WHERE f_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "families WHERE f_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "sources WHERE s_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "sources WHERE s_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "other WHERE o_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "other WHERE o_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "places WHERE p_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "places WHERE p_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "placelinks WHERE pl_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "names WHERE n_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "names WHERE n_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "dates WHERE d_file='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "dates WHERE d_file='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "media WHERE m_gedfile='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media WHERE m_gedfile='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "media_mapping WHERE mm_gedfile='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media_mapping WHERE mm_gedfile='$FILE'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "nextid WHERE ni_gedfile='$FILE'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_gedfile='$FILE'";
 	$res = dbquery($sql);
 
 }
@@ -1040,16 +1040,16 @@ function empty_database($FILE) {
  * this funciton.
  */
 function cleanup_database() {
-	global $DBTYPE, $DBCONN, $TBLPREFIX, $MAX_IDS, $GEDCOMS, $FILE;
+	global $DBTYPE, $DBCONN, $MAX_IDS, $GEDCOMS, $FILE;
 	/*-- commenting out as it seems to cause more problems than it helps
 	$sql = "UNLOCK TABLES";
 	$res = dbquery($sql); */
 	//-- end the transaction
 	if (isset ($MAX_IDS)) {
-		$sql = "DELETE FROM " . $TBLPREFIX . "nextid WHERE ni_gedfile='" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "'";
+		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_gedfile='" . $DBCONN->escape($GEDCOMS[$FILE]['id']) . "'";
 		$res = dbquery($sql);
 		foreach ($MAX_IDS as $type => $id) {
-			$sql = "INSERT INTO " . $TBLPREFIX . "nextid VALUES('" . $DBCONN->escape($id +1) . "', '" . $DBCONN->escape($type) . "', '" . $GEDCOMS[$FILE]["id"] . "')";
+			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "nextid VALUES('" . $DBCONN->escape($id +1) . "', '" . $DBCONN->escape($type) . "', '" . $GEDCOMS[$FILE]["id"] . "')";
 			$res = dbquery($sql);
 		}
 	}
@@ -1071,7 +1071,7 @@ function cleanup_database() {
  * @param string $cid The change id of the record to accept
  */
 function accept_changes($cid) {
-	global $pgv_changes, $GEDCOM, $TBLPREFIX, $FILE, $DBCONN, $GEDCOMS, $MEDIA_ID_PREFIX;
+	global $pgv_changes, $GEDCOM, $FILE, $DBCONN, $GEDCOMS, $MEDIA_ID_PREFIX;
 	global $COMMIT_COMMAND, $INDEX_DIRECTORY;
 
 	if (isset ($pgv_changes[$cid])) {
@@ -1136,7 +1136,7 @@ function accept_changes($cid) {
  * @param string $indirec
  */
 function update_record($indirec, $delete = false) {
-	global $TBLPREFIX, $GEDCOM, $DBCONN, $GEDCOMS, $FILE;
+	global $GEDCOM, $DBCONN, $GEDCOMS, $FILE;
 
 	if (empty ($FILE))
 		$FILE = $GEDCOM;
@@ -1150,62 +1150,62 @@ function update_record($indirec, $delete = false) {
 		return false;
 	}
 
-	$sql = "SELECT pl_p_id FROM " . $TBLPREFIX . "placelinks WHERE pl_gid='" . $DBCONN->escape($gid) . "' AND pl_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+	$sql = "SELECT pl_p_id FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_gid='" . $DBCONN->escape($gid) . "' AND pl_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 	$res = dbquery($sql);
 
 	$placeids = array ();
 	while ($row = & $res->fetchRow()) {
 		$placeids[] = $row['pl_p_id'];
 	}
-	$sql = "DELETE FROM " . $TBLPREFIX . "placelinks WHERE pl_gid='" . $DBCONN->escape($gid) . "' AND pl_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_gid='" . $DBCONN->escape($gid) . "' AND pl_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "dates WHERE d_gid='" . $DBCONN->escape($gid) . "' AND d_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "dates WHERE d_gid='" . $DBCONN->escape($gid) . "' AND d_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 	$res = dbquery($sql);
 
 	//-- delete any unlinked places
 	foreach ($placeids as $indexval => $p_id) {
-		$sql = "SELECT count(pl_p_id) FROM " . $TBLPREFIX . "placelinks WHERE pl_p_id=$p_id AND pl_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+		$sql = "SELECT count(pl_p_id) FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_p_id=$p_id AND pl_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 		$res = dbquery($sql);
 
 		$row = & $res->fetchRow();
 		if ($row['count'] == 0) {
-			$sql = "DELETE FROM " . $TBLPREFIX . "places WHERE p_id=$p_id AND p_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+			$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "places WHERE p_id=$p_id AND p_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 			$res = dbquery($sql);
 
 		}
 	}
 
 	//-- delete any media mapping references
-	$sql = "DELETE FROM " . $TBLPREFIX . "media_mapping WHERE mm_gid LIKE '" . $DBCONN->escape($gid) . "' AND mm_gedfile='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media_mapping WHERE mm_gid LIKE '" . $DBCONN->escape($gid) . "' AND mm_gedfile='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 	$res = dbquery($sql);
 
-	$sql = "DELETE FROM " . $TBLPREFIX . "remotelinks WHERE r_gid='" . $DBCONN->escape($gid) . "' AND r_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "remotelinks WHERE r_gid='" . $DBCONN->escape($gid) . "' AND r_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 	$res = dbquery($sql);
 
 	if ($type == "INDI") {
-		$sql = "DELETE FROM " . $TBLPREFIX . "individuals WHERE i_id LIKE '" . $DBCONN->escape($gid) . "' AND i_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "individuals WHERE i_id LIKE '" . $DBCONN->escape($gid) . "' AND i_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 		$res = dbquery($sql);
 
-		$sql = "DELETE FROM " . $TBLPREFIX . "names WHERE n_gid LIKE '" . $DBCONN->escape($gid) . "' AND n_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "names WHERE n_gid LIKE '" . $DBCONN->escape($gid) . "' AND n_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 		$res = dbquery($sql);
 
 	} else
 		if ($type == "FAM") {
-			$sql = "DELETE FROM " . $TBLPREFIX . "families WHERE f_id LIKE '" . $DBCONN->escape($gid) . "' AND f_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+			$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "families WHERE f_id LIKE '" . $DBCONN->escape($gid) . "' AND f_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 			$res = dbquery($sql);
 
 		} else
 			if ($type == "SOUR") {
-				$sql = "DELETE FROM " . $TBLPREFIX . "sources WHERE s_id LIKE '" . $DBCONN->escape($gid) . "' AND s_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+				$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "sources WHERE s_id LIKE '" . $DBCONN->escape($gid) . "' AND s_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 				$res = dbquery($sql);
 
 			} else
 				if ($type == "OBJE") {
-					$sql = "DELETE FROM " . $TBLPREFIX . "media WHERE m_media LIKE '" . $DBCONN->escape($gid) . "' AND m_gedfile='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+					$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media WHERE m_media LIKE '" . $DBCONN->escape($gid) . "' AND m_gedfile='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 					$res = dbquery($sql);
 				} else {
-					$sql = "DELETE FROM " . $TBLPREFIX . "other WHERE o_id LIKE '" . $DBCONN->escape($gid) . "' AND o_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
+					$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "other WHERE o_id LIKE '" . $DBCONN->escape($gid) . "' AND o_file='" . $DBCONN->escape($GEDCOMS[$GEDCOM]["id"]) . "'";
 					$res = dbquery($sql);
 
 				}

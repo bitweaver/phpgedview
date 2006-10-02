@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.6 2006/10/02 22:47:24 lsces Exp $
+ * @version $Id: functions.php,v 1.7 2006/10/02 23:04:15 lsces Exp $
  */
 
 /**
@@ -899,7 +899,7 @@ function find_updated_record($gid, $gedfile="") {
  */
 function find_highlighted_object($pid, $indirec) {
 	global $MEDIA_DIRECTORY, $MEDIA_DIRECTORY_LEVELS, $PGV_IMAGE_DIR, $PGV_IMAGES, $MEDIA_EXTERNAL;
-	global $GEDCOMS, $GEDCOM, $TBLPREFIX, $DBCONN, $gGedcom;
+	global $GEDCOMS, $GEDCOM, $DBCONN, $gGedcom;
 
 	if (!showFactDetails("OBJE", $pid)) return false;
 	$object = array();
@@ -928,7 +928,7 @@ function find_highlighted_object($pid, $indirec) {
 	}
 
 	//-- find all of the media items for a person
-	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile=? AND mm_gid=? ORDER BY m_id";
+	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".PHPGEDVIEW_DB_PREFIX."media, ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile=? AND mm_gid=? ORDER BY m_id";
 	$res = $gGedcom->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"], $pid ));
 	while( $row = $res->fetchRow() ) {
 		$media[] = $row;
@@ -2918,7 +2918,7 @@ function CheckPageViews() {
  * @return string
  */
 function get_new_xref($type='INDI') {
-	global $fcontents, $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $pgv_changes, $GEDCOM, $TBLPREFIX, $GEDCOMS;
+	global $fcontents, $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $pgv_changes, $GEDCOM, $GEDCOMS;
 	global $MEDIA_ID_PREFIX, $FAM_ID_PREFIX, $GEDCOM_ID_PREFIX, $FILE, $DBCONN, $MAX_IDS;
 
 	//-- during online updates $FILE comes through as an array for some odd reason
@@ -2938,7 +2938,7 @@ function get_new_xref($type='INDI') {
 	}
 	else {
 		//-- check for the id in the nextid table
-		$sql = "SELECT * FROM ".$TBLPREFIX."nextid WHERE ni_type='".$DBCONN->escape($type)."' AND ni_gedfile='".$DBCONN->escape($gedid)."'";
+		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."nextid WHERE ni_type='".$DBCONN->escape($type)."' AND ni_gedfile='".$DBCONN->escape($gedid)."'";
 		$res =& dbquery($sql);
 		if ($res->numRows() > 0) {
 			$row = $res->fetchRow();
@@ -2961,7 +2961,7 @@ function get_new_xref($type='INDI') {
 		//-- type wasn't found in database or in file so make a new one
 		if (is_null($num)) {
 			$num = 1;
-			$sql = "INSERT INTO ".$TBLPREFIX."nextid VALUES('".$DBCONN->escape($num+1)."', '".$DBCONN->escape($type)."', '".$gedid."')";
+			$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."nextid VALUES('".$DBCONN->escape($num+1)."', '".$DBCONN->escape($type)."', '".$gedid."')";
 			$res = dbquery($sql);
 		}
 	}
@@ -2988,7 +2988,7 @@ function get_new_xref($type='INDI') {
 	}
 	$num++;
 	//-- update the next id number in the DB table
-	$sql = "UPDATE ".$TBLPREFIX."nextid SET ni_id='".$DBCONN->escape($num)."' WHERE ni_type='".$DBCONN->escape($type)."' AND ni_gedfile='".$DBCONN->escape($gedid)."'";
+	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."nextid SET ni_id='".$DBCONN->escape($num)."' WHERE ni_type='".$DBCONN->escape($type)."' AND ni_gedfile='".$DBCONN->escape($gedid)."'";
 	$res = dbquery($sql);
 	return $key;
 }

@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.6 2006/10/02 22:05:51 lsces Exp $
+ * $Id: authentication.php,v 1.7 2006/10/02 23:04:15 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -47,7 +47,7 @@ if (strstr($_SERVER["SCRIPT_NAME"],"authentication")) {
  * @return bool return true if the username and password credentials match a user in the database return false if they don't
  */
 function authenticateUser($username, $password, $basic=false) {
-	global $TBLPREFIX, $GEDCOM, $pgv_lang;
+	global $GEDCOM, $pgv_lang;
 	checkTableExists();
 	$user = getUser($username);
 	//-- make sure that we have the actual username as it was stored in the DB
@@ -57,7 +57,7 @@ function authenticateUser($username, $password, $basic=false) {
 	        if (!isset($user["verified"])) $user["verified"] = "";
 	        if (!isset($user["verified_by_admin"])) $user["verified_by_admin"] = "";
 	        if ((($user["verified"] == "yes") and ($user["verified_by_admin"] == "yes")) or ($user["canadmin"] != "")){
-		        $sql = "UPDATE ".$TBLPREFIX."users SET u_loggedin='Y', u_sessiontime='".time()."' WHERE u_username='$username'";
+		        $sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='Y', u_sessiontime='".time()."' WHERE u_username='$username'";
 		        $res = dbquery($sql);
 
 				AddToLog(($basic ? "Basic HTTP Authentication" :"Login"). " Successful ->" . $username ."<-");
@@ -118,14 +118,14 @@ function basicHTTPAuthenticateUser() {
  * @param string $username	optional parameter to logout a specific user
  */
 function userLogout($username = "") {
-	global $TBLPREFIX, $GEDCOM, $LANGUAGE;
+	global $GEDCOM, $LANGUAGE;
 
 	if ($username=="") {
 		if (isset($_SESSION["pgv_user"])) $username = $_SESSION["pgv_user"];
 		else if (isset($_COOKIE["pgv_rem"])) $username = $_COOKIE["pgv_rem"];
 		else return;
 	}
-	$sql = "UPDATE ".$TBLPREFIX."users SET u_loggedin='N' WHERE u_username='".$username."'";
+	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='N' WHERE u_username='".$username."'";
 	$res = dbquery($sql);
 
 	AddToLog("Logout - " . $username);
@@ -152,12 +152,11 @@ function userLogout($username = "") {
  * @param string $username	the username to update the login info for
  */
 function userUpdateLogin($username) {
-	global $TBLPREFIX;
 	
 	if (empty($username)) $username = getUserName();
 	if (empty($username)) return;
 	
-	$sql = "UPDATE ".$TBLPREFIX."users SET u_sessiontime='".time()."' WHERE u_username='$username'";
+	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_sessiontime='".time()."' WHERE u_username='$username'";
 	$res = dbquery($sql);
 }
 
@@ -171,8 +170,8 @@ function userUpdateLogin($username) {
  * @return array returns a sorted array of users
  */
 function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
-	global $TBLPREFIX, $usersortfields;
-	$sql = "SELECT * FROM ".$TBLPREFIX."users ORDER BY u_".$field." ".strtoupper($order).", u_".$sort2;
+	global $usersortfields;
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users ORDER BY u_".$field." ".strtoupper($order).", u_".$sort2;
 	$res = dbquery($sql);
 
 	$users = array();
@@ -392,9 +391,9 @@ function userAutoAccept($username = "") {
  * @return boolean true if an admin user has been defined
  */
 function adminUserExists() {
-	global $TBLPREFIX, $DBCONN;
+	global $DBCONN;
 	if (checkTableExists()) {
-		$sql = "SELECT u_username FROM ".$TBLPREFIX."users WHERE u_canadmin='Y'";
+		$sql = "SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_canadmin='Y'";
 		$res = dbquery($sql);
 
 		if ($res) {
@@ -427,7 +426,7 @@ function checkTableExists() {
  * @param string $msg		The log message to write to the log
  */
 function addUser($newuser, $msg = "added") {
-	global $TBLPREFIX, $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
+	global $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
 
 	if (checkTableExists()) {
 //		if (!isset($newuser["relationship_privacy"])) {
@@ -439,7 +438,7 @@ function addUser($newuser, $msg = "added") {
 //		$newuser = db_prep($newuser);
 		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
 		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
-		$sql = "INSERT INTO ".$TBLPREFIX."users VALUES('".$DBCONN->escape($newuser["username"])."','".$DBCONN->escape($newuser["password"])."','".$DBCONN->escape($newuser["firstname"])."','".$DBCONN->escape($newuser["lastname"])."','".$DBCONN->escape(serialize($newuser["gedcomid"]))."','".$DBCONN->escape(serialize($newuser["rootid"]))."'";
+		$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."users VALUES('".$DBCONN->escape($newuser["username"])."','".$DBCONN->escape($newuser["password"])."','".$DBCONN->escape($newuser["firstname"])."','".$DBCONN->escape($newuser["lastname"])."','".$DBCONN->escape(serialize($newuser["gedcomid"]))."','".$DBCONN->escape(serialize($newuser["rootid"]))."'";
 		if ($newuser["canadmin"]) $sql .= ",'Y'";
 		else $sql .= ",'N'";
 		$sql .= ",'".$DBCONN->escape(serialize($newuser["canedit"]))."'";
@@ -492,14 +491,14 @@ function addUser($newuser, $msg = "added") {
  * @param string $msg		The log message to write to the log
  */
 function updateUser($username, $newuser, $msg = "updated") {
-	global $TBLPREFIX, $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
+	global $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
 
 	if (checkTableExists()) {
 //		$newuser = db_prep($newuser);
 		$newuser['previous_username'] = $username;
 		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
 		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
-		$sql = "UPDATE ".$TBLPREFIX."users SET u_username='".$DBCONN->escape($newuser["username"])."', " .
+		$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_username='".$DBCONN->escape($newuser["username"])."', " .
 				"u_password='".$newuser["password"]."', " .
 				"u_firstname='".$DBCONN->escape($newuser["firstname"])."', " .
 				"u_lastname='".$DBCONN->escape($newuser["lastname"])."', " .
@@ -539,11 +538,11 @@ function updateUser($username, $newuser, $msg = "updated") {
 
 		//-- update all reference tables if username changed
 		if ($newuser["username"]!=$username) {
-			$sql = "UPDATE ".$TBLPREFIX."favorites SET fv_username='".$DBCONN->escape($newuser["username"])."' WHERE fv_username='".$DBCONN->escape($username)."'";
+			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."favorites SET fv_username='".$DBCONN->escape($newuser["username"])."' WHERE fv_username='".$DBCONN->escape($username)."'";
 			$res = dbquery($sql);
-			$sql = "UPDATE ".$TBLPREFIX."messages SET m_from='".$DBCONN->escape($newuser["username"])."' WHERE m_from='".$DBCONN->escape($username)."'";
+			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."messages SET m_from='".$DBCONN->escape($newuser["username"])."' WHERE m_from='".$DBCONN->escape($username)."'";
 			$res = dbquery($sql);
-			$sql = "UPDATE ".$TBLPREFIX."messages SET m_to='".$DBCONN->escape($newuser["username"])."' WHERE m_to='".$DBCONN->escape($username)."'";
+			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."messages SET m_to='".$DBCONN->escape($newuser["username"])."' WHERE m_to='".$DBCONN->escape($username)."'";
 			$res = dbquery($sql);
 		}
 		if($res)
@@ -560,10 +559,10 @@ function updateUser($username, $newuser, $msg = "updated") {
  * @param string $msg		a message to write to the log file
  */
 function deleteUser($username, $msg = "deleted") {
-	global $TBLPREFIX, $users;
+	global $users;
 	unset($users[$username]);
 //	$username = db_prep($username);
-	$sql = "DELETE FROM ".$TBLPREFIX."users WHERE u_username='$username'";
+	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='$username'";
 	$res = dbquery($sql);
 
 	$activeuser = getUserName();
@@ -636,12 +635,12 @@ function create_export_user($export_accesslevel) {
  * @return array the user array to return
  */
 function getUser($username) {
-	global $TBLPREFIX, $users, $REGEXP_DB, $GEDCOMS, $DBTYPE;
+	global $users, $REGEXP_DB, $GEDCOMS, $DBTYPE;
 
 	if (empty($username)) return false;
 	if (isset($users[$username])) return $users[$username];
 //	$username = db_prep($username);
-	$sql = "SELECT * FROM ".$TBLPREFIX."users WHERE ";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
 	if (stristr($DBTYPE, "mysql")!==false) $sql .= "BINARY ";
 	$sql .= "u_username='".$username."'";
 	$res = dbquery($sql, false);
@@ -712,13 +711,13 @@ function getUser($username) {
  * @return array 	returns a user array
  */
 function getUserByGedcomId($id, $gedcom) {
-	global $TBLPREFIX, $users, $REGEXP_DB;
+	global $users, $REGEXP_DB;
 
 	if (empty($id) || empty($gedcom)) return false;
 
 	$user = false;
 //	$id = db_prep($id);
-	$sql = "SELECT * FROM ".$TBLPREFIX."users WHERE ";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
 	$sql .= "u_gedcomid LIKE '%".$id."%'";
 	$res = dbquery($sql, false);
 
@@ -890,7 +889,7 @@ function AddToChangeLog($LogString, $ged="") {
 //----------------------------------- addMessage
 //-- stores a new message in the database
 function addMessage($message) {
-	global $TBLPREFIX, $CONTACT_METHOD, $pgv_lang,$CHARACTER_SET, $LANGUAGE, $PGV_STORE_MESSAGES, $SERVER_URL, $pgv_language, $PGV_SIMPLE_MAIL, $WEBMASTER_EMAIL, $DBCONN;
+	global $CONTACT_METHOD, $pgv_lang,$CHARACTER_SET, $LANGUAGE, $PGV_STORE_MESSAGES, $SERVER_URL, $pgv_language, $PGV_SIMPLE_MAIL, $WEBMASTER_EMAIL, $DBCONN;
 	global $TEXT_DIRECTION, $TEXT_DIRECTION_array, $DATE_FORMAT, $DATE_FORMAT_array, $TIME_FORMAT, $TIME_FORMAT_array, $WEEK_START, $WEEK_START_array, $NAME_REVERSE, $NAME_REVERSE_array;
 
 	//-- do not allow users to send a message to themselves
@@ -936,7 +935,7 @@ function addMessage($message) {
 	if (!isset($message["created"])) $message["created"] = gmdate ("M d Y H:i:s");
 	if ($PGV_STORE_MESSAGES && ($message["method"]!="messaging3" && $message["method"]!="mailto" && $message["method"]!="none")) {
 		$newid = get_next_id("messages", "m_id");
-		$sql = "INSERT INTO ".$TBLPREFIX."messages VALUES ($newid, '".$DBCONN->escape($message["from"])."','".$DBCONN->escape($message["to"])."','".$DBCONN->escape($message["subject"])."','".$DBCONN->escape($message["body"])."','".$DBCONN->escape($message["created"])."')";
+		$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."messages VALUES ($newid, '".$DBCONN->escape($message["from"])."','".$DBCONN->escape($message["to"])."','".$DBCONN->escape($message["subject"])."','".$DBCONN->escape($message["body"])."','".$DBCONN->escape($message["created"])."')";
 		$res = dbquery($sql);
 
 	}
@@ -989,9 +988,8 @@ function addMessage($message) {
 //----------------------------------- deleteMessage
 //-- deletes a message in the database
 function deleteMessage($message_id) {
-	global $TBLPREFIX;
 
-	$sql = "DELETE FROM ".$TBLPREFIX."messages WHERE m_id=".$message_id;
+	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."messages WHERE m_id=".$message_id;
 	$res = dbquery($sql);
 
 	if ($res) return true;
@@ -1001,10 +999,9 @@ function deleteMessage($message_id) {
 //----------------------------------- getUserMessages
 //-- Return an array of a users messages
 function getUserMessages($username) {
-	global $TBLPREFIX;
 
 	$messages = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."messages WHERE m_to='$username' ORDER BY m_id DESC";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."messages WHERE m_to='$username' ORDER BY m_id DESC";
 	$res = dbquery($sql);
 
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -1026,13 +1023,13 @@ function getUserMessages($username) {
  * @param array $favorite	the favorite array of the favorite to add
  */
 function addFavorite($favorite) {
-	global $TBLPREFIX, $DBCONN;
+	global $DBCONN;
 
 	// -- make sure a favorite is added
 	if (empty($favorite["gid"]) && empty($favorite["url"])) return false;
 
 	//-- make sure this is not a duplicate entry
-	$sql = "SELECT * FROM ".$TBLPREFIX."favorites WHERE ";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE ";
 	if (!empty($favorite["gid"])) $sql .= "fv_gid='".$DBCONN->escape($favorite["gid"])."' ";
 	if (!empty($favorite["url"])) $sql .= "fv_url='".$DBCONN->escape($favorite["url"])."' ";
 	$sql .= "AND fv_file='".$DBCONN->escape($favorite["file"])."' AND fv_username='".$DBCONN->escape($favorite["username"])."'";
@@ -1043,7 +1040,7 @@ function addFavorite($favorite) {
 	$newid = get_next_id("favorites", "fv_id");
 
 	//-- add the favorite to the database
-	$sql = "INSERT INTO ".$TBLPREFIX."favorites VALUES ($newid, '".$DBCONN->escape($favorite["username"])."'," .
+	$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."favorites VALUES ($newid, '".$DBCONN->escape($favorite["username"])."'," .
 			"'".$DBCONN->escape($favorite["gid"])."','".$DBCONN->escape($favorite["type"])."'," .
 			"'".$DBCONN->escape($favorite["file"])."'," .
 			"'".$DBCONN->escape($favorite["url"])."'," .
@@ -1061,9 +1058,8 @@ function addFavorite($favorite) {
  * @param int $fv_id	the id of the favorite to delete
  */
 function deleteFavorite($fv_id) {
-	global $TBLPREFIX;
 
-	$sql = "DELETE FROM ".$TBLPREFIX."favorites WHERE fv_id=".$fv_id;
+	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_id=".$fv_id;
 	$res = dbquery($sql);
 
 	if ($res) return true;
@@ -1076,12 +1072,12 @@ function deleteFavorite($fv_id) {
  * @param string $username		the username to get the favorites for
  */
 function getUserFavorites($username) {
-	global $TBLPREFIX, $GEDCOMS, $gGedcom, $CONFIGURED;
+	global $GEDCOMS, $gGedcom, $CONFIGURED;
 
 	$favorites = array();
 	//-- make sure we don't try to look up favorites for unconfigured sites
 	if (!$CONFIGURED) return $favorites;
-	$sql = "SELECT * FROM ".$TBLPREFIX."favorites WHERE fv_username=?";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_username=?";
 	$result = $gGedcom->mDb->query($sql, array($username));
 
 	while( $row = $result->fetchRow()){
