@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editlang_edit_settings.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: editlang_edit_settings.php,v 1.3 2006/10/02 12:48:41 lsces Exp $
  */
 
 require "config.php";
@@ -112,12 +112,12 @@ if ($action == "new_lang") {
 
   // Suggest a suitable flag file
   $temp = strtolower($lng_codes[$new_shortcut][1]).".gif";
-  if (file_exists("image/flags/".$temp)) {
+  if (file_exists("../users/icons/flags/".$temp)) {
     $flag = $temp;						// long name takes precedence
-  } else if (file_exists("image/flags/".$new_shortcut.".gif")) {
+  } else if (file_exists("../users/icons/flags/".$new_shortcut.".gif")) {
 	$flag = $new_shortcut.".gif";		// use short name if long name doesn't exist
   } else $flag = "new.gif";				// default if neither a long nor a short name exist
-  $flagsfile[$ln] = "image/flags/" . $flag;
+  $flagsfile[$ln] = "../users/icons/flags/" . $flag;
 
   $factsfile[$ln]    = "languages/facts.".$new_shortcut.".php";
   $DATE_FORMAT_array[$ln]  = "D M Y";
@@ -243,7 +243,7 @@ if ($action != "save" and $action != "toggleActive") {
   print " <a href=\"javascript:;\" onclick=\"return helpPopup('flagsfile_help'); \"><b style=\"color: red; cursor: help; \">?</b></a>";
   print "</td>";
   write_td_with_textdir_check();
-  $dire = "image/flags";
+  $dire = "../users/icons/flags";
   if ($handle = opendir($dire)) {
     $flagfiles = array();
     $sortedflags = array();

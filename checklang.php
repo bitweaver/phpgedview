@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: checklang.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: checklang.php,v 1.3 2006/10/02 12:48:41 lsces Exp $
  */
 // -- include config file
 require("config.php");
@@ -36,7 +36,7 @@ if (!isset($lang)) $lang="";
 
 // reading flags directory
 $flags = array();
-$rep = opendir('./image/flags/');
+$rep = opendir('../users/icons/flags/');
 while ($file = readdir($rep)) {
 	if (stristr($file, ".gif") and $file!="new.gif" and $file!="en.gif") {
 		$flags[] = substr($file, 0, strlen($file)-4);
@@ -91,7 +91,7 @@ if ($lang!="all") {
 	if ($lang!="") $flags[] = $lang;
 }
 if (isset($flags)) foreach ($flags as $indexval => $flag) {
-	print "<tr class=\"facts_label\"><td><img src=\"./image/flags/$flag.gif\" width=\"32\" border=0 alt=\"$flag\" align=\"middle\" /> $flag</td>";
+	print "<tr class=\"facts_label\"><td><img src=\"../users/icons/flags//$flag.gif\" width=\"32\" border=0 alt=\"$flag\" align=\"middle\" /> $flag</td>";
 	print "<td id=\"$flag.f\" class=\"facts_value\">...</td>";
 	print "<td id=\"$flag.l\" class=\"facts_value\">...</td>";
 	print "<td id=\"$flag.c\" class=\"facts_value\">...</td>";
