@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
+ * $Id: authentication.php,v 1.5 2006/10/02 10:59:00 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -79,8 +79,6 @@ function authenticateUser($username, $password, $basic=false) {
 						}
 					}
 				}
-				// pass entire user data insted of just username since we have it already.
-				runHooks('login', array('user'=>$user));
 				return true;
 			}
 		}
@@ -145,7 +143,6 @@ function userLogout($username = "") {
 			if($tmphits>=0) $_SESSION["pgv_counter"]=$tmphits; //set since it was set before so don't get double hits
 		}
 	}
-	runHooks('logout', array('username'=>$username));
 }
 
 /**
@@ -221,11 +218,6 @@ function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
 //			else $user["auto_accept"] = true;
 			if ($user_row["u_auto_accept"]!="N") $user["auto_accept"] = true;
 			else $user["auto_accept"] = false;
-			$ext = runHooks('getuser', $user);
-			if(count($ext) > 0)
-			{
-				$user = array_merge($user, $ext);
-			}
 			$users[$user_row["u_username"]] = $user;
 		}
 	}
@@ -485,7 +477,6 @@ function addUser($newuser, $msg = "added") {
 		AddToLog($activeuser." ".$msg." user -> ".$newuser["username"]." <-");
 		if ($res)
 		{
-			runHooks('adduser', $newuser);
 			return true;
 		}
 	}
@@ -557,7 +548,6 @@ function updateUser($username, $newuser, $msg = "updated") {
 		}
 		if($res)
 		{
-			runHooks('updateuser', $newuser);
 			return true;
 		}
 	}
@@ -581,7 +571,6 @@ function deleteUser($username, $msg = "deleted") {
 	if (($msg != "changed") && ($msg != "reqested password for") && ($msg != "verified")) AddToLog($activeuser." ".$msg." user -> ".$username." <-");
 	if($res)
 	{
-		runHooks('deleteuser', array('username'=>$username));
 		return true;
 	}
 	else{return false;}
@@ -705,11 +694,6 @@ function getUser($username) {
 //				else $user["auto_accept"]=true;
 				if ($user_row["u_auto_accept"]!='N') $user["auto_accept"]=true;
 				else $user["auto_accept"]=false;
-				$ext = runHooks('getuser', $user);
-				if(count($ext) > 0)
-				{
-					$user = array_merge($user, $ext);
-				}
 				$users[$user_row["u_username"]] = $user;
 			}
 		}
@@ -785,11 +769,6 @@ function getUserByGedcomId($id, $gedcom) {
 //					else $user["auto_accept"]=true;
 					if ($user_row["u_auto_accept"]!='N') $user["auto_accept"]=true;
 					else $user["auto_accept"]=false;
-					$ext = runHooks('getuser', $user);
-					if(count($ext) > 0)
-					{
-						$user = array_merge($user, $ext);
-					}
 					$users[$user_row["u_username"]] = $user;
 				}
 			}

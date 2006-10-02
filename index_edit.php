@@ -24,7 +24,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_edit.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
+ * @version $Id: index_edit.php,v 1.5 2006/10/02 10:58:59 lsces Exp $
  */
 
 require("config.php");
@@ -232,7 +232,6 @@ function parentrefresh() {
 
 	// end of 2nd tab
 	print "</div>\n";
-}
 
 print "</body></html>";		// Yes! Absolutely NOTHING at page bottom, please.
 ?>

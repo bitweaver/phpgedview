@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.3 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: functions.php,v 1.4 2006/10/02 10:59:00 lsces Exp $
  */
 
 /**
@@ -2673,57 +2673,6 @@ function remove_custom_tags($gedrec, $remove="no") {
 	//-- make downloaded file DOS formatted
 	$gedrec = preg_replace("/([^\r])\n/", "$1\n", $gedrec);
 	return $gedrec;
-}
-
-/**
- * Locate and run any hook files found.
- *
- * @param string $type		the type of hook requested (login|logout|adduser|updateuser|deleteuser|getuser)
- * @param array  $params	array of parameters
- * @return array			array containing any results from the hooks (not currently used)
- * @author					Patrick Kellum
- * @todo					add aditional types, including search.
- */
-function runHooks($type, $params=array())
-{
-	global $THEME_DIR;
-	static $cache = array();
-	// check for cache
-	if(isset($cache[$type]))
-	{
-		$hooks = $cache[$type];
-	}
-	else
-	{
-		// look for core hooks, shouldn't be needed, but may be useful for quick site customizing
-		if(file_exists("hooks/{$type}.php")){$hooks = array('core'=>"hooks/{$type}.php");}else{$hooks = array();}
-	// look for module hooks
-	$d = dir('modules/');
-		while(false !== ($f = $d->read()))
-		{
-			if($f === '.' || $f === '..'){continue;}
-			if(file_exists("modules/{$f}/pgvhooks/{$type}.php"))
-		{
-				$hooks[$f] = "modules/{$f}/pgvhooks/{$type}.php";
-		}
-	}
-	$d->close();
-		// look for theme hooks
-		if(file_exists("{$THEME_DIR}hooks/{$type}.php")){$hooks['theme'] = "{$THEME_DIR}hooks/{$type}.php";}
-		// cache the results for speed
-		$cache[$type] = $hooks;
-	}
-	// run all found hooks
-	$results = array();
-	foreach($hooks as $module=>$hook)
-		{
-		include_once $hook;
-		$cl = "mod_{$module}_{$type}";
-					$obj = new $cl();
-		$res = $obj->hook($params);
-		if($res !== null){$results = array_merge($results, $res);}
-	}
-	return $results;
 }
 
 function getfilesize($bytes) {
