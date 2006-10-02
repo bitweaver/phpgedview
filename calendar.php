@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * $Id: calendar.php,v 1.3 2006/10/02 22:47:24 lsces Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -31,6 +31,17 @@
 /**
  * load the configuration and create the context
  */
+// Initialization
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require($factsfile["english"]);
 if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
@@ -205,6 +216,7 @@ if (strlen($year)<5 && preg_match("/[\d]{2,4}/", $year)) {
 }
 else $leap = FALSE;
 
+$pregquery = "";
 // Check for invalid days
 $m_days = 31;
 $m_name = strtolower($month);
@@ -313,12 +325,11 @@ print_header($pgv_lang["anniversary_calendar"]);
 print "<div style=\" text-align: center;\" id=\"calendar_page\">\n";
 
 	//-- moved here from session.php, should probably be moved somewhere else still
-	$sql = "SELECT i_id FROM ".$TBLPREFIX."individuals where i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' AND i_gedcom like '%@#DHEBREW@%'";
-	$tempsql = dbquery($sql);
-	$res =& $tempsql;
+	$sql = "SELECT i_id FROM ".$TBLPREFIX."individuals where i_file='".$GEDCOMS[$GEDCOM]["id"]."' AND i_gedcom like '%@#DHEBREW@%'";
+	$tempsql = $gGedcom->mDb->query($sql);
+	$res = $tempsql;
 	if ($res->numRows()>0) $HEBREWFOUND[$GEDCOM] = true;
 	else $HEBREWFOUND[$GEDCOM] = false;
-	$res->free();
 
 	// Print top text
 	?>

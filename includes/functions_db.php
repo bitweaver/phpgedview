@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.6 2006/10/02 22:05:51 lsces Exp $
+ * @version $Id: functions_db.php,v 1.7 2006/10/02 22:47:24 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -641,7 +641,7 @@ function get_indi_list() {
 
 //-- get the assolist from the datastore
 function get_asso_list($type = "all") {
-	global $assolist, $GEDCOM, $DBCONN, $GEDCOMS;
+	global $assolist, $GEDCOM, $DBCONN, $GEDCOMS, $gGedcom;
 	global $TBLPREFIX, $ASSOLIST_RETRIEVED;
 
 	if ($ASSOLIST_RETRIEVED) return $assolist;
@@ -650,10 +650,10 @@ function get_asso_list($type = "all") {
 	$oldged = $GEDCOM;
 	if (($type == "all") || ($type == "fam")) {
 		$sql = "SELECT f_id, f_file, f_gedcom, f_husb, f_wife FROM ".$TBLPREFIX."families WHERE f_gedcom LIKE '% ASSO %'";
-		$res = dbquery($sql);
+		$res = $gGedcom->mDb->query($sql);
 
 		$ct = $res->numRows();
-		while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+		while( $row =& $res->fetchRow() ){
 			$asso = array();
 			$asso["type"] = "fam";
 			$pid2 = $row["f_id"]."[".$row["f_file"]."]";
@@ -678,17 +678,15 @@ function get_asso_list($type = "all") {
 				$pid = $match[$i][1]."[".$row["f_file"]."]";
 				$assolist[$pid][$pid2] = $asso;
 			}
-			$row = db_cleanup($row);
 		}
-		$res->free();
 	}
 
 	if (($type == "all") || ($type == "indi")) {
 		$sql = "SELECT i_id, i_file, i_gedcom FROM ".$TBLPREFIX."individuals WHERE i_gedcom LIKE '% ASSO %'";
-		$res = dbquery($sql);
+		$res = $gGedcom->mDb->query($sql);
 
 		$ct = $res->numRows();
-		while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+		while( $row =& $res->fetchRow() ){
 			$asso = array();
 			$asso["type"] = "indi";
 			$pid2 = $row["i_id"]."[".$row["i_file"]."]";
@@ -700,9 +698,7 @@ function get_asso_list($type = "all") {
 				$pid = $match[$i][1]."[".$row["i_file"]."]";
 				$assolist[$pid][$pid2] = $asso;
 			}
-			$row = db_cleanup($row);
 		}
-		$res->free();
 	}
 
 	$GEDCOM = $oldged;
@@ -1063,16 +1059,16 @@ function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
  * @return	array $myindilist array with all individuals that matched the query
  */
 function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=false, $ANDOR="AND") {
-	global $TBLPREFIX, $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $TBLPREFIX, $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS, $gGedcom;
 	$myindilist = array();
 	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$sql = "SELECT i_id, i_name, i_file, i_gedcom, i_isdead, i_letter, i_surname, d_gid, d_fact FROM ".$TBLPREFIX."dates, ".$TBLPREFIX."individuals WHERE i_id=d_gid AND i_file=d_file ";
-	if (!empty($day)) $sql .= "AND d_day='".$DBCONN->escape($day)."' ";
-	if (!empty($month)) $sql .= "AND d_month='".$DBCONN->escape(str2upper($month))."' ";
-	if (!empty($year)) $sql .= "AND d_year='".$DBCONN->escape($year)."' ";
+	if (!empty($day)) $sql .= "AND d_day='".$day."' ";
+	if (!empty($month)) $sql .= "AND d_month='".str2upper($month)."' ";
+	if (!empty($year)) $sql .= "AND d_year='".$year."' ";
 	if (!empty($fact)) {
 		$sql .= "AND (";
 		$facts = preg_split("/[,:; ]/", $fact);
@@ -1082,23 +1078,22 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 			$ct = preg_match("/!(\w+)/", $fact, $match);
 			if ($ct > 0) {
 				$fact = $match[1];
-				$sql .= "d_fact!='".$DBCONN->escape(str2upper($fact))."'";
+				$sql .= "d_fact!='".str2upper($fact)."'";
 			}
 			else {
-				$sql .= "d_fact='".$DBCONN->escape(str2upper($fact))."'";
+				$sql .= "d_fact='".str2upper($fact)."'";
 			}
 			$i++;
 		}
 		$sql .= ") ";
 	}
-	if (!$allgeds) $sql .= "AND d_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ";
+	if (!$allgeds) $sql .= "AND d_file='".$GEDCOMS[$GEDCOM]["id"]."' ";
 	$sql .= "ORDER BY d_year DESC, d_mon DESC, d_day DESC";
 //	print $sql;
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if ($res) {
-		while($row =& $res->fetchRow()){
-			$row = db_cleanup($row);
+		while( $row =& $res->fetchRow() ){
 			if ($allgeds) {
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["names"] = get_indi_names($row['i_gedcom']);
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["gedfile"] = $row['i_file'];
@@ -1114,7 +1109,6 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 				if ($myindilist[$row['i_id']]["gedfile"] == $GEDCOMS[$GEDCOM]['id']) $indilist[$row['i_id']] = $myindilist[$row['i_id']];
 			}
 		}
-		$res->free();
 	}
 	return $myindilist;
 }
@@ -1385,16 +1379,16 @@ function search_fams_year_range($startyear, $endyear, $allgeds=false) {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $TBLPREFIX, $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOM, $GEDCOMS;
+	global $TBLPREFIX, $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOM, $GEDCOMS, $gGedcom;
 	$myfamlist = array();
 	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$sql = "SELECT f_id, f_husb, f_wife, f_file, f_gedcom, d_gid, d_fact FROM ".$TBLPREFIX."dates, ".$TBLPREFIX."families WHERE f_id=d_gid AND f_file=d_file ";
-	if (!empty($day)) $sql .= "AND d_day='".$DBCONN->escape($day)."' ";
-	if (!empty($month)) $sql .= "AND d_month='".$DBCONN->escape(str2upper($month))."' ";
-	if (!empty($year)) $sql .= "AND d_year='".$DBCONN->escape($year)."' ";
+	if (!empty($day)) $sql .= "AND d_day='".$day."' ";
+	if (!empty($month)) $sql .= "AND d_month='".str2upper($month)."' ";
+	if (!empty($year)) $sql .= "AND d_year='".$year."' ";
 	if (!empty($fact)) {
 		$sql .= "AND (";
 		$facts = preg_split("/[,:; ]/", $fact);
@@ -1404,23 +1398,22 @@ function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=fals
 			$ct = preg_match("/!(\w+)/", $fact, $match);
 			if ($ct > 0) {
 				$fact = $match[1];
-				$sql .= "d_fact!='".$DBCONN->escape(str2upper($fact))."'";
+				$sql .= "d_fact!='".str2upper($fact)."'";
 			}
 			else {
-				$sql .= "d_fact='".$DBCONN->escape(str2upper($fact))."'";
+				$sql .= "d_fact='".str2upper($fact)."'";
 			}
 			$i++;
 		}
 		$sql .= ") ";
 	}
-	if (!$allgeds) $sql .= "AND d_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ";
+	if (!$allgeds) $sql .= "AND d_file=? ";
 	$sql .= "ORDER BY d_year, d_month, d_day DESC";
 
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql, array($GEDCOMS[$GEDCOM]["id"]));
 
 	$gedold = $GEDCOM;
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		$GEDCOM = get_gedcom_from_id($row['f_file']);
 		$hname = get_sortable_name($row['f_husb']);
 		$wname = get_sortable_name($row['f_wife']);
@@ -1441,7 +1434,6 @@ function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=fals
 		}
 	}
 	$GEDCOM = $gedold;
-	$res->free();
 	return $myfamlist;
 }
 

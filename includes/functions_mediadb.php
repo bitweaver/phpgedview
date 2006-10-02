@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: functions_mediadb.php,v 1.3 2006/10/02 22:05:51 lsces Exp $
+ * @version $Id: functions_mediadb.php,v 1.4 2006/10/02 22:47:24 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -1496,15 +1496,14 @@ function show_media_form($pid, $action="newentry", $filename="", $linktoid="", $
 }
 
 function get_media_links($m_media) {
-	global $DBCONN, $TBLPREFIX, $GEDCOMS, $GEDCOM;
+	global $DBCONN, $TBLPREFIX, $GEDCOMS, $GEDCOM, $gGedcom;
 	
-	$sql = "SELECT mm_gid FROM ".$TBLPREFIX."media_mapping WHERE mm_media='".$DBCONN->escape($m_media)."' AND mm_gedfile='".$GEDCOMS[$GEDCOM]['id']."'";
-	$res = dbquery($sql);
+	$sql = "SELECT mm_gid FROM ".$TBLPREFIX."media_mapping WHERE mm_media=? AND mm_gedfile=?";
+	$res = $gGedcom->mDb->query($sql, array($m_media,$GEDCOMS[$GEDCOM]['id']) );
 	$links = array();
-	while($row =& $res->fetchRow()) {
+	while( $row =& $res->fetchRow() ) {
 		$links[] = $row['mm_gid'];
 	}
-	$res->free();
 	return $links;
 }
 

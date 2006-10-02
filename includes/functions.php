@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.5 2006/10/02 22:05:51 lsces Exp $
+ * @version $Id: functions.php,v 1.6 2006/10/02 22:47:24 lsces Exp $
  */
 
 /**
@@ -57,7 +57,7 @@ function check_db($ignore_previous=false) {
 
 	if (!$ignore_previous) {
 		if ($gGedcom->mDb->isValid()) return true;
-		if (!empty($gBitSystem->mDb->ErrorMsg )) {
+		if (!empty($$gGedcom->mDb->ErrorMsg )) {
 			return false;
 		}
 	}
@@ -899,7 +899,7 @@ function find_updated_record($gid, $gedfile="") {
  */
 function find_highlighted_object($pid, $indirec) {
 	global $MEDIA_DIRECTORY, $MEDIA_DIRECTORY_LEVELS, $PGV_IMAGE_DIR, $PGV_IMAGES, $MEDIA_EXTERNAL;
-	global $GEDCOMS, $GEDCOM, $TBLPREFIX, $DBCONN;
+	global $GEDCOMS, $GEDCOM, $TBLPREFIX, $DBCONN, $gGedcom;
 
 	if (!showFactDetails("OBJE", $pid)) return false;
 	$object = array();
@@ -928,12 +928,11 @@ function find_highlighted_object($pid, $indirec) {
 	}
 
 	//-- find all of the media items for a person
-	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' AND mm_gid='".$DBCONN->escape($pid)."' ORDER BY m_id";
-	$res = dbquery($sql);
-	while($row = $res->fetchRow()) {
+	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile=? AND mm_gid=? ORDER BY m_id";
+	$res = $gGedcom->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"], $pid ));
+	while( $row = $res->fetchRow() ) {
 		$media[] = $row;
 	}
-	$res->free();
 
 	//-- for the given media choose the
 	foreach($media as $i=>$row) {

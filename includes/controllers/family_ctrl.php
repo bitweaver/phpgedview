@@ -26,6 +26,17 @@
  * @version $Id$
  */
 
+// Initialization
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require_once 'config.php';
 require_once 'includes/functions_print_facts.php';
 require_once 'includes/controllers/basecontrol.php';
