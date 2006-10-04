@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.8 2006/10/02 23:04:15 lsces Exp $
+ * @version $Id: functions_db.php,v 1.9 2006/10/04 12:07:54 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -36,7 +36,8 @@ if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 //-- PEAR:DB replaced by ADOdb from bitweaver
 
 //-- set the REGEXP status of databases
-$REGEXP_DB = (stristr($DBTYPE,'mysql') !== false || $DBTYPE=='pgsql');
+global $gBitDbType;
+$REGEXP_DB = (stristr($gBitDbType,'mysql') !== false || $gBitDbType=='pgsql');
 
 //-- uncomment the following line to turn on sql query logging
 $SQL_LOG = false;
@@ -81,52 +82,6 @@ function &dbquery($sql, $show_error=true, $count=0) {
 //		if ($show_error) print "<span class=\"error\"><b>ERROR:".$res->getCode()." ".$res->getMessage()." <br />SQL:</b>".$res->getUserInfo()."</span><br /><br />\n";
 //	}
 	return $res;
-}
-
-/**
- * prepare an item to be updated in the database
- *
- * add slashes and convert special chars so that it can be added to db
- * @param mixed $item		an array or string to be prepared for the database
- */
-function db_prep($item) {
-	global $DBCONN;
-
-	if (is_array($item)) {
-		foreach($item as $key=>$value) {
-			$item[$key]=db_prep($value);
-		}
-		return $item;
-	}
-	else {
-//		if (DB::isError($DBCONN)) return $item;
-		if (is_object($DBCONN)) return $DBCONN->escape($item);
-		//-- use the following commented line to convert between character sets
-		//return $DBCONN->escape(iconv("iso-8859-1", "UTF-8", $item));
-	}
-}
-
-/**
- * Clean up an item retrieved from the database
- *
- * clean the slashes and convert special
- * html characters to their entities for
- * display and entry into form elements
- * @param mixed $item	the item to cleanup
- * @return mixed the cleaned up item
- */
-function db_cleanup($item) {
-//	return $item;
-	if (is_array($item)) {
-		foreach($item as $key=>$value) {
-			if ($key!="gedcom") $item[$key]=stripslashes($value);
-			else $key=$value;
-		}
-		return $item;
-	}
-	else {
-		return stripslashes($item);
-	}
 }
 
 /**
@@ -381,7 +336,6 @@ function find_media_record($rid, $gedfile='') {
 	if (!$res) return false;
 	if ($res->numRows()!=0) {
 		$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
-		$row = db_cleanup($row);
 		$objectlist[$rid]["ext"] = $row["m_ext"];
 		$row["m_titl"] = trim($row["m_titl"]);
 		if (empty($row["m_titl"])) $row["m_titl"] = $row["m_file"];
@@ -402,9 +356,9 @@ function find_media_record($rid, $gedfile='') {
  * @return string the gedcom xref id of the first person in the gedcom
  */
 function find_first_person() {
-	global $GEDCOM, $GEDCOMS, $DBTYPE, $DBCONN;
+	global $GEDCOM, $GEDCOMS, $gBitDbType, $DBCONN;
 	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY i_id";
-	if ($DBTYPE!="sqlite") $sql.=" LIMIT 1";
+	if ($gBitDbType!="sqlite") $sql.=" LIMIT 1";
 	$row = $DBCONN->getRow($sql);
 	if (!$row) return $row['i_id'];
 	else return "I1";
@@ -466,7 +420,6 @@ function get_source_add_title_list() {
 	$ct = $res->numRows();
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		$source = array();
-		$row = db_cleanup($row);
 		$ct = preg_match("/\d ROMN (.*)/", $row["s_gedcom"], $match);
  		if ($ct==0) $ct = preg_match("/\d _HEB (.*)/", $row["s_gedcom"], $match);
 		$source["name"] = $match[1];
@@ -500,7 +453,6 @@ function get_source_list() {
 		$source = array();
 		$source["name"] = $row["s_name"];
 		$source["gedcom"] = $row["s_gedcom"];
-		$row = db_cleanup($row);
 		$source["gedfile"] = $row["s_file"];
 //		$source["nr"] = 0;
 		$sourcelist[$row["s_id"]] = $source;
@@ -530,7 +482,6 @@ function get_repo_list() {
 		$repo["gedfile"] = $row["o_file"];
 		$repo["type"] = $row["o_type"];
 		$repo["gedcom"] = $row["o_gedcom"];
-		$row = db_cleanup($row);
 		$repolist[$row["o_id"]]= $repo;
 	}
 	$res->free();
@@ -557,7 +508,6 @@ function get_repo_id_list() {
 		$repo["gedfile"] = $row["o_file"];
 		$repo["type"] = $row["o_type"];
 		$repo["gedcom"] = $row["o_gedcom"];
-		$row = db_cleanup($row);
 		$repo_id_list[$row["o_id"]] = $repo;
 	}
 	$res->free();
@@ -591,7 +541,6 @@ function get_repo_add_title_list() {
 		$repo["id"] = $row["o_id"];
 		$repo["gedfile"] = $row["o_file"];
 		$repo["type"] = $row["o_type"];
-		$row = db_cleanup($row);
 		$repolist[$row["o_id"]] = $repo;
 
 	}
@@ -613,7 +562,6 @@ function get_indi_list() {
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		$indi = array();
 		$indi["gedcom"] = $row["i_gedcom"];
-		$row = db_cleanup($row);
 		$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], "A"));
 		$indi["isdead"] = $row["i_isdead"];
 		$indi["gedfile"] = $row["i_file"];
@@ -626,7 +574,6 @@ function get_indi_list() {
 
 	$ct = $res->numRows();
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
 		if (isset($indilist[$row["n_gid"]]) && ($indilist[$row["n_gid"]]["gedfile"]==$GEDCOMS[$GEDCOM]["id"])) {
 			$indilist[$row["n_gid"]]["names"][] = array($row["n_name"], $row["n_letter"], $row["n_surname"], $row["n_type"]);
 		}
@@ -719,7 +666,6 @@ function get_fam_list() {
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		$fam = array();
 		$fam["gedcom"] = $row["f_gedcom"];
-		$row = db_cleanup($row);
 		$hname = get_sortable_name($row["f_husb"]);
 		$wname = get_sortable_name($row["f_wife"]);
 		$name = "";
@@ -754,7 +700,6 @@ function get_other_list() {
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		$source = array();
 		$source["gedcom"] = $row["o_gedcom"];
-		$row = db_cleanup($row);
 		$source["type"] = $row["o_type"];
 		$source["gedfile"] = $row["o_file"];
 		$otherlist[$row["o_id"]]= $source;
@@ -777,7 +722,6 @@ function get_media_list() {
 	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		$source = array();
 		$source["gedcom"] = $row["m_gedrec"];
-		$row = db_cleanup($row);
 		$source["ext"] = $row["m_ext"];
 		$source["titl"] = $row["m_titl"];
 		$source["file"] = $row["m_file"];
@@ -801,10 +745,10 @@ function get_media_list() {
  * @return	array $myindilist array with all individuals that matched the query
  */
 function search_indis($query, $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 	$myindilist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term = "LIKE";
 	//-- if the query is a string
 	if (!is_array($query)) {
@@ -840,7 +784,6 @@ function search_indis($query, $allgeds=false, $ANDOR="AND") {
 
 	if ($res) {
 		while($row =& $res->fetchRow()){
-			$row = db_cleanup($row);
 			if (count($allgeds) > 1) {
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["names"] = get_indi_names($row['i_gedcom']);
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["gedfile"] = $row['i_file'];
@@ -871,7 +814,6 @@ function search_indis_fam($add2myindilist) {
 	while($row =& $res->fetchRow()){
 		if (isset($add2myindilist[$row['i_id']])){
 			$add2my_fam=$add2myindilist[$row['i_id']];
-			$row = db_cleanup($row);
 			$myindilist[$row['i_id']]["names"] = get_indi_names($row['i_gedcom']);
 			$myindilist[$row['i_id']]["gedfile"] = $row['i_file'];
 			$myindilist[$row['i_id']]["gedcom"] = $row['i_gedcom'].$add2my_fam;
@@ -890,10 +832,10 @@ function search_indis_fam($add2myindilist) {
  * @return array
  */
 function search_indis_year_range($startyear, $endyear, $allgeds=false) {
-	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$myindilist = array();
@@ -913,7 +855,6 @@ function search_indis_year_range($startyear, $endyear, $allgeds=false) {
 	$res = dbquery($sql);
 
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		$myindilist[$row['i_id']]["names"] = get_indi_names($row['i_gedcom']);
 		$myindilist[$row['i_id']]["gedfile"] = $row['i_file'];
 		$myindilist[$row['i_id']]["gedcom"] = $row['i_gedcom'];
@@ -927,10 +868,10 @@ function search_indis_year_range($startyear, $endyear, $allgeds=false) {
 
 //-- search through the gedcom records for individuals
 function search_indis_names($query, $allgeds=false) {
-	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	//-- split up words and find them anywhere in the record... important for searching names
@@ -962,7 +903,6 @@ function search_indis_names($query, $allgeds=false) {
 	if (!$allgeds) $sql .= " AND i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."'";
 	$res = dbquery($sql);
 	while($row = $res->fetchRow()){
-		$row = db_cleanup($row);
 		if ($allgeds) $key = $row['i_id']."[".$row['i_file']."]";
 		else $key = $row['i_id'];
 		if (isset($indilist[$key])) $myindilist[$key] = $indilist[$key];
@@ -994,7 +934,6 @@ function search_indis_names($query, $allgeds=false) {
 	$res = dbquery($sql);
 
 	while($row = $res->fetchRow()){
-		$row = db_cleanup($row);
 		if ($allgeds) $key = $row['i_id']."[".$row['i_file']."]";
 		else $key = $row['i_id'];
 		if (!isset($myindilist[$key])) {
@@ -1020,7 +959,7 @@ function search_indis_names($query, $allgeds=false) {
  * @param	int $year the year to search for, leave empty to include all
  */
 function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
-	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $GEDCOMS;
 
 	$changes = array();
 	while(strlen($year)<4) $year ='0'.$year;
@@ -1056,10 +995,10 @@ function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
  * @return	array $myindilist array with all individuals that matched the query
  */
 function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS, $gGedcom;
+	global $GEDCOM, $indilist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS, $gGedcom;
 	$myindilist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$sql = "SELECT i_id, i_name, i_file, i_gedcom, i_isdead, i_letter, i_surname, d_gid, d_fact FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_id=d_gid AND i_file=d_file ";
@@ -1112,9 +1051,9 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 
 //-- search through the gedcom records for families
 function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 	$myfamlist = array();
 	if (!is_array($query)) $sql = "SELECT f_id, f_husb, f_wife, f_file, f_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE (f_gedcom $term '".$DBCONN->escape($query)."')";
@@ -1144,7 +1083,6 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 
 	$gedold = $GEDCOM;
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		$GEDCOM = get_gedcom_from_id($row['f_file']);
 		if ($allnames == true) {
 			$hname = get_sortable_name($row['f_husb'], "", "", true);
@@ -1186,7 +1124,7 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 
 //-- search through the gedcom records for families
 function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $GEDCOMS;
 	//if ($REGEXP_DB) $term = "REGEXP";
 	//else $term = "LIKE";
 	$myfamlist = array();
@@ -1203,7 +1141,6 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
 
 	$gedold = $GEDCOM;
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		$GEDCOM = get_gedcom_from_id($row['f_file']);
 		if ($allnames == true) {
 			$hname = get_sortable_name($row['f_husb'], "", "", true);
@@ -1256,7 +1193,7 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
  * @return	array $myfamlist array with all families that matched the query
  */
 function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $GEDCOMS;
 	$myfamlist = array();
 	if (!is_array($query)) $sql = "SELECT f_id, f_husb, f_wife, f_file FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE (f_husb='$query' OR f_wife='$query' OR f_chil LIKE '%$query;%')";
 	else {
@@ -1284,7 +1221,6 @@ function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=fal
 
 	$i=0;
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		if ($allnames == true) {
 			$hname = get_sortable_name($row['f_husb'], "", "", true);
 			$wname = get_sortable_name($row['f_wife'], "", "", true);
@@ -1325,10 +1261,10 @@ function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=fal
 
 //-- search through the gedcom records for families with daterange
 function search_fams_year_range($startyear, $endyear, $allgeds=false) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$myfamlist = array();
@@ -1348,7 +1284,6 @@ function search_fams_year_range($startyear, $endyear, $allgeds=false) {
 	$res = dbquery($sql);
 
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		$hname = get_sortable_name($row['f_husb']);
 		$wname = get_sortable_name($row['f_wife']);
 		if (empty($hname)) $hname = "@N.N.";
@@ -1376,10 +1311,10 @@ function search_fams_year_range($startyear, $endyear, $allgeds=false) {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOM, $GEDCOMS, $gGedcom;
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOM, $GEDCOMS, $gGedcom;
 	$myfamlist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$sql = "SELECT f_id, f_husb, f_wife, f_file, f_gedcom, d_gid, d_fact FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."families WHERE f_id=d_gid AND f_file=d_file ";
@@ -1436,10 +1371,10 @@ function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=fals
 
 //-- search through the gedcom records for sources
 function search_sources($query, $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 	$mysourcelist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 	if (!is_array($query)) {
 		$sql = "SELECT s_id, s_name, s_file, s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE ";
@@ -1472,7 +1407,6 @@ function search_sources($query, $allgeds=false, $ANDOR="AND") {
 	$res = dbquery($sql);
 
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		if (count($allgeds) > 1) {
 			$mysourcelist[$row['s_id']."[".$row['s_file']."]"]["name"] = $row['s_name'];
 			$mysourcelist[$row['s_id']."[".$row['s_file']."]"]["gedfile"] = $row['s_file'];
@@ -1496,10 +1430,10 @@ function search_sources($query, $allgeds=false, $ANDOR="AND") {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 	$mysourcelist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$sql = "SELECT s_id, s_name, s_file, s_gedcom, d_gid FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_id=d_gid AND s_file=d_file ";
@@ -1514,7 +1448,6 @@ function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=f
 
 	$gedold = $GEDCOM;
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		if ($allgeds) {
 			$mysourcelist[$row['s_id']."[".$row['s_name']."]"]["name"] = $row['s_name'];
 			$mysourcelist[$row['s_id']."[".$row['s_name']."]"]["gedfile"] = $row['s_name'];
@@ -1533,10 +1466,10 @@ function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=f
 
 //-- search through the gedcom records for sources
 function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
-	global $GEDCOM, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 	$mysourcelist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 	if (!is_array($query)) {
 		$sql = "SELECT o_id, o_type, o_file, o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE ";
@@ -1569,7 +1502,6 @@ function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
 	$res = dbquery($sql);
 
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		if (count($allgeds) > 1) {
 			$mysourcelist[$row['o_id']."[".$row['o_file']."]"]["type"] = $row['o_type'];
 			$mysourcelist[$row['o_id']."[".$row['o_file']."]"]["gedfile"] = $row['o_file'];
@@ -1593,10 +1525,10 @@ function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $DBTYPE, $GEDCOMS;
+	global $GEDCOM, $famlist, $DBCONN, $REGEXP_DB, $gBitDbType, $GEDCOMS;
 	$myrepolist = array();
-	if (stristr($DBTYPE, "mysql")!==false) $term = "REGEXP";
-	else if (stristr($DBTYPE, "pgsql")!==false) $term = "~*";
+	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
+	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
 
 	$sql = "SELECT o_id, o_file, o_type, o_gedcom, d_gid FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."other WHERE o_id=d_gid AND o_file=d_file ";
@@ -1611,7 +1543,6 @@ function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 
 	$gedold = $GEDCOM;
 	while($row =& $res->fetchRow()){
-		$row = db_cleanup($row);
 		$tt = preg_match("/1 NAME (.*)/", $row['o_type'], $match);
 		if ($tt == "0") $name = $row['o_id']; else $name = $match[1];
 		if ($allgeds) {
@@ -2556,7 +2487,6 @@ function get_server_list(){
 			$source = array();
 			$source["name"] = $row["s_name"];
 			$source["gedcom"] = $row["s_gedcom"];
-			$row = db_cleanup($row);
 			$source["gedfile"] = $row["s_file"];
 			$sitelist[$row["s_id"]] = $source;
 			$sourcelist[$row["s_id"]] = $source;

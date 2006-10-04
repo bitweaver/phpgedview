@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.7 2006/10/02 22:05:51 lsces Exp $
+ * @version $Id: index.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
  */
 
 // Initialization
@@ -130,16 +130,6 @@ if (!empty($uname)) {
 	}
 	if (($action=="deletefav")&&(isset($fv_id))) {
 		deleteFavorite($fv_id);
-	}
-	else if ($action=="deletemessage") {
-		if (isset($message_id)) {
-			if (!is_array($message_id)) deleteMessage($message_id);
-			else {
-				foreach($message_id as $indexval => $mid) {
-					if (isset($mid)) deleteMessage($mid);
-				}
-			}
-		}
 	}
 }
 

@@ -42,7 +42,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: postgedview.php,v 1.3 2006/10/02 23:04:16 lsces Exp $
+ * @version $Id: postgedview.php,v 1.4 2006/10/04 12:07:53 lsces Exp $
  * @author Jim Carrey
  * @package PhpGedView
  * @subpackage PostNuke
@@ -131,7 +131,7 @@
 			// is the user there and verified ?
 			if (getUser($post_user) and ($admin_ver == "yes")) {
 				$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='Y', u_sessiontime='".time()."' WHERE u_username='$post_user'";
-				$res = dbquery($sql);
+				$res = $gGedcom->mDb->query($sql);
 				AddToLog("Login Successful ->" . $post_user ."<-");
 				
 				$_SESSION['pgv_user'] = $post_user;

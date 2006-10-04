@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.4 2006/10/02 23:04:16 lsces Exp $
+ * @version $Id: editconfig.php,v 1.5 2006/10/04 12:07:54 lsces Exp $
  */
 
 // Initialization
@@ -109,9 +109,6 @@ if ($action=="update" && !isset($security_user)) {
 		$configtext = preg_replace('/\$CONFIGURED\s*=\s*.*;/', "\$CONFIGURED = true;", $configtext);
 		$CONFIGURED = true;
 //		require_once("includes/functions_import.php");
-//        //-- upgrade the database
-//        setup_database(1);
-//        cleanup_database();
 	}
 
 	// Save the languages the user has chosen to have active on the website

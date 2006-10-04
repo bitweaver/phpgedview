@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: login_register.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: login_register.php,v 1.3 2006/10/04 12:07:54 lsces Exp $
  */
 
 require "config.php";
@@ -472,16 +472,6 @@ switch ($action) {
 						$mail_body .= $pgv_lang["mail02_line04a"] . "\r\n";
 					 }
 					  $host = preg_replace("/^www\./i", "", $_SERVER["SERVER_NAME"]);
-					  $headers = "From: phpgedview-noreply@".$host;
-						$message = array();
-						$message["to"]=$WEBMASTER_EMAIL;
-						$message["from"]=$user_email;
-						$message["subject"] = str_replace("#SERVER_NAME#", $SERVER_URL, str_replace("#user_email#", $user_email, $pgv_lang["mail02_subject"]));
-						$message["body"] = $mail_body;
-						$message["created"] = $time;
-						$message["method"] = $SUPPORT_METHOD;
-						$message["no_from"] = true;
-						addMessage($message);
 	
 						loadLanguage($oldlanguage);		// Reset language
 					?>
@@ -578,18 +568,6 @@ switch ($action) {
 	  			  	$mail_body .= $pgv_lang["mail03_line03a"] . "\r\n";
   			      }
   			      $path = substr($SCRIPT_NAME, 0, strrpos($SCRIPT_NAME, "/"));
-  			      $mail_body .= "http://".$_SERVER['SERVER_NAME'] . $path."/useradmin.php?action=edituser&username=" . urlencode($newuser["username"]) . "\r\n";
-					$host = preg_replace("/^www\./i", "", $_SERVER["SERVER_NAME"]);
-					$headers = "From: phpgedview-noreply@".$host;
-		  			$message = array();
-					$message["to"]=$WEBMASTER_EMAIL;
-					$message["from"]="phpgedview-noreply@".$host;
-					$message["subject"] = str_replace("#SERVER_NAME#", $SERVER_URL, $pgv_lang["mail03_subject"]);
-					$message["body"] = $mail_body;
-					$message["created"] = $time;
-					$message["method"] = $SUPPORT_METHOD;
-					$message["no_from"] = true;
-					addMessage($message);
 
 				loadLanguage($oldlanguage);		// Reset language
   			

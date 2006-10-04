@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.7 2006/10/02 22:05:51 lsces Exp $
+ * @version $Id: session.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -744,10 +744,10 @@ if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='no') $_SESSION["show_cont
 if (!isset($USE_THUMBS_MAIN)) $USE_THUMBS_MAIN = false;
 if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
    &&(strstr($SCRIPT_NAME, "editconfig_help.php")===false)) {
-   if ((!check_db())||(!adminUserExists())) {
+//   if ((!check_db())||(!adminUserExists())) {
 //      header("Location: editconfig.php");
 //      exit;
-   }
+//   }
 
    if ((strstr($SCRIPT_NAME, "editconfig_gedcom.php")===false)
    &&(strstr($SCRIPT_NAME, "help_text.php")===false)
@@ -762,9 +762,7 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
    &&(strstr($SCRIPT_NAME, "addmedia.php")===false)
    &&(strstr($SCRIPT_NAME, "importgedcom.php")===false)
    &&(strstr($SCRIPT_NAME, "client.php")===false)
-   &&(strstr($SCRIPT_NAME, "edit_privacy.php")===false)
-   &&(strstr($SCRIPT_NAME, "upgrade33-40.php")===false)
-   &&(strstr($SCRIPT_NAME, "useradmin.php")===false)) {
+   &&(strstr($SCRIPT_NAME, "edit_privacy.php")===false) ) {
 //   	if ((count($GEDCOMS)==0)||(!check_for_import($GEDCOM))) {
 //		header("Location: editgedcoms.php");
 //		exit;

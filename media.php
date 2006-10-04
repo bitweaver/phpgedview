@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.3 2006/10/02 23:04:16 lsces Exp $
+ * @version $Id: media.php,v 1.4 2006/10/04 12:07:54 lsces Exp $
  */
 
  /* TODO:
@@ -375,12 +375,11 @@ if (check_media_structure()) {
 		//-- do not allow it to be moved if it is
 		$myFile = str_replace($MEDIA_DIRECTORY, "", $directory.$movefile);
 		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
-		$res = dbquery($sql);
+		$res = $gGedcom->mDb->query($sql);
 		$onegedcom = true;
-		while($row=$res->fetchRow(DB_FETCHMODE_ASSOC)) {
+		while($row=$res->fetchRow()) {
 			if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
 		}
-		$res->free();
 		if (!$onegedcom) {
 			print "<span class=\"error\">".$pgv_lang["multiple_gedcoms"]."<br /><br /><b>".$pgv_lang["media_file_not_moved"]."</b></span><br />";
 		}
@@ -767,13 +766,12 @@ if (check_media_structure()) {
 			//-- and check if the file is used in multiple gedcoms
 			$myFile = str_replace($MEDIA_DIRECTORY, "", $filename);
 			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
-			$res = dbquery($sql);
+			$res = $gGedcom->mDb->query($sql);
 
-			while($row=$res->fetchRow(DB_FETCHMODE_ASSOC)) {
+			while($row=$res->fetchRow()) {
 				if ($row["m_gedfile"]!=$GEDCOMS[$GEDCOM]["id"]) $onegedcom = false;
 				else $xrefs[] = $row["m_media"];
 			}
-			$res->free();
 			$xrefs = array_unique($xrefs);
 		}
 

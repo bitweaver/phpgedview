@@ -897,7 +897,6 @@ if ($startimport == "true") {
 		}
 	}
 
-	setup_database($stage);
 	if ($stage == 0) {
 		$_SESSION["resumed"] = 0;
 		if (file_exists($INDEX_DIRECTORY.basename($GEDCOM_FILE).".new"))
@@ -1090,7 +1089,6 @@ if ($startimport == "true") {
 						</td></tr></table>
 						<?php
 
-						cleanup_database();
 						print_footer();
 						session_write_close();
 						exit;
@@ -1297,7 +1295,6 @@ if ($startimport == "true") {
 		}
 		print "</td></tr></table>\n";
 		// NOTE: Finished Links
-		cleanup_database();
 		print "</td></tr>";
 
 		$record_count = 0;

@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.7 2006/10/02 23:04:15 lsces Exp $
+ * @version $Id: functions.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
  */
 
 /**
@@ -56,7 +56,7 @@ function check_db($ignore_previous=false) {
 	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
 	if (!$ignore_previous) {
-		if ($gGedcom->mDb->isValid()) return true;
+		if ($gGedcom->mDb) return true;
 		if (!empty($$gGedcom->mDb->ErrorMsg )) {
 			return false;
 		}

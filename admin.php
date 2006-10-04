@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: admin.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
+ * @version $Id: admin.php,v 1.5 2006/10/04 12:07:53 lsces Exp $
  */
 
 /**
@@ -119,16 +119,6 @@ foreach($users as $indexval => $user) {
 			  print $pgv_lang["config_still_writable"];
 			  print "</span><br /><br />";
 		  }
-		  if ($verify_msg) {
-			  print "<br />";
-			  print "<a href=\"useradmin.php?action=listusers&amp;filter=admunver\" class=\"error\">".$pgv_lang["admin_verification_waiting"]."</a>";
-			  print "<br /><br />";
-		  }
-		  if ($warn_msg) {
-			  print "<br />";
-			  print "<a href=\"useradmin.php?action=listusers&amp;filter=warnings\" class=\"error\" >".$pgv_lang["admin_user_warnings"]."</a>";
-			  print "<br /><br />";
-		  }
 	    }
 	  ?>
       </td>
@@ -175,9 +165,6 @@ foreach($users as $indexval => $user) {
    </tr>
    <tr>
       <td class="optionbox"><?php print_help_link("help_editconfig.php", "qm"); ?><a href="editconfig.php"><?php print $pgv_lang["configuration"];?></a></td>
-   </tr>
-   <tr>
-   	<td class="optionbox"><?php print_help_link("help_useradmin.php", "qm"); ?><a href="useradmin.php"><?php print $pgv_lang["user_admin"];?></a></td>
    </tr>
    <tr>
 	<td class="optionbox"><?php print_help_link("help_managesites", "qm"); ?><a href="manageservers.php"><?php print $pgv_lang["link_manage_servers"];?></a></td>

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: individual.php,v 1.4 2006/10/04 12:07:53 lsces Exp $
+ * @version $Id$
  */
 
 // Initialization

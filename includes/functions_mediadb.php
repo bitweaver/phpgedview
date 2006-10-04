@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: functions_mediadb.php,v 1.5 2006/10/02 23:04:15 lsces Exp $
+ * @version $Id: functions_mediadb.php,v 1.6 2006/10/04 12:07:54 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -927,7 +927,6 @@ function search_media_pids($query, $allgeds=false, $ANDOR="AND") {
 	$res =& dbquery($sql);
 	if ($res) {
 		while($row =& $res->fetchRow()){
-			$row = db_cleanup($row);
 			$sqlmm = "select mm_gid as mm_gid from ".PHPGEDVIEW_DB_PREFIX."media_mapping where mm_media = '".$row['m_media']."' and mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
 			$resmm =& dbquery($sqlmm);
 			while ($rowmm =& $resmm->fetchRow()) {

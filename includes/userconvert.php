@@ -11,11 +11,10 @@ function fillUser($gBitUser) {
 
 	if (empty($username)) return false;
 	if (isset($users[$username])) return $users[$username];
-//	$username = db_prep($username);
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
 	if (stristr($DBTYPE, "mysql")!==false) $sql .= "BINARY ";
 	$sql .= "u_username='".$username."'";
-	$res = dbquery($sql, false);
+	$res = $gGedcom->mDb->query($sql);
 
 	if ($res===false) return false;
 	if ($res->numRows()==0) return false;
@@ -68,7 +67,6 @@ function fillUser($gBitUser) {
 				$users[$user_row["u_username"]] = $user;
 			}
 		}
-		$res->free();
 		if (isset($user)) return $user;
 	}
 	return false;

@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.7 2006/10/02 23:04:15 lsces Exp $
+ * $Id: authentication.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -58,7 +58,7 @@ function authenticateUser($username, $password, $basic=false) {
 	        if (!isset($user["verified_by_admin"])) $user["verified_by_admin"] = "";
 	        if ((($user["verified"] == "yes") and ($user["verified_by_admin"] == "yes")) or ($user["canadmin"] != "")){
 		        $sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='Y', u_sessiontime='".time()."' WHERE u_username='$username'";
-		        $res = dbquery($sql);
+		        $res = $gGedcom->mDb->query($sql);
 
 				AddToLog(($basic ? "Basic HTTP Authentication" :"Login"). " Successful ->" . $username ."<-");
 				//-- reset the user's session
@@ -88,32 +88,6 @@ function authenticateUser($username, $password, $basic=false) {
 }
 
 /**
- * authenticate a username and password using Basic HTTP Authentication
- *
- * This function uses authenticateUser(), for authentication, but retrives the userName and password provided via basic auth.
- * @return bool return true if the user is already logged in or the basic HTTP auth username and password credentials match a user in the database return false if they don't
- * @TODO Security audit for this functionality
- * @TODO Do we really need a return value here?
- * @TODO should we reauthenticate the user even if already logged in?
- * @TODO do we need to set the user language and other jobs done in login.php? Should that loading be moved to a function called from the authenticateUser function?
- */
-function basicHTTPAuthenticateUser() {
-	global $pgv_lang;
-	$username = getUserName();
-	if(empty($username)){ //not logged in.
-		if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW'])
-				|| (! authenticateUser($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'], true))) {
-			header('WWW-Authenticate: Basic realm="' . $pgv_lang["basic_realm"] . '"');
-			header('HTTP/1.0 401 Unauthorized');
-			echo $pgv_lang["basic_auth_failure"] ;
-			exit;
-		}
-	} else { //already logged in or successful basic authentication
-		return true; //probably not needed
-	}
-}
-
-/**
  * logs a user out of the system
  * @param string $username	optional parameter to logout a specific user
  */
@@ -126,7 +100,7 @@ function userLogout($username = "") {
 		else return;
 	}
 	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='N' WHERE u_username='".$username."'";
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	AddToLog("Logout - " . $username);
 
@@ -152,12 +126,6 @@ function userLogout($username = "") {
  * @param string $username	the username to update the login info for
  */
 function userUpdateLogin($username) {
-	
-	if (empty($username)) $username = getUserName();
-	if (empty($username)) return;
-	
-	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_sessiontime='".time()."' WHERE u_username='$username'";
-	$res = dbquery($sql);
 }
 
 /**
@@ -172,7 +140,7 @@ function userUpdateLogin($username) {
 function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
 	global $usersortfields;
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users ORDER BY u_".$field." ".strtoupper($order).", u_".$sort2;
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$users = array();
 	if ($res) {
@@ -220,7 +188,6 @@ function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
 			$users[$user_row["u_username"]] = $user;
 		}
 	}
-	$res->free();
 	return $users;
 }
 
@@ -391,20 +358,6 @@ function userAutoAccept($username = "") {
  * @return boolean true if an admin user has been defined
  */
 function adminUserExists() {
-	global $DBCONN;
-	if (checkTableExists()) {
-		$sql = "SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_canadmin='Y'";
-		$res = dbquery($sql);
-
-		if ($res) {
-			$count = $res->numRows();
-			while($row =& $res->fetchRow());
-			$res->free();
-			if ($count==0) return false;
-			return true;
-		}
-	}
-	return false;
 }
 
 /**
@@ -435,7 +388,6 @@ function addUser($newuser, $msg = "added") {
 //		}
 //		if (!isset($newuser["max_relation_path"])) $newuser["max_relation_path"] = $MAX_RELATION_PATH_LENGTH;
 //		if (!isset($newuser["auto_accept"])) $newuser["auto_accept"] = "N";
-//		$newuser = db_prep($newuser);
 		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
 		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
 		$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."users VALUES('".$DBCONN->escape($newuser["username"])."','".$DBCONN->escape($newuser["password"])."','".$DBCONN->escape($newuser["firstname"])."','".$DBCONN->escape($newuser["lastname"])."','".$DBCONN->escape(serialize($newuser["gedcomid"]))."','".$DBCONN->escape(serialize($newuser["rootid"]))."'";
@@ -469,7 +421,7 @@ function addUser($newuser, $msg = "added") {
 		if ($newuser["auto_accept"]) $sql .= ",'Y'";
 		else $sql .= ",'N'";
 		$sql .= ")";
-		$tmp = dbquery($sql);
+		$tmp = $gGedcom->mDb->query($sql);
 		$res =& $tmp;
 		$activeuser = getUserName();
 		if ($activeuser == "") $activeuser = "Anonymous user";
@@ -494,7 +446,6 @@ function updateUser($username, $newuser, $msg = "updated") {
 	global $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
 
 	if (checkTableExists()) {
-//		$newuser = db_prep($newuser);
 		$newuser['previous_username'] = $username;
 		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
 		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
@@ -531,7 +482,7 @@ function updateUser($username, $newuser, $msg = "updated") {
 		if ($newuser["auto_accept"]) $sql .= ", u_auto_accept='Y'";
 		else $sql .= ", u_auto_accept='N'";
 		$sql .= " WHERE u_username='".$DBCONN->escape($username)."'";
-		$res = dbquery($sql);
+		$res = $gGedcom->mDb->query($sql);
 		$activeuser = getUserName();
 		if ($activeuser == "") $activeuser = "Anonymous user";
 		AddToLog($activeuser." ".$msg." user -> ".$newuser["username"]." <-");
@@ -539,11 +490,11 @@ function updateUser($username, $newuser, $msg = "updated") {
 		//-- update all reference tables if username changed
 		if ($newuser["username"]!=$username) {
 			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."favorites SET fv_username='".$DBCONN->escape($newuser["username"])."' WHERE fv_username='".$DBCONN->escape($username)."'";
-			$res = dbquery($sql);
+			$res = $gGedcom->mDb->query($sql);
 			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."messages SET m_from='".$DBCONN->escape($newuser["username"])."' WHERE m_from='".$DBCONN->escape($username)."'";
-			$res = dbquery($sql);
+			$res = $gGedcom->mDb->query($sql);
 			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."messages SET m_to='".$DBCONN->escape($newuser["username"])."' WHERE m_to='".$DBCONN->escape($username)."'";
-			$res = dbquery($sql);
+			$res = $gGedcom->mDb->query($sql);
 		}
 		if($res)
 		{
@@ -561,9 +512,8 @@ function updateUser($username, $newuser, $msg = "updated") {
 function deleteUser($username, $msg = "deleted") {
 	global $users;
 	unset($users[$username]);
-//	$username = db_prep($username);
 	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='$username'";
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$activeuser = getUserName();
 	if ($activeuser == "") $activeuser = "Anonymous user";
@@ -635,15 +585,13 @@ function create_export_user($export_accesslevel) {
  * @return array the user array to return
  */
 function getUser($username) {
-	global $users, $REGEXP_DB, $GEDCOMS, $DBTYPE;
+	global $gBitUser, $users, $REGEXP_DB, $GEDCOMS, $gBitDbType;
 
 	if (empty($username)) return false;
 	if (isset($users[$username])) return $users[$username];
-//	$username = db_prep($username);
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
-	if (stristr($DBTYPE, "mysql")!==false) $sql .= "BINARY ";
 	$sql .= "u_username='".$username."'";
-	$res = dbquery($sql, false);
+	$res = $gBitUser->mDb->query($sql, false);
 
 	if ($res===false) return false;
 	if ($res->numRows()==0) return false;
@@ -716,10 +664,9 @@ function getUserByGedcomId($id, $gedcom) {
 	if (empty($id) || empty($gedcom)) return false;
 
 	$user = false;
-//	$id = db_prep($id);
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
 	$sql .= "u_gedcomid LIKE '%".$id."%'";
-	$res = dbquery($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 
 	if (!$res) return false;
 	if ($res->numRows()==0) return false;
@@ -886,138 +833,6 @@ function AddToChangeLog($LogString, $ged="") {
 	include(get_config_file());
 }
 
-//----------------------------------- addMessage
-//-- stores a new message in the database
-function addMessage($message) {
-	global $CONTACT_METHOD, $pgv_lang,$CHARACTER_SET, $LANGUAGE, $PGV_STORE_MESSAGES, $SERVER_URL, $pgv_language, $PGV_SIMPLE_MAIL, $WEBMASTER_EMAIL, $DBCONN;
-	global $TEXT_DIRECTION, $TEXT_DIRECTION_array, $DATE_FORMAT, $DATE_FORMAT_array, $TIME_FORMAT, $TIME_FORMAT_array, $WEEK_START, $WEEK_START_array, $NAME_REVERSE, $NAME_REVERSE_array;
-
-	//-- do not allow users to send a message to themselves
-	if ($message["from"]==$message["to"]) return false;
-	
-	require_once('includes/functions_mail.php');
-
-	//-- setup the message body for the from user
-	$email2 = stripslashes($message["body"]);
-	if (isset($message["from_name"])) $email2 = $pgv_lang["message_from_name"]." ".$message["from_name"]."\r\n".$pgv_lang["message_from"]." ".$message["from_email"]."\r\n\r\n".$email2;
-	if (!empty($message["url"])) $email2 .= "\r\n\r\n--------------------------------------\r\n\r\n".$pgv_lang["viewing_url"]."\r\n".$SERVER_URL.$message["url"]."\r\n";
-	$email2 .= "\r\n=--------------------------------------=\r\nIP ADDRESS: ".$_SERVER['REMOTE_ADDR']."\r\n";
-	$email2 .= "DNS LOOKUP: ".gethostbyaddr($_SERVER['REMOTE_ADDR'])."\r\n";
-	$email2 .= "LANGUAGE: $LANGUAGE\r\n";
-	$subject2 = "[".$pgv_lang["phpgedview_message"]."] ".stripslashes($message["subject"]);
-	$from ="";
-	$fuser = getUser($message["from"]);
-	if (!$fuser) {
-		$from = $message["from"];
-		$email2 = $pgv_lang["message_email3"]."\r\n\r\n".stripslashes($email2);
-	}
-	else {
-		//FIXME should the hex4email be removed?
-		// removed unneeded single quotes. If anyone thinks that they are needed, reverse my changes. KJ
-		//if (!$PGV_SIMPLE_MAIL) $from = "'".hex4email(stripslashes($fuser["firstname"]." ".$fuser["lastname"]),$CHARACTER_SET). "' <".$fuser["email"].">";
-		if (!$PGV_SIMPLE_MAIL) $from = hex4email(stripslashes($fuser["firstname"]." ".$fuser["lastname"]),$CHARACTER_SET). " <".$fuser["email"].">";
-		else $from = $fuser["email"];
-		$email2 = $pgv_lang["message_email2"]."\r\n\r\n".stripslashes($email2);
-
-	}
-
-	//-- get the to users language
-	$tuser = getUser($message["to"]);
-	$oldlanguage = $LANGUAGE;
-	if (($tuser)&&(!empty($tuser["language"]))) {
-		loadLanguage($tuser["language"]);		// Load the "to" user's language
-	}
-	if (isset($message["from_name"])) $message["body"] = $pgv_lang["message_from_name"]." ".$message["from_name"]."\r\n".$pgv_lang["message_from"]." ".$message["from_email"]."\r\n\r\n".$message["body"];
-	if (!empty($message["url"])) $message["body"] .= "\r\n\r\n--------------------------------------\r\n\r\n".$pgv_lang["viewing_url"]."\r\n".$SERVER_URL.$message["url"]."\r\n";
-	$message["body"] .= "\r\n=--------------------------------------=\r\nIP ADDRESS: ".$_SERVER['REMOTE_ADDR']."\r\n";
-	$message["body"] .= "DNS LOOKUP: ".gethostbyaddr($_SERVER['REMOTE_ADDR'])."\r\n";
-	$message["body"] .= "LANGUAGE: $LANGUAGE\r\n";
-	if (!isset($message["created"])) $message["created"] = gmdate ("M d Y H:i:s");
-	if ($PGV_STORE_MESSAGES && ($message["method"]!="messaging3" && $message["method"]!="mailto" && $message["method"]!="none")) {
-		$newid = get_next_id("messages", "m_id");
-		$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."messages VALUES ($newid, '".$DBCONN->escape($message["from"])."','".$DBCONN->escape($message["to"])."','".$DBCONN->escape($message["subject"])."','".$DBCONN->escape($message["body"])."','".$DBCONN->escape($message["created"])."')";
-		$res = dbquery($sql);
-
-	}
-	if ($message["method"]!="messaging") {
-		$subject1 = "[".$pgv_lang["phpgedview_message"]."] ".stripslashes($message["subject"]);
-		if (!$fuser) {
-			$email1 = $pgv_lang["message_email1"];
-			if (!empty($message["from_name"])) $email1 .= $message["from_name"]."\r\n\r\n".stripslashes($message["body"]);
-			else $email1 .= $from."\r\n\r\n".stripslashes($message["body"]);
-		}
-		else {
-			$email1 = $pgv_lang["message_email1"];
-			$email1 .= stripslashes($fuser["firstname"]." ".$fuser["lastname"])."\r\n\r\n".stripslashes($message["body"]);
-		}
-		$tuser = getUser($message["to"]);
-		if (!$tuser) {
-			//-- the to user must be a valid user in the system before it will send any mails
-			return false;
-		} else {
-			//if (!$PGV_SIMPLE_MAIL) $to = "'".hex4email(stripslashes($tuser["firstname"]." ".$tuser["lastname"]),$CHARACTER_SET). "' <".$tuser["email"].">";
-			// removed unneeded single quotes. If anyone thinks that they are needed, reverse my changes. KJ
-			if (!$PGV_SIMPLE_MAIL) $to = hex4email(stripslashes($tuser["firstname"]." ".$tuser["lastname"]),$CHARACTER_SET). " <".$tuser["email"].">";
-			else $to = $tuser["email"];
-		}
-		if (!$fuser) {
-			$host = preg_replace("/^www\./i", "", $_SERVER["SERVER_NAME"]);
-			$header2 = "From: phpgedview-noreply@".$host;
-		} else {
-			$header2 = "From: ".$to;
-		}
-		if (!empty($tuser["email"])) {
-			pgvMail($to, $subject1, $email1, "From: ".$from);
-		}
-	}
-	if (($tuser)&&(!empty($LANGUAGE))) {
-		loadLanguage($oldlanguage);			// restore language settings if needed
-	}
-	if ($message["method"]!="messaging") {
-		if (!isset($message["no_from"])) {
-			if (stristr($from, "phpgedview-noreply@")){
-				$admuser = getuser($WEBMASTER_EMAIL);
-				$from = $admuser["email"];
-			}
-			pgvMail($from, $subject2, $email2, $header2);
-		}
-	}
-	return true;
-}
-
-//----------------------------------- deleteMessage
-//-- deletes a message in the database
-function deleteMessage($message_id) {
-
-	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."messages WHERE m_id=".$message_id;
-	$res = dbquery($sql);
-
-	if ($res) return true;
-	else return false;
-}
-
-//----------------------------------- getUserMessages
-//-- Return an array of a users messages
-function getUserMessages($username) {
-
-	$messages = array();
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."messages WHERE m_to='$username' ORDER BY m_id DESC";
-	$res = dbquery($sql);
-
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$message = array();
-		$message["id"] = $row["m_id"];
-		$message["to"] = $row["m_to"];
-		$message["from"] = $row["m_from"];
-		$message["subject"] = stripslashes($row["m_subject"]);
-		$message["body"] = stripslashes($row["m_body"]);
-		$message["created"] = $row["m_created"];
-		$messages[] = $message;
-	}
-	return $messages;
-}
-
 /**
  * stores a new favorite in the database
  * @param array $favorite	the favorite array of the favorite to add
@@ -1030,23 +845,18 @@ function addFavorite($favorite) {
 
 	//-- make sure this is not a duplicate entry
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE ";
-	if (!empty($favorite["gid"])) $sql .= "fv_gid='".$DBCONN->escape($favorite["gid"])."' ";
-	if (!empty($favorite["url"])) $sql .= "fv_url='".$DBCONN->escape($favorite["url"])."' ";
-	$sql .= "AND fv_file='".$DBCONN->escape($favorite["file"])."' AND fv_username='".$DBCONN->escape($favorite["username"])."'";
-	$res =& dbquery($sql);
+	if (!empty($favorite["gid"])) $sql .= "fv_gid='".$favorite["gid"]."' ";
+	if (!empty($favorite["url"])) $sql .= "fv_url='".$favorite["url"]."' ";
+	$sql .= "AND fv_file='".$favorite["file"]."' AND fv_username='".$favorite["username"]."'";
+	$res =& $gGedcom->mDb->query($sql);
 	if ($res->numRows()>0) return false;
 
 	//-- get the next favorite id number for the primary key
 	$newid = get_next_id("favorites", "fv_id");
 
 	//-- add the favorite to the database
-	$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."favorites VALUES ($newid, '".$DBCONN->escape($favorite["username"])."'," .
-			"'".$DBCONN->escape($favorite["gid"])."','".$DBCONN->escape($favorite["type"])."'," .
-			"'".$DBCONN->escape($favorite["file"])."'," .
-			"'".$DBCONN->escape($favorite["url"])."'," .
-			"'".$DBCONN->escape($favorite["title"])."'," .
-			"'".$DBCONN->escape($favorite["note"])."')";
-	$res = dbquery($sql);
+	$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."favorites VALUES ($newid, ?, ?, ?, ?, ?, ?, ?)";
+	$res = $gGedcom->mDb->query($sql,array($favorite["username"],$favorite["gid"],$favorite["type"],$favorite["file"],$favorite["url"],$favorite["title"],$favorite["note"]));
 
 	if ($res) return true;
 	else return false;
@@ -1060,7 +870,7 @@ function addFavorite($favorite) {
 function deleteFavorite($fv_id) {
 
 	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_id=".$fv_id;
-	$res = dbquery($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if ($res) return true;
 	else return false;

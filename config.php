@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.4 2006/10/02 23:04:16 lsces Exp $
+ * @version $Id: config.php,v 1.5 2006/10/04 12:07:53 lsces Exp $
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -34,7 +34,6 @@ if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
 	exit;
 }
 
-$DBTYPE = "firebird";
 $INDEX_DIRECTORY = "./index/";					//-- Readable and Writeable Directory to store index files (include the trailing "/")
 $AUTHENTICATION_MODULE = "authentication.php";	//-- File that contains authentication functions
 $PGV_STORE_MESSAGES = true;						//-- allow messages sent to users to be stored in the PGV system

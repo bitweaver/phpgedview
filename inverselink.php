@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: inverselink.php,v 1.3 2006/10/02 23:04:16 lsces Exp $
+ * @version $Id: inverselink.php,v 1.4 2006/10/04 12:07:54 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
@@ -100,9 +100,9 @@ if ($action == "choose" && $paramok) {
 	if (!empty($mediaid)) {
 		//-- Get the title of this existing Media item
 		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$mediaid."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
-		$tempsql = dbquery($sql);
+		$tempsql = $gGedcom->mDb->query($sql);
 		$res =& $tempsql;
-		$row =& $res->fetchRow(DB_FETCHMODE_ASSOC);
+		$row =& $res->fetchRow();
 		if (trim($row["m_titl"])=="") {
 			print "<td class=\"optionbox wrap\"><b>".$mediaid."</b></td></tr>";
 		} else {
@@ -112,7 +112,6 @@ if ($action == "choose" && $paramok) {
 			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
 			print "</td></tr>";
 		}
-		$res->free();
  	} else {
 		print "<td class=\"optionbox wrap\"><input type=\"text\" name=\"mediaid\" id=\"mediaid\" size=\"5\" />";
 		print_findmedia_link("mediaid","1media");

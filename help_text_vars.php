@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Help
  * @author John Finlay & Jans Luder
- * @version $Id: help_text_vars.php,v 1.5 2006/10/02 10:33:26 lsces Exp $
+ * @version $Id: help_text_vars.php,v 1.6 2006/10/04 12:07:54 lsces Exp $
  */
 
 // The variables in this file are used to glue together other var's in the help_text.xx.php
@@ -58,7 +58,6 @@ $pgv_lang["edituser_user_contact_help"]		= "#pgv_lang[edituser_contact_meth_help
 $pgv_lang["help_edituser.php"]			= "~#pgv_lang[myuserdata]#~<br /><br />#pgv_lang[edituser_my_account_help]#<br />#pgv_lang[more_help]#";
 
 // user_admin.php
-$pgv_lang["help_useradmin.php"]			= "#pgv_lang[useradmin_help]#<br /><br />#pgv_lang[is_user_help]#<br />#pgv_lang[more_help]#";
 $pgv_lang["useradmin_user_contact_help"]	= "#pgv_lang[is_user_help]#<br /><br />#pgv_lang[edituser_user_contact_help]#";
 $pgv_lang["useradmin_change_lang_help"]		= "#pgv_lang[is_user_help]#<br /><br />#pgv_lang[edituser_change_lang_help]#";
 $pgv_lang["useradmin_email_help"]		= "#pgv_lang[is_user_help]#<br /><br />#pgv_lang[edituser_email_help]#";
@@ -215,7 +214,7 @@ $pgv_lang["ah13"]	= "upload_gedcom_help,ah13_help";
 $pgv_lang["ah14"]	= "validate_gedcom_help,ah14_help";
 $pgv_lang["ah15"]	= "convert_ansi2utf_help,ah15_help";
 $pgv_lang["ah16"]	= "help_edit_privacy.php,ah16_help";
-$pgv_lang["ah17"]	= "help_useradmin.php,ah17_help";
+$pgv_lang["ah17"]	= "help_admin.php,ah17_help";
 $pgv_lang["ah18"]	= "help_admin.php,ah18_help";
 $pgv_lang["ah19"]	= "addmedia_tool_help,ah19_help";
 $pgv_lang["ah20"]	= "change_indi2id_help,ah20_help";

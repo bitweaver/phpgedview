@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: help_text.php,v 1.3 2006/10/04 12:07:53 lsces Exp $
  */
 
 require "config.php";
@@ -41,7 +41,6 @@ print_simple_header($pgv_lang["help_header"]);
 print "<a name=\"top\"></a><span class=\"helpheader\">".$pgv_lang["help_header"]."</span><br /><br />\n<div class=\"helptext\">\n";
 $actione = "";
 if (isset($action)) $actione = $action;
-if (($help == "help_useradmin.php")&& ($actione == "edituser")) $help = "edit_useradmin_help";
 if (($help == "help_login_register.php")&& ($actione == "pwlost")) $help = "help_login_lost_pw.php";
 if ($help == "help_contents_help") {
 	if (userIsAdmin(getUserName())) {

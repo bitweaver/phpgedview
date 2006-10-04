@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.6 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.7 2006/10/04 12:07:54 lsces Exp $
  */
 // TODO: Progress bars don't show until </table> or </div>
 // TODO: Upload ZIP support alternative path and name
@@ -1075,7 +1075,6 @@ if ($startimport == "true") {
 						</td></tr></table>
 						<?php
 
-						cleanup_database();
 						print_footer();
 						session_write_close();
 						exit;
@@ -1282,7 +1281,6 @@ if ($startimport == "true") {
 		}
 		print "</td></tr></table>\n";
 		// NOTE: Finished Links
-		cleanup_database();
 		print "</td></tr>";
 
 		$record_count = 0;
