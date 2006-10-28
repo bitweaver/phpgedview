@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.11 2006/10/28 21:03:33 lsces Exp $
+ * @version $Id: functions_db.php,v 1.12 2006/10/28 21:45:15 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -376,12 +376,12 @@ function find_first_person() {
  * @return int	1 if the person is dead, 0 if living
  */
 function update_isdead($gid, $indi) {
-	global $USE_RIN, $indilist, $DBCONN, $gGedcom;
+	global $USE_RIN, $indilist, $DBCONN, $gBitSystem;
 	$isdead = 0;
 	$isdead = is_dead($indi["gedcom"]);
 	if (empty($isdead)) $isdead = 0;
 	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."individuals SET i_isdead=$isdead WHERE i_id LIKE ? AND i_file=?";
-	$res = $gGedcom->mDb->query($sql, array($gid,$indi["gedfile"]));
+	$res = $gBitSystem->mDb->query($sql, array($gid,$indi["gedfile"]));
 
 	if (isset($indilist[$gid])) $indilist[$gid]["isdead"] = $isdead;
 	return $isdead;
@@ -1732,7 +1732,7 @@ function get_indi_alpha() {
 	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $SHOW_MARRIED_NAMES, $DBCONN, $GEDCOMS;
 	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
-	global $gGedcom;
+	global $gBitSystem;
 	$indialpha = array();
 
 	$danishex = array("OE", "AE", "AA");
@@ -1740,7 +1740,7 @@ function get_indi_alpha() {
 	$danishTo = array("Å", "Æ", "Ø");
 
 	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY 1";
-	$res = $gGedcom->mDb->query($sql,array($GEDCOMS[$GEDCOM]["id"]));
+	$res = $gBitSystem->mDb->query($sql,array($GEDCOMS[$GEDCOM]["id"]));
 
 	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
@@ -1887,7 +1887,7 @@ function get_alpha_indis($letter) {
 	global $GEDCOM, $LANGUAGE, $indilist, $surname, $SHOW_MARRIED_NAMES, $DBCONN, $GEDCOMS;
 	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
-	global $gGedcom;
+	global $gBitSystem;
 	
 	$tindilist = array();
 
@@ -1949,9 +1949,9 @@ function get_alpha_indis($letter) {
 	//-- add some optimization if the surname is set to speed up the lists
 	if (!empty($surname)) $sql .= "AND i_surname LIKE '%".$surname."%' ";
 	$sql .= "AND i_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY i_name";
-	$res = $gGedcom->mDb->query($sql);
+	$res = $gBitSystem->mDb->query($sql);
 
-	while( $row = $res->fetchRow() ){
+	while( $row = $res->FetchRow() ){
 		//if (substr($row["i_letter"], 0, 1)==substr($letter, 0, 1)||(isset($text)?substr($row["i_letter"], 0, 1)==substr($text, 0, 1):FALSE)){
 			$indi = array();
 			$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], 'P'));
@@ -2019,7 +2019,7 @@ function get_alpha_indis($letter) {
 	if (!empty($surname)) $sql .= "AND n_surname LIKE '%".$surname."%' ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= "AND n_type!='C' ";
 	$sql .= "AND i_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY i_name";
-	$res = $gGedcom->mDb->query($sql);
+	$res = $gBitSystem->mDb->query($sql);
 
 	while( $row = $res->fetchRow() ){
 		//if (substr($row["n_letter"], 0, strlen($letter))==$letter||(isset($text)?substr($row["n_letter"], 0, strlen($text))==$text:FALSE)){
