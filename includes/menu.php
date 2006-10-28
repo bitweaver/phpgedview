@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.5 2006/10/28 20:17:03 lsces Exp $
+ * @version $Id: menu.php,v 1.6 2006/10/28 21:59:40 lsces Exp $
  */
 
 class Menu
@@ -538,7 +538,7 @@ class MenuBar
 				$username = getUserName();
 				if (!empty($username)) {
 					$user = getUser($username);
-					$myid = @$user["gedcomid"][$GEDCOM];
+					$myid = @$user["gedcomid"]; //[$GEDCOM];
 				}
 			}
 			if (($myid and $myid!=$rootid) or empty($rootid)) {
