@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: admin.php,v 1.6 2006/10/28 20:17:04 lsces Exp $
+ * @version $Id: admin.php,v 1.7 2006/10/28 21:02:08 lsces Exp $
  */
 
 /**
@@ -139,15 +139,11 @@ foreach($users as $indexval => $user) {
 	</tr>
 	<tr>
 	  <td class="optionbox"><?php print_help_link("readmefile_help", "qm"); ?><a href="readme.txt" target="manual" title="<?php print $pgv_lang["view_readme"]; ?>"><?php print $pgv_lang["readme_documentation"];?></a></td>
-      <td class="optionbox"><?php print_help_link("phpinfo_help", "qm"); ?><a href="pgvinfo.php?action=phpinfo" title="<?php print $pgv_lang["show_phpinfo"]; ?>"><?php print $pgv_lang["phpinfo"];?></a></td>
+      <td class="optionbox"><?php print_help_link("phpinfo_help", "qm"); ?><a href="<?php print KERNEL_PKG_URL; ?>admin/phpinfo.php" title="<?php print $pgv_lang["show_phpinfo"]; ?>"><?php print $pgv_lang["phpinfo"];?></a></td>
 	</tr>
 	<tr>
       <td class="optionbox"><?php print_help_link("config_help_help", "qm"); ?><a href="pgvinfo.php?action=confighelp"><?php print $pgv_lang["config_help"];?></a></td>
-	  <td class="optionbox"><?php print_help_link("changelog_help", "qm"); ?><a href="changelog.php" target="manual" title="<?php print $pgv_lang["view_changelog"]; ?>"><?php print_text("changelog"); ?></a></td>
-	</tr>
-	<tr>
       <td class="optionbox"><?php print_help_link("registry_help", "qm"); ?><a href="http://phpgedview.sourceforge.net/registry.php" target="_blank"><?php print $pgv_lang["pgv_registry"];?></a></td>
-	  <td class="optionbox">&nbsp;</td>
 	</tr>
 	<tr>
 	  <td colspan="2" class="topbottombar" style="text-align:center; "><?php print $pgv_lang["admin_geds"]; ?></td>

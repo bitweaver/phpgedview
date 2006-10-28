@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.5 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: editconfig.php,v 1.6 2006/10/28 21:02:08 lsces Exp $
  */
 
 // Initialization
@@ -32,6 +32,8 @@ require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require "config.php";
