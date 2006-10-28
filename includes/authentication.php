@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
+ * $Id: authentication.php,v 1.9 2006/10/28 20:17:03 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -138,55 +138,52 @@ function userUpdateLogin($username) {
  * @return array returns a sorted array of users
  */
 function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
-	global $usersortfields;
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users ORDER BY u_".$field." ".strtoupper($order).", u_".$sort2;
-	$res = $gGedcom->mDb->query($sql);
+	global $usersortfields, $gBitUser;
+
+	$listHash['last_get'] = 3600;
+	$online_users = $gBitUser->getUserActivity( $listHash );
 
 	$users = array();
-	if ($res) {
-		while($user_row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-			$user = array();
-			$user["username"]=$user_row["u_username"];
-			$user["firstname"]=stripslashes($user_row["u_firstname"]);
-			$user["lastname"]=stripslashes($user_row["u_lastname"]);
-			$user["gedcomid"]=unserialize($user_row["u_gedcomid"]);
-			$user["rootid"]=unserialize($user_row["u_rootid"]);
-			$user["password"]=$user_row["u_password"];
-			if ($user_row["u_canadmin"]=='Y') $user["canadmin"]=true;
-			else $user["canadmin"]=false;
-			$user["canedit"]=unserialize($user_row["u_canedit"]);
-			//-- convert old <3.1 access levels to the new 3.2 access levels
-			foreach($user["canedit"] as $key=>$value) {
-				if ($value=="no") $user["canedit"][$key] = "access";
-				if ($value=="yes") $user["canedit"][$key] = "edit";
-			}
-			$user["email"] = $user_row["u_email"];
-			$user["verified"] = $user_row["u_verified"];
-			$user["verified_by_admin"] = $user_row["u_verified_by_admin"];
-			$user["language"] = $user_row["u_language"];
-			$user["pwrequested"] = $user_row["u_pwrequested"];
-			$user["reg_timestamp"] = $user_row["u_reg_timestamp"];
-			$user["reg_hashcode"] = $user_row["u_reg_hashcode"];
-			$user["theme"] = $user_row["u_theme"];
-			$user["loggedin"] = $user_row["u_loggedin"];
-			$user["sessiontime"] = $user_row["u_sessiontime"];
-			$user["contactmethod"] = $user_row["u_contactmethod"];
-			if ($user_row["u_visibleonline"]!='N') $user["visibleonline"] = true;
-			else $user["visibleonline"] = false;
-			if ($user_row["u_editaccount"]!='N') $user["editaccount"] = true;
-			else $user["editaccount"] = false;
-			$user["default_tab"] = $user_row["u_defaulttab"];
-			$user["comment"] = $user_row["u_comment"];
-			$user["comment_exp"] = $user_row["u_comment_exp"];
-			$user["sync_gedcom"] = $user_row["u_sync_gedcom"];
-			$user["relationship_privacy"] = $user_row["u_relationship_privacy"];
-			$user["max_relation_path"] = $user_row["u_max_relation_path"];
-//			if ($user_row["u_auto_accept"]!="Y") $user["auto_accept"] = false;
-//			else $user["auto_accept"] = true;
-			if ($user_row["u_auto_accept"]!="N") $user["auto_accept"] = true;
-			else $user["auto_accept"] = false;
-			$users[$user_row["u_username"]] = $user;
+	foreach( $online_users as $user_row ) {
+		$user = array();
+		$user["username"]=$user_row["login"];
+		$user["firstname"]=$user_row["user_id"];
+		$user["lastname"]=$user_row["real_name"];
+		$user["gedcomid"]="";
+		$user["rootid"]=1;
+/*		$user["password"]=$user_row["u_password"];
+		if ($user_row["u_canadmin"]=='Y') $user["canadmin"]=true;
+		else $user["canadmin"]=false;
+		$user["canedit"]=unserialize($user_row["u_canedit"]);
+		-- convert old <3.1 access levels to the new 3.2 access levels
+		foreach($user["canedit"] as $key=>$value) {
+			if ($value=="no") $user["canedit"][$key] = "access";
+			if ($value=="yes") $user["canedit"][$key] = "edit";
 		}
+		$user["email"] = $user_row["u_email"];
+		$user["verified"] = $user_row["u_verified"];
+		$user["verified_by_admin"] = $user_row["u_verified_by_admin"];
+		$user["language"] = $user_row["u_language"];
+		$user["pwrequested"] = $user_row["u_pwrequested"];
+		$user["reg_timestamp"] = $user_row["u_reg_timestamp"];
+		$user["reg_hashcode"] = $user_row["u_reg_hashcode"];
+		$user["theme"] = $user_row["u_theme"];
+		$user["loggedin"] = $user_row["u_loggedin"];
+		$user["sessiontime"] = $user_row["u_sessiontime"];
+		$user["contactmethod"] = $user_row["u_contactmethod"];
+		if ($user_row["u_visibleonline"]!='N') $user["visibleonline"] = true;
+		else $user["visibleonline"] = false;
+		if ($user_row["u_editaccount"]!='N') $user["editaccount"] = true;
+		else $user["editaccount"] = false;
+		$user["default_tab"] = $user_row["u_defaulttab"];
+		$user["comment"] = $user_row["u_comment"];
+		$user["comment_exp"] = $user_row["u_comment_exp"];
+		$user["sync_gedcom"] = $user_row["u_sync_gedcom"];
+		$user["relationship_privacy"] = $user_row["u_relationship_privacy"];
+		$user["max_relation_path"] = $user_row["u_max_relation_path"];
+*/
+		$user["auto_accept"] = false;
+		$users[$user_row["login"]] = $user;
 	}
 	return $users;
 }
@@ -200,28 +197,10 @@ function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
  * @return string 	the username of the user or an empty string if the user is not logged in
  */
 function getUserName() {
-	global $ALLOW_REMEMBER_ME, $DBCONN, $logout, $SERVER_URL;
-	//-- this section checks if the session exists and uses it to get the username
-	if (isset($_SESSION)) {
-		if (!empty($_SESSION['pgv_user'])) return $_SESSION['pgv_user'];
-	}
-	if (isset($HTTP_SESSION_VARS)) {
-		if (!empty($HTTP_SESSION_VARS['pgv_user'])) return $HTTP_SESSION_VARS['pgv_user'];
-	}
-	if ($ALLOW_REMEMBER_ME) {
-		$tSERVER_URL = preg_replace(array("'https?://'", "'www.'", "'/$'"), array("","",""), $SERVER_URL);
-		if ((isset($_SERVER['HTTP_REFERER'])) && (stristr($_SERVER['HTTP_REFERER'],$tSERVER_URL)!==false)) $referrer_found=true;
-		if (!empty($_COOKIE["pgv_rem"])&& (empty($referrer_found)) && empty($logout)) {
-			if (!is_object($DBCONN)) return $_COOKIE["pgv_rem"];
-			$user = getUser($_COOKIE["pgv_rem"]);
-			if ($user) {
-				if (time() - $user["sessiontime"] < 60*60*24*7) {
-					$_SESSION['pgv_user'] = $_COOKIE["pgv_rem"];
-					$_SESSION['cookie_login'] = true;
-					return $_COOKIE["pgv_rem"];
-				}
-			}
-		}
+	global $gBitUser;
+	$user = getUser( $gBitUser );
+	if ($user) {
+		return $gBitUser->mUsername;
 	}
 	return "";
 }
@@ -234,11 +213,8 @@ function getUserName() {
  * to change the configuration files
  */
 function userIsAdmin($username) {
-	if (empty($username)) return false;
-	if ($_SESSION['cookie_login']) return false;
-	$user = getUser($username);
-	if (!$user) return false;
-	return $user["canadmin"];
+	global $gBitUser;
+	return $gBitUser->IsAdmin();
 }
 
 /**
@@ -372,211 +348,6 @@ function checkTableExists() {
 }
 
 /**
- * Add a new user
- *
- * Adds a new user to the data store
- * @param array $newuser	The new user array to add
- * @param string $msg		The log message to write to the log
- */
-function addUser($newuser, $msg = "added") {
-	global $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
-
-	if (checkTableExists()) {
-//		if (!isset($newuser["relationship_privacy"])) {
-//			if ($USE_RELATIONSHIP_PRIVACY) $newuser["relationship_privacy"] = "Y";
-//			else $newuser["relationship_privacy"] = "N";
-//		}
-//		if (!isset($newuser["max_relation_path"])) $newuser["max_relation_path"] = $MAX_RELATION_PATH_LENGTH;
-//		if (!isset($newuser["auto_accept"])) $newuser["auto_accept"] = "N";
-		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
-		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
-		$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."users VALUES('".$DBCONN->escape($newuser["username"])."','".$DBCONN->escape($newuser["password"])."','".$DBCONN->escape($newuser["firstname"])."','".$DBCONN->escape($newuser["lastname"])."','".$DBCONN->escape(serialize($newuser["gedcomid"]))."','".$DBCONN->escape(serialize($newuser["rootid"]))."'";
-		if ($newuser["canadmin"]) $sql .= ",'Y'";
-		else $sql .= ",'N'";
-		$sql .= ",'".$DBCONN->escape(serialize($newuser["canedit"]))."'";
-		$sql .= ",'".$DBCONN->escape($newuser["email"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["verified"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["verified_by_admin"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["language"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["pwrequested"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["reg_timestamp"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["reg_hashcode"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["theme"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["loggedin"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["sessiontime"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["contactmethod"])."'";
-		if ($newuser["visibleonline"]) $sql .= ",'Y'";
-		else $sql .= ",'N'";
-		if ($newuser["editaccount"]) $sql .= ",'Y'";
-		else $sql .= ",'N'";
-		$sql .= ",'".$DBCONN->escape($newuser["default_tab"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["comment"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["comment_exp"])."'";
-//		if (isset($newuser["sync_gedcom"])) $sql .= ",'".$DBCONN->escape($newuser["sync_gedcom"])."'";
-//		else $sql .= ",'N'";
-		$sql .= ",'".$DBCONN->escape($newuser["sync_gedcom"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["relationship_privacy"])."'";
-		$sql .= ",'".$DBCONN->escape($newuser["max_relation_path"])."'";
-//		if (isset($newuser["auto_accept"]) && $newuser["auto_accept"]===true) $sql .= ",'Y'";
-		if ($newuser["auto_accept"]) $sql .= ",'Y'";
-		else $sql .= ",'N'";
-		$sql .= ")";
-		$tmp = $gGedcom->mDb->query($sql);
-		$res =& $tmp;
-		$activeuser = getUserName();
-		if ($activeuser == "") $activeuser = "Anonymous user";
-		AddToLog($activeuser." ".$msg." user -> ".$newuser["username"]." <-");
-		if ($res)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * Update a user
- *
- * Updates a user's record in the data store
- * @param string $username	The username of the user to update
- * @param array $newuser	The new user array to add
- * @param string $msg		The log message to write to the log
- */
-function updateUser($username, $newuser, $msg = "updated") {
-	global $DBCONN, $USE_RELATIONSHIP_PRIVACY, $MAX_RELATION_PATH_LENGTH;
-
-	if (checkTableExists()) {
-		$newuser['previous_username'] = $username;
-		$newuser["firstname"] = preg_replace("/\//", "", $newuser["firstname"]);
-		$newuser["lastname"] = preg_replace("/\//", "", $newuser["lastname"]);
-		$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_username='".$DBCONN->escape($newuser["username"])."', " .
-				"u_password='".$newuser["password"]."', " .
-				"u_firstname='".$DBCONN->escape($newuser["firstname"])."', " .
-				"u_lastname='".$DBCONN->escape($newuser["lastname"])."', " .
-				"u_gedcomid='".$DBCONN->escape(serialize($newuser["gedcomid"]))."'," .
-				"u_rootid='".$DBCONN->escape(serialize($newuser["rootid"]))."'";
-		if ($newuser["canadmin"]) $sql .= ", u_canadmin='Y'";
-		else $sql .= ", u_canadmin='N'";
-		$sql .= ", u_canedit='".$DBCONN->escape(serialize($newuser["canedit"]))."'";
-		$sql .= ", u_email='".$DBCONN->escape($newuser["email"])."'";
-		$sql .= ", u_verified='".$DBCONN->escape($newuser["verified"])."'";
-		$sql .= ", u_verified_by_admin='".$DBCONN->escape($newuser["verified_by_admin"])."'";
-		$sql .= ", u_language='".$DBCONN->escape($newuser["language"])."'";
-		$sql .= ", u_pwrequested='".$DBCONN->escape($newuser["pwrequested"])."'";
-		$sql .= ", u_reg_timestamp='".$DBCONN->escape($newuser["reg_timestamp"])."'";
-		$sql .= ", u_reg_hashcode='".$DBCONN->escape($newuser["reg_hashcode"])."'";
-		$sql .= ", u_theme='".$DBCONN->escape($newuser["theme"])."'";
-		$sql .= ", u_loggedin='".$DBCONN->escape($newuser["loggedin"])."'";
-		$sql .= ", u_sessiontime='".$DBCONN->escape($newuser["sessiontime"])."'";
-		$sql .= ", u_contactmethod='".$DBCONN->escape($newuser["contactmethod"])."'";
-		if ($newuser["visibleonline"]) $sql .= ", u_visibleonline='Y'";
-		else $sql .= ", u_visibleonline='N'";
-		if ($newuser["editaccount"]) $sql .= ", u_editaccount='Y'";
-		else $sql .= ", u_editaccount='N'";
-		$sql .= ", u_defaulttab='".$DBCONN->escape($newuser["default_tab"])."'";
-		$sql .= ", u_comment='".$DBCONN->escape($newuser["comment"])."'";
-		$sql .= ", u_comment_exp='".$DBCONN->escape($newuser["comment_exp"])."'";
-		$sql .= ", u_sync_gedcom='".$DBCONN->escape($newuser["sync_gedcom"])."'";
-		$sql .= ", u_relationship_privacy='".$DBCONN->escape($newuser["relationship_privacy"])."'";
-		$sql .= ", u_max_relation_path='".$DBCONN->escape($newuser["max_relation_path"])."'";
-		if ($newuser["auto_accept"]) $sql .= ", u_auto_accept='Y'";
-		else $sql .= ", u_auto_accept='N'";
-		$sql .= " WHERE u_username='".$DBCONN->escape($username)."'";
-		$res = $gGedcom->mDb->query($sql);
-		$activeuser = getUserName();
-		if ($activeuser == "") $activeuser = "Anonymous user";
-		AddToLog($activeuser." ".$msg." user -> ".$newuser["username"]." <-");
-
-		//-- update all reference tables if username changed
-		if ($newuser["username"]!=$username) {
-			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."favorites SET fv_username='".$DBCONN->escape($newuser["username"])."' WHERE fv_username='".$DBCONN->escape($username)."'";
-			$res = $gGedcom->mDb->query($sql);
-			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."messages SET m_from='".$DBCONN->escape($newuser["username"])."' WHERE m_from='".$DBCONN->escape($username)."'";
-			$res = $gGedcom->mDb->query($sql);
-			$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."messages SET m_to='".$DBCONN->escape($newuser["username"])."' WHERE m_to='".$DBCONN->escape($username)."'";
-			$res = $gGedcom->mDb->query($sql);
-		}
-		if($res)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * deletes the user with the given username.
- * @param string $username	the username to delete
- * @param string $msg		a message to write to the log file
- */
-function deleteUser($username, $msg = "deleted") {
-	global $users;
-	unset($users[$username]);
-	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='$username'";
-	$res = $gGedcom->mDb->query($sql);
-
-	$activeuser = getUserName();
-	if ($activeuser == "") $activeuser = "Anonymous user";
-	if (($msg != "changed") && ($msg != "reqested password for") && ($msg != "verified")) AddToLog($activeuser." ".$msg." user -> ".$username." <-");
-	if($res)
-	{
-		return true;
-	}
-	else{return false;}
-}
-
-/**
- * creates a user as reference for a gedcom export
- * @param string $export_accesslevel
- */
-function create_export_user($export_accesslevel) {
-	GLOBAL $GEDCOM;
-
-	if (getUser("export")) deleteUser("export");
-
-	$newuser = array();
-	$newuser["username"] = "export";
-	$newuser["firstname"] = "Export";
-	$newuser["lastname"] = "useraccount";
-	$newuser["gedcomid"] = "";
-	$newuser["rootid"] = "";
-	srand((double)microtime()*1000000);
-	$allow = "abcdefghijkmnpqrstuvwxyz123456789";
-	$password = "";
-	for($i=0; $i<8; $i++) {
-		$password .= $allow[rand()%strlen($allow)];
-	}
-	$newuser["password"] = $password;
-	if ($export_accesslevel == "admin") $newuser["canadmin"] = true;
-	else $newuser["canadmin"] = false;
-	if ($export_accesslevel == "gedadmin") $newuser["canedit"][$GEDCOM] = "admin";
-	elseif ($export_accesslevel == "user") $newuser["canedit"][$GEDCOM] = "access";
-	else $newuser["canedit"][$GEDCOM] = "none";
-	$newuser["email"] = "";
-	$newuser["verified"] = "yes";
-	$newuser["verified_by_admin"] = "yes";
-	$newuser["language"] = "english";
-	$newuser["pwrequested"] = "";
-	$newuser["reg_timestamp"] = "";
-	$newuser["reg_hashcode"] = "";
-	$newuser["theme"] = "";
-	$newuser["loggedin"] = "";
-	$newuser["sessiontime"] = time();
-	$newuser["contactmethod"] = "none";
-	$newuser["visibleonline"] = false;
-	$newuser["editaccount"] = false;
-	$newuser["default_tab"] = 0;
-	$newuser["comment"] = "Dummy tester for export purposes";
-	$newuser["comment_exp"] = 0;
-	$newuser["sync_gedcom"] = "N";
-	$newuser["relationship_privacy"] = "N";
-	$newuser["max_relation_path"] = 0;
-//	$newuser["auto_accept"] = "N";
-	$newuser["auto_accept"] = false;
-	addUser($newuser);
-}
-
-/**
  * get a user array
  *
  * finds a user from the given username and returns a user array of the form
@@ -585,68 +356,55 @@ function create_export_user($export_accesslevel) {
  * @return array the user array to return
  */
 function getUser($username) {
-	global $gBitUser, $users, $REGEXP_DB, $GEDCOMS, $gBitDbType;
+	global $gBitUser;
 
-	if (empty($username)) return false;
-	if (isset($users[$username])) return $users[$username];
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE ";
-	$sql .= "u_username='".$username."'";
-	$res = $gBitUser->mDb->query($sql, false);
-
-	if ($res===false) return false;
-	if ($res->numRows()==0) return false;
-	if ($res) {
-		while($user_row =& $res->fetchRow()) {
-			if ($user_row) {
-				$user = array();
-				$user["username"]=$user_row["u_username"];
-				$user["firstname"]=stripslashes($user_row["u_firstname"]);
-				$user["lastname"]=stripslashes($user_row["u_lastname"]);
-				$user["gedcomid"]=unserialize($user_row["u_gedcomid"]);
-				$user["rootid"]=unserialize($user_row["u_rootid"]);
-				$user["password"]=$user_row["u_password"];
-				if ($user_row["u_canadmin"]=='Y') $user["canadmin"]=true;
-				else $user["canadmin"]=false;
-				$user["canedit"]=unserialize($user_row["u_canedit"]);
-				//-- convert old <3.1 access levels to the new 3.2 access levels
-				foreach($user["canedit"] as $key=>$value) {
-					if ($value=="no") $user["canedit"][$key] = "access";
-					if ($value=="yes") $user["canedit"][$key] = "edit";
-				}
-				foreach($GEDCOMS as $ged=>$gedarray) {
-					if (!isset($user["canedit"][$ged])) $user["canedit"][$ged] = "access";
-				}
-				$user["email"] = $user_row["u_email"];
-				$user["verified"] = $user_row["u_verified"];
-				$user["verified_by_admin"] = $user_row["u_verified_by_admin"];
-				$user["language"] = $user_row["u_language"];
-				$user["pwrequested"] = $user_row["u_pwrequested"];
-				$user["reg_timestamp"] = $user_row["u_reg_timestamp"];
-				$user["reg_hashcode"] = $user_row["u_reg_hashcode"];
-				$user["theme"] = $user_row["u_theme"];
-				$user["loggedin"] = $user_row["u_loggedin"];
-				$user["sessiontime"] = $user_row["u_sessiontime"];
-				$user["contactmethod"] = $user_row["u_contactmethod"];
-				if ($user_row["u_visibleonline"]!='N') $user["visibleonline"]=true;
-				else $user["visibleonline"]=false;
-				if ($user_row["u_editaccount"]!='N' || $user["canadmin"]) $user["editaccount"]=true;
-				else $user["editaccount"]=false;
-				$user["default_tab"] = $user_row["u_defaulttab"];
-				$user["comment"] = $user_row["u_comment"];
-				$user["comment_exp"] = $user_row["u_comment_exp"];
-				$user["sync_gedcom"] = $user_row["u_sync_gedcom"];
-				$user["relationship_privacy"] = $user_row["u_relationship_privacy"];
-				$user["max_relation_path"] = $user_row["u_max_relation_path"];
-//				if ($user_row["u_auto_accept"]!='Y') $user["auto_accept"]=false;
-//				else $user["auto_accept"]=true;
-				if ($user_row["u_auto_accept"]!='N') $user["auto_accept"]=true;
-				else $user["auto_accept"]=false;
-				$users[$user_row["u_username"]] = $user;
-			}
-		}
-		$res->free();
-		if (isset($user)) return $user;
+	$user = array();
+//vd($gBitUser);
+	if ( $gBitUser->isValid() )
+		$user["username"]=$gBitUser->mInfo["login"];
+	$user["firstname"]=$gBitUser->mUserId;
+	$user["lastname"]=$gBitUser->mInfo["real_name"];
+	$user["gedcomid"]=""; // unserialize($user_row["u_gedcomid"]);
+	$user["rootid"]=1;
+	if ( $gBitUser->isAdmin() ) $user["canadmin"]=true;
+		else $user["canadmin"]=false;
+	$user["editaccount"]=false;
+	$user["anon"]=$gBitUser->isValid();
+	$user["email"] = $gBitUser->mInfo["email"];
+/*	$user["canedit"]=unserialize($user_row["u_canedit"]);
+	-- convert old <3.1 access levels to the new 3.2 access levels
+	foreach($user["canedit"] as $key=>$value) {
+		if ($value=="no") $user["canedit"][$key] = "access";
+		if ($value=="yes") $user["canedit"][$key] = "edit";
 	}
+	foreach($GEDCOMS as $ged=>$gedarray) {
+		if (!isset($user["canedit"][$ged])) $user["canedit"][$ged] = "access";
+	}
+	$user["verified"] = $user_row["u_verified"];
+	$user["verified_by_admin"] = $user_row["u_verified_by_admin"];
+	$user["language"] = $user_row["u_language"];
+	$user["pwrequested"] = $user_row["u_pwrequested"];
+	$user["reg_timestamp"] = $user_row["u_reg_timestamp"];
+	$user["reg_hashcode"] = $user_row["u_reg_hashcode"];
+	$user["theme"] = $user_row["u_theme"];
+	$user["loggedin"] = $user_row["u_loggedin"];
+	$user["sessiontime"] = $user_row["u_sessiontime"];
+	$user["contactmethod"] = $user_row["u_contactmethod"];
+	if ($user_row["u_visibleonline"]!='N') $user["visibleonline"]=true;
+		else $user["visibleonline"]=false;
+	if ($user_row["u_editaccount"]!='N' || $user["canadmin"]) $user["editaccount"]=true;
+		else $user["editaccount"]=false;
+	$user["default_tab"] = $user_row["u_defaulttab"];
+	$user["comment"] = $user_row["u_comment"];
+	$user["comment_exp"] = $user_row["u_comment_exp"];
+	$user["sync_gedcom"] = $user_row["u_sync_gedcom"];
+	$user["relationship_privacy"] = $user_row["u_relationship_privacy"];
+	$user["max_relation_path"] = $user_row["u_max_relation_path"];
+*/
+	$user["auto_accept"]=false;
+
+	if (isset($user)) return $user;
+
 	return false;
 }
 
@@ -886,9 +644,9 @@ function getUserFavorites($username) {
 
 	$favorites = array();
 	//-- make sure we don't try to look up favorites for unconfigured sites
-	if (!$CONFIGURED) return $favorites;
+/*	if (!$CONFIGURED) return $favorites;
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_username=?";
-	$result = $gGedcom->mDb->query($sql, array($username));
+	$result = $gGedcom->mDbx->query($sql, array($username));
 
 	while( $row = $result->fetchRow()){
 		if (isset($GEDCOMS[$row["fv_file"]])) {
@@ -903,7 +661,7 @@ function getUserFavorites($username) {
 			$favorite["url"] = $row["fv_url"];
 			$favorites[] = $favorite;
 		}
-	}
+	} */
 	return $favorites;
 }
 

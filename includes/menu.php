@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.4 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: menu.php,v 1.5 2006/10/28 20:17:03 lsces Exp $
  */
 
 class Menu
@@ -368,14 +368,6 @@ class MenuBar
 				$submenu->addIcon($PGV_IMAGE_DIR."/".$PGV_IMAGES["mygedview"]["small"]);
 			$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
 			$menu->addSubmenu($submenu);
-			//-- editaccount submenu
-			if ($user["editaccount"]) {
-				$submenu = new Menu($pgv_lang["editowndata"], "edituser.php");
-				if (!empty($PGV_IMAGES["mygedview"]["small"]))
-					$submenu->addIcon($PGV_IMAGE_DIR."/".$PGV_IMAGES["mygedview"]["small"]);
-				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
-				$menu->addSubmenu($submenu);
-			}
 			if (!empty($user["gedcomid"][$GEDCOM])) {
 				//-- quick_update submenu
 				$submenu = new Menu($pgv_lang["quick_update_title"], "#");

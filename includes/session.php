@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: session.php,v 1.9 2006/10/28 20:17:03 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -824,22 +824,6 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
 
 } else {
 	check_db();
-}
-
-//-- load the user specific theme
-if ((!empty($pgv_username))&&(!isset($_REQUEST['logout']))) {
-	//-- update the login time every 5 minutes
-	if (!isset($_SESSION['activity_time']) || (time()-$_SESSION['activity_time'])>300) {
-		userUpdateLogin($pgv_username);
-		$_SESSION['activity_time'] = time();
-	}
-
-	$tempuser = getUser($pgv_username);
-	$usertheme = $tempuser["theme"];
-	if ((!empty($_POST["user_theme"]))&&(!empty($_POST["oldusername"]))&&($_POST["oldusername"]==$pgv_username)) $usertheme = $_POST["user_theme"];
-	if ((!empty($usertheme)) && (file_exists($usertheme."theme.php")))  {
-		$THEME_DIR = $usertheme;
-	}
 }
 
 if (isset($_SESSION["theme_dir"]))

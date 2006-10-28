@@ -18,6 +18,7 @@ require_once( LIBERTY_PKG_PATH.'LibertyAttachable.php' );
 class BitGEDCOM extends LibertyAttachable {
 	var $mGEDCOMId;
 	var $mGedcomName;
+	var $mDbx;
 
 	function BitGEDCOM( $pGEDCOMId=NULL, $pContentId=NULL ) {
 		LibertyAttachable::LibertyAttachable();
@@ -31,6 +32,8 @@ class BitGEDCOM extends LibertyAttachable {
 			) );
 		$this->mContentId = $pContentId;
 		$this->mContentTypeGuid = 'BitGEDCOM';
+		global $gBitSystem;
+		$mDbx = ( !empty( $this->mDb ) ? $this->mDb : $gBitSystem->getDb() );
 	}
 
 	/**

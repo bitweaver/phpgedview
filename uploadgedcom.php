@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.7 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.8 2006/10/28 20:17:04 lsces Exp $
  */
 // TODO: Progress bars don't show until </table> or </div>
 // TODO: Upload ZIP support alternative path and name
@@ -46,6 +46,17 @@
 // NOTE: $bakfile = Name and path of the backupfile, this file is created if a file with the same name exists
 
 ini_set('register_globals', 'Off');
+/**
+ * load the main configuration and context
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require "config.php";
 require_once "includes/functions_import.php";
 require $confighelpfile["english"];

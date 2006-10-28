@@ -25,12 +25,20 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: admin.php,v 1.5 2006/10/04 12:07:53 lsces Exp $
+ * @version $Id: admin.php,v 1.6 2006/10/28 20:17:04 lsces Exp $
  */
 
 /**
  * load the main configuration and context
  */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require "config.php";
 if (!userGedcomAdmin(getUserName())) {
 	header("Location: login.php?url=admin.php");
@@ -94,9 +102,6 @@ $users = getUsers();
 $verify_msg = false;
 $warn_msg = false;
 foreach($users as $indexval => $user) {
-	if (!$user["verified_by_admin"] && $user["verified"])  {
-		$verify_msg = true;
-	}
 	if (!empty($user["comment_exp"])) {
 		if ((strtotime($user["comment_exp"]) != "-1") && (strtotime($user["comment_exp"]) < time("U"))) $warn_msg = true;
 	}

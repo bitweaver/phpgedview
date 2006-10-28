@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: functions_print.php,v 1.3 2006/10/28 20:17:03 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 	 print "Now, why would you want to do that. You're not hacking are you?";
@@ -971,10 +971,10 @@ function print_lang_form($option=0) {
  */
 function print_user_links() {
 	 global $pgv_lang, $SCRIPT_NAME, $QUERY_STRING, $GEDCOM, $PRIV_USER, $PRIV_PUBLIC, $USE_REGISTRATION_MODULE, $pid;
-	 global $LOGIN_URL, $SEARCH_SPIDER;
+	 global $LOGIN_URL, $SEARCH_SPIDER, $gBitUser;
 	 $username = getUserName();
 	 $user = getUser($username);
-	 if ($user && !empty($username)) {
+	 if ($user && !empty($username) && $username != "-1" ) {
 		  print '<a href="edituser.php" class="link">'.$pgv_lang["logged_in_as"].' ('.$username.')</a><br />';
 		  if ($user["canadmin"] || (userGedcomAdmin($username, $GEDCOM))) print "<a href=\"admin.php\" class=\"link\">".$pgv_lang["admin"]."</a> | ";
 		  print "<a href=\"index.php?logout=1\" class=\"link\">".$pgv_lang["logout"]."</a>";
@@ -1128,7 +1128,7 @@ function print_favorite_selector($option=0) {
 	}
 	if (empty($pid)&&(!empty($famid))) $pid = $famid;
 	if (empty($pid)&&(!empty($sid))) $pid = $sid;
-	$gedcomfavs = getUserFavorites($GEDCOM);
+	$gedcomfavs = array();
 	if ((empty($username))&&(count($gedcomfavs)==0)) return;
 
 	if(!empty($SEARCH_SPIDER)) {

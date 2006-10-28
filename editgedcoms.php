@@ -25,9 +25,25 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see index/gedcoms.php
- * @version $Id: editgedcoms.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: editgedcoms.php,v 1.3 2006/10/28 20:17:04 lsces Exp $
  */
 
+/**
+ * required setup
+ */
+require_once( '../bit_setup_inc.php' );
+
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+// Now check permissions to access this page
+$gBitSystem->verifyPermission( 'bit_p_admin_phpgedview' );
+
+require_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+/**
+ * load the main configuration and context
+ */
 require "config.php";
 require $confighelpfile["english"];
 global $TEXT_DIRECTION;

@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.9 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: functions_db.php,v 1.10 2006/10/28 20:17:03 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -150,7 +150,7 @@ function find_family_record($famid, $gedfile="") {
 function find_person_record($pid, $gedfile="") {
 	global $pgv_lang;
 	global $GEDCOM, $GEDCOMS;
-	global $BUILDING_INDEX, $indilist, $DBCONN, $gGedcom;
+	global $BUILDING_INDEX, $indilist, $gBitSystem, $gGedcom;
 
 	if (empty($pid)) return false;
 	if (empty($gedfile)) $gedfile = $GEDCOM;
@@ -161,7 +161,7 @@ function find_person_record($pid, $gedfile="") {
 	if ((isset($indilist[$pid]["gedcom"]))&&($indilist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $indilist[$pid]["gedcom"];
 
 	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_letter, i_surname FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_id LIKE ? AND i_file=?";
-	$res = $gGedcom->mDb->query($sql, array( $pid ,$GEDCOMS[$gedfile]["id"] ));
+	$res = $gBitSystem->mDb->query($sql, array( $pid ,$GEDCOMS[$gedfile]["id"] ));
 
 	if ($res) {
 		if ($res->numRows()==0) {
@@ -191,7 +191,7 @@ function find_person_record($pid, $gedfile="") {
 function find_gedcom_record($pid, $gedfile = "") {
 	global $pgv_lang;
 	global $GEDCOMS, $MEDIA_ID_PREFIX;
-	global $GEDCOM, $indilist, $famlist, $sourcelist, $objectlist, $otherlist, $DBCONN;
+	global $GEDCOM, $indilist, $famlist, $sourcelist, $objectlist, $otherlist, $gBitSystem;
 
 	if (empty($pid)) return false;
 	if (empty($gedfile)) $gedfile = $GEDCOM;
@@ -226,8 +226,8 @@ function find_gedcom_record($pid, $gedfile = "") {
 
 	//-- unable to guess the type so look in all the tables
 	if (empty($gedrec)) {
-		$sql = "SELECT o_gedcom, o_file FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_id LIKE '".$DBCONN->escape($pid)."' AND o_file='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
-		$res =& dbquery($sql);
+		$sql = "SELECT o_gedcom, o_file FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_id LIKE ? AND o_file=?";
+		$res =& $gBitSystem->mDb->query($sql, array( $pid, $GEDCOMS[$gedfile]["id"] ) );
 		if ($res->numRows()!=0) {
 			$row =& $res->fetchRow();
 			$res->free();
@@ -257,15 +257,15 @@ function find_source_record($sid, $gedfile="") {
 	global $fcontents;
 	global $pgv_lang;
 	global $GEDCOMS;
-	global $GEDCOM, $sourcelist, $DBCONN;
+	global $GEDCOM, $sourcelist, $gBitSystem;
 
 	if ($sid=="") return false;
 	if (empty($gedfile)) $gedfile = $GEDCOM;
 
 	if (isset($sourcelist[$sid]["gedcom"]) && ($sourcelist[$sid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $sourcelist[$sid]["gedcom"];
 
-	$sql = "SELECT s_gedcom, s_name, s_file FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_id LIKE '".$DBCONN->escape($sid)."' AND s_file='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT s_gedcom, s_name, s_file FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_id LIKE ? AND s_file=?";
+	$res = $gBitSystem->mDb->query($sql, array( $sid, $GEDCOMS[$gedfile]["id"] ) );
 
 	if ($res->numRows()!=0) {
 		$row =& $res->fetchRow();
@@ -289,15 +289,15 @@ function find_source_record($sid, $gedfile="") {
  */
 function find_repo_record($rid, $gedfile="") {
 	global $GEDCOMS;
-	global $GEDCOM, $repolist, $DBCONN;
+	global $GEDCOM, $repolist, $gBitSystem;
 
 	if ($rid=="") return false;
 	if (empty($gedfile)) $gedfile = $GEDCOM;
 
 	if (isset($repolist[$rid]["gedcom"]) && ($repolist[$rid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $repolist[$rid]["gedcom"];
 
-	$sql = "SELECT o_id, o_gedcom, o_file FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='REPO' AND o_id LIKE '".$DBCONN->escape($rid)."' AND o_file='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT o_id, o_gedcom, o_file FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='REPO' AND o_id LIKE ? AND o_file=?";
+	$res = $gBitSystem->mDb->query($sql, array( $rid, $GEDCOMS[$gedfile]["id"] ) );
 
 	if ($res->numRows()!=0) {
 		$row =& $res->fetchRow();
@@ -320,7 +320,7 @@ function find_repo_record($rid, $gedfile="") {
  */
 function find_media_record($rid, $gedfile='') {
 	global $GEDCOMS;
-	global $GEDCOM, $objectlist, $DBCONN, $MULTI_MEDIA;
+	global $GEDCOM, $objectlist, $gBitSystem, $MULTI_MEDIA;
 
 	//-- don't look for a media record if not using media
 	if (!$MULTI_MEDIA) return false;
@@ -331,8 +331,8 @@ function find_media_record($rid, $gedfile='') {
 	if (empty($objectlist)) $objectlist = array();
 	if (isset($objectlist[$rid]["gedcom"]) && ($objectlist[$rid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $objectlist[$rid]["gedcom"];
 
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media LIKE '".$DBCONN->escape($rid)."' AND m_gedfile='".$DBCONN->escape($GEDCOMS[$gedfile]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media LIKE ? AND m_gedfile=?";
+	$res = $gBitSystem->mDb->query($sql, array( $rid, $GEDCOMS[$gedfile]["id"] ));
 	if (!$res) return false;
 	if ($res->numRows()!=0) {
 		$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
@@ -2473,17 +2473,17 @@ function get_next_id($table, $field) {
  */
 function get_server_list(){
  	global $GEDCOM, $GEDCOMS;
-	global $DBCONN, $sitelist, $sourcelist;
+	global $gBitSystem, $sitelist, $sourcelist;
 
 	//if (isset($sitelist)) return $sitelist;
 	$sitelist = array();
 
 	if (isset($GEDCOMS[$GEDCOM]) && check_for_import($GEDCOM)) {
-		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' AND s_gedcom LIKE '%1 _DBID%' ORDER BY s_name";
-		$res = dbquery($sql);
+		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=? AND s_gedcom LIKE '%1 _DBID%' ORDER BY s_name";
+		$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 		$ct = $res->numRows();
-		while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+		while($row =& $res->fetchRow()){
 			$source = array();
 			$source["name"] = $row["s_name"];
 			$source["gedcom"] = $row["s_gedcom"];
