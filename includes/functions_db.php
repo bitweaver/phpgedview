@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.10 2006/10/28 20:17:03 lsces Exp $
+ * @version $Id: functions_db.php,v 1.11 2006/10/28 21:03:33 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -92,10 +92,10 @@ function &dbquery($sql, $show_error=true, $count=0) {
  * @return bool return true if the gedcom has been imported otherwise returns false
  */
 function check_for_import($ged) {
-	global $BUILDING_INDEX, $DBCONN, $GEDCOMS, $gGedcom;
+	global $BUILDING_INDEX, $DBCONN, $GEDCOMS, $gBitSystem;
 
 	$sql = "SELECT count(i_id) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
-	$res = $gGedcom->mDb->query($sql, array($GEDCOMS[$ged]["id"]));
+	$res = $gBitSystem->mDb->query($sql, array($GEDCOMS[$ged]["id"]));
 
 	if ($res) {
 		$row = $res->fetchRow();

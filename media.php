@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.4 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: media.php,v 1.5 2006/10/28 21:03:33 lsces Exp $
  */
 
  /* TODO:
@@ -42,6 +42,17 @@
  *  $dirs = list of subdirectories within current directory.  Built with medialist.
  */
 
+/**
+ * load the main configuration and context
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
 require_once("includes/functions_print_facts.php");

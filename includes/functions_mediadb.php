@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: functions_mediadb.php,v 1.6 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: functions_mediadb.php,v 1.7 2006/10/28 21:03:33 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -509,7 +509,7 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 	global $MEDIA_DIRECTORY_LEVELS, $BADMEDIA, $thumbdir, $MEDIATYPE, $DBCONN;
 	global $level, $dirs, $ALLOW_CHANGE_GEDCOM, $GEDCOM, $GEDCOMS, $MEDIA_DIRECTORY;
 	global $MEDIA_EXTERNAL, $medialist, $pgv_changes;
-	
+	global $gBitSystem;
 	
 	// Retrieve the gedcoms to search in
 	$sgeds = array();
@@ -526,17 +526,17 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 	$medialist = array();
 	if (empty($directory)) $directory = $MEDIA_DIRECTORY;
 	$myDir = str_replace($MEDIA_DIRECTORY, "", $directory); 
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile='".$GEDCOMS[$GEDCOM]["id"]."'";
-	$sql .= " AND (m_file LIKE '%".$DBCONN->escape($myDir)."%' OR m_file LIKE '%://%') ORDER BY m_id desc";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=?";
+	$sql .= " AND (m_file LIKE ? OR m_file LIKE '%://%') ORDER BY m_id desc";
 	//print "sql: ".$sql."<br />";
-	$res =& dbquery($sql);
-	$ct = $res->numRows();
+	$res =& $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"], "%$myDir%" ) );
+	$ct = $res->NumRows();
 	//print $directory.$sql;
 	
 	// Build the raw medialist array, 
 	// but weed out any folders we're not interested in 
 	$mediaObjects = array();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while( $row =& $res->FetchRow() ){
 		if ($row) {
 			if (!empty($row["m_file"])) {
 				$fileName = check_media_depth(stripslashes($row["m_file"]), "NOTRUNC", "QUIET");
@@ -685,8 +685,8 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 		}
 		$sql .= " ORDER BY mm_gid";
 		//print "sql: ".$sql."<br />";
-		$res = dbquery($sql);
-		while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+		$res = $gBitSystem->mDb->query($sql);
+		while($row =& $res->FetchRow()){
 			//print_r($row); print "<br />";
 			// Build the key for the medialist
 			$temp = stripslashes($row["mm_media"]);
