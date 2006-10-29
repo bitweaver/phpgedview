@@ -1,5 +1,9 @@
 {strip}
-{form}
+{if !$settings}
+	{assign var=settings value=$gBitSystem->mConfig}
+{/if}
+
+{form legend="phpgedview Settings"}
 	{jstabs}
 		{jstab title="GEDCOM Settings"}
 			{legend legend="GEDCOM Settings"}
