@@ -185,6 +185,11 @@ foreach( array_keys( $tables ) AS $tableName ) {
 	$gBitInstaller->registerSchemaTable( PHPGEDVIEW_PKG_NAME, $tableName, $tables[$tableName] );
 }
 
+// these sequences are automatically generated, but Firebird and MSSQL prefers they exist
+// Starting the numbering off at 5 for types to allow room for the INSERTs later.
+$sequences = array (
+	'gedview_id_seq' => array( 'start' => 1 ),
+);
 $gBitInstaller->registerSchemaSequences( ARTICLES_PKG_NAME, $sequences );
 
 $indices = array (
@@ -255,9 +260,9 @@ $gBitInstaller->registerPreferences( PHPGEDVIEW_PKG_NAME, array(
 
 // ### Default UserPermissions
 $gBitInstaller->registerUserPermissions( PHPGEDVIEW_PKG_NAME, array(
-	array('bit_p_view_phpgedview', 'Can view gedcom data', 'registered', 'phpgedview'),
-	array('bit_p_edit_phpgedview', 'Can edit gedcom data', 'registered', 'phpgedview'),
-	array('bit_p_admin_phpgedview', 'Can admin phpgedview interface', 'editors', 'phpgedview')
+	array('p_phpgedview_view', 'Can view gedcom data', 'registered', 'phpgedview'),
+	array('p_phpgedview_edit', 'Can edit gedcom data', 'registered', 'phpgedview'),
+	array('p_phpgedview_admin', 'Can admin phpgedview interface', 'editors', 'phpgedview')
 ) );
 
 $gBitInstaller->registerSchemaDefault( PHPGEDVIEW_PKG_NAME, array(
