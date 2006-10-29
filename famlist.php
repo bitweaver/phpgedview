@@ -19,11 +19,24 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: famlist.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
 
+/**
+ * Initialization
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
 print_header($pgv_lang["family_list"]);

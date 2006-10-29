@@ -19,10 +19,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: imageview.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: imageview.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
+
+/**
+ * Initialization
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 
 if (!isset($filename)) $filename = "";

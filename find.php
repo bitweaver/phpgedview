@@ -21,9 +21,22 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: find.php,v 1.2 2006/10/01 22:44:00 lsces Exp $
+ * @version $Id: find.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
  */
 
+/**
+ * Initialization
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
 if (!isset($type)) $type = "indi";

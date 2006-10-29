@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.12 2006/10/28 21:45:15 lsces Exp $
+ * @version $Id: functions_db.php,v 1.13 2006/10/29 11:02:13 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -356,10 +356,9 @@ function find_media_record($rid, $gedfile='') {
  * @return string the gedcom xref id of the first person in the gedcom
  */
 function find_first_person() {
-	global $GEDCOM, $GEDCOMS, $gBitDbType, $DBCONN;
-	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY i_id";
-	if ($gBitDbType!="sqlite") $sql.=" LIMIT 1";
-	$row = $DBCONN->getRow($sql);
+	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY i_id";
+	$row = $gBitSystem->mDb->getRow($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 	if (!$row) return $row['i_id'];
 	else return "I1";
 }
@@ -550,16 +549,16 @@ function get_repo_add_title_list() {
 
 //-- get the indilist from the datastore
 function get_indi_list() {
-	global $indilist, $GEDCOM, $DBCONN, $GEDCOMS;
+	global $indilist, $GEDCOM, $gBitSystem, $GEDCOMS;
 	global $INDILIST_RETRIEVED;
 
 	if ($INDILIST_RETRIEVED) return $indilist;
 	$indilist = array();
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY i_surname";
-	$res = dbquery($sql);
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY i_surname";
+	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 	$ct = $res->numRows();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->FetchRow()){
 		$indi = array();
 		$indi["gedcom"] = $row["i_gedcom"];
 		$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], "A"));
@@ -567,18 +566,16 @@ function get_indi_list() {
 		$indi["gedfile"] = $row["i_file"];
 		$indilist[$row["i_id"]] = $indi;
 	}
-	$res->free();
 
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY n_surname";
-	$res = dbquery($sql);
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=? ORDER BY n_surname";
+	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 	$ct = $res->numRows();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->FetchRow()){
 		if (isset($indilist[$row["n_gid"]]) && ($indilist[$row["n_gid"]]["gedfile"]==$GEDCOMS[$GEDCOM]["id"])) {
 			$indilist[$row["n_gid"]]["names"][] = array($row["n_name"], $row["n_letter"], $row["n_surname"], $row["n_type"]);
 		}
 	}
-	$res->free();
 	$INDILIST_RETRIEVED = true;
 	return $indilist;
 }
@@ -1570,15 +1567,14 @@ function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=fal
  * @return int
  */
 function get_place_parent_id($parent, $level) {
-	global $DBCONN, $GEDCOM, $GEDCOMS;
+	global $gBitSystem, $GEDCOM, $GEDCOMS;
 
 	$parent_id=0;
 	for($i=0; $i<$level; $i++) {
-		$escparent=preg_replace("/\?/","\\\\\\?", $DBCONN->escape($parent[$i]));
+		$escparent=preg_replace("/\?/","\\\\\\?", $parent[$i]);
 		$psql = "SELECT p_id FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=".$i." AND p_parent_id=$parent_id AND p_place LIKE '".$escparent."' AND p_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY p_place";
-		$res = dbquery($psql);
-		$row =& $res->fetchRow();
-		$res->free();
+		$res = $gBitSystem->mDb->query($psql);
+		$row =& $res->FetchRow();
 		if (empty($row['p_id'])) break;
 		$parent_id = $row['p_id'];
 	}
@@ -1593,21 +1589,20 @@ function get_place_parent_id($parent, $level) {
  */
 function get_place_list() {
 	global $numfound, $j, $level, $parent, $found;
-	global $GEDCOM, $placelist, $positions, $DBCONN, $GEDCOMS;
+	global $GEDCOM, $placelist, $positions, $gBitSystem, $GEDCOMS;
 
 	// --- find all of the place in the file
-	if ($level==0) $sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=0 AND p_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY p_place";
+	if ($level==0) $sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=0 AND p_file=? ORDER BY p_place";
 	else {
 		$parent_id = get_place_parent_id($parent, $level);
-		$sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=$level AND p_parent_id=$parent_id AND p_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY p_place";
+		$sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=$level AND p_parent_id=$parent_id AND p_file=? ORDER BY p_place";
 	}
-	$res = dbquery($sql);
+	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
-	while ($row =& $res->fetchRow()) {
+	while ($row =& $res->FetchRow()) {
 		$placelist[] = $row['p_place'];
 		$numfound++;
 	}
-	$res->free();
 }
 
 /**
@@ -1617,38 +1612,36 @@ function get_place_list() {
  * @return array
  */
 function get_place_positions($parent, $level='') {
-	global $positions, $GEDCOM, $DBCONN, $GEDCOMS;
+	global $positions, $GEDCOM, $gBitSystem, $GEDCOMS;
 
 	if ($level!='') $p_id = get_place_parent_id($parent, $level);
 	else {
 		//-- we don't know the level so get the any matching place
-		$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks, ".PHPGEDVIEW_DB_PREFIX."places WHERE p_place LIKE '".$DBCONN->escape($parent)."' AND p_file=pl_file AND p_id=pl_p_id AND p_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."'";
+		$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks, ".PHPGEDVIEW_DB_PREFIX."places WHERE p_place LIKE ? AND p_file=pl_file AND p_id=pl_p_id AND p_file=?";
 		//print $sql;
-		$res = dbquery($sql);
-		while ($row =& $res->fetchRow()) {
+		$res = $gBitSystem->mDb->query($sql, array( $parent, $GEDCOMS[$GEDCOM]["id"] ) );
+		while ($row =& $res->FetchRow() ) { 
 			$positions[] = $row['pl_gid'];
 		}
-		$res->free();
 		return $positions;
 	}
-	$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks WHERE pl_p_id=$p_id AND pl_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."'";
-	$res = dbquery($sql);
+	$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks WHERE pl_p_id=$p_id AND pl_file=?";
+	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
-	while ($row =& $res->fetchRow()) {
+	while ($row =& $res->FetchRow()) {
 		$positions[] = $row['pl_gid'];
 	}
-	$res->free();
 	return $positions;
 }
 
 //-- find all of the places
 function find_place_list($place) {
-	global $GEDCOM, $placelist, $indilist, $famlist, $sourcelist, $otherlist, $DBCONN, $GEDCOMS;
+	global $GEDCOM, $placelist, $indilist, $famlist, $sourcelist, $otherlist, $gBitSystem, $GEDCOMS;
 
-	$sql = "SELECT p_id, p_place, p_parent_id  FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_file='".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."' ORDER BY p_parent_id, p_id";
-	$res = dbquery($sql);
+	$sql = "SELECT p_id, p_place, p_parent_id  FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_file=? ORDER BY p_parent_id, p_id";
+	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
-	while($row =& $res->fetchRow()) {
+	while($row =& $res->FetchRow()) {
 		if ($row['p_parent_id']==0) $placelist[$row['p_id']] = $row['p_place'];
 		else {
 			$placelist[$row['p_id']] = $placelist[$row['p_parent_id']].", ".$row['p_place'];
@@ -1670,16 +1663,16 @@ function find_place_list($place) {
 
 //-- find all of the media
 function get_media_list() {
-	global $GEDCOM, $medialist, $ct, $DBCONN, $GEDCOMS, $MEDIA_DIRECTORY;
+	global $GEDCOM, $medialist, $ct, $gBitSystem, $GEDCOMS, $MEDIA_DIRECTORY;
 	global $GEDCOM_ID_PREFIX, $FAM_ID_PREFIX, $SOURCE_ID_PREFIX;
 	$ct = 0;
 	if (!isset($medialinks)) $medialinks = array();
 	$sqlmm = "SELECT mm_gid, mm_media FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY mm_id ASC";
-	$resmm =@ dbquery($sqlmm);
-	while($rowmm =& $resmm->fetchRow(DB_FETCHMODE_ASSOC)){
+	$resmm =@ $gBitSystem->mDb->query($sqlmm);
+	while($rowmm =& $resmm->FetchRow(DB_FETCHMODE_ASSOC)){
 		$sqlm = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media = '".$rowmm["mm_media"]."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
-		$resm =@ dbquery($sqlm);
-		while($rowm =& $resm->fetchRow(DB_FETCHMODE_ASSOC)){
+		$resm =@ $gBitSystem->mDb->query($sqlm);
+		while($rowm =& $resm->FetchRow(DB_FETCHMODE_ASSOC)){
 			$filename = check_media_depth($rowm["m_file"], "NOTRUNC");
 			$thumbnail = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $filename);
 			$title = $rowm["m_titl"];
