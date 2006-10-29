@@ -549,7 +549,7 @@ function print_media_links($factrec, $level,$pid='') {
 	 global $pgv_lang, $factarray, $SEARCH_SPIDER, $view;
 	 global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $MEDIA_EXTERNAL, $THUMBNAIL_WIDTH;
 	 global $PGV_IMAGE_DIR, $PGV_IMAGES;
-	 global $GEDCOM, $SHOW_FAM_ID_NUMBERS;
+	 global $GEDCOM, $SHOW_FAM_ID_NUMBERS, $gBitSystem;
 	 if (!$MULTI_MEDIA) return;
 	 $nlevel = $level+1;
 	 if ($level==1) $size=50;
@@ -560,9 +560,9 @@ function print_media_links($factrec, $level,$pid='') {
 		$media_id = preg_replace("/@/", "", trim($omatch[$objectNum][1]));
 		if (displayDetailsById($media_id, "OBJE")) {
 			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$media_id."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
-			$tempsql = dbquery($sql);
+			$tempsql = $gBitSystem->mDb->query($sql);
 			$res =& $tempsql;
-			$row =& $res->fetchRow(DB_FETCHMODE_ASSOC);
+			$row =& $res->FetchRow();
 
 			$mainMedia = check_media_depth($row["m_file"], "NOTRUNC");
 			$thumbnail = thumbnail_file($mainMedia);
@@ -1030,7 +1030,7 @@ function print_main_notes($factrec, $level, $pid, $linenum) {
 function print_main_media($pid, $level=1, $related=false) {
 	global $MULTI_MEDIA, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS, $MEDIA_EXTERNAL;
 	global $pgv_lang, $pgv_changes, $factarray, $view;
-	global $GEDCOMS, $GEDCOM, $MEDIATYPE, $pgv_changes, $DBCONN, $DBTYPE;
+	global $GEDCOMS, $GEDCOM, $MEDIATYPE, $pgv_changes, $gBitSystem, $DBTYPE;
 	global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION;
 
 	if (!showFact("OBJE", $pid)) return false;
@@ -1055,13 +1055,15 @@ function print_main_media($pid, $level=1, $related=false) {
 	}
 
 	$media_found = false;
+	$args = array();
 	$sqlmm = "SELECT ";
 	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM ".PHPGEDVIEW_DB_PREFIX."media, ".PHPGEDVIEW_DB_PREFIX."media_mapping where ";
 	$sqlmm .= "mm_gid IN (";
 	$i=0;
 	foreach($ids as $key=>$id) {
-		if ($i>0) $sqlmm .= ",";
-		$sqlmm .= "'".$DBCONN->escape($id)."'";
+		if ($i>0) $sqlmm .= ",?";
+		else $sqlmm .= "?";
+		$args[] = $id;
 		$i++;
 	}
 	$sqlmm .= ") AND mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' AND mm_media=m_media AND mm_gedfile=m_gedfile ";
@@ -1069,8 +1071,8 @@ function print_main_media($pid, $level=1, $related=false) {
 	if ($level>0) $sqlmm .= "AND mm_gedrec LIKE '$level OBJE%'";
 
 	$sqlmm .= "ORDER BY mm_id ASC";
-	$resmm = dbquery($sqlmm);
-	while($rowm = $resmm->fetchRow(DB_FETCHMODE_ASSOC)){
+	$resmm = $gBitSystem->mDb->query($sqlmm);
+	while($rowm = $resmm->FetchRow()){
 		// NOTE: Determine the size of the mediafile
 		$imgwidth = 300+40;
 		$imgheight = 300+150;

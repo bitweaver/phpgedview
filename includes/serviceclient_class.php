@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: serviceclient_class.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
+ * @version $Id: serviceclient_class.php,v 1.4 2006/10/29 16:45:27 lsces Exp $
  */
 
 require_once('includes/gedcomrecord.php');
@@ -635,7 +635,7 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 	 * @param string $remote	the remote id that matches the $local id
 	 */
 	function setSameId($local, $remote) {
-		global $DBCONN, $GEDCOMS, $GEDCOM;
+		global $gBitSystem, $GEDCOMS, $GEDCOM;
 		
 		if ($local == $remote) {
 			debug_print_backtrace();
@@ -644,8 +644,8 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 		//-- check if the link already exists
 		$gid = get_remote_id($remote);
 		if (empty($gid)) {
-			$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."remotelinks VALUES ('".$DBCONN->escape($local)."','".$DBCONN->escape($remote)."','".$DBCONN->escape($GEDCOMS[$GEDCOM]["id"])."')";
-			$res = dbquery($sql);
+			$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."remotelinks VALUES ( ?, ?, ? )";
+			$res = $gBitSystem->mDb->query( $sql, array( $local, $remote, $GEDCOMS[$GEDCOM]["id"] ));
 		}
 	}
 	

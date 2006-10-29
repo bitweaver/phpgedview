@@ -25,12 +25,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.4 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: addmedia.php,v 1.5 2006/10/29 16:45:27 lsces Exp $
  */
 
 /**
- * load config file
+ * load the main configuration and context
  */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require($factsfile["english"]);
 if (file_exists($factsfile[$LANGUAGE])) require $factsfile[$LANGUAGE];
@@ -256,8 +264,8 @@ if ($action=="newentry") {
 			//-- check if the file is used in more than one gedcom
 			//-- do not allow it to be moved or renamed if it is
 			$myFile = str_replace($MEDIA_DIRECTORY, "", $oldFolder.$oldFilename);
-			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
-			$res = $gGedcom->mDb->query($sql);
+			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE ?";
+			$res = $gBitSystem->mDb->query( $sql, array( $myFile ) );
 			$onegedcom = true;
 			while($row=$res->fetchRow()) {
 				if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
@@ -395,8 +403,8 @@ if ($action == "update") {
 	//-- check if the file is used in more than one gedcom
 	//-- do not allow it to be moved or renamed if it is
 	$myFile = str_replace($MEDIA_DIRECTORY, "", $oldFolder.$oldFilename);
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
-	$res = $gGedcom->mDb->query($sql);
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE ?";
+	$res = $gBitSystem->mDb->query( $sql, array( "%".$myFile ) );
 	$onegedcom = true;
 	while($row=$res->fetchRow()) {
 		if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;

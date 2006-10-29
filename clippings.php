@@ -26,9 +26,22 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: clippings.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: clippings.php,v 1.3 2006/10/29 16:45:27 lsces Exp $
  */
-// -- include config file
+
+/**
+ * Initialization
+ */ 
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 
 if (!isset($ENABLE_CLIPPINGS_CART)) $ENABLE_CLIPPINGS_CART = $PRIV_HIDE;

@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.6 2006/10/28 21:02:08 lsces Exp $
+ * @version $Id: editconfig.php,v 1.7 2006/10/29 16:45:27 lsces Exp $
  */
 
 // Initialization
@@ -250,7 +250,7 @@ if ($action=="update" && !isset($security_user)) {
 		print "<span class=\"error\">";
 		print $pgv_lang["db_setup_bad"];
 		print "</span><br />";
-		print "<span class=\"error\">".$DBCONN->getMessage()." ".$DBCONN->getUserInfo()."</span><br />";
+//		print "<span class=\"error\">".$gBitUser->getMessage()." ".$gBitUser->getUserInfo()."</span><br />";
 		if ($CONFIGURED==true) {
 			//-- force the incoming user to enter the database password before they can configure the site for security.
 			if (!isset($_POST["security_check"]) || !isset($_POST["security_user"]) || (($_POST["security_check"]!=$DBPASS)&&($_POST["security_user"]==$DBUSER))) {

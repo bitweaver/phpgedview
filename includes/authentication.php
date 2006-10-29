@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.10 2006/10/28 21:59:40 lsces Exp $
+ * $Id: authentication.php,v 1.11 2006/10/29 16:45:27 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -596,7 +596,6 @@ function AddToChangeLog($LogString, $ged="") {
  * @param array $favorite	the favorite array of the favorite to add
  */
 function addFavorite($favorite) {
-	global $DBCONN;
 
 	// -- make sure a favorite is added
 	if (empty($favorite["gid"]) && empty($favorite["url"])) return false;

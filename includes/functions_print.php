@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.3 2006/10/28 20:17:03 lsces Exp $
+ * @version $Id: functions_print.php,v 1.4 2006/10/29 16:45:27 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 	 print "Now, why would you want to do that. You're not hacking are you?";
@@ -1903,7 +1903,7 @@ function PrintReady($text, $InHeaders=false) {
     //		argument search, in which the second or later arguments can be found in the
     //		<span> or </span> strings.
     if ($HighlightOK) {
-	    if (isset($query)) {
+		if (isset($query) && !is_array($query) ) {
 			$queries = explode(" ", $query);
 	    	$newtext = $text;
 	    	$hasallhits = true;

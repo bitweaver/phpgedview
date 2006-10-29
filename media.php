@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.5 2006/10/28 21:03:33 lsces Exp $
+ * @version $Id: media.php,v 1.6 2006/10/29 16:45:27 lsces Exp $
  */
 
  /* TODO:
@@ -385,10 +385,10 @@ if (check_media_structure()) {
 		//-- check if the file is used in more than one gedcom
 		//-- do not allow it to be moved if it is
 		$myFile = str_replace($MEDIA_DIRECTORY, "", $directory.$movefile);
-		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
-		$res = $gGedcom->mDb->query($sql);
+		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE ?";
+		$res = $gBitSystem->mDb->query( $sql, array( "%".$myFile ) );
 		$onegedcom = true;
-		while($row=$res->fetchRow()) {
+		while($row=$res->FetchRow()) {
 			if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
 		}
 		if (!$onegedcom) {
@@ -776,8 +776,8 @@ if (check_media_structure()) {
 			//-- get all of the XREFS associated with this record
 			//-- and check if the file is used in multiple gedcoms
 			$myFile = str_replace($MEDIA_DIRECTORY, "", $filename);
-			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE '%".$DBCONN->escape($myFile)."'";
-			$res = $gGedcom->mDb->query($sql);
+			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_file LIKE ?";
+			$res = $gBitSystem->mDb->query( $sql, array( "%".$myFile ) );
 
 			while($row=$res->fetchRow()) {
 				if ($row["m_gedfile"]!=$GEDCOMS[$GEDCOM]["id"]) $onegedcom = false;

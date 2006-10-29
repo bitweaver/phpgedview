@@ -24,7 +24,9 @@
  * @version $Id$
  */
 
-// Initialization
+/**
+ * Initialization
+ */ 
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
