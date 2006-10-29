@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.4 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: functions_print.php,v 1.5 2006/10/29 17:42:04 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 	 print "Now, why would you want to do that. You're not hacking are you?";
@@ -977,7 +977,7 @@ function print_user_links() {
 	 if ($user && !empty($username) && $username != "-1" ) {
 		  print '<a href="edituser.php" class="link">'.$pgv_lang["logged_in_as"].' ('.$username.')</a><br />';
 		  if ($user["canadmin"] || (userGedcomAdmin($username, $GEDCOM))) print "<a href=\"admin.php\" class=\"link\">".$pgv_lang["admin"]."</a> | ";
-		  print "<a href=\"index.php?logout=1\" class=\"link\">".$pgv_lang["logout"]."</a>";
+		  print "<a href=\"../index.php\" class=\"link\">Home</a>";
 	 }
 	 else {
 		  $QUERY_STRING = preg_replace("/logout=1/", "", $QUERY_STRING);
