@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.9 2006/10/28 20:17:03 lsces Exp $
+ * @version $Id: session.php,v 1.10 2006/10/29 23:18:39 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -826,17 +826,7 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
 	check_db();
 }
 
-if (isset($_SESSION["theme_dir"]))
-{
-	$THEME_DIR = $_SESSION["theme_dir"];
-	if (!empty($pgv_username))
-	{
-		$tempuser = getUser($pgv_username);
-		if ($tempuser["editaccount"]) unset($_SESSION["theme_dir"]);
-	}
-}
-
-if (empty($THEME_DIR)) $THEME_DIR="standard/";
+$THEME_DIR="standard/";
 if (file_exists($THEME_DIR."theme.php")) require_once($THEME_DIR."theme.php");
 else {
 	$THEME_DIR = "themes/standard/";

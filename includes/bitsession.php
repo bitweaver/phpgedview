@@ -865,7 +865,7 @@ if (isset($_SESSION["theme_dir"]))
 	}
 }
 
-if (empty($THEME_DIR)) $THEME_DIR="bitweaver/";
+$THEME_DIR="bitweaver/";
 if (file_exists($THEME_DIR."theme.php")) require_once($THEME_DIR."theme.php");
 else {
 	$THEME_DIR = "themes/bitweaver/";
