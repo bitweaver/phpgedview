@@ -19,10 +19,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: sourcelist.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: sourcelist.php,v 1.3 2006/10/30 15:00:45 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
+
+/**
+ * load the main configuration and context
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
 $addsourcelist = get_source_add_title_list();  //-- array of additional source titlesadd

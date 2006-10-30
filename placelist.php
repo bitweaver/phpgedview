@@ -21,9 +21,20 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: placelist.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: placelist.php,v 1.3 2006/10/30 15:00:45 lsces Exp $
  */
 
+/**
+ * load the main configuration and context
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
 function case_in_array($value, $array) {
