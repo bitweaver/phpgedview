@@ -1071,7 +1071,7 @@ function print_main_media($pid, $level=1, $related=false) {
 	if ($level>0) $sqlmm .= "AND mm_gedrec LIKE '$level OBJE%'";
 
 	$sqlmm .= "ORDER BY mm_id ASC";
-	$resmm = $gBitSystem->mDb->query($sqlmm);
+	$resmm = $gBitSystem->mDb->query($sqlmm, $args);
 	while($rowm = $resmm->FetchRow()){
 		// NOTE: Determine the size of the mediafile
 		$imgwidth = 300+40;

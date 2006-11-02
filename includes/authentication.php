@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.11 2006/10/29 16:45:27 lsces Exp $
+ * $Id: authentication.php,v 1.12 2006/11/02 22:47:47 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -366,8 +366,13 @@ function getUser($username) {
 	$user["lastname"]=$gBitUser->mInfo["real_name"];
 	$user["gedcomid"]=""; // unserialize($user_row["u_gedcomid"]);
 	$user["rootid"]=1;
-	if ( $gBitUser->isAdmin() ) $user["canadmin"]=true;
-		else $user["canadmin"]=false;
+	if ( $gBitUser->isAdmin() ) {
+		$user["canadmin"]=true;
+		$user["sync_gedcom"] = 'Y';
+	} else {
+		$user["canadmin"]=false;
+		$user["sync_gedcom"] = 'N';
+	}
 	$user["editaccount"]=false;
 	$user["anon"]=$gBitUser->isValid();
 	$user["email"] = $gBitUser->mInfo["email"];

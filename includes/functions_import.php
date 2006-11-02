@@ -757,7 +757,7 @@ function accept_changes($cid) {
 
 		if ($change["type"] != "delete") {
 			//-- synchronize the gedcom record with any user account
-			$user = getUserByGedcomId($gid, $GEDCOM);
+/*			$user = getUser($gid);
 			if ($user && ($user["sync_gedcom"] == "Y")) {
 				$firstname = get_gedcom_value("GIVN", 2, $indirec);
 				$lastname = get_gedcom_value("SURN", 2, $indirec);
@@ -778,7 +778,7 @@ function accept_changes($cid) {
 					$user["lastname"] = $lastname;
 					updateUser($user["username"], $user);
 				}
-			}
+*/			}
 		}
 
 		unset ($pgv_changes[$cid]);
