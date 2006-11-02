@@ -778,8 +778,8 @@ function accept_changes($cid) {
 					$user["lastname"] = $lastname;
 					updateUser($user["username"], $user);
 				}
-*/			}
-		}
+			}
+*/		}
 
 		unset ($pgv_changes[$cid]);
 		write_changes();
