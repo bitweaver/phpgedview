@@ -190,7 +190,7 @@ foreach( array_keys( $tables ) AS $tableName ) {
 $sequences = array (
 	'gedview_id_seq' => array( 'start' => 1 ),
 );
-$gBitInstaller->registerSchemaSequences( ARTICLES_PKG_NAME, $sequences );
+$gBitInstaller->registerSchemaSequences( PHPGEDVIEW_PKG_NAME, $sequences );
 
 $indices = array (
 	'indi_name_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'individuals', 'cols' => 'i_name', 'opts' => NULL ),
