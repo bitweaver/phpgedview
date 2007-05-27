@@ -30,7 +30,70 @@ if (preg_match("/lang\...\.php$/", $_SERVER["SCRIPT_NAME"])>0) {
 	exit;
 }
 
+$pgv_lang["invalid_search_input"] 	= "Please enter a Given name, Last name, or Place in addition to Year";
+$pgv_lang["duplicate_username"] 	= "Duplicate user name.  A user with that user name already exists.  Please choose another user name.";
+$pgv_lang["cache_life"]				= "Cache file life";
+$pgv_lang["genealogy"]					= "genealogy";
+$pgv_lang["activate"]					= "Activate";
+$pgv_lang["deactivate"]					= "Deactivate";
+$pgv_lang["play"]					= "Play";
+$pgv_lang["stop"]					= "Stop";
+$pgv_lang["random_media_start_slide"]	= "Start slideshow on page load?";
+$pgv_lang["random_media_ajax_controls"]	= "Show slideshow controls?";
+$pgv_lang["description"]			= "Description";
+$pgv_lang["current_dir"]			= "Current directory";
+$pgv_lang["SHOW_ID_NUMBERS"]		= "Show ID numbers next to names";
+$pgv_lang["SHOW_HIGHLIGHT_IMAGES"]	= "Show highlight images in people boxes";
+$pgv_lang["view_img_details"]		= "View image details";
+$pgv_lang["server_folder"]			= "Folder name on server";
+$pgv_lang["media_options"]			= "Media Options";
+$pgv_lang["confirm_password"]					= "You must confirm the password.";
+$pgv_lang["enter_email"]						= "You must enter an email address.";
+$pgv_lang["enter_fullname"] 					= "You must enter a first and last name.";
+$pgv_lang["name"]					= "Name";
+$pgv_lang["children"]				= "Children";
+$pgv_lang["child"]					= "Child";
+$pgv_lang["as_child"]				= "Family with Parents";
+$pgv_lang["source_menu"]			= "Options for source";
+$pgv_lang["other_records"]			= "Records that link to this Source:";
+$pgv_lang["other_repo_records"]		= "Records that link to this Repository:";
+$pgv_lang["repo_info"]				= "Repository Information";
+$pgv_lang["enter_terms"]			= "Enter Search terms";
+$pgv_lang["search_asso_label"]		= "Associates";
+$pgv_lang["search_asso_text"]		= "Show related persons/families";
+$pgv_lang["search_DM"]				= "Daitch-Mokotoff";
+$pgv_lang["search_fams"]			= "Families";
+$pgv_lang["search_gedcom"]			= "Search databases";
+$pgv_lang["search_geds"]			= "Databases to search in";
+$pgv_lang["search_indis"]			= "Individuals";
+$pgv_lang["search_inrecs"]			= "Search for";
+$pgv_lang["search_prtall"]			= "All names";
+$pgv_lang["search_prthit"]			= "Names with hit";
+$pgv_lang["results_per_page"]		= "Results per page";
+$pgv_lang["firstname_search"]		= "Given name";
+$pgv_lang["search_prtnames"]		= "Individuals'<br />names to print:";
+$pgv_lang["other_searches"]			= "Other Searches";
+$pgv_lang["add_to_cart"]			= "Add to Clippings Cart";
+$pgv_lang["view_gedcom"]			= "View GEDCOM Record";
+$pgv_lang["welcome"]				= "Welcome";
+$pgv_lang["son"]					= "Son";
+$pgv_lang["daughter"]				= "Daughter";
+$pgv_lang["welcome_page"]			= "Welcome Page";
 $pgv_lang["upload_replacement"]		="Upload Replacement";
+$pgv_lang["editowndata"]			= "My Account";
+$pgv_lang["user_admin"] 			= "User administration";
+$pgv_lang["manage_media"]			= "Manage Media";
+$pgv_lang["search_general"]			= "General search";
+$pgv_lang["clipping_privacy"]		= "Some items could not be added due to privacy restrictions";
+$pgv_lang["chart_new"]				= "Family Tree Chart";
+$pgv_lang["loading"]				= "Loading...";
+$pgv_lang["clear_chart"]			= "Clear Chart";
+$pgv_lang["file_information"]		= "File Information";
+$pgv_lang["choose_file_type"]		= "Choose File Type";
+$pgv_lang["add_individual_by_id"]		= "Add Individual By ID";
+$pgv_lang["advanced_options"]		= "Advanced Options";
+$pgv_lang["zip_files"]				= "Zip File(s)";
+$pgv_lang["include_media"]			= "Include Media (automatically zips files)";
 $pgv_lang["roman_surn"]				= "Romanized Surname";
 $pgv_lang["roman_givn"]				= "Romanized Given Names";
 $pgv_lang["hebrew_surn"]			= "Hebrew Surname";
@@ -161,7 +224,7 @@ $pgv_lang["ex-wife"] = "Ex-Wife";
 $pgv_lang["ex-husband"] = "Ex-Husband";
 $pgv_lang["noemail"] 				= "Addresses without emails";
 $pgv_lang["onlyemail"] 				= "Only addresses with emails";
-$pgv_lang["maxviews_exceeded"]		= "Page view rate exceeded, try again later.";
+$pgv_lang["maxviews_exceeded"]		= "Permitted page view rate of #GLOBALS[MAX_VIEWS]# per #GLOBALS[MAX_VIEW_TIME]# seconds exceeded.";
 $pgv_lang["broadcast_not_logged_6mo"]	= "Send message to users who have not logged in for 6 months";
 $pgv_lang["broadcast_never_logged_in"]	= "Send message to users who have never logged in";
 $pgv_lang["stats_to_show"]			= "Select the stats to show in this block";
@@ -174,6 +237,8 @@ $pgv_lang["stat_media"]				= "Media objects";
 $pgv_lang["stat_surnames"]			= "Total surnames";
 $pgv_lang["stat_users"]				= "Total users";
 $pgv_lang["no_family_facts"]		= "No facts for this family.";
+$pgv_lang["stat_males"]				= "Total males";
+$pgv_lang["stat_females"]			= "Total females";
 
 $pgv_lang["sunday_1st"]				= "Su";
 $pgv_lang["monday_1st"]				= "M";
@@ -273,6 +338,19 @@ $pgv_lang["htmlplus_block_descr"]	= "This is an HTML block that you can place on
 $pgv_lang["htmlplus_block_templates"] = "Templates";
 $pgv_lang["htmlplus_block_content"] = "Content";
 $pgv_lang["htmlplus_block_narrative"] = "Narrative style (English only)";
+$pgv_lang["htmlplus_block_custom"]	= "Custom";
+$pgv_lang["htmlplus_block_keyword"]	= "Keyword Examples (English only)";
+$pgv_lang["htmlplus_block_taglist"]	= "Tag List";
+$pgv_lang["htmlplus_block_compat"]	= "Compatibility Mode";
+$pgv_lang["htmlplus_block_current"]	= "Current";
+$pgv_lang["htmlplus_block_default"]	= "Default";
+$pgv_lang["htmlplus_block_gedcom"]	= "Family Tree";
+$pgv_lang["htmlplus_block_birth"]	= "birth";
+$pgv_lang["htmlplus_block_death"]	= "death";
+$pgv_lang["htmlplus_block_marrage"]	= "marriage";
+$pgv_lang["htmlplus_block_adoption"]= "adoption";
+$pgv_lang["htmlplus_block_burial"]	= "burial";
+$pgv_lang["htmlplus_block_census"]	= "census added";
 $pgv_lang["num_to_show"]			= "Number of items to show";
 $pgv_lang["days_to_show"]			= "Number of days to show";
 $pgv_lang["before_or_after"]		= "Place counts before or after name?";
@@ -308,6 +386,7 @@ $pgv_lang["common_upload_errors"]	= "This error probably means that the file you
 $pgv_lang["total_memory_usage"]		= "Total Memory Usage:";
 $pgv_lang["mothers_family_with"]	= "Mother's Family with ";
 $pgv_lang["fathers_family_with"]	= "Father's Family with ";
+$pgv_lang["family_with"]			= "Family with";
 $pgv_lang["halfsibling"]			= "Half-Sibling";
 $pgv_lang["halfbrother"]			= "Half-Brother";
 $pgv_lang["halfsister"]				= "Half-Sister";
@@ -826,6 +905,10 @@ $pgv_lang["confidential"]			= "Confidential";
 $pgv_lang["alpha_index"]				= "Alphabetical Index";
 $pgv_lang["name_list"] 				= "Name List";
 $pgv_lang["firstname_alpha_index"] 	= "Firstname Alphabetical Index";
+$pgv_lang["roots"]		 				= "Roots";
+$pgv_lang["leaves"] 					= "Leaves";
+$pgv_lang["widow"] 					= "Widow";
+$pgv_lang["widower"] 				= "Widower";
 
 //-- TIMELINE FILE MESSAGES
 $pgv_lang["age"]					= "Age";
@@ -846,6 +929,12 @@ $pgv_lang["year"]					= "Year:";
 $pgv_lang["timeline_instructions"]	= "In most recent browsers you can click and drag the boxes around on the chart.";
 $pgv_lang["zoom_in"]				= "Zoom In";
 $pgv_lang["zoom_out"]				= "Zoom Out";
+$pgv_lang["timeline_beginYear"] = "Begin Year";
+$pgv_lang["timeline_endYear"] = "End Year";
+$pgv_lang["timeline_scrollSpeed"] = "Speed";
+$pgv_lang["timeline_controls"] = "Timeline Controls";
+$pgv_lang["include_family"] = "Include Immediate Family";
+$pgv_lang["lifespan_chart"] = "Lifespan Chart";
 
 //-- MONTH NAMES
 $pgv_lang["jan"]					= "January";
@@ -998,6 +1087,243 @@ $pgv_lang["show_path"]				= "Show path";
 $pgv_lang["line_up_generations"]	= "Line up the same generations";
 $pgv_lang["oldest_top"]             = "Show oldest top";
 
+// %1\$s replaced by first person, %2\$s by the relationship and %3\$s by the second person.
+$pgv_lang["relationship_male_1_is_the_2_of_3"] = "%1\$s is the %2\$s of %3\$s.";
+$pgv_lang["relationship_female_1_is_the_2_of_3"] = "%1\$s is the %2\$s of %3\$s.";
+
+$pgv_lang["mother_in_law"]		    = "mother in law";
+$pgv_lang["father_in_law"]		    = "father in law";
+$pgv_lang["brother_in_law"]		    = "brother in law";
+$pgv_lang["sister_in_law"]		    = "sister in law";
+$pgv_lang["son_in_law"]		        = "son in law";
+$pgv_lang["daughter_in_law"]		= "daughter in law";
+
+$pgv_lang["step_son"]		        = "step son";
+$pgv_lang["step_daughter"]	    	= "step daughter";
+
+// the bosa_brothers_offspring name is used for fraternal nephews and nieces - the names below can be extended to any number
+// of generations just by adding more translations.
+// 1st generation
+$pgv_lang["bosa_brothers_offspring_2"] 				= "nephew";             // brother's son
+$pgv_lang["bosa_brothers_offspring_3"] 				= "niece";              // brother's daughter
+// 2nd generation
+$pgv_lang["bosa_brothers_offspring_4"] 				= "great nephew";       // brother's son's son
+$pgv_lang["bosa_brothers_offspring_5"] 				= "great niece";        // brother's son's daughter
+$pgv_lang["bosa_brothers_offspring_6"] 				= "great nephew";       // brother's daughter's son
+$pgv_lang["bosa_brothers_offspring_7"] 				= "great niece";        // brother's daughter's daughter
+// for the general case of offspring of the nth generation use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_brothers_son"]	  = "%2\$d x great nephew";
+$pgv_lang["n_x_brothers_daughter"] = "%2\$d x great niece";
+// the bosa_sisters_offspring name is used for sisters nephews and nieces - the names below can be extended to any number
+// of generations just by adding more translations.
+// 1st generation
+$pgv_lang["bosa_sisters_offspring_2"] 				= "nephew";             // sister's son
+$pgv_lang["bosa_sisters_offspring_3"] 				= "niece";              // sister's daughter
+// 2nd generation
+$pgv_lang["bosa_sisters_offspring_4"] 				= "great nephew";       // sister's son's son
+$pgv_lang["bosa_sisters_offspring_5"] 				= "great niece";        // sister's son's daughter
+$pgv_lang["bosa_sisters_offspring_6"] 				= "great nephew";       // sister's daughter's son
+$pgv_lang["bosa_sisters_offspring_7"] 				= "great niece";        // sister's daughter's daughter
+// for the general case of offspring of the nth generation use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_sisters_son"]	  = "%2\$d x great nephew";
+$pgv_lang["n_x_sisters_daughter"] = "%2\$d x great niece";
+
+// the bosa name is used for offspring - the names below can be extended to any number
+// of generations just by adding more translations.
+// 1st generation
+$pgv_lang["bosa_2"] 				= "son";                   // son
+$pgv_lang["bosa_3"] 				= "daughter";              // daughter
+// 2nd generation
+$pgv_lang["bosa_4"] 				= "grandson";              // son's son
+$pgv_lang["bosa_5"] 				= "granddaughter";         // son's daughter
+$pgv_lang["bosa_6"] 				= "grandson";              // daughter's son
+$pgv_lang["bosa_7"] 				= "granddaughter";         // daughter's daughter
+// 3rd generation
+$pgv_lang["bosa_8"] 				= "great grandson";        // son's son's son
+$pgv_lang["bosa_9"] 				= "great granddaughter";   // son's son's daughter
+$pgv_lang["bosa_10"] 				= "great grandson";		   // son's daughter's son
+$pgv_lang["bosa_11"] 				= "great granddaughter";   // son's daughter's daughter
+$pgv_lang["bosa_12"] 				= "great grandson";        // daughter's son's son
+$pgv_lang["bosa_13"] 				= "great granddaughter";   // daughter's son's daughter
+$pgv_lang["bosa_14"] 				= "great grandson";		   // daughter's daughter's son
+$pgv_lang["bosa_15"] 				= "great granddaughter";   // daughter's daughter's daughter
+// for the general case of offspring of the nth generation use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_grandson_from_son"]	  = "%3\$d x great grandson";
+$pgv_lang["n_x_granddaughter_from_son"] = "%3\$d x great granddaughter";
+$pgv_lang["n_x_grandson_from_daughter"]	  = "%3\$d x great grandson";
+$pgv_lang["n_x_granddaughter_from_daughter"] = "%3\$d x great granddaughter";
+
+// the sosa_uncle name is used for uncles - the names below can be extended to any number
+// of generations just by adding more translations.
+// to allow fo language variations we specify different relationships for paternal and maternal
+// aunts and uncles
+// 1st generation
+$pgv_lang["sosa_uncle_2"] 				= "uncle";            // father's brother
+$pgv_lang["sosa_uncle_3"] 				= "uncle";            // mother's brother
+// 2nd generation
+$pgv_lang["sosa_uncle_4"] 				= "great uncle";      // fathers's father's brother
+$pgv_lang["sosa_uncle_5"] 				= "great uncle";      // father's mother's brother
+$pgv_lang["sosa_uncle_6"] 				= "great uncle";      // mother's father's brother
+$pgv_lang["sosa_uncle_7"] 				= "great uncle";      // mother's mother's brother
+// for the general case of uncles of the nth degree use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_paternal_uncle"]		= "%2\$d x great uncle";
+$pgv_lang["n_x_maternal_uncle"]	    = "%2\$d x great uncle";
+
+// the sosa_aunt name is used for aunts - the names below can be extended to any number
+// of generations just by adding more translations.
+// to allow fo language variations we specify different relationships for paternal and maternal
+// aunts and aunts
+// 1st generation
+$pgv_lang["sosa_aunt_2"] 				= "aunt";            // father's sister
+$pgv_lang["sosa_aunt_3"] 				= "aunt";            // mother's sister
+// 2nd generation
+$pgv_lang["sosa_aunt_4"] 				= "great aunt";      // fathers's father's sister
+$pgv_lang["sosa_aunt_5"] 				= "great aunt";      // father's mother's sister
+$pgv_lang["sosa_aunt_6"] 				= "great aunt";      // mother's father's sister
+$pgv_lang["sosa_aunt_7"] 				= "great aunt";      // mother's mother's sister
+// for the general case of aunts of the nth degree use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_paternal_aunt"]		= "%2\$d x great aunt";
+$pgv_lang["n_x_maternal_aunt"]	    = "%2\$d x great aunt";
+
+// the sosa_uncle name is used for uncles(by marriage) - the names below can be extended to any number
+// of generations just by adding more translations.
+// to allow fo language variations we specify different relationships for paternal and maternal
+// aunts and uncles
+// 1st generation
+$pgv_lang["sosa_uncle_bm_2"] 				= "uncle";            // father's brother
+$pgv_lang["sosa_uncle_bm_3"] 				= "uncle";            // mother's brother
+// 2nd generation
+$pgv_lang["sosa_uncle_bm_4"] 				= "great uncle";      // fathers's father's brother
+$pgv_lang["sosa_uncle_bm_5"] 				= "great uncle";      // father's mother's brother
+$pgv_lang["sosa_uncle_bm_6"] 				= "great uncle";      // mother's father's brother
+$pgv_lang["sosa_uncle_bm_7"] 				= "great uncle";      // mother's mother's brother
+// for the general case of uncles of the nth degree use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_paternal_uncle_bm"]		= "%2\$d x great uncle";
+$pgv_lang["n_x_maternal_uncle_bm"]	    = "%2\$d x great uncle";
+
+// the sosa_aunt name is used for aunts (by marriage)- the names below can be extended to any number
+// of generations just by adding more translations.
+// to allow fo language variations we specify different relationships for paternal and maternal
+// aunts and aunts
+// 1st generation
+$pgv_lang["sosa_aunt_bm_2"] 				= "aunt";            // father's sister
+$pgv_lang["sosa_aunt_bm_3"] 				= "aunt";            // mother's sister
+// 2nd generation
+$pgv_lang["sosa_aunt_bm_4"] 				= "great aunt";      // fathers's father's sister
+$pgv_lang["sosa_aunt_bm_5"] 				= "great aunt";      // father's mother's sister
+$pgv_lang["sosa_aunt_bm_6"] 				= "great aunt";      // mother's father's sister
+$pgv_lang["sosa_aunt_bm_7"] 				= "great aunt";      // mother's mother's sister
+// for the general case of aunts of the nth degree use the text below
+// in this text %1\$d is replaced with the number of generations
+//              %2\$d is replaced with the number of generations - 1
+//              %3\$d is replaced with the number of generations - 2
+$pgv_lang["n_x_paternal_aunt_bm"]		= "%2\$d x great aunt";
+$pgv_lang["n_x_maternal_aunt_bm"]	    = "%2\$d x great aunt";
+
+
+// if a specific cousin relationship cannot be represented in a language translate as "";
+$pgv_lang["male_cousin_1"]              = "first cousin";
+$pgv_lang["male_cousin_2"]              = "second cousin";
+$pgv_lang["male_cousin_3"]              = "third cousin";
+$pgv_lang["male_cousin_4"]              = "fourth cousin";
+$pgv_lang["male_cousin_5"]              = "fifth cousin";
+$pgv_lang["male_cousin_6"]              = "sixth cousin";
+$pgv_lang["male_cousin_7"]              = "seventh cousin";
+$pgv_lang["male_cousin_8"]              = "eighth cousin";
+$pgv_lang["male_cousin_9"]              = "ninth cousin";
+$pgv_lang["male_cousin_10"]             = "tenth cousin";
+$pgv_lang["male_cousin_11"]             = "eleventh cousin";
+$pgv_lang["male_cousin_12"]             = "twelfth cousin";
+$pgv_lang["male_cousin_13"]             = "thirteenth cousin";
+$pgv_lang["male_cousin_14"]             = "fourteenth cousin";
+$pgv_lang["male_cousin_15"]             = "fifteenth cousin";
+$pgv_lang["male_cousin_16"]             = "sixteenth cousin";
+$pgv_lang["male_cousin_17"]             = "seventeenth cousin";
+$pgv_lang["male_cousin_18"]             = "eighteenth cousin";
+$pgv_lang["male_cousin_19"]             = "nineteenth cousin";
+$pgv_lang["male_cousin_20"]             = "twentieth cousin";
+$pgv_lang["male_cousin_n"]              = "%d x cousin";
+$pgv_lang["female_cousin_1"]            = "first cousin";
+$pgv_lang["female_cousin_2"]            = "second cousin";
+$pgv_lang["female_cousin_3"]            = "third cousin";
+$pgv_lang["female_cousin_4"]            = "fourth cousin";
+$pgv_lang["female_cousin_5"]            = "fifth cousin";
+$pgv_lang["female_cousin_6"]            = "sixth cousin";
+$pgv_lang["female_cousin_7"]            = "seventh cousin";
+$pgv_lang["female_cousin_8"]            = "eighth cousin";
+$pgv_lang["female_cousin_9"]            = "ninth cousin";
+$pgv_lang["female_cousin_10"]           = "tenth cousin";
+$pgv_lang["female_cousin_11"]           = "eleventh cousin";
+$pgv_lang["female_cousin_12"]           = "twelfth cousin";
+$pgv_lang["female_cousin_13"]           = "thirteenth cousin";
+$pgv_lang["female_cousin_14"]           = "fourteenth cousin";
+$pgv_lang["female_cousin_15"]           = "fifteenth cousin";
+$pgv_lang["female_cousin_16"]           = "sixteenth cousin";
+$pgv_lang["female_cousin_17"]           = "seventeenth cousin";
+$pgv_lang["female_cousin_18"]           = "eighteenth cousin";
+$pgv_lang["female_cousin_19"]           = "nineteenth cousin";
+$pgv_lang["female_cousin_20"]           = "twentieth cousin";
+$pgv_lang["female_cousin_n"]            = "%d x cousin";
+
+// Only referenced from english specific functions
+$pgv_lang["removed_ascending_1"]   = " once removed ascending";
+$pgv_lang["removed_ascending_2"]   = " twice removed ascending";
+$pgv_lang["removed_ascending_3"]   = " three times removed ascending";
+$pgv_lang["removed_ascending_4"]   = " four times removed ascending";
+$pgv_lang["removed_ascending_5"]   = " five times removed ascending";
+$pgv_lang["removed_ascending_6"]   = " six times removed ascending";
+$pgv_lang["removed_ascending_7"]   = " seven times removed ascending";
+$pgv_lang["removed_ascending_8"]   = " eight times removed ascending";
+$pgv_lang["removed_ascending_9"]   = " nine times removed ascending";
+$pgv_lang["removed_ascending_10"]  = " ten times removed ascending";
+$pgv_lang["removed_ascending_11"]  = " eleven times removed ascending";
+$pgv_lang["removed_ascending_12"]  = " twelve times removed ascending";
+$pgv_lang["removed_ascending_13"]  = " thirteen times removed ascending";
+$pgv_lang["removed_ascending_14"]  = " fourteen times removed ascending";
+$pgv_lang["removed_ascending_15"]  = " fifteen times removed ascending";
+$pgv_lang["removed_ascending_16"]  = " sixteen times removed ascending";
+$pgv_lang["removed_ascending_17"]  = " seventeen times removed ascending";
+$pgv_lang["removed_ascending_18"]  = " eighteen times removed ascending";
+$pgv_lang["removed_ascending_19"]  = " nineteen times removed ascending";
+$pgv_lang["removed_ascending_20"]  = " twenty times removed ascending";
+$pgv_lang["removed_descending_1"]  = " once removed descending";
+$pgv_lang["removed_descending_2"]  = " twice removed descending";
+$pgv_lang["removed_descending_3"]  = " three times removed descending";
+$pgv_lang["removed_descending_4"]  = " four times removed descending";
+$pgv_lang["removed_descending_5"]  = " five times removed descending";
+$pgv_lang["removed_descending_6"]  = " six times removed descending";
+$pgv_lang["removed_descending_7"]  = " seven times removed descending";
+$pgv_lang["removed_descending_8"]  = " eight times removed descending";
+$pgv_lang["removed_descending_9"]  = " nine times removed descending";
+$pgv_lang["removed_descending_10"] = " ten times removed descending";
+$pgv_lang["removed_descending_11"] = " eleven times removed descending";
+$pgv_lang["removed_descending_12"] = " twelve times removed descending";
+$pgv_lang["removed_descending_13"] = " thirteen times removed descending";
+$pgv_lang["removed_descending_14"] = " fourteen times removed descending";
+$pgv_lang["removed_descending_15"] = " fifteen times removed descending";
+$pgv_lang["removed_descending_16"] = " sixteen times removed descending";
+$pgv_lang["removed_descending_17"] = " seventeen times removed descending";
+$pgv_lang["removed_descending_18"] = " eighteen times removed descending";
+$pgv_lang["removed_descending_19"] = " nineteen times removed descending";
+$pgv_lang["removed_descending_20"] = " twenty times removed descending";
 //-- GEDCOM edit utility
 $pgv_lang["check_delete"]			= "Are you sure you want to delete this GEDCOM fact?";
 $pgv_lang["access_denied"]			= "<b>Access Denied</b><br />You do not have access to this resource.";
@@ -1085,6 +1411,7 @@ $pgv_lang["today"]					= "Today";
 $pgv_lang["day"]					= "Day:";
 $pgv_lang["month"]					= "Month:";
 $pgv_lang["showcal"]				= "Show events of:";
+$pgv_lang["anniversary"]			= "Anniversary";
 $pgv_lang["anniversary_calendar"]	= "Anniversary Calendar";
 $pgv_lang["sunday"] 				= "Sunday";
 $pgv_lang["monday"] 				= "Monday";
@@ -1100,7 +1427,7 @@ $pgv_lang["all_people"] 			= "All People";
 $pgv_lang["living_only"]			= "Living People";
 $pgv_lang["recent_events"]			= "Recent Years (&lt; 100 yrs)";
 $pgv_lang["day_not_set"]			= "Day not set";
-$pgv_lang["year_error"] 			= "Sorry, dates before 1970 are not supported.";
+
 
 //-- user self registration module
 //$pgv_lang["no_pw_or_account"] 	= "If you do not have an account or if you have lost your password, please click the <b>Login</b> button";
@@ -1560,6 +1887,7 @@ $pgv_lang["rss_feeds"]				= "RSS Feeds";
 $pgv_lang["no_feed_title"]			= "Feed not available";
 $pgv_lang["no_feed"]				= "There is no RSS feed available for this PhpGedView site";
 $pgv_lang["feed_login"]				= "If you have an account at this PhpGedView site, you can <a href=\"#AUTH_URL#\">log in</a> to the server using Basic HTTP Authentication to view private information.";
+$pgv_lang["authenticated_feed"]		= "Authenticated Feed";
 
 //-- ASSOciates RELAtionship
 // After any change in the following list, please check $assokeys in edit_interface.php
@@ -1651,6 +1979,8 @@ $pgv_lang["is_alive_in"]			= "Is alive in #YEAR#";
 $pgv_lang["alive"]					= "Alive ";
 $pgv_lang["dead"]					= "Dead ";
 $pgv_lang["maybe"]					= "Maybe ";
+$pgv_lang["both_alive"]					= "Both alive ";
+$pgv_lang["both_dead"]					= "Both dead ";
 
 //-- Help system
 $pgv_lang["definitions"]			= "Definitions";
@@ -1753,5 +2083,37 @@ $pgv_lang["TYPE__photo"] = "Photo";
 $pgv_lang["TYPE__tombstone"] = "Tombstone";
 $pgv_lang["TYPE__video"] = "Video";
 
-if (file_exists( "languages/lang.en.extra.php")) require  "languages/lang.en.extra.php";
+//-- Other media suff
+$pgv_lang["view_slideshow"] = "View as slideshow";
+$pgv_lang["download_image"]			= "Download File";
+$pgv_lang["no_media"]				= "No Media Found";
+$pgv_lang["relations_heading"]		= "The image relates to:";
+$pgv_lang["file_size"]				= "File Size";
+$pgv_lang["img_size"]				= "Image Size";
+
+//-- Modules
+$pgv_lang["module_error_unknown_action_v2"] = "Unknown action: [action].";
+$pgv_lang["module_error_unknown_type"] = "Unknown module type.";
+
+//-- sortable tables buttons
+$pgv_lang["button_alive_in_year"] = "Show persons alive in the indicated year.";
+$pgv_lang["button_BIRT_Y100"] = "Show persons born within the last 100 years.";
+$pgv_lang["button_BIRT_YES"] = "Show persons born more than 100 years ago.";
+$pgv_lang["button_DEAT_H"] = "Show couples where only the male partner is deceased.";
+$pgv_lang["button_DEAT_N"] = "Show people who are alive or couples where both partners are alive.";
+$pgv_lang["button_DEAT_W"] = "Show couples where only the female partner is deceased.";
+$pgv_lang["button_DEAT_Y"] = "Show people who are dead or couples where both partners are deceased.";
+$pgv_lang["button_DEAT_Y100"] = "Show people who died within the last 100 years.";
+$pgv_lang["button_DEAT_YES"] = "Show people who died more than 100 years ago.";
+$pgv_lang["button_MARR_DIV"] = "Show divorced couples.";
+$pgv_lang["button_MARR_U"] = "Show couples with an unknown marriage date.";
+$pgv_lang["button_MARR_Y100"] = "Show couples who married within the last 100 years.";
+$pgv_lang["button_MARR_YES"] = "Show couples who married more than 100 years ago.";
+$pgv_lang["button_reset"] = "Reset to the list defaults.";
+$pgv_lang["button_SEX_F"] = "Show only females.";
+$pgv_lang["button_SEX_M"] = "Show only males.";
+$pgv_lang["button_SEX_U"] = "Show only persons of whom the gender is not known.";
+$pgv_lang["button_TREE_L"] = "Show «leaves» couples or individuals.  These are individuals who are alive but have no children recorded in the database.";
+$pgv_lang["button_TREE_R"] = "Show «roots» couples or individuals.  These people may also be called «patriarchs».  They are individuals who have no parents recorded in the database.";
+$pgv_lang["sort_column"] = "Sort by this column.";
 ?>
