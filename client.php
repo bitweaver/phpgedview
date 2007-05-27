@@ -26,7 +26,7 @@
  * 
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: client.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: client.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
  */
 
 require "config.php";
@@ -120,7 +120,7 @@ else if ($action=='get') {
 			$xref1 = trim($xref1);
 			$xref1 = clean_input($xref1);
 			if (!empty($xref1)) {
-				if (isset($pgv_changes[$xref1."_".$GEDCOM])) $gedrec = find_record_in_file($xref1);
+				if (isset($pgv_changes[$xref1."_".$GEDCOM])) $gedrec = find_updated_record($xref1);
 				if (empty($gedrec)) $gedrec = find_gedcom_record($xref1);
 				if (!empty($gedrec)) {
 					$gedrec = trim($gedrec);
@@ -242,7 +242,7 @@ else if ($action=='getnext') {
 	$gedrec="";
 	if (!empty($xref)) {
 		$xref1 = get_next_xref($xref);
-		if (isset($pgv_changes[$xref1."_".$GEDCOM])) $gedrec = @find_record_in_file($xref1);
+		if (isset($pgv_changes[$xref1."_".$GEDCOM])) $gedrec = @find_updated_record($xref1);
 		if (empty($gedrec)) $gedrec = @find_gedcom_record($xref1);
 		if (!displayDetails($gedrec)) {
 			//-- do not have full access to this record, so privatize it
@@ -261,7 +261,7 @@ else if ($action=='getprev') {
 	$gedrec="";
 	if (!empty($xref)) {
 		$xref1 = get_prev_xref($xref);
-		if (isset($pgv_changes[$xref1."_".$GEDCOM])) $gedrec = @find_record_in_file($xref1);
+		if (isset($pgv_changes[$xref1."_".$GEDCOM])) $gedrec = @find_updated_record($xref1);
 		if (empty($gedrec)) $gedrec = @find_gedcom_record($xref1);
 		if (!displayDetails($gedrec)) {
 			//-- do not have full access to this record, so privatize it

@@ -1,12 +1,11 @@
 <?php
 /**
  * Displays pedigree tree as a printable booklet
- *
  * with Sosa-Stradonitz numbering system
  * ($rootid=1, father=2, mother=3 ...)
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2006  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,21 +21,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * This Page Is Valid XHTML 1.0 Transitional! > 21 August 2005
- *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: ancestry.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: ancestry.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
  */
 
 require_once("includes/controllers/ancestry_ctrl.php");
- 
-
 
 // -- print html header information
 print_header($controller->name . " " . $pgv_lang["ancestry_chart"]);
 print "\n\t<table class=\"list_table $TEXT_DIRECTION\"><tr><td width=\"".$controller->cellwidth."px\" valign=\"top\">\n\t\t";
-if ($view == "preview") print "<h2>" . str_replace("#PEDIGREE_GENERATIONS#", convert_number($PEDIGREE_GENERATIONS), $pgv_lang["gen_ancestry_chart"]) . ":";
+if ($view == "preview") print "<h2>" . str_replace("#PEDIGREE_GENERATIONS#", $PEDIGREE_GENERATIONS, $pgv_lang["gen_ancestry_chart"]) . ":";
 else print "<h2>" . $pgv_lang["ancestry_chart"] . ":";
 print "<br />".PrintReady($controller->name);
 if ($controller->addname != "") print "<br />" . PrintReady($controller->addname);
@@ -54,7 +49,7 @@ if ($view != "preview") {
 	//-->
 	</script>
 	<?php if (isset($controller->max_generation) == true) 
-	print "<span class=\"error\">" . str_replace("#PEDIGREE_GENERATIONS#", convert_number($PEDIGREE_GENERATIONS), $pgv_lang["max_generation"]) . "</span>";
+	print "<span class=\"error\">" . str_replace("#PEDIGREE_GENERATIONS#", $PEDIGREE_GENERATIONS, $pgv_lang["max_generation"]) . "</span>";
 	if (isset($min_generation) == true) print "<span class=\"error\">" . $pgv_lang["min_generation"] . "</span>";?>
 	</td><td><form name="people" id="people" method="get" action="?">
 	<input type="hidden" name="show_full" value="<?php print $controller->show_full; ?>" />
@@ -90,16 +85,15 @@ if ($view != "preview") {
 	<?php
 	if ($controller->chart_style == "0") print " checked=\"checked\" ";
 	print "onclick=\"toggleStatus('cousins');";
-	if ($controller->chart_style != "1") print " document.people.chart_style.value='1';";
+	//if ($controller->chart_style != "1") print " document.people.chart_style.value='1';";
 	print "\" />".$pgv_lang["chart_list"];
 	print "<br /><input type=\"radio\" name=\"chart_style\" value=\"1\"";
 	if ($controller->chart_style == "1") print " checked=\"checked\" ";
 	print "onclick=\"toggleStatus('cousins');";
-	if ($controller->chart_style != "1") print " document.people.chart_style.value='0';"; 
-	print "\""?> />
-	<?php print $pgv_lang["chart_booklet"];?>
+	//if ($controller->chart_style != "1") print " document.people.chart_style.value='0';";
+	print "\" />".$pgv_lang["chart_booklet"];
+	?>
 
-	
 		<!-- // NOTE: show cousins -->
 	<br />
 	<?php
@@ -110,10 +104,17 @@ if ($view != "preview") {
 	if ($controller->show_cousins) print "1\" checked=\"checked\" onclick=\"document.people.show_cousins.value='0';\"";
 	else print "0\" onclick=\"document.people.show_cousins.value='1';\"";
 	print " />";
-	print $pgv_lang["show_cousins"];?>
+	print $pgv_lang["show_cousins"];
+
+	print "<br /><input type=\"radio\" name=\"chart_style\" value=\"2\"";
+	if ($controller->chart_style == "2") print " checked=\"checked\" ";
+	print " />".$pgv_lang["individual_list"];
+	print "<br /><input type=\"radio\" name=\"chart_style\" value=\"3\"";
+	if ($controller->chart_style == "3") print " checked=\"checked\" ";
+	print " />".$pgv_lang["family_list"];
+	?>
 	</td>
 
-	
 	<!-- // NOTE: submit -->
 	<td rowspan="2" class="facts_label03">
 	<input type="submit" value="<?php print $pgv_lang["view"] ?>" />
@@ -158,7 +159,16 @@ if ($view != "preview") {
 </td></tr></table>
 
 <?php
-if ($controller->chart_style) {
+//-- list
+if ($controller->chart_style==0) {
+	$pidarr=array();
+	print "<ul style=\"list-style: none; display: block;\" id=\"ancestry_chart".($TEXT_DIRECTION=="rtl" ? "_rtl" : "") ."\">\r\n";
+	$controller->print_child_ascendancy($controller->rootid, 1, $OLD_PGENS);
+	print "</ul>";
+	print "<br />";
+}
+//-- booklet
+if ($controller->chart_style==1) {
 	// first page : show indi facts
 	print_pedigree_person($controller->rootid, 2, false, 1);
 	// expand the layer
@@ -187,13 +197,27 @@ END;
 		}
 	}
 }
-else {
-	$pidarr=array();
-	print "<ul style=\"list-style: none; display: block;\" id=\"ancestry_chart".($TEXT_DIRECTION=="rtl" ? "_rtl" : "") ."\">\r\n";
-	$controller->print_child_ascendancy($controller->rootid, 1, $OLD_PGENS);
-	print "</ul>";
-	print "<br />";
+//-- Individual list
+if ($controller->chart_style==2) {
+	require_once("includes/functions_print_lists.php");
+	$treeid = ancestry_array($controller->rootid);
+	echo "<div class=\"center\">";
+	print_indi_table($treeid, $pgv_lang["ancestry_chart"]." : ".PrintReady($controller->name), "sosa");
+	echo "</div>";
 }
-
+//-- Family list
+if ($controller->chart_style==3) {
+	require_once("includes/functions_print_lists.php");
+	$treeid = ancestry_array($controller->rootid);
+	$famlist = array();
+	foreach ($treeid as $p=>$pid) {
+	  $person = Person::getInstance($pid);
+		if (is_null($person)) continue;
+	  foreach ($person->getChildFamilyIds() as $f=>$famc) $famlist[] = $famc;
+	}
+	echo "<div class=\"center\">";
+	print_fam_table(array_unique($famlist), $pgv_lang["ancestry_chart"]." : ".PrintReady($controller->name));
+	echo "</div>";
+}
 print_footer();
 ?>

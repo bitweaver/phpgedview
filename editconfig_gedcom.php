@@ -3,7 +3,7 @@
  * UI for online updating of the gedcom config file.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.4 2006/10/28 20:17:04 lsces Exp $
+ * @version $Id: editconfig_gedcom.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
  */
 
 /**
@@ -93,8 +93,6 @@ require $confighelpfile["english"];
 if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 require $helptextfile["english"];
 if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
-require $factsfile["english"];
-if (file_exists($factsfile[$LANGUAGE])) require $factsfile[$LANGUAGE];
 
 if (!isset($_POST)) $_POST = $HTTP_POST_VARS;
 
@@ -115,10 +113,10 @@ if (isset($GEDCOMPATH)) {
 		if ($path=="") $upload_path = $INDEX_DIRECTORY;
 		else $upload_path = $path;
 		if (empty($GEDFILENAME)) $GEDFILENAME = $_FILES['GEDCOMPATH']['name'];
-		
+
 		//-- remove any funny characters from uploaded files
 		$GEDFILENAME = preg_replace('/[\+\&\%\$@]/', "_", $GEDFILENAME);
-		
+
 		// NOTE: When uploading a file check if it doesn't exist yet
 		if ($action=="replace" || (!isset($GEDCOMS[$GEDFILENAME]) && !file_exists($upload_path.$GEDFILENAME))) {
 			if (move_uploaded_file($_FILES['GEDCOMPATH']['tmp_name'], $upload_path.$GEDFILENAME)) {
@@ -266,7 +264,7 @@ if ($action=="update") {
 	$boolarray[false]="false";
 	$boolarray[true]="true";
 	$configtext = implode('', file("config_gedcom.php"));
-	
+
 	$_POST["NEW_MEDIA_DIRECTORY"] = preg_replace('/\\\/','/',$_POST["NEW_MEDIA_DIRECTORY"]);
 	$ct = preg_match("'/$'", $_POST["NEW_MEDIA_DIRECTORY"]);
 	if ($ct==0) $_POST["NEW_MEDIA_DIRECTORY"] .= "/";
@@ -278,6 +276,8 @@ if ($action=="update") {
 	if ($_POST["NEW_DAYS_TO_SHOW_LIMIT"] > 30) $_POST["NEW_DAYS_TO_SHOW_LIMIT"] = 30;
 
 	$configtext = preg_replace('/\$ABBREVIATE_CHART_LABELS\s*=\s*.*;/', "\$ABBREVIATE_CHART_LABELS = ".$boolarray[$_POST["NEW_ABBREVIATE_CHART_LABELS"]].";", $configtext);
+	$configtext = preg_replace('/\$ADVANCED_NAME_FACTS\s*=\s*.*;/', "\$ADVANCED_NAME_FACTS = \"".$_POST["NEW_ADVANCED_NAME_FACTS"]."\";", $configtext);
+	$configtext = preg_replace('/\$ADVANCED_PLAC_FACTS\s*=\s*.*;/', "\$ADVANCED_PLAC_FACTS = \"".$_POST["NEW_ADVANCED_PLAC_FACTS"]."\";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_EDIT_GEDCOM\s*=\s*.*;/', "\$ALLOW_EDIT_GEDCOM = ".$boolarray[$_POST["NEW_ALLOW_EDIT_GEDCOM"]].";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_THEME_DROPDOWN\s*=\s*.*;/', "\$ALLOW_THEME_DROPDOWN = ".$boolarray[$_POST["NEW_ALLOW_THEME_DROPDOWN"]].";", $configtext);
 	$configtext = preg_replace('/\$ALPHA_INDEX_LISTS\s*=\s*.*;/', "\$ALPHA_INDEX_LISTS = ".$boolarray[$_POST["NEW_ALPHA_INDEX_LISTS"]].";", $configtext);
@@ -296,23 +296,25 @@ if ($action=="update") {
 	$configtext = preg_replace('/\$DEFAULT_PEDIGREE_GENERATIONS\s*=\s*".*";/', "\$DEFAULT_PEDIGREE_GENERATIONS = \"".$_POST["NEW_DEFAULT_PEDIGREE_GENERATIONS"]."\";", $configtext);
 	$configtext = preg_replace('/\$DISPLAY_JEWISH_GERESHAYIM\s*=\s*.*;/', "\$DISPLAY_JEWISH_GERESHAYIM = ".$boolarray[$_POST["NEW_DISPLAY_JEWISH_GERESHAYIM"]].";", $configtext);
 	$configtext = preg_replace('/\$DISPLAY_JEWISH_THOUSANDS\s*=\s*.*;/', "\$DISPLAY_JEWISH_THOUSANDS = ".$boolarray[$_POST["NEW_DISPLAY_JEWISH_THOUSANDS"]].";", $configtext);
-	$configtext = preg_replace('/\$SECURITY_CHECK_GEDCOM_DOWNLOADABLE\s*=\s*.*;/', "\$SECURITY_CHECK_GEDCOM_DOWNLOADABLE = ".$boolarray[$_POST["NEW_SECURITY_CHECK_GEDCOM_DOWNLOADABLE"]].";", $configtext);
 	$configtext = preg_replace('/\$EDIT_AUTOCLOSE\s*=\s*.*;/', "\$EDIT_AUTOCLOSE = ".$boolarray[$_POST["NEW_EDIT_AUTOCLOSE"]].";", $configtext);
 	$configtext = preg_replace('/\$ENABLE_MULTI_LANGUAGE\s*=\s*.*;/', "\$ENABLE_MULTI_LANGUAGE = ".$boolarray[$_POST["NEW_ENABLE_MULTI_LANGUAGE"]].";", $configtext);
+	$configtext = preg_replace('/\$ENABLE_RSS\s*=\s*.*;/', "\$ENABLE_RSS = ".$boolarray[$_POST["NEW_ENABLE_RSS"]].";", $configtext);
 	$configtext = preg_replace('/\$EXPAND_RELATIVES_EVENTS\s*=\s*.*;/', "\$EXPAND_RELATIVES_EVENTS = ".$boolarray[$_POST["NEW_EXPAND_RELATIVES_EVENTS"]].";", $configtext);
 	$configtext = preg_replace('/\$EXPAND_SOURCES\s*=\s*.*;/', "\$EXPAND_SOURCES = ".$boolarray[$_POST["NEW_EXPAND_SOURCES"]].";", $configtext);
 	$configtext = preg_replace('/\$FAM_FACTS_ADD\s*=\s*".*";/', "\$FAM_FACTS_ADD = \"".$_POST["NEW_FAM_FACTS_ADD"]."\";", $configtext);
+	$configtext = preg_replace('/\$FAM_FACTS_QUICK\s*=\s*".*";/', "\$FAM_FACTS_QUICK = \"".$_POST["NEW_FAM_FACTS_QUICK"]."\";", $configtext);
 	$configtext = preg_replace('/\$FAM_FACTS_UNIQUE\s*=\s*".*";/', "\$FAM_FACTS_UNIQUE = \"".$_POST["NEW_FAM_FACTS_UNIQUE"]."\";", $configtext);
 	$configtext = preg_replace('/\$FAM_ID_PREFIX\s*=\s*".*";/', "\$FAM_ID_PREFIX = \"".$_POST["NEW_FAM_ID_PREFIX"]."\";", $configtext);
-	$configtext = preg_replace('/\$SHOW_FACT_ICONS\s*=\s*.*;/', "\$SHOW_FACT_ICONS = ".$boolarray[$_POST["NEW_SHOW_FACT_ICONS"]].";", $configtext);
 	$configtext = preg_replace('/\$FAVICON\s*=\s*".*";/', "\$FAVICON = \"".$_POST["NEW_FAVICON"]."\";", $configtext);
 	$configtext = preg_replace('/\$GEDCOM_DEFAULT_TAB\s*=\s*".*";/', "\$GEDCOM_DEFAULT_TAB = \"".$_POST["NEW_GEDCOM_DEFAULT_TAB"]."\";", $configtext);
 	$configtext = preg_replace('/\$GEDCOM_ID_PREFIX\s*=\s*".*";/', "\$GEDCOM_ID_PREFIX = \"".$_POST["NEW_GEDCOM_ID_PREFIX"]."\";", $configtext);
+	$configtext = preg_replace('/\$GENERATE_UIDS\s*=\s*.*;/', "\$GENERATE_UIDS = ".$boolarray[$_POST["NEW_GENERATE_UIDS"]].";", $configtext);
 	$configtext = preg_replace('/\$HIDE_GEDCOM_ERRORS\s*=\s*.*;/', "\$HIDE_GEDCOM_ERRORS = ".$boolarray[$_POST["NEW_HIDE_GEDCOM_ERRORS"]].";", $configtext);
 	$configtext = preg_replace('/\$HIDE_LIVE_PEOPLE\s*=\s*.*;/', "\$HIDE_LIVE_PEOPLE = ".$boolarray[$_POST["NEW_HIDE_LIVE_PEOPLE"]].";", $configtext);
 	$configtext = preg_replace('/\$HOME_SITE_TEXT\s*=\s*".*";/', "\$HOME_SITE_TEXT = \"".$_POST["NEW_HOME_SITE_TEXT"]."\";", $configtext);
 	$configtext = preg_replace('/\$HOME_SITE_URL\s*=\s*".*";/', "\$HOME_SITE_URL = \"".$_POST["NEW_HOME_SITE_URL"]."\";", $configtext);
 	$configtext = preg_replace('/\$INDI_FACTS_ADD\s*=\s*".*";/', "\$INDI_FACTS_ADD = \"".$_POST["NEW_INDI_FACTS_ADD"]."\";", $configtext);
+	$configtext = preg_replace('/\$INDI_FACTS_QUICK\s*=\s*".*";/', "\$INDI_FACTS_QUICK = \"".$_POST["NEW_INDI_FACTS_QUICK"]."\";", $configtext);
 	$configtext = preg_replace('/\$INDI_FACTS_UNIQUE\s*=\s*".*";/', "\$INDI_FACTS_UNIQUE = \"".$_POST["NEW_INDI_FACTS_UNIQUE"]."\";", $configtext);
 	$configtext = preg_replace('/\$JEWISH_ASHKENAZ_PRONUNCIATION\s*=\s*.*;/', "\$JEWISH_ASHKENAZ_PRONUNCIATION = ".$boolarray[$_POST["NEW_JEWISH_ASHKENAZ_PRONUNCIATION"]].";", $configtext);
 	$configtext = preg_replace('/\$LANGUAGE\s*=\s*".*";/', "\$LANGUAGE = \"".$_POST["GEDCOMLANG"]."\";", $configtext);
@@ -346,38 +348,44 @@ if ($action=="update") {
 	$configtext = preg_replace('/\$QUICK_REQUIRED_FACTS\s*=\s*".*";/', "\$QUICK_REQUIRED_FACTS = \"".$_POST["NEW_QUICK_REQUIRED_FACTS"]."\";", $configtext);
 	$configtext = preg_replace('/\$QUICK_REQUIRED_FAMFACTS\s*=\s*".*";/', "\$QUICK_REQUIRED_FAMFACTS = \"".$_POST["NEW_QUICK_REQUIRED_FAMFACTS"]."\";", $configtext);
 	$configtext = preg_replace('/\$REPO_FACTS_ADD\s*=\s*".*";/', "\$REPO_FACTS_ADD = \"".$_POST["NEW_REPO_FACTS_ADD"]."\";", $configtext);
+	$configtext = preg_replace('/\$REPO_FACTS_QUICK\s*=\s*".*";/', "\$REPO_FACTS_QUICK = \"".$_POST["NEW_REPO_FACTS_QUICK"]."\";", $configtext);
 	$configtext = preg_replace('/\$REPO_FACTS_UNIQUE\s*=\s*".*";/', "\$REPO_FACTS_UNIQUE = \"".$_POST["NEW_REPO_FACTS_UNIQUE"]."\";", $configtext);
 	$configtext = preg_replace('/\$REPO_ID_PREFIX\s*=\s*".*";/', "\$REPO_ID_PREFIX = \"".$_POST["NEW_REPO_ID_PREFIX"]."\";", $configtext);
 	$configtext = preg_replace('/\$REQUIRE_AUTHENTICATION\s*=\s*.*;/', "\$REQUIRE_AUTHENTICATION = ".$boolarray[$_POST["NEW_REQUIRE_AUTHENTICATION"]].";", $configtext);
 	$configtext = preg_replace('/\$RSS_FORMAT\s*=\s*".*";/', "\$RSS_FORMAT = \"".$_POST["NEW_RSS_FORMAT"]."\";", $configtext);
-	$configtext = preg_replace('/\$ENABLE_RSS\s*=\s*.*;/', "\$ENABLE_RSS = ".$boolarray[$_POST["NEW_ENABLE_RSS"]].";", $configtext);
 	$configtext = preg_replace('/\$SEARCHLOG_CREATE\s*=\s*".*";/', "\$SEARCHLOG_CREATE = \"".$_POST["NEW_SEARCHLOG_CREATE"]."\";", $configtext);
 	$configtext = preg_replace('/\$SHOW_CONTEXT_HELP\s*=\s*.*;/', "\$SHOW_CONTEXT_HELP = ".$boolarray[$_POST["NEW_SHOW_CONTEXT_HELP"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_COUNTER\s*=\s*.*;/', "\$SHOW_COUNTER = ".$boolarray[$_POST["NEW_SHOW_COUNTER"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_EMPTY_BOXES\s*=\s*.*;/', "\$SHOW_EMPTY_BOXES = ".$boolarray[$_POST["NEW_SHOW_EMPTY_BOXES"]].";", $configtext);
-	$configtext = preg_replace('/\$SHOW_FAM_ID_NUMBERS\s*=\s*.*;/', "\$SHOW_FAM_ID_NUMBERS = ".$boolarray[$_POST["NEW_SHOW_FAM_ID_NUMBERS"]].";", $configtext);
+	$configtext = preg_replace('/\$SHOW_FACT_ICONS\s*=\s*.*;/', "\$SHOW_FACT_ICONS = ".$boolarray[$_POST["NEW_SHOW_FACT_ICONS"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_GEDCOM_RECORD\s*=\s*.*;/', "\$SHOW_GEDCOM_RECORD = ".$boolarray[$_POST["NEW_SHOW_GEDCOM_RECORD"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_HIGHLIGHT_IMAGES\s*=\s*.*;/', "\$SHOW_HIGHLIGHT_IMAGES = ".$boolarray[$_POST["NEW_SHOW_HIGHLIGHT_IMAGES"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_ID_NUMBERS\s*=\s*.*;/', "\$SHOW_ID_NUMBERS = ".$boolarray[$_POST["NEW_SHOW_ID_NUMBERS"]].";", $configtext);
+	$configtext = preg_replace('/\$SHOW_LAST_CHANGE\s*=\s*.*;/', "\$SHOW_LAST_CHANGE = ".$boolarray[$_POST["NEW_SHOW_LAST_CHANGE"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_LDS_AT_GLANCE\s*=\s*.*;/', "\$SHOW_LDS_AT_GLANCE = ".$boolarray[$_POST["NEW_SHOW_LDS_AT_GLANCE"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_MARRIED_NAMES\s*=\s*.*;/', "\$SHOW_MARRIED_NAMES = ".$boolarray[$_POST["NEW_SHOW_MARRIED_NAMES"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_PARENTS_AGE\s*=\s*.*;/', "\$SHOW_PARENTS_AGE = ".$boolarray[$_POST["NEW_SHOW_PARENTS_AGE"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_PEDIGREE_PLACES\s*=\s*".*";/', "\$SHOW_PEDIGREE_PLACES = \"".$_POST["NEW_SHOW_PEDIGREE_PLACES"]."\";", $configtext);
 	$configtext = preg_replace('/\$SHOW_QUICK_RESN\s*=\s*.*;/', "\$SHOW_QUICK_RESN = ".$boolarray[$_POST["NEW_SHOW_QUICK_RESN"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_RELATIVES_EVENTS\s*=\s*.*;/', "\$SHOW_RELATIVES_EVENTS = \"".$_POST["NEW_SHOW_RELATIVES_EVENTS"]."\";", $configtext);
+	$configtext = preg_replace('/\$SHOW_SPIDER_TAGLINE\s*=\s*.*;/', "\$SHOW_SPIDER_TAGLINE = ".$boolarray[$_POST["NEW_SHOW_SPIDER_TAGLINE"]].";", $configtext);
 	$configtext = preg_replace('/\$SHOW_STATS\s*=\s*.*;/', "\$SHOW_STATS = ".$boolarray[$_POST["NEW_SHOW_STATS"]].";", $configtext);
 	$configtext = preg_replace('/\$SOUR_FACTS_ADD\s*=\s*".*";/', "\$SOUR_FACTS_ADD = \"".$_POST["NEW_SOUR_FACTS_ADD"]."\";", $configtext);
+	$configtext = preg_replace('/\$SOUR_FACTS_QUICK\s*=\s*".*";/', "\$SOUR_FACTS_QUICK = \"".$_POST["NEW_SOUR_FACTS_QUICK"]."\";", $configtext);
 	$configtext = preg_replace('/\$SOUR_FACTS_UNIQUE\s*=\s*".*";/', "\$SOUR_FACTS_UNIQUE = \"".$_POST["NEW_SOUR_FACTS_UNIQUE"]."\";", $configtext);
 	$configtext = preg_replace('/\$SOURCE_ID_PREFIX\s*=\s*".*";/', "\$SOURCE_ID_PREFIX = \"".$_POST["NEW_SOURCE_ID_PREFIX"]."\";", $configtext);
 	$configtext = preg_replace('/\$SPLIT_PLACES\s*=\s*.*;/', "\$SPLIT_PLACES = ".$boolarray[$_POST["NEW_SPLIT_PLACES"]].";", $configtext);
 	$configtext = preg_replace('/\$SUPPORT_METHOD\s*=\s*".*";/', "\$SUPPORT_METHOD = \"".$_POST["NEW_SUPPORT_METHOD"]."\";", $configtext);
+	$configtext = preg_replace('/\$SURNAME_TRADITION\s*=\s*.*;/', "\$SURNAME_TRADITION = \"".$_POST["NEW_SURNAME_TRADITION"]."\";", $configtext);
+	$configtext = preg_replace('/\$SYNC_GEDCOM_FILE\s*=\s*.*;/', "\$SYNC_GEDCOM_FILE = ".$boolarray[$_POST["NEW_SYNC_GEDCOM_FILE"]].";", $configtext);
 	$configtext = preg_replace('/\$THUMBNAIL_WIDTH\s*=\s*".*";/', "\$THUMBNAIL_WIDTH = \"".$_POST["NEW_THUMBNAIL_WIDTH"]."\";", $configtext);
 	$configtext = preg_replace('/\$UNDERLINE_NAME_QUOTES\s*=\s*.*;/', "\$UNDERLINE_NAME_QUOTES = ".$boolarray[$_POST["NEW_UNDERLINE_NAME_QUOTES"]].";", $configtext);
 	$configtext = preg_replace('/\$USE_QUICK_UPDATE\s*=\s*.*;/', "\$USE_QUICK_UPDATE = ".$boolarray[$_POST["NEW_USE_QUICK_UPDATE"]].";", $configtext);
 	$configtext = preg_replace('/\$USE_RIN\s*=\s*.*;/', "\$USE_RIN = ".$boolarray[$_POST["NEW_USE_RIN"]].";", $configtext);
-	$configtext = preg_replace('/\$GENERATE_UIDS\s*=\s*.*;/', "\$GENERATE_UIDS = ".$boolarray[$_POST["NEW_GENERATE_UIDS"]].";", $configtext);
 	$configtext = preg_replace('/\$USE_RTL_FUNCTIONS\s*=\s*.*;/', "\$USE_RTL_FUNCTIONS = ".$boolarray[$_POST["NEW_USE_RTL_FUNCTIONS"]].";", $configtext);
 	$configtext = preg_replace('/\$USE_THUMBS_MAIN\s*=\s*.*;/', "\$USE_THUMBS_MAIN = ".$boolarray[$_POST["NEW_USE_THUMBS_MAIN"]].";", $configtext);
+	$configtext = preg_replace('/\$USE_MEDIA_VIEWER\s*=\s*.*;/', "\$USE_MEDIA_VIEWER = ".$boolarray[$_POST["NEW_USE_MEDIA_VIEWER"]].";", $configtext);
+	$configtext = preg_replace('/\$PHPGEDVIEW_EMAIL\s*=\s*".*";/', "\$PHPGEDVIEW_EMAIL = \"".trim($_POST["NEW_PHPGEDVIEW_EMAIL"])."\";", $configtext);
 	$configtext = preg_replace('/\$WEBMASTER_EMAIL\s*=\s*".*";/', "\$WEBMASTER_EMAIL = \"".$_POST["NEW_WEBMASTER_EMAIL"]."\";", $configtext);
 	$configtext = preg_replace('/\$WELCOME_TEXT_AUTH_MODE\s*=\s*".*";/', "\$WELCOME_TEXT_AUTH_MODE = \"".$_POST["NEW_WELCOME_TEXT_AUTH_MODE"]."\";", $configtext);
 	$configtext = preg_replace('/\$WELCOME_TEXT_AUTH_MODE_4\s*=\s*".*";/', "\$WELCOME_TEXT_AUTH_MODE_4 = \"".$_POST["NEW_WELCOME_TEXT_AUTH_MODE_4"]."\";", $configtext);// new
@@ -389,18 +397,18 @@ if ($action=="update") {
 		$errors = true;
 	}
 	$configtext = preg_replace('/\$TIME_LIMIT\s*=\s*".*";/', "\$TIME_LIMIT = \"".$_POST["NEW_TIME_LIMIT"]."\";", $configtext);
+	global $whichFile;
+	$whichFile = $INDEX_DIRECTORY.$FILE."_conf.php";
 	if (!is_writable($INDEX_DIRECTORY.$FILE."_conf.php")) {
 		$errors = true;
-		$pgv_lang["global_str1"] = $gedcom_config;
-		$error_msg .= "<span class=\"error\"><b>".print_text("file_write_error",0,1)."</b></span><br />";
+		$error_msg .= "<span class=\"error\"><b>".print_text("gedcom_config_write_error",0,1)."</b></span><br />";
 		$_SESSION[$gedcom_config]=$configtext;
 		$error_msg .= "<br /><br /><a href=\"config_download.php?file=$gedcom_config\">".$pgv_lang["download_gedconf"]."</a> ".$pgv_lang["upload_to_index"]."$INDEX_DIRECTORY<br /><br />\n";
 	}
-	$fp = fopen($INDEX_DIRECTORY.$FILE."_conf.php", "wb");
+	$fp = @fopen($INDEX_DIRECTORY.$FILE."_conf.php", "wb");
 	if (!$fp) {
 		$errors = true;
-		$pgv_lang["global_str1"] = $gedcom_config;
-		$error_msg .= "<span class=\"error\">".print_text("file_write_error",0,1)."</span><br />\n";
+		$error_msg .= "<span class=\"error\">".print_text("gedcom_config_write_error",0,1)."</span><br />\n";
 	}
 	else {
 		fwrite($fp, $configtext);
@@ -421,10 +429,34 @@ if ($action=="update") {
 			else $$key=$value;
 		}
 	}
+	
+	//-- delete the cache files for the welcome page blocks
+	include_once("includes/index_cache.php");
+	clearCache();
+	
 	$logline = AddToLog("Gedcom configuration ".$INDEX_DIRECTORY.$FILE."_conf.php"." updated by >".getUserName()."<", $FILE);
  	$gedcomconfname = $FILE."_conf.php";
  	if (!empty($COMMIT_COMMAND)) check_in($logline, $gedcomconfname, $INDEX_DIRECTORY);
-
+	if (!$errors) {
+		$gednews = getUserNews($FILE);
+		if (count($gednews)==0) {
+			$news = array();
+			$news["title"] = "#default_news_title#";
+			$news["username"] = $FILE;
+			$news["text"] = "#default_news_text#";
+			$news["date"] = time()-$_SESSION["timediff"];
+			addNews($news);
+		}
+		if ($source == "upload_form") $check = "upload";
+		else if ($source == "add_form") $check = "add";
+		else if ($source == "add_new_form") $check = "add_new";
+		if (!isset($bakfile)) $bakfile = "";
+		if ($source !== "") header("Location: uploadgedcom.php?action=$source&check=$check&step=2&GEDFILENAME=$GEDFILENAME&path=$path&verify=verify_gedcom&bakfile=$bakfile");
+		else {
+			header("Location: editgedcoms.php");
+		}
+		exit;
+	}
 }
 else if ($action=="replace") {
 	header("Location: uploadgedcom.php?action=upload_form&GEDFILENAME=$GEDFILENAME&path=$path&verify=validate_form");
@@ -436,6 +468,7 @@ $temp2 = $THEME_DIR;
 $THEME_DIR = $temp;
 print_header($pgv_lang["gedconf_head"]);
 $THEME_DIR = $temp2;
+// if (isset($FILE) && !check_for_import($FILE)) print "<span class=\"subheaders\">".$pgv_lang["step2"]." ".$pgv_lang["configure"]." + ".$pgv_lang["ged_gedcom"]."</span><br /><br />";
 if (!isset($NTHEME_DIR)) $NTHEME_DIR=$THEME_DIR;
 if (!isset($themeselect)) $themeselect="";
 if (!empty($error)) print "<span class=\"error\">".$error."</span>";
@@ -482,8 +515,8 @@ if (!empty($error)) print "<span class=\"error\">".$error."</span>";
     <td colspan="2" class="facts_label"><?php
     		print "<h2>".$pgv_lang["gedconf_head"]." - ";
 		if (isset($ged)) {
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;(".$GEDCOMS[$ged]["id"].")&nbsp;&rlm;";
-			else print "&nbsp;&lrm;(".$GEDCOMS[$ged]["id"].")&lrm;";
+//			if ($TEXT_DIRECTION=="rtl") print "&rlm;(".$GEDCOMS[$ged]["id"].")&nbsp;&rlm;";
+//			else print "&nbsp;&lrm;(".$GEDCOMS[$ged]["id"].")&lrm;";
 			print $GEDCOMS[$ged]["title"];
 		}
 		else if ($source == "add_form") print $pgv_lang["add_gedcom"];
@@ -561,7 +594,7 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["gedcom_conf"]."\" onclick=\"expa
 		<input type="text" name="path" value="<?php print preg_replace('/\\*/', '\\', $path);?>" size="40" dir ="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('gedcom_path_help');" />
 		</td>
 	</tr>
-	<?php } 
+	<?php }
 	if ($source != "replace_form") {
 	?>
 	<tr>
@@ -657,7 +690,7 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["gedcom_conf"]."\" onclick=\"expa
 			    }
 			    else {
 					print "<span class=\"error\">";
-					print $pgv_lang["unable_to_find_indi"];
+					print $pgv_lang["unable_to_find_record"];
 					print "</span>";
 				}
 				print_findindi_link("NEW_PEDIGREE_ROOT_ID","");
@@ -794,14 +827,6 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["gedcom_conf"]."\" onclick=\"expa
 		<td class="descriptionbox wrap"><?php print_help_link("TIME_LIMIT_help", "qm", "TIME_LIMIT"); print $pgv_lang["TIME_LIMIT"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_TIME_LIMIT" value="<?php print $TIME_LIMIT?>" size="5" tabindex="<?php $i++; print $i?>" onfocus="getHelp('TIME_LIMIT_help');" /></td>
 	</tr>
-	<tr>
-		<td class="descriptionbox wrap"><?php print_help_link("SECURITY_CHECK_GEDCOM_DOWNLOADABLE_help", "qm", "SECURITY_CHECK_GEDCOM_DOWNLOADABLE"); print $pgv_lang["SECURITY_CHECK_GEDCOM_DOWNLOADABLE"];?></td>
-		<td class="optionbox"><select name="NEW_SECURITY_CHECK_GEDCOM_DOWNLOADABLE" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SECURITY_CHECK_GEDCOM_DOWNLOADABLE_help');">
-				<option value="yes" <?php if ($SECURITY_CHECK_GEDCOM_DOWNLOADABLE) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
-				<option value="no" <?php if (!$SECURITY_CHECK_GEDCOM_DOWNLOADABLE) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
-			</select>
-		</td>
-	</tr>
 </table>
 <table class="facts_table" border="0">
 <tr><td style="padding: 5px" class="topbottombar">
@@ -864,6 +889,14 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["media_conf"]."\" onclick=\"expan
 		<td class="optionbox"><select name="NEW_SHOW_HIGHLIGHT_IMAGES" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SHOW_HIGHLIGHT_IMAGES_help');">
 				<option value="yes" <?php if ($SHOW_HIGHLIGHT_IMAGES) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
 				<option value="no" <?php if (!$SHOW_HIGHLIGHT_IMAGES) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("USE_MEDIA_VIEWER_help", "qm", "USE_MEDIA_VIEWER"); print $pgv_lang["USE_MEDIA_VIEWER"];?></td>
+		<td class="optionbox"><select name="NEW_USE_MEDIA_VIEWER" tabindex="<?php $i++; print $i?>" onfocus="getHelp('USE_MEDIA_VIEWER_help');">
+				<option value="yes" <?php if ($USE_MEDIA_VIEWER) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+				<option value="no" <?php if (!$USE_MEDIA_VIEWER) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
 			</select>
 		</td>
 	</tr>
@@ -1026,14 +1059,6 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["displ_names_conf"]."\" onclick=\
 		</td>
 	</tr>
 	<tr>
-		<td class="descriptionbox wrap"><?php print_help_link("SHOW_FAM_ID_NUMBERS_help", "qm", "SHOW_FAM_ID_NUMBERS"); print $pgv_lang["SHOW_FAM_ID_NUMBERS"];?></td>
-        <td class="optionbox"><select name="NEW_SHOW_FAM_ID_NUMBERS" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SHOW_FAM_ID_NUMBERS_help');">
-			<option value="yes" <?php if ($SHOW_FAM_ID_NUMBERS) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
-            <option value="no" <?php if (!$SHOW_FAM_ID_NUMBERS) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
-            </select>
-        </td>
-    </tr>
-	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("NAME_FROM_GEDCOM_help", "qm", "NAME_FROM_GEDCOM"); print $pgv_lang["NAME_FROM_GEDCOM"];?></td>
 		<td class="optionbox"><select name="NEW_NAME_FROM_GEDCOM" tabindex="<?php $i++; print $i?>" onfocus="getHelp('NAME_FROM_GEDCOM_help');">
 				<option value="yes" <?php if ($NAME_FROM_GEDCOM) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
@@ -1136,6 +1161,7 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["displ_layout_conf"]."\" onclick=
 				<option value="3" <?php if ($GEDCOM_DEFAULT_TAB==3) print "selected=\"selected\""; ?>><?php print $pgv_lang["media"];?></option>
 				<option value="4" <?php if ($GEDCOM_DEFAULT_TAB==4) print "selected=\"selected\""; ?>><?php print $pgv_lang["relatives"];?></option>
 				<option value="-1" <?php if ($GEDCOM_DEFAULT_TAB==-1) print "selected=\"selected\""; ?>><?php print $pgv_lang["all"];?></option>
+				<option value="-2" <?php if ($GEDCOM_DEFAULT_TAB==-2) print "selected=\"selected\""; ?>><?php print $pgv_lang["lasttab"];?></option>
 			</select>
 		</td>
 	</tr>
@@ -1157,8 +1183,8 @@ $previous="_DEAT_";
 print "<table>";
 foreach ($factarray as $factkey=>$factlabel) {
 	$f6=substr($factkey,0,6);
-	if ($f6=="_BIRT_" or $f6=="_MARR_" or $f6=="_DEAT_") {
-		if ($f6=="_BIRT_") print "<tr>";
+	if ($f6=="_BIRT_" or $f6=="_MARR_" or $f6=="_DEAT_" or $f6=="_FAMC_") {
+		if ($f6=="_BIRT_" or $f6=="_FAMC_") print "<tr>";
 		if ($f6=="_MARR_" and $previous!="_BIRT_") print "<tr><td>&nbsp;</td>";
 		if ($f6=="_DEAT_" and $previous=="_DEAT_") print "<tr><td>&nbsp;</td>";
 		if ($f6=="_DEAT_" and $previous!="_MARR_") print "<td>&nbsp;</td>";
@@ -1171,7 +1197,7 @@ foreach ($factarray as $factkey=>$factlabel) {
 	}
 }
 print "</table>";
-print "<table><tr>";
+print "<tr>";
 ?>
 		<td class="descriptionbox wrap"><?php print_help_link("EXPAND_RELATIVES_EVENTS_help", "qm", "EXPAND_RELATIVES_EVENTS"); print $pgv_lang["EXPAND_RELATIVES_EVENTS"];?></td>
 		<td class="optionbox">
@@ -1181,7 +1207,7 @@ print "<table><tr>";
 			</select>
 		</td>
 <?php
-print "</tr></table>";
+print "</tr>";
 ?>
 		</td>
 	</tr>
@@ -1270,6 +1296,14 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["displ_hide_conf"]."\" onclick=\"
 		</td>
 	</tr>
 	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("SHOW_SPIDER_TAGLINE_help", "qm", "SHOW_SPIDER_TAGLINE"); print $pgv_lang["SHOW_SPIDER_TAGLINE"];?></td>
+		<td class="optionbox"><select name="NEW_SHOW_SPIDER_TAGLINE" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SHOW_SPIDER_TAGLINE_help');">
+				<option value="yes" <?php if ($SHOW_SPIDER_TAGLINE) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+				<option value="no" <?php if (!$SHOW_SPIDER_TAGLINE) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+			</select>
+		</td>
+	</tr>
+	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("SHOW_STATS_help", "qm", "SHOW_STATS"); print $pgv_lang["SHOW_STATS"];?></td>
 		<td class="optionbox"><select name="NEW_SHOW_STATS" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SHOW_STATS_help');">
 				<option value="yes" <?php if ($SHOW_STATS) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
@@ -1277,6 +1311,14 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["displ_hide_conf"]."\" onclick=\"
 			</select>
 		</td>
 	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("SHOW_LAST_CHANGE_help", "qm", "SHOW_LAST_CHANGE"); print $pgv_lang["SHOW_LAST_CHANGE"];?></td>
+        <td class="optionbox"><select name="NEW_SHOW_LAST_CHANGE" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SHOW_LAST_CHANGE_help');">
+			<option value="yes" <?php if ($SHOW_LAST_CHANGE) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+            <option value="no" <?php if (!$SHOW_LAST_CHANGE) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+            </select>
+        </td>
+    </tr>
 </table>
 </div>
 <table class="facts_table" border="0">
@@ -1306,12 +1348,24 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["editopt_conf"]."\" onclick=\"exp
 		</td>
 	</tr>
 	<tr>
+		<td class="descriptionbox wrap width20"><?php print_help_link("SYNC_GEDCOM_FILE_help", "qm", "SYNC_GEDCOM_FILE"); print $pgv_lang["SYNC_GEDCOM_FILE"];?></td>
+		<td class="optionbox"><select name="NEW_SYNC_GEDCOM_FILE" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SYNC_GEDCOM_FILE_help');">
+				<option value="yes" <?php if ($SYNC_GEDCOM_FILE) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+				<option value="no" <?php if (!$SYNC_GEDCOM_FILE) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+			</select>
+		</td>
+	</tr>
+	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("INDI_FACTS_ADD_help", "qm", "INDI_FACTS_ADD"); print $pgv_lang["INDI_FACTS_ADD"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_INDI_FACTS_ADD" value="<?php print $INDI_FACTS_ADD; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('INDI_FACTS_ADD_help');" /></td>
 	</tr>
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("INDI_FACTS_UNIQUE_help", "qm", "INDI_FACTS_UNIQUE"); print $pgv_lang["INDI_FACTS_UNIQUE"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_INDI_FACTS_UNIQUE" value="<?php print $INDI_FACTS_UNIQUE; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('INDI_FACTS_UNIQUE_help');" /></td>
+	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("INDI_FACTS_QUICK_help", "qm", "INDI_FACTS_QUICK"); print $pgv_lang["INDI_FACTS_QUICK"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_INDI_FACTS_QUICK" value="<?php print $INDI_FACTS_QUICK; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('INDI_FACTS_QUICK_help');" /></td>
 	</tr>
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("FAM_FACTS_ADD_help", "qm", "FAM_FACTS_ADD"); print $pgv_lang["FAM_FACTS_ADD"];?></td>
@@ -1322,6 +1376,10 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["editopt_conf"]."\" onclick=\"exp
 		<td class="optionbox"><input type="text" name="NEW_FAM_FACTS_UNIQUE" value="<?php print $FAM_FACTS_UNIQUE; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('FAM_FACTS_UNIQUE_help');" /></td>
 	</tr>
 	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("FAM_FACTS_QUICK_help", "qm", "FAM_FACTS_QUICK"); print $pgv_lang["FAM_FACTS_QUICK"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_FAM_FACTS_QUICK" value="<?php print $FAM_FACTS_QUICK; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('FAM_FACTS_QUICK_help');" /></td>
+	</tr>
+	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("SOUR_FACTS_ADD_help", "qm", "SOUR_FACTS_ADD"); print $pgv_lang["SOUR_FACTS_ADD"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_SOUR_FACTS_ADD" value="<?php print $SOUR_FACTS_ADD; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SOUR_FACTS_ADD_help');" /></td>
 	</tr>
@@ -1330,12 +1388,20 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["editopt_conf"]."\" onclick=\"exp
 		<td class="optionbox"><input type="text" name="NEW_SOUR_FACTS_UNIQUE" value="<?php print $SOUR_FACTS_UNIQUE; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SOUR_FACTS_UNIQUE_help');" /></td>
 	</tr>
 	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("SOUR_FACTS_QUICK_help", "qm", "SOUR_FACTS_QUICK"); print $pgv_lang["SOUR_FACTS_QUICK"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_SOUR_FACTS_QUICK" value="<?php print $SOUR_FACTS_QUICK; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SOUR_FACTS_QUICK_help');" /></td>
+	</tr>
+	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("REPO_FACTS_ADD_help", "qm", "REPO_FACTS_ADD"); print $pgv_lang["REPO_FACTS_ADD"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_REPO_FACTS_ADD" value="<?php print $REPO_FACTS_ADD; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('REPO_FACTS_ADD_help');" /></td>
 	</tr>
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("REPO_FACTS_UNIQUE_help", "qm", "REPO_FACTS_UNIQUE"); print $pgv_lang["REPO_FACTS_UNIQUE"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_REPO_FACTS_UNIQUE" value="<?php print $REPO_FACTS_UNIQUE; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('REPO_FACTS_UNIQUE_help');" /></td>
+	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("REPO_FACTS_QUICK_help", "qm", "REPO_FACTS_QUICK"); print $pgv_lang["REPO_FACTS_QUICK"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_REPO_FACTS_QUICK" value="<?php print $REPO_FACTS_QUICK; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('REPO_FACTS_QUICK_help');" /></td>
 	</tr>
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("EDIT_AUTOCLOSE_help", "qm", "EDIT_AUTOCLOSE"); print $pgv_lang["EDIT_AUTOCLOSE"];?></td>
@@ -1384,6 +1450,27 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["editopt_conf"]."\" onclick=\"exp
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("QUICK_REQUIRED_FAMFACTS_help", "qm", "QUICK_REQUIRED_FAMFACTS"); print $pgv_lang["QUICK_REQUIRED_FAMFACTS"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_QUICK_REQUIRED_FAMFACTS" value="<?php print $QUICK_REQUIRED_FAMFACTS?>" size="40" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('QUICK_REQUIRED_FAMFACTS_help');" /></td>
+	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("SURNAME_TRADITION_help", "qm", "SURNAME_TRADITION"); print $pgv_lang["SURNAME_TRADITION"];?></td>
+		<td class="optionbox"><select name="NEW_SURNAME_TRADITION" tabindex="<?php $i++; print $i?>" onfocus="getHelp('SURNAME_TRADITION_help');">
+			<?php
+				foreach (array('paternal', 'spanish', 'portuguese', 'icelandic', 'none') as $value) {
+					print '<option value="'.$value.'"';
+					if ($SURNAME_TRADITION==$value) print ' selected="selected"';
+					print '>'.$pgv_lang[$value].'</option>';
+				}
+			?>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("ADVANCED_NAME_FACTS_help", "qm", "ADVANCED_NAME_FACTS"); print $pgv_lang["ADVANCED_NAME_FACTS"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_ADVANCED_NAME_FACTS" value="<?php print $ADVANCED_NAME_FACTS?>" size="40" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('ADVANCED_NAME_FACTS_help');" /></td>
+	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("ADVANCED_PLAC_FACTS_help", "qm", "ADVANCED_PLAC_FACTS"); print $pgv_lang["ADVANCED_PLAC_FACTS"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_ADVANCED_PLAC_FACTS" value="<?php print $ADVANCED_PLAC_FACTS?>" size="40" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('ADVANCED_PLAC_FACTS_help');" /></td>
 	</tr>
 </table>
 <table class="facts_table" border="0">
@@ -1477,6 +1564,15 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["contact_conf"]."\" onclick=\"exp
 ?></td></tr></table>
 <div id="contact-options" style="display: none">
 <table class="facts_table">
+	<tr>
+		<?php
+		if (empty($PHPGEDVIEW_EMAIL)) {
+			$PHPGEDVIEW_EMAIL = "phpgedview-noreply@".preg_replace("/^www\./i", "", $_SERVER["SERVER_NAME"]);
+		}
+		?>
+		<td class="descriptionbox wrap"><?php print_help_link("PHPGEDVIEW_EMAIL_help", "qm", "PHPGEDVIEW_EMAIL"); print $pgv_lang["PHPGEDVIEW_EMAIL"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_PHPGEDVIEW_EMAIL" value="<?php print $PHPGEDVIEW_EMAIL; ?>" size="80" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('PHPGEDVIEW_EMAIL_help');" /></td>
+	</tr>
 	<tr>
 		<td class="descriptionbox wrap width20"><?php print_help_link("CONTACT_EMAIL_help", "qm", "CONTACT_EMAIL"); print $pgv_lang["CONTACT_EMAIL"];?></td>
 		<td class="optionbox"><select name="NEW_CONTACT_EMAIL" tabindex="<?php $i++; print $i?>" onfocus="getHelp('CONTACT_EMAIL_help');">
@@ -1640,11 +1736,11 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["meta_conf"]."\" onclick=\"expand
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("RSS_FORMAT_help", "qm", "RSS_FORMAT"); print $pgv_lang["RSS_FORMAT"];?></td>
 		<td class="optionbox"><select name="NEW_RSS_FORMAT" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('RSS_FORMAT_help');">
-				<option value="RSS0.91" <?php if ($RSS_FORMAT=="RSS0.91") print "selected=\"selected\""; ?>>RSS 0.91</option>
-				<option value="RSS1.0" <?php if ($RSS_FORMAT=="RSS1.0") print "selected=\"selected\""; ?>>RSS 1.0</option>
-				<option value="RSS2.0" <?php if ($RSS_FORMAT=="RSS2.0") print "selected=\"selected\""; ?>>RSS 2.0</option>
 				<option value="ATOM" <?php if ($RSS_FORMAT=="ATOM") print "selected=\"selected\""; ?>>ATOM 1.0</option>
-				<option value="ATOM0.3" <?php if ($RSS_FORMAT=='"ATOM0.3') print "selected=\"selected\""; ?>>ATOM 0.3</option>
+				<!--option value="ATOM0.3" <?php if ($RSS_FORMAT=="ATOM0.3") print "selected=\"selected\""; ?>>ATOM 0.3</option-->
+				<option value="RSS2.0" <?php if ($RSS_FORMAT=="RSS2.0") print "selected=\"selected\""; ?>>RSS 2.0</option>
+				<!--option value="RSS0.91" <?php if ($RSS_FORMAT=="RSS0.91") print "selected=\"selected\""; ?>>RSS 0.91</option-->
+				<option value="RSS1.0" <?php if ($RSS_FORMAT=="RSS1.0") print "selected=\"selected\""; ?>>RSS 1.0</option>
 			</select>
 		</td>
 	</tr>

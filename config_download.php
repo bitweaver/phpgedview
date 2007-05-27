@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: config_download.php,v 1.3 2006/10/30 15:00:45 lsces Exp $
+ * @version $Id: config_download.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  * @package PhpGedView
  * @subpackage Admin
  */
@@ -39,7 +39,8 @@ require "config.php";
 require $confighelpfile["english"];
 if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
-if ((adminUserExists()&&!userIsAdmin(getUserName()))&&$CONFIGURED) {
+global $gBitUser;
+if ( !$gBitUser->IsAdmin() && $CONFIGURED ) {
 	header("Location: admin.php");
 	exit;
 }

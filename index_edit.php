@@ -24,7 +24,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_edit.php,v 1.6 2006/10/28 21:44:25 lsces Exp $
+ * @version $Id: index_edit.php,v 1.7 2007/05/27 17:49:22 lsces Exp $
  */
 
 /**
@@ -59,11 +59,12 @@ require $confighelpfile["english"];
 if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
 global $pgv_lang, $PGV_USE_HELPIMG, $PGV_IMAGES, $PGV_IMAGE_DIR, $TEXT_DIRECTION;
-global $GEDCOM_TITLE;
+global $GEDCOM_TITLE, $gBitUser;
 
 
 //-- make sure that they have user status before they can use this page
 //-- otherwise have them login again
+
 $uname = getUserName();
 if (empty($uname) || empty($name)) {
 	print_simple_header("");
@@ -72,7 +73,7 @@ if (empty($uname) || empty($name)) {
 	print_simple_footer();
 	exit;
 }
-if (!userIsAdmin($uname)) $setdefault=false;
+if (!$gBitUser->IsAdmin()) $setdefault=false;
 
 if (!isset($action)) $action="";
 if (!isset($command)) $command="user";
@@ -213,7 +214,7 @@ function parentrefresh() {
 	print "</div></td></tr>";
 	print "<tr><td class=\"topbottombar\" colspan=\"7\">";
 
-	if ((userIsAdmin($uname))&&($command=='user')) {
+	if ( $gBitUser->IsAdmin() && ($command=='user') ) {
 		print $pgv_lang["use_blocks_for_default"]."<input type=\"checkbox\" name=\"setdefault\" value=\"1\" /><br />\n";
 	}
 

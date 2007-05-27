@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_changes.php,v 1.4 2007/05/27 10:31:35 lsces Exp $
+ * @version $Id: edit_changes.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
  */
 
 /**
@@ -41,8 +41,6 @@ require("config.php");
 require "includes/functions_edit.php";
 require "includes/functions_import.php";
 require $INDEX_DIRECTORY."pgv_changes.php";
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 if (!userCanAccept(getUserName())) {
 	header("Location: login.php?url=edit_changes.php");
@@ -91,7 +89,7 @@ if ($action=="undoall") {
 		$change = $changes[0];
 		if ($change["gedcom"]==$ged) undo_change($cid, 0);
 	}
-	write_file();
+	write_changes();
 	$manual_save = false;
 	print "<br /><br /><b>";
 	print $pgv_lang["undo_successful"];
@@ -115,6 +113,7 @@ if ($action=="acceptall") {
 			if ($change["gedcom"]==$ged) accept_changes($cid);
 		}
 	}
+	if ($SYNC_GEDCOM_FILE) write_file();
 	write_changes();
 	$manual_save = false;
 	print "<br /><br /><b>";
@@ -139,13 +138,13 @@ else {
 				if ($GEDCOM != $change["gedcom"]) {
 					$GEDCOM = $change["gedcom"];
 				}
-				$gedrec = find_record_in_file($change["gid"]);
-				if (empty($gedrec)) $gedrec = $change["undo"];
+				$gedrec = $change["undo"];
 				$ct = preg_match("/0 @(.*)@(.*)/", $gedrec, $match);
 				if ($ct>0) $type = trim($match[2]);
 				else $type = "INDI";
 				if ($type=="INDI") {
-					$names = get_indi_names($gedrec);
+					if ($change['type']=='delete') $names = get_indi_names(find_person_record($change['gid'])); 
+					else $names = get_indi_names($gedrec);
 					$output .= "<b>".PrintReady(check_NN($names[0][0]))."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
 				}
 				else if ($type=="FAM") $output .= "<b>".PrintReady(get_family_descriptor($change["gid"]))."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
@@ -154,10 +153,16 @@ else {
 					if (empty($name)) $name = get_gedcom_value("TITL", 1, $gedrec);
 					$output .= "<b>".PrintReady($name)."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
 				}
+				else if ($type=="OBJE") {
+					$name = get_gedcom_value("TITL", 1, $gedrec);
+					if (empty($name)) $name = get_gedcom_value("TITL", 2, $gedrec);
+					$output .= "<b>".PrintReady($name)."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
+				}
 				else $output .= "<b>".$factarray[$type]."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
 				if ($type=="INDI") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('individual.php?pid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
 				if ($type=="FAM") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('family.php?famid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
 				if ($type=="SOUR") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('source.php?sid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
+				if ($type=="OBJE") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('mediaviewer.php?mid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
 				$output .= "<a href=\"javascript:show_gedcom_record('".$change["gid"]."');\">".$pgv_lang["view_gedcom"]."</a> | ";
 				$output .= "<a href=\"javascript:;\" onclick=\"return edit_raw('".$change["gid"]."');\">".$pgv_lang["edit_raw"]."</a><br />";
 				$output .= "<div class=\"indent\">\n";
@@ -192,7 +197,7 @@ else {
 		}
 	}
 	$output .= "</td></tr></table>";
-	
+
 	//-- Now for the global Action bar:
 	$output2 = "<br /><table class=\"list_table\">";
 	// Row 1 column 1: title "Accept all"
@@ -227,7 +232,7 @@ else {
 }
 	
 
-print "<br /><br />\n</center></div>\n";
+print "<br /><br />\n</div>\n";
 print "<center><a href=\"javascript:;\" onclick=\"if (window.opener.showchanges) window.opener.showchanges(); window.close();\">".$pgv_lang["close_window"]."</a><br /></center>\n";
 print_simple_footer();
 ?>

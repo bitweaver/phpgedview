@@ -25,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.5 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: addmedia.php,v 1.6 2007/05/27 17:49:22 lsces Exp $
  */
 
 /**
@@ -50,16 +50,17 @@ if (empty($ged)) $ged = $GEDCOM;
 $GEDCOM = $ged;
 
 if ($_SESSION["cookie_login"]) {
-	header("Location: login.php?ged=$GEDCOM&url=addmedia.php");
+	header("Location: login.php?type=simple&ged=$GEDCOM&url=addmedia.php");
 	exit;
 }
 
 print_simple_header($pgv_lang["add_media_tool"]);
 $disp = true;
+if (empty($pid) && !empty($mid)) $pid = $mid;
 if (!empty($pid)) {
 	$pid = clean_input($pid);
 	if (!isset($pgv_changes[$pid."_".$GEDCOM])) $gedrec = find_media_record($pid);
-	else $gedrec = find_record_in_file($pid);
+	else $gedrec = find_updated_record($pid);
 	if (empty($gedrec)) $gedrec =  find_record_in_file($pid);
 	$disp = displayDetails($pid, "OBJE");
 }
@@ -512,13 +513,13 @@ if ($action == "update") {
 		//-- look for the old record media in the file
 		//-- if the old media record does not exist that means it was 
 		//-- generated at import and we need to append it
-		$oldrec = find_record_in_file($pid);
-		if (!empty($oldrec)) {
+		//$oldrec = find_record_in_file($pid);
+		//if (!empty($oldrec)) {
 			if (replace_gedrec($pid, $newrec)) AddToChangeLog("Media ID ".$pid." successfully updated.");
-		} else {
-			$pid = append_gedrec($newrec);
-			if ($pid) AddToChangeLog("Media ID ".$pid." successfully added.");
-		}
+		//} else {
+		//	$pid = append_gedrec($newrec);
+		//	if ($pid) AddToChangeLog("Media ID ".$pid." successfully added.");
+		//}
     	
 		if ($pid && $linktoid!="") {
 			$link = linkMedia($pid, $linktoid, $level);
@@ -566,6 +567,7 @@ if ($action=="showmedia") {
 if ($action=="showmediaform") {
 	if (!isset($pid)) $pid = "";
 	if (empty($level)) $level = 1;
+	if (!isset($linktoid)) $linktoid = "";
 	show_media_form($pid, "newentry", $filename, $linktoid, $level);
 }
 

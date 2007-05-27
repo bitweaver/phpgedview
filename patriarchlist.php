@@ -32,7 +32,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: patriarchlist.php,v 1.4 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: patriarchlist.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -64,13 +64,13 @@ function indi2roots() {
 	$keys= array();
 	$orignames= array();
 	$person = array();
-	
-	//--print "<br>start indi2:" . date("m/d/y G.i:s",time()) . "<br>\n";
+
+	//--print "<br/>start indi2:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 
 	$my2indilist = get_indi_list();
 	$ct = count($my2indilist);
 
-	//--	print "<br>tijd na getindi:" . date("m/d/y G.i:s",time()) . "<br>\n";
+	//--	print "<br/>tijd na getindi:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 
 	//--	first select the names then do the alphabetic sort
 	$orignum=0;
@@ -90,14 +90,14 @@ function indi2roots() {
 			$parents= find_parents($famc);
 			if (($parents["WIFE"] == "") and ($parents["HUSB"] == "")) $famc= "";
 		}
-		
+
 		//-- we assume that when there is a famc record, this person is not a patriarch
 		//-- in special cases it is possible that a child is a member of a famc record but no parents are given
 		//-- and so they are the patriarch's
 
 		//-- first spouse record. assuming a person has just one father and one mother.
 		if ($famc == "") {
-			//--print "select:$orignum,$key,$value,$person<br>";
+			//--print "select:$orignum,$key,$value,$person<br/>";
 			$orignum ++;
 			$orignames["$key"]["name"]=$value;
 		 	$orignames["$key"]["gedfile"]=$value2;
@@ -105,13 +105,13 @@ function indi2roots() {
 		$i++;
 	}
 	$ct= $orignum;
-	//--print "totaal aantal=,$ct<br>";
-	//--	print "<br>indi2 na select:" . date("m/d/y G.i:s",time()) . "<br>\n";
+	//--print "totaal aantal=,$ct<br/>";
+	//--	print "<br/>indi2 na select:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 	$patrilist=$orignames;
 	uasort($patrilist, "itemsort");
 
 	//--end search
-	//--print "<br>indi2 na sort:" . date("m/d/y G.i:s",time()) . "<br>\n";
+	//--print "<br/>indi2 na sort:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 
 	$i=0;
 	$keys = array_keys($patrilist);
@@ -145,13 +145,13 @@ function indi2roots() {
 	 			$patrialpha[$letter]["gid"]= "$key";
 			}
 			else $patrialpha[$letter]["gid"].= ",$key";
-			//-- print " reeks: $letter,$key,==" . $patrialpha[$letter]["gid"] . "==<br>";
-			//-- print "select:$i,$letter,$key,$value,$person<br>";
+			//-- print " reeks: $letter,$key,==" . $patrialpha[$letter]["gid"] . "==<br/>";
+			//-- print "select:$i,$letter,$key,$value,$person<br/>";
 		}
 		$i++;
 	}
 	$patrilist=$orignames;
-	//--print "<br>indi2 na alpha:" . date("m/d/y G.i:s",time()) . "<br>\n";
+	//--print "<br/>indi2 na alpha:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 }
 // end indi2roots
 
@@ -184,7 +184,7 @@ function get_alpha_patri($letter) {
 	$list = $patrialpha[$letter]["gid"];
 	$gids = preg_split("/[+,]/", $list);
 	foreach($gids as $indexval => $gid)	{
-//-- print "regel201:letter,gid,list,gids: " . $letter . ":" . $gid . ":" . $patrilist[$gid] . ":" . $gids[0] . ":<br>";
+//-- print "regel201:letter,gid,list,gids: " . $letter . ":" . $gid . ":" . $patrilist[$gid] . ":" . $gids[0] . ":<br/>";
 		$tpatrilist[$gid] = $patrilist[$gid];
 	}
 	return $tpatrilist;
@@ -246,7 +246,7 @@ if ($pass == TRUE) {
 }
 print "<a href=\"patriarchlist.php?show_all=yes&amp;surname_sublist=$surname_sublist\">";
 if ($show_all=="yes") print "<span class=\"warning\">";
-print_text("all"); 
+print_text("all");
 if ($show_all=="yes") print "</span>";
 print "</a>\n";
 if (isset($startalpha)) $alpha = $startalpha;
@@ -318,7 +318,7 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 		if (count($indi_hide)>0) print $pgv_lang["hidden"]." ".count($indi_hide);
 		if ($count>1) print "<br />".$pgv_lang["surnames"]." ".$count;
 		print "</td>\n";
-	}	
+	}
 }
 else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	if (!isset($alpha)) $alpha="";
@@ -359,7 +359,7 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 		if ($i==$newcol && $i<$count) {
 			print "</td><td class=\"list_value\" style=\"padding: 14px;\">\n";
 			$newcol=$i+ceil($count/$col);
-		}	
+		}
 	}
 	print "</td>\n";
 	if ($count>1 || count($indi_hide)>0) {
@@ -374,7 +374,7 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 else {
 	$firstname_alpha = false;
 	//-- if the surname is set then only get the names in that surname list
-	//echo "<br> 3"; //-- MA @@@
+	//echo "<br/> 3"; //-- MA @@@
 	if ((!empty($surname))&&($surname_sublist=="yes")) {
 		$tpatrilist = get_patri_list();
 		$npatrilist = array();
@@ -387,7 +387,7 @@ else {
 	else $tpatrilist = get_alpha_patri($alpha);
 
 //		$ct = count($tpatrilist);
-//echo "<br> 4"; //-- MA @@@
+//echo "<br/> 4"; //-- MA @@@
 
 	$i=0;
 	$surnames = array();
@@ -432,6 +432,8 @@ else {
 	}
 }
 print "</tr></table>";
+
+//print_indi_table($surnames);
 
 print "<br />";
 if ($alpha != "@") {

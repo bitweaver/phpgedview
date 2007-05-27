@@ -21,13 +21,13 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: medialist.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: medialist.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
  */
 require("config.php");
 require_once 'includes/functions_print_facts.php';
 
 global $MEDIA_EXTERNAL, $THUMBNAIL_WIDTH;
-global $GEDCOM, $GEDCOMS;
+global $GEDCOM, $GEDCOMS, $gBitUser;
 global $currentPage, $lastPage;
 
 $lrm = chr(0xE2).chr(0x80).chr(0x8E);
@@ -49,7 +49,7 @@ print "\n\t<div class=\"center\"><h2>".$pgv_lang["multi_title"]."</h2></div>\n\t
 $isEditUser = userCanEdit(getUserName());		//-- Determines whether to show file names
 
 //-- automatically generate an image
-if (userIsAdmin(getUserName()) && $action=="generate" && !empty($file) && !empty($thumb)) {
+if ( $gBitUser->isAdmin() && $action=="generate" && !empty($file) && !empty($thumb)) {
 	generate_thumbnail($file, $thumb);
 }
 if ($search == "yes") {

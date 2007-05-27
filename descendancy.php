@@ -3,7 +3,7 @@
  * Parses gedcom file and displays a descendancy tree.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2006  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: descendancy.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: descendancy.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
  */
 
 // -- include config file
@@ -81,14 +81,20 @@ if ($view!="preview") {
 	print $pgv_lang["displ_layout_conf"];?>
 	</td>
 	<td rowspan="2" class="optionbox vmiddle">
-	<input type="radio" name="chart_style" value="0"<?php
-	if (!$controller->chart_style) print " checked=\"checked\"";
-	else print " onclick=\"document.people.chart_style.value='1';\"";
-	print " />".$pgv_lang["chart_list"];
+
+	<input type="radio" name="chart_style" value="0"
+	<?php
+	if ($controller->chart_style == "0") print " checked=\"checked\" ";
+	print "/>".$pgv_lang["chart_list"];
 	print "<br /><input type=\"radio\" name=\"chart_style\" value=\"1\"";
-	if ($controller->chart_style) print " checked=\"checked\"";
-	else print " onclick=\"document.people.chart_style.value='0';\"";
-	print " />".$pgv_lang["chart_booklet"];
+	if ($controller->chart_style == "1") print " checked=\"checked\" ";
+	print "/>".$pgv_lang["chart_booklet"];
+	print "<br /><input type=\"radio\" name=\"chart_style\" value=\"2\"";
+	if ($controller->chart_style == "2") print " checked=\"checked\" ";
+	print " />".$pgv_lang["individual_list"];
+	print "<br /><input type=\"radio\" name=\"chart_style\" value=\"3\"";
+	if ($controller->chart_style == "3") print " checked=\"checked\" ";
+	print " />".$pgv_lang["family_list"];
 	?>
 	</td>
 
@@ -139,23 +145,68 @@ if ($view!="preview") {
 if (is_null($controller->descPerson)) {
 	print "<span class=\"error\">".$pgv_lang["record_not_found"]."</span>";
 }
-// descendancy booklet
-if ($controller->chart_style) {
+//-- list
+if ($controller->chart_style==0) {
+	echo "<ul style=\"list-style: none; display: block;\" id=\"descendancy_chart".($TEXT_DIRECTION=="rtl" ? "_rtl" : "")."\">";
+	$controller->print_child_descendancy($controller->descPerson, $controller->generations);
+	echo "</ul><br />";
+}
+//-- booklet
+if ($controller->chart_style==1) {
 	$show_cousins = true;
 	$famids = find_sfamily_ids($controller->pid);
 	if (count($famids)) {
-		$controller->print_child_family($controller->descPerson,$controller->generations);
+		$controller->print_child_family($controller->descPerson, $controller->generations);
 		print_footer();
 		exit;
 	}
 }
-?>
-<!-- // descendancy list -->
-<ul style="list-style: none; display: block;" id=<?php print "\"descendancy_chart".($TEXT_DIRECTION=="rtl" ? "_rtl" : "")."\""?>>
-<?php $controller->print_child_descendancy($controller->descPerson, $controller->generations);?>
-</ul>
-<br />
-
-<?php
+//-- Individual list
+if ($controller->chart_style==2) {
+	require_once("includes/functions_print_lists.php");
+	$datalist = array();
+	function indi_desc($pid, $n) {
+		if ($n<0) return;
+		global $datalist;
+		$person = Person::getInstance($pid);
+		if (is_null($person)) return;
+		//-- add indi
+		$datalist[] = $person->xref;
+		foreach ($person->getSpouseFamilyIds() as $f=>$fams) {
+			$family = Family::getInstance($fams);
+			if (is_null($family)) continue;
+			//-- add spouse
+			$datalist[] = $family->getSpouseId($pid);
+			//-- recursive call for each child
+			foreach ($family->getChildren() as $c=>$child) indi_desc($child->xref, $n-1);
+		}
+	}
+	indi_desc($controller->pid, $controller->generations);
+	echo "<div class=\"center\">";
+	print_indi_table(array_unique($datalist), $pgv_lang["descend_chart"]." : ".PrintReady($controller->name));
+	echo "</div>";
+}
+//-- Family list
+if ($controller->chart_style==3) {
+	require_once("includes/functions_print_lists.php");
+	$datalist = array();
+	function fam_desc($pid, $n) {
+		if ($n<0) return;
+		global $datalist;
+		$person = Person::getInstance($pid);
+		if (is_null($person)) return;
+		foreach ($person->getSpouseFamilyIds() as $f=>$fams) {
+			$family = Family::getInstance($fams);
+			if (is_null($family)) continue;
+			$datalist[] = $family->xref;
+			//-- recursive call for each child
+			foreach ($family->getChildren() as $c=>$child) fam_desc($child->xref, $n-1);
+		}
+	}
+	fam_desc($controller->pid, $controller->generations);
+	echo "<div class=\"center\">";
+	print_fam_table(array_unique($datalist), $pgv_lang["descend_chart"]." : ".PrintReady($controller->name));
+	echo "</div>";
+}
 print_footer();
 ?>

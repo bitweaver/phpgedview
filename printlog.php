@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: printlog.php,v 1.3 2007/05/27 10:31:36 lsces Exp $
+ * @version $Id: printlog.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  */
 
 /**
@@ -60,9 +60,9 @@ if ($logtype == "searchlog") {
 }
 
 //-- make sure that they have admin status before they can use this page
-$uname = getUserName();
 $auth = false;
-if (($logtype == "syslog") && (userIsAdmin($uname))) $auth = true;
+global $gBitUser;
+if (($logtype == "syslog") && ($gBitUser->isAdmin())) $auth = true;
 if ((($logtype == "gedlog") || ($logtype == "searchlog"))  && (userGedcomAdmin($uname, $gedname))) $auth = true;
 
 if ($auth) {

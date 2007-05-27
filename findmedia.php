@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: findmedia.php,v 1.3 2007/05/27 14:45:30 lsces Exp $
+ * @version $Id: findmedia.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
@@ -72,7 +72,8 @@ if ((!userCanEdit(getUserName())) || (!$ALLOW_EDIT_GEDCOM)) {
 }
 
 //-- check for admin once (used a bit in this script)
-$isadmin =  userIsAdmin(getUserName());
+global $gBitUser;
+$isadmin =  $gBitUser->IsAdmin();
 
 //-- TODO add check for -- admin can manipulate files
 $fileaccess = false;

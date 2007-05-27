@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.6 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: media.php,v 1.7 2007/05/27 17:49:22 lsces Exp $
  */
 
  /* TODO:
@@ -114,22 +114,15 @@ if (($level < 0) || ($level > $MEDIA_DIRECTORY_LEVELS)){
 }
 
 $thumbdir = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $directory);
-
-
-//-- check for admin once (used a bit in this script)
-$isadmin =  userIsAdmin(getUserName());
-
+global $gBitUser;
 //-- only allow users with Admin privileges to access script.
-if (!$isadmin || !$ALLOW_EDIT_GEDCOM) {
+if (!$gBitUser->isAdmin() || !$ALLOW_EDIT_GEDCOM) {
 	header("Location: login.php?url=media.php");
 	exit;
 }
 
 //-- TODO add check for -- admin can manipulate files
-$fileaccess = false;
-if ($isadmin) {
-	$fileaccess = true;
-}
+$fileaccess = $gBitUser->isAdmin();
 
 // Print the header of the page
 print_header($pgv_lang["manage_media"]);
@@ -395,7 +388,7 @@ if (check_media_structure()) {
 			print "<span class=\"error\">".$pgv_lang["multiple_gedcoms"]."<br /><br /><b>".$pgv_lang["media_file_not_moved"]."</b></span><br />";
 		}
 
-		while ($isadmin && $fileaccess && $onegedcom) {
+		while ($gBitUser->isAdmin() && $fileaccess && $onegedcom) {
 			$exists = false;
 
 			// file details
@@ -1250,7 +1243,7 @@ if (check_media_structure()) {
 		// Form for ceating a new directory
 		// Checks admin user can write and is not trying to create deeper level dir
 		// than the configured number of levels
-		if ($isadmin && $fileaccess && ($level < $MEDIA_DIRECTORY_LEVELS)) {
+		if ($gBitUser->isAdmin() && $fileaccess && ($level < $MEDIA_DIRECTORY_LEVELS)) {
 			print "<tr>";
 				print "<td class=\"list_value $TEXT_DIRECTION\">";
 					print "<form action=\"media.php\" method=\"get\">";

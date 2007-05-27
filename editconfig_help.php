@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: editconfig_help.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: editconfig_help.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
  * @package PhpGedView
  * @subpackage Admin
  */
@@ -34,7 +34,8 @@ print '<span class="helpheader">';
 print_text("config_help");
 print '</span><br /><br /><span class="helptext">';
 if ($help == "help_contents_help") {
-		if (userIsAdmin(getUserName())) {
+	global $gBitUser;
+	if ($gBitUser->IsAdmin()) {
 		$help = "admin_help_contents_help";
 		print_text("admin_help_contents_head_help");
 	}

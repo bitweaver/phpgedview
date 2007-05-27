@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: changelanguage.php,v 1.3 2006/10/04 12:07:53 lsces Exp $
+ * @version $Id: changelanguage.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  */
  
 require "config.php";
@@ -278,7 +278,7 @@ switch ($action) {
 		}
 		print "<tr><td  class=\"facts_value\" colspan=\"5\" valign=\"top\" colspan=\"2\">".$pgv_lang["users_langs"]."</td><td class=\"facts_value\" colspan=\"2\">";
 		foreach ($configuredlanguages["users"] as $key => $value) {
-			print "<img src=\"".$language_settings[$key]["flagsfile"]."\" class=\"brightflag\" alt=\"".$pgv_lang["lang_name_".$key]."\" title=\"".$pgv_lang["lang_name_".$key]."\" />&nbsp;";
+			print "<img src=\"".$language_settings[$key]["flagsfile"]."\" class=\"brightflag\" alt=\"".$pgv_lang["lang_name_".$key]."\" title=\"".$pgv_lang["lang_name_".$key]."\" />&nbsp;<a href=\"useradmin.php?action=listusers&amp;filter=language&amp;usrlang=".$key."\">".$pgv_lang["lang_name_".$key]."</a><br />";
 		}
 }
 print "</td></tr>";

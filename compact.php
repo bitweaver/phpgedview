@@ -39,8 +39,6 @@ $gGedcom = new BitGEDCOM();
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_charts.php");
-require($confighelpfile["english"]);
-if (file_exists($confighelpfile[$LANGUAGE])) require($confighelpfile[$LANGUAGE]);
 
 // -- args
 if (!isset($rootid)) $rootid = "";
@@ -49,7 +47,9 @@ $rootid = check_rootid($rootid);
 if (!isset($showids)) $showids = 0;
 if (!isset($showthumbs)) $showthumbs = 0;
 
-if ((DisplayDetailsByID($rootid)) || (showLivingNameByID($rootid))) {
+$person = Person::getInstance($rootid);
+
+if ($person->canDisplayName()) {
 	$name = get_person_name($rootid);
 	$addname = get_add_person_name($rootid);
 }
@@ -316,9 +316,16 @@ function print_td_person($n) {
 
 	$text = "";
 	$pid = $treeid[$n];
+
+	if ($TEXT_DIRECTION=="ltr") {
+		$title = $pgv_lang["indi_info"].": ".$pid;
+	} else {
+		$title = $pid." :".$pgv_lang["indi_info"];
+	}
+
 	if ($pid) {
 		$indirec=find_person_record($pid);
-		if (!$indirec) $indirec = find_record_in_file($pid);
+		if (!$indirec) $indirec = find_updated_record($pid);
 
 		if ((!displayDetailsByID($pid))&&(!showLivingNameByID($pid))) {
 			$name = $pgv_lang["private"];
@@ -345,7 +352,7 @@ function print_td_person($n) {
 				else $text .= " />\n";
 			}
 		}
-		$text .= "<a class=\"name1\" href=\"individual.php?pid=".$pid."\"> ";
+		$text .= "<a class=\"name1\" href=\"individual.php?pid=$pid\" title=\"$title\"> ";
 		$text .= PrintReady($name);
 		if ($addname) $text .= "<br />" . PrintReady($addname);
 		$text .= "</a>";
@@ -390,7 +397,9 @@ function print_td_person($n) {
 function print_arrow_person($n, $arrow_dir) {
 	global $treeid;
 	global $view, $showids, $showthumbs;
-	global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES;
+	global $pgv_lang, $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES;
+
+	$pid = $treeid[$n];
 
 	$arrow_swap = array("l"=>"0", "r"=>"1", "u"=>"2", "d"=>"3");
 
@@ -399,10 +408,15 @@ function print_arrow_person($n, $arrow_dir) {
 		if ($arrow_dir=="l") $arrow_dir="r";
 		else if ($arrow_dir=="r") $arrow_dir="l";
 	}
-	$arrow_img = "<img id='arrow$n' src='".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$arrow_dir."arrow"]["other"]."' border='0' align='middle' alt='' />";
+	if ($TEXT_DIRECTION=="ltr") {
+		$title = $pgv_lang["compact_chart"].": ".$pid;
+	} else {
+		$title = $pid." :".$pgv_lang["compact_chart"];
+	}
+	$arrow_img = "<img id='arrow$n' src='".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$arrow_dir."arrow"]["other"]."' border='0' align='middle' alt='$title' title='$title' />";
+	$hideArrow = "<img id='arrow$n' src='".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$arrow_dir."arrow"]["other"]."' border='0' align='middle' alt='$title' title='$title' style='visibility:hidden;' />";
 
 	$text = "";
-	$pid = $treeid[$n];
 	if ($pid) {
 		$text .= "<a href=\"?rootid=".$pid;
 		if ($showids) $text .="&amp;showids=".$showids;
@@ -412,7 +426,7 @@ function print_arrow_person($n, $arrow_dir) {
 		$text .= $arrow_img."</a>";
 	}
 	// -- arrow to empty box does not have a url attached.
-	else $text = $arrow_img;
+	else $text = $hideArrow;
 	print $text;
 }
 ?>

@@ -21,12 +21,10 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: checklang.php,v 1.3 2006/10/02 12:48:41 lsces Exp $
+ * @version $Id: checklang.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  */
 // -- include config file
 require("config.php");
-require( $factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 print_header("checklang");
 
@@ -53,8 +51,6 @@ This tool performs a check between english files and
 selected language(s) files to help translators keeping files up-to-date.
 <br />
 The table shows <i>translated vars / english vars</i> ratio.
-<br />
-<span class="warning">Results files (*.NEW.php) have to be carefully verified before use.</span>
 <br /><br />
 END1;
 
@@ -63,6 +59,7 @@ print "Select a lang code : <select name=\"lang\">";
 print "<option value=\"\">Select...</option>";
 print "<option value=\"all\">all</option>";
 foreach ($flags as $indexval => $flag) {
+	if (strlen($flag)!=2) continue;
 	print "<option value=\"$flag\"";
 	if ($flag==$lang) print " selected";
 	print ">$flag</option>";
@@ -78,11 +75,13 @@ clearstatcache();
 print "<table border=\"0\" class=\"facts_table\">";
 //print "<table class=\"list_table $TEXT_DIRECTION\">";
 print "<tr class=\"facts_label03\">";
-print "<td width=\"20%\">lang</td>";
-print "<td width=\"20%\">facts</td>";
-print "<td width=\"20%\">lang</td>";
-print "<td width=\"20%\">configure_help</td>";
-print "<td width=\"20%\">help_text</td>";
+print "<td width=\"14%\">lang</td>";
+print "<td width=\"14%\">facts</td>";
+print "<td width=\"14%\">admin</td>";
+print "<td width=\"14%\">editor</td>";
+print "<td width=\"14%\">lang</td>";
+print "<td width=\"14%\">configure_help</td>";
+print "<td width=\"14%\">help_text</td>";
 print "</tr>";
 
 
@@ -91,8 +90,10 @@ if ($lang!="all") {
 	if ($lang!="") $flags[] = $lang;
 }
 if (isset($flags)) foreach ($flags as $indexval => $flag) {
-	print "<tr class=\"facts_label\"><td><img src=\"../users/icons/flags//$flag.gif\" width=\"32\" border=0 alt=\"$flag\" align=\"middle\" /> $flag</td>";
+	print "<tr class=\"facts_label\"><td><img src=\"images/flags/$flag.gif\" width=\"32\" border=0 alt=\"$flag\" align=\"middle\" /> $flag</td>";
 	print "<td id=\"$flag.f\" class=\"facts_value\">...</td>";
+	print "<td id=\"$flag.a\" class=\"facts_value\">...</td>";
+	print "<td id=\"$flag.e\" class=\"facts_value\">...</td>";
 	print "<td id=\"$flag.l\" class=\"facts_value\">...</td>";
 	print "<td id=\"$flag.c\" class=\"facts_value\">...</td>";
 	print "<td id=\"$flag.h\" class=\"facts_value\">...</td>";
@@ -110,6 +111,10 @@ $path = "languages";
 if (isset($flags)) foreach ($flags as $indexval => $flag) {
 	unset($target);
 	checkfile("$path/facts.en.php");
+	if (!file_exists(("$path/admin.$flag.php"))) copy("$path/lang.$flag.php","$path/admin.$flag.php");
+	checkfile("$path/admin.en.php");
+	if (!file_exists(("$path/editor.$flag.php"))) copy("$path/lang.$flag.php","$path/editor.$flag.php");
+	checkfile("$path/editor.en.php");
 	checkfile("$path/lang.en.php");
 	checkfile("$path/configure_help.en.php");
 	checkfile("$path/help_text.en.php");
@@ -124,22 +129,38 @@ function checkfile($filename) {
 	set_time_limit(0); //
 
 	// loading source data
+	//echo "<br />$filename";
 	if (!$fd = fopen($filename, 'r')) die("Cannot open $filename");
-	while ($data = fgets($fd)) $source[] = $data;
+	while ($data = @fgets($fd)) {
+		//if (substr($data, 0, 1) == "\$") $source[] = $data; //smart_utf8_decode($data);
+		if (isset($data[1]) and $data[1]!='*' and $data[1]!='?') $source[] = $data;
+	}
 	fclose($fd);
 
 	// loading target data
 	$filename = str_replace(".en.", ".$flag.", $filename);
 	if (!$fd = fopen($filename, 'r')) print("Cannot open $filename");
+	$header = "";
 	while ($data = @fgets($fd)) {
+	  if ($data[1]=='*' or $data[1]=='?') $header .= $data;
 		if (substr($data, 0, 1) == "\$") $target[] = $data; //smart_utf8_decode($data);
 	}
 	@fclose($fd);
 	$target[] = ""; // DO NOT DELETE THIS
 
+	// rename file
+	for ($n=1; $n<999; $n++) {
+		$filename2 = str_replace(".php", ".$n.php", $filename);
+		if (!file_exists($filename2)) {
+			rename ($filename, $filename2);
+			//echo "<br />$filename : $filename2";
+			break;
+		}
+	}
 	// output file
-	$filename = str_replace(".php", ".NEW.php", $filename);
+	//$filename = str_replace(".php", ".NEW.php", $filename);
 	if (!$fd = fopen($filename, 'w')) die("Cannot open $filename");
+	if (!fputs($fd, $header, strlen($header))) die("Cannot write to $filename"); // file header
 
 	// process source data
 	$ok = 0;

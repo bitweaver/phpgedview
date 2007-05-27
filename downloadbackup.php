@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadbackup.php,v 1.3 2007/05/27 10:31:36 lsces Exp $
+ * @version $Id: downloadbackup.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  */
 
 /**
@@ -37,7 +37,7 @@ $gGedcom = new BitGEDCOM();
 // leave manual config until we can move it to bitweaver table 
 require "config.php";
 
-if ((!userGedcomAdmin(getUserName()))||(empty($fname))) {
+if ((!userGedcomAdmin(getUserName()))||(empty($fname))||(preg_match("/\.zip$/", $fname)==0)) {
 	print $pgv_lang['access_denied'];
 	exit;
 }

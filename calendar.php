@@ -5,7 +5,7 @@
  * Displays events on a daily, monthly, or yearly calendar.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2006  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.4 2006/10/02 23:04:16 lsces Exp $
+ * $Id: calendar.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -43,32 +43,46 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
+require_once("includes/functions_print_lists.php");
+require("includes/adodb-time.inc.php");
 
+if (!isset($year)) $year = adodb_date("Y");
 if (empty($day)) $day = adodb_date("j");
 if (empty($month)) $month = adodb_date("M");
-if (empty($year)) $year = adodb_date("Y");
 
+$pattern="[-| |bet|abt|bef|aft]";
+$a=preg_split($pattern, str2lower($year)); 
+
+if (!empty($a[0])) $yr=$a[0];
+else if (isset($a[2]) && empty($a[0]) && empty($a[1])){
+        if (substr($a[2],0,1)>='0' and substr($a[2],0,1)<='9') $yr=$a[2];
+        else if (!empty($a[2]) && !empty($a[3])) {
+	        $yr=$a[3];
+        	$month=$a[2]; 
+        }
+}
+	        
 if ($USE_RTL_FUNCTIONS) {
 	//-------> Today's Hebrew Day with Gedcom Month
 
 	$datearray = array();
  	$datearray[0]["day"]   = $day;
  	$datearray[0]["mon"]   = $monthtonum[str2lower(trim($month))];
- 	$datearray[0]["year"]  = $year;
+ 	
+	$datearray[0]["year"]  = $yr; 
  	$datearray[0]["month"] = $month;
+//today 	
  	$datearray[1]["day"]   = adodb_date("j");
  	$datearray[1]["mon"]   = $monthtonum[str2lower(trim(adodb_date("M")))];
  	$datearray[1]["year"]  = adodb_date("Y");
  	// should use $parse_date
-
+ 	
     $date   	= gregorianToJewishGedcomDate($datearray);
     $hDay   	= $date[0]["day"];
     $hMonth 	= $date[0]["month"];
     $hYear		= $date[0]["year"];
     $CalYear	= $hYear;
-
+    
     $currhDay   = $date[1]["day"];
     $currhMon   = trim($date[1]["month"]);
     $currhMonth = $monthtonum[str2lower($currhMon)];
@@ -100,6 +114,7 @@ if ($action=="year") {
 		if (function_exists("str2lower"))	$year = preg_replace(array("/$abbr[0]/","/$abbr[1]/","/$abbr[2]/","/$abbr[3]/","/$abbr[4]/","/$abbr[5]/","/$abbr[6]/","/$abbr[7]/","/$abbr[8]/","/$abbr[9]/","/ $abbr[10] /","/ $abbr[11] /"), array("abt","aft","bef","bet","cal","est","from","int","cir","apx"," and "," to "), str2lower($year));
 		else $year = preg_replace(array("/$abbr[0]/","/$abbr[1]/","/$abbr[2]/","/$abbr[3]/","/$abbr[4]/","/$abbr[5]/","/$abbr[6]/","/$abbr[7]/","/$abbr[8]/","/$abbr[9]/"), array("abt","aft","bef","bet","cal","est","from","int","cir","apx"), $year);
 	}
+	
 	if (strlen($year)>1 && preg_match("/\?/", $year)) $year = preg_replace("/\?/", "[0-9]", $year);
 	$year = preg_replace(array("/&lt;/", "/&gt;/", "/[?*+|&.,:'%_<>!#�{}=^]/", "/\\$/", "/\\\/",  "/\"/"), "", $year);
 	if (preg_match("/[\D]{1,2}/", $year) && strlen($year)<=2) $year="";
@@ -153,7 +168,9 @@ if ($action=="year") {
 			$year_text = $startyear." - ".$endyear;
 		}
 	}
+	
 	if (strpos($year, "[", 1)>"0"){
+		
 		$pos1=(strpos($year, "[", 0));
 		$year_text=substr($year, 0, $pos1);
 		while (($pos1 = strpos($year, "[", $pos1))!==false) {
@@ -178,6 +195,7 @@ if ($action=="year") {
 		$year_query=$year;
 	}
 	else if (strlen($year)<4 && preg_match("/[\d]{1,3}/", $year)){
+		
 		if (substr($year, 0, 2)<=substr(adodb_date("Y"), 0, 2)){
 			for ($i=strlen($year); $i<4; $i++) $year_text .="0";
 			$startyear=$year_text;
@@ -194,8 +212,10 @@ if ($action=="year") {
 	}
 }
 else {
-	if (strlen($year)<3) $year = adodb_date("Y");
+  if (strlen($year)<3) $year = adodb_date("Y"); 
+	
 	if (strlen($year)>4){
+		
 		if (strpos($year, "[", 1)>"0"){
 			$pos1 = (strpos($year, "[", 0));
 			$year_text = $year;
@@ -207,6 +227,7 @@ else {
 			else $year = adodb_date("Y");
 	}
 	$year=trim($year);
+	
 }
 
 // calculate leap year
@@ -216,7 +237,6 @@ if (strlen($year)<5 && preg_match("/[\d]{2,4}/", $year)) {
 }
 else $leap = FALSE;
 
-$pregquery = "";
 // Check for invalid days
 $m_days = 31;
 $m_name = strtolower($month);
@@ -283,31 +303,65 @@ If (!isset($datearray[4]["year"]) && $USE_RTL_FUNCTIONS) {
 
  	// for year
 	if ($action=="year") {
-		$pattern="[ - |-|and|bet|from|to|abt|bef|aft|cal|cir|est|apx|int]";
-		$a=preg_split($pattern, $year_text);
-		if ($a[0]!="") $gstartyear = $a[0];
-		if (isset($a[1]))
-			if ($a[0]!="") $gendyear = $a[1];
-			else {
-				$gstartyear = $a[1];
-				if (isset($a[2])) $gendyear = $a[2];
-				else $gendyear = $a[1];
-			}
-		else $gendyear = $a[0];
+		$pattern="[ - |-| |and|bet|from|to|abt|bef|aft|cal|cir|est|apx|int]";
+		$a=preg_split($pattern, str2lower($year_text));
 
+$gstartmonth = 01;
+$gendmonth = 12;
+$gendday = 31;
+
+if (!empty($a[0])) {
+	$gstartyear=$a[0];
+	if (!empty($a[1])) $gendyear=$a[1];
+}
+else if (isset($a[2]) && empty($a[0]) && empty($a[1])){
+        if (substr($a[2],0,1)>='0' and substr($a[2],0,1)<='9') $gstartyear=$a[2];
+        else if (!empty($a[2]) && !empty($a[3])) {
+	        $gstartyear=$a[3];
+	        $gstartmonth=$monthtonum[str2lower(trim($a[2]))];
+        	$gendmonth=$gstartmonth; 
+        	if ($gendmonth == 4 || $gendmonth == 6 || $gendmonth == 9 || $gendmonth == 11) $gendday = 30;
+        	if ($gendmonth == 2) {
+        		// calculate leap year
+				if (strlen($gstartyear)<5 && preg_match("/[\d]{2,4}/", $gstartyear)) {
+					if (checkdate(2,29,$gstartyear)) $leap = TRUE;
+					else $leap = FALSE;
+				}
+				else $leap = FALSE;
+				if (!$leap) $gendday = 28;
+				else $gendday = 29;
+        	}
+    	}
+}
+if (empty($gendyear)) $gendyear=$gstartyear;
+
+//		if ($a[0]!="") $gstartyear = $a[0];
+//		if (isset($a[1]))
+//			if ($a[0]!="") $gendyear = $a[1];
+//			else {
+//				$gstartyear = $a[1];
+//				if (isset($a[2])) $gendyear = $a[2];
+//				else $gendyear = $a[1];
+//			}
+//		else $gendyear = $a[0];
+
+		$datearray[0]["year"]  = $gstartyear; 
+		$datearray[1]["year"]  = $gstartyear; 
+		$datearray[2]["year"]  = $gstartyear; 
+		
  		$datearray[3]["day"]   = 01;
- 		$datearray[3]["mon"]   = 01;
+ 		$datearray[3]["mon"]   = $gstartmonth; 
  		$datearray[3]["year"]  = $gstartyear;
- 		$datearray[4]["day"]   = 31;
- 		$datearray[4]["mon"]   = 12;
+ 		$datearray[4]["day"]   = $gendday;
+ 		$datearray[4]["mon"]   = $gendmonth;
  		$datearray[4]["year"]  = $gendyear;
 	}
 
-    $date   	= gregorianToJewishGedcomDate($datearray);
+    $date   	= gregorianToJewishGedcomDate($datearray); 
     $hDay   	= $date[0]["day"];
     $hMonth 	= $date[0]["month"];
     $CalYear	= $date[0]["year"];
-
+    
     if (!isset($queryhb) && $action!="year") {   //---- ?????? does not work - see I90 in 1042 @@@@@
     	if ($hDay<10) {
 			$preghbquery = "2 DATE[^\n]*[ |0]$hDay $hMonth";
@@ -366,6 +420,7 @@ else if ($action=="year") {
 	print "<tr><td class=\"topbottombar\">";
 	print get_changed_date(" $year_text ");
 	if ($CALENDAR_FORMAT=="gregorian" && $USE_RTL_FUNCTIONS && $HEBREWFOUND[$GEDCOM] == true) {
+		
 		$hdd = $date[3]["day"];
 		$hmm = $date[3]["month"];
 		$hstartyear = $date[3]["year"];
@@ -403,13 +458,13 @@ if ($view!="preview") {
 //	print "<a href=\"calendar.php?filterev=$filterev&amp;filterof=$filterof&amp;filtersx=$filtersx\"><b>".get_changed_date("$Dd $Mm $Yy")."</b></a> | ";
 	//-- for alternate calendars the year is needed
   	if ($CALENDAR_FORMAT!="gregorian" || ($USE_RTL_FUNCTIONS && $HEBREWFOUND[$GEDCOM] == true)) $datestr = "$Dd $Mm $Yy";
-// 	if ($CALENDAR_FORMAT!="gregorian") $datestr = "$Dd $Mm $Yy"; // MA @@@
 	else $datestr = "$Dd $Mm";
 	print "<a href=\"calendar.php?filterev=$filterev&amp;filterof=$filterof&amp;filtersx=$filtersx&amp;year=$year\"><b>".get_changed_date($datestr);
 	if ($USE_RTL_FUNCTIONS && $HEBREWFOUND[$GEDCOM] == true) {
 		$hdatestr = "@#DHEBREW@ $currhDay $currhMon $currhYear";
 		print " / ".get_changed_date($hdatestr);
 	}
+	
 	print "</b></a> | ";
 	print "</td>\n";
 
@@ -468,7 +523,9 @@ if ($view!="preview") {
 		print "</select>\n";
 	}
 	else {
-		print "<td class=\"descriptionbox vmiddle\">".$pgv_lang["showcal"]."</td>\n";
+		print "<td class=\"descriptionbox vmiddle\">";
+		print_help_link("annivers_show_help", "qm", "show");
+		print $pgv_lang["show"].":&nbsp;</td>\n";
 		print "<td colspan=\"5\" class=\"optionbox vmiddle\">";
 		if ($filterof=="all") print "<span class=\"error\">".$pgv_lang["all_people"]. "</span> | ";
 		else {
@@ -605,7 +662,7 @@ if (($action=="today") || ($action=="year")) {
 	$myindilist = array();
 	$myfamlist = array();
 
-	if ($action=="year"){
+	if ($action=="year"){		
 		if (isset($year_query)) $year=$year_query;
 		$pregquery = "2 DATE[^\n]*(bet|$year)";
 		if ($REGEXP_DB) $query = "2 DATE[^\n]*(bet|$year)";
@@ -617,6 +674,7 @@ if (($action=="today") || ($action=="year")) {
 		if ($endyear>0){
 			$myindilist = search_indis_year_range($startyear,$endyear);
 			$myfamlist = search_fams_year_range($startyear,$endyear);
+			
 		}
 		if ($USE_RTL_FUNCTIONS && isset($hstartyear) && isset($hendyear)) {
 			$myindilist1 = search_indis_year_range($hstartyear,$hendyear);
@@ -626,6 +684,7 @@ if (($action=="today") || ($action=="year")) {
 			$myfamlist = pgv_array_merge($myfamlist, $myfamlist1);
 		}
 	}
+	
 	if ($endyear==0) {
 		if ($USE_RTL_FUNCTIONS) {
 			$myindilist1 = search_indis($query);
@@ -676,7 +735,6 @@ if (($action=="today") || ($action=="year")) {
 	$text_indi="";
 	$sx=1;
 	foreach($myindilist as $gid=>$indi) {
-		//print $gid."<br />";
 		if (!empty($filtersx)) $sx = preg_match("/1 SEX $filtersx/i", $indi["gedcom"]);
 		if ((($filterof!="living")||(is_dead_id($gid)!=1)) && $sx>0) {
 			$filterout=false;
@@ -974,6 +1032,7 @@ if (($action=="today") || ($action=="year")) {
 	}
 
 	// Print the day/year list(s)
+#	/** DEPRECATED
 	if (!empty($text_indi) || !empty($text_fam) || $count_private_indi>0 || $count_private_fam>0) {
 		print "\n\t\t<table class=\"center $TEXT_DIRECTION\">\n\t\t<tr>";
 		if (!empty($text_indi) || ($count_private_indi>0)) {
@@ -1055,6 +1114,23 @@ if (($action=="today") || ($action=="year")) {
 		print $pgv_lang["no_results"];
 		print "</i><br />\n\t\t</td></tr>";
 	}
+#	**/
+	/** Not ready
+	$legend = "";
+	if ($action=="today") {
+		$legend = " : ".$day." ".$pgv_lang[strtolower($month)];
+		if (isset($hDay)) $legend .= " / ".$hDay." ".$hMonth;
+	}
+	if ($action=="year") {
+		$legend = " : ".$year;
+		if (isset($hYear)) $legend .= " / ".$hYear;
+	}
+	//-- indilist
+	echo "<pre>"; print_r ($myindilist); echo "</pre>";
+	print_indi_table($myindilist, $pgv_lang["individuals"]." ".$legend);
+	//-- famlist
+	print_fam_table($myfamlist, $pgv_lang["families"]." ".$legend);
+	**/
 	if ($view=="preview") print "<tr><td>";
 }
 else if ($action=="calendar") {

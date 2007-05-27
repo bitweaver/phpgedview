@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.3 2006/10/04 12:07:53 lsces Exp $
+ * @version $Id: help_text.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
  */
 
 require "config.php";
@@ -43,7 +43,8 @@ $actione = "";
 if (isset($action)) $actione = $action;
 if (($help == "help_login_register.php")&& ($actione == "pwlost")) $help = "help_login_lost_pw.php";
 if ($help == "help_contents_help") {
-	if (userIsAdmin(getUserName())) {
+	global $gBitUser;
+	if ( $gBitUser->IsAdmin() ) {
 		$help = "admin_help_contents_help";
 		print $pgv_lang["admin_help_contents_head_help"];
 	}
