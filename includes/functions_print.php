@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.6 2007/05/27 14:45:32 lsces Exp $
+ * @version $Id: functions_print.php,v 1.7 2007/05/27 17:46:58 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -1630,14 +1630,14 @@ function print_privacy_error($username) {
  * @param boolean $output	return the text instead of printing it
  */
 function print_help_link($help, $helpText, $show_desc="", $use_print_text=false, $return=false) {
-	global $SHOW_CONTEXT_HELP, $pgv_lang,$view, $PGV_USE_HELPIMG, $PGV_IMAGES, $PGV_IMAGE_DIR;
+	global $SHOW_CONTEXT_HELP, $pgv_lang,$view, $PGV_USE_HELPIMG, $PGV_IMAGES, $PGV_IMAGE_DIR, $gBitUser;
 
 	if ($PGV_USE_HELPIMG) $sentense = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["help"]["small"]."\" class=\"icon\" width=\"15\" height=\"15\" alt=\"\" />";
 	else $sentense = $pgv_lang[$helpText];
 	$output = "";
 	if (($view!="preview")&&($_SESSION["show_context_help"])){
 		if ($helpText=="qm_ah"){
-			if (userIsAdmin(getUserName())){
+			if ($gBitUser->isAdmin()){
 				 $output .= " <a class=\"error help\" tabindex=\"0\" href=\"javascript:// ";
 				 if ($show_desc == "") $output .= $help;
 				 else if ($use_print_text) $output .= print_text($show_desc, 0, 1);

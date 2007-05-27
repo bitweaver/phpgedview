@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_privacy.php,v 1.3 2007/05/27 14:45:31 lsces Exp $
+ * @version $Id: functions_privacy.php,v 1.4 2007/05/27 17:46:58 lsces Exp $
  * @package PhpGedView
  * @subpackage Privacy
  */
@@ -874,7 +874,7 @@ function getUserAccessLevel($username="") {
  * @return int		Allowed or not allowed
  */
 function FactEditRestricted($pid, $factrec) {
-	global $GEDCOM;
+	global $GEDCOM, $gBitUser;
 	$user = getUser(getuserName());
 	$myindi = "";
 	if (isset($user["gedcomid"][$GEDCOM])) trim($myindi = $user["gedcomid"][$GEDCOM]);
@@ -883,13 +883,13 @@ function FactEditRestricted($pid, $factrec) {
 	if ($ct > 0) {
 		$match[1] = strtolower(trim($match[1]));
 		if ($match[1] == "none") return false;
-		if ((($match[1] == "confidential") || ($match[1] == "locked")) && ((userIsAdmin(getUserName())) || (userGedcomAdmin(getUserName())))) return false;
-		if (($match[1] == "privacy") && ((userIsAdmin(getUserName())) || ($myindi == $pid) || (userGedcomAdmin(getUserName())))) return false;
+		if ((($match[1] == "confidential") || ($match[1] == "locked")) && (($gBitUser->isAdmin()) || (userGedcomAdmin(getUserName())))) return false;
+		if (($match[1] == "privacy") && (($gBitUser->isAdmin()) || ($myindi == $pid) || (userGedcomAdmin(getUserName())))) return false;
 		if (substr($pid,0,1) == "F"){
 			$famrec = find_family_record($pid);
 			$parents = find_parents_in_record($famrec);
-			if (($match[1] == "privacy") && ((userIsAdmin(getUserName())) || ($myindi == $parents["HUSB"]) || (userGedcomAdmin(getUserName())))) return false;
-			if (($match[1] == "privacy") && ((userIsAdmin(getUserName())) || ($myindi == $parents["WIFE"]) || (userGedcomAdmin(getUserName())))) return false;
+			if (($match[1] == "privacy") && (($gBitUser->isAdmin()) || ($myindi == $parents["HUSB"]) || (userGedcomAdmin(getUserName())))) return false;
+			if (($match[1] == "privacy") && (($gBitUser->isAdmin()) || ($myindi == $parents["WIFE"]) || (userGedcomAdmin(getUserName())))) return false;
 		}
 	}
 	return true;

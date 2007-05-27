@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.12 2006/11/02 22:47:47 lsces Exp $
+ * $Id: authentication.php,v 1.13 2007/05/27 17:46:58 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -142,7 +142,7 @@ function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
 
 	$listHash['last_get'] = 3600;
 	$online_users = $gBitUser->getUserActivity( $listHash );
-
+vd($online_users);
 	$users = array();
 	foreach( $online_users as $user_row ) {
 		$user = array();
@@ -151,37 +151,6 @@ function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
 		$user["lastname"]=$user_row["real_name"];
 		$user["gedcomid"]="";
 		$user["rootid"]=1;
-/*		$user["password"]=$user_row["u_password"];
-		if ($user_row["u_canadmin"]=='Y') $user["canadmin"]=true;
-		else $user["canadmin"]=false;
-		$user["canedit"]=unserialize($user_row["u_canedit"]);
-		-- convert old <3.1 access levels to the new 3.2 access levels
-		foreach($user["canedit"] as $key=>$value) {
-			if ($value=="no") $user["canedit"][$key] = "access";
-			if ($value=="yes") $user["canedit"][$key] = "edit";
-		}
-		$user["email"] = $user_row["u_email"];
-		$user["verified"] = $user_row["u_verified"];
-		$user["verified_by_admin"] = $user_row["u_verified_by_admin"];
-		$user["language"] = $user_row["u_language"];
-		$user["pwrequested"] = $user_row["u_pwrequested"];
-		$user["reg_timestamp"] = $user_row["u_reg_timestamp"];
-		$user["reg_hashcode"] = $user_row["u_reg_hashcode"];
-		$user["theme"] = $user_row["u_theme"];
-		$user["loggedin"] = $user_row["u_loggedin"];
-		$user["sessiontime"] = $user_row["u_sessiontime"];
-		$user["contactmethod"] = $user_row["u_contactmethod"];
-		if ($user_row["u_visibleonline"]!='N') $user["visibleonline"] = true;
-		else $user["visibleonline"] = false;
-		if ($user_row["u_editaccount"]!='N') $user["editaccount"] = true;
-		else $user["editaccount"] = false;
-		$user["default_tab"] = $user_row["u_defaulttab"];
-		$user["comment"] = $user_row["u_comment"];
-		$user["comment_exp"] = $user_row["u_comment_exp"];
-		$user["sync_gedcom"] = $user_row["u_sync_gedcom"];
-		$user["relationship_privacy"] = $user_row["u_relationship_privacy"];
-		$user["max_relation_path"] = $user_row["u_max_relation_path"];
-*/
 		$user["auto_accept"] = false;
 		$users[$user_row["login"]] = $user;
 	}
@@ -206,18 +175,6 @@ function getUserName() {
 }
 
 /**
- * check if given username is an admin
- *
- * takes a username and checks if the
- * user has administrative privileges
- * to change the configuration files
- */
-function userIsAdmin($username) {
-	global $gBitUser;
-	return $gBitUser->IsAdmin();
-}
-
-/**
  * check if given username is an admin for the current gedcom
  *
  * takes a username and checks if the
@@ -225,12 +182,12 @@ function userIsAdmin($username) {
  * to change the configuration files for the currently active gedcom
  */
 function userGedcomAdmin($username, $ged="") {
-	global $GEDCOM;
+	global $GEDCOM, $gBitUser;
 
 	if (empty($ged)) $ged = $GEDCOM;
 
 	if ($_SESSION['cookie_login']) return false;
-	if (userIsAdmin($username)) return true;
+	if ($gBitUser->isAdmin()) return true;
 	if (empty($username)) return false;
 	$user = getUser($username);
 	if (!$user) return false;
@@ -250,9 +207,9 @@ function userGedcomAdmin($username, $ged="") {
  * @return boolean true if user can access false if they cannot
  */
 function userCanAccess($username) {
-	global $GEDCOM;
+	global $GEDCOM, $gBitUser;
 
-	if (userIsAdmin($username)) return true;
+	if ($gBitUser->isAdmin()) return true;
 	if (empty($username)) return false;
 	$user = getUser($username);
 	if (!$user) return false;
@@ -272,10 +229,10 @@ function userCanAccess($username) {
  * @return boolean true if user can edit false if they cannot
  */
 function userCanEdit($username) {
-	global $ALLOW_EDIT_GEDCOM, $GEDCOM;
+	global $ALLOW_EDIT_GEDCOM, $GEDCOM, $gBitUser;
 
 	if (!$ALLOW_EDIT_GEDCOM) return false;
-	if (userIsAdmin($username)) return true;
+	if ($gBitUser->isAdmin()) return true;
 	if (empty($username)) return false;
 	$user = getUser($username);
 	if (!$user) return false;
@@ -296,10 +253,10 @@ function userCanEdit($username) {
  * @return boolean true if user can accept false if user cannot accept
  */
 function userCanAccept($username) {
-	global $ALLOW_EDIT_GEDCOM, $GEDCOM;
+	global $ALLOW_EDIT_GEDCOM, $GEDCOM, $gBitUser;
 
 	if ($_SESSION['cookie_login']) return false;
-	if (userIsAdmin($username)) return true;
+	if ($gBitUser->isAdmin()) return true;
 	if (!$ALLOW_EDIT_GEDCOM) return false;
 	if (empty($username)) return false;
 	$user = getUser($username);

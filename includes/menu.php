@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.6 2006/10/28 21:59:40 lsces Exp $
+ * @version $Id: menu.php,v 1.7 2007/05/27 17:46:58 lsces Exp $
  */
 
 class Menu
@@ -348,7 +348,7 @@ class MenuBar
 	 */
 	function &getMygedviewMenu() {
 		global $GEDCOMS, $MEDIA_DIRECTORY, $MULTI_MEDIA;
-		global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $GEDCOM, $pgv_lang;
+		global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $GEDCOM, $pgv_lang, $gBitUser;
 		if ($TEXT_DIRECTION=="rtl") $ff="_rtl"; else $ff="";
 		//-- main menu
 		$menu = new Menu($pgv_lang["mygedview"], "index.php?command=user", "down");
@@ -390,7 +390,7 @@ class MenuBar
 				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
 				$menu->addSubmenu($submenu);
 			}
-			if ((userIsAdmin($username)) || (userGedcomAdmin($username, $GEDCOM))){
+			if (($gBitUser->isAdmin()) || (userGedcomAdmin($username, $GEDCOM))){
 				$menu->addSeperator();
 				//-- admin submenu
 				$submenu = new Menu($pgv_lang["admin"], "admin.php");

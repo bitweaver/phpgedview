@@ -942,7 +942,7 @@ class SearchControllerRoot extends BaseController {
 
 	function printResults() {
 		include_once ("includes/functions_print_lists.php");
-		global $GEDCOM, $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $global_facts;
+		global $GEDCOM, $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $global_facts, $gBitUser;
 		// ---- section to search and display results on a general keyword search
 		if ($this->action == "general") {
 			if ((isset ($this->query)) && ($this->query != "")) {
@@ -952,7 +952,7 @@ class SearchControllerRoot extends BaseController {
 				$skiptags = "_UID";
 
 				// If not admin, also hide searches in RESN tags
-				if (!userIsAdmin(getUserName())) $skiptags .= ", RESN";
+				if (!$gBitUser->isAdmin()) $skiptags .= ", RESN";
 
 				// Add the optional tags
 				if ($this->tagfilter == "on") $skiptags .= ", _PGVU, FILE, FORM, TYPE, CHAN, SUBM, REFN";
