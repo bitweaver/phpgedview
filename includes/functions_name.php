@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
+ * @version $Id: functions_name.php,v 1.4 2007/05/27 10:31:39 lsces Exp $
  */
 
 /**
@@ -63,7 +63,7 @@ function get_common_surnames($min) {
 	global $GEDCOM, $indilist, $CONFIGURED, $GEDCOMS, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
 
 	$surnames = array();
-	if (!$CONFIGURED || !adminUserExists() || (count($GEDCOMS)==0) || (!check_for_import($GEDCOM))) return $surnames;
+	if (!$CONFIGURED || (count($GEDCOMS)==0) || (!check_for_import($GEDCOM))) return $surnames;
 	//-- this line causes a bug where the common surnames list is not properly updated
 	// if ((!isset($indilist))||(!is_array($indilist))) return $surnames;
 	$surnames = get_top_surnames(100);

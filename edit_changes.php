@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_changes.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: edit_changes.php,v 1.4 2007/05/27 10:31:35 lsces Exp $
  */
 
 /**
@@ -38,7 +38,6 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
-require "config.php";
 require "includes/functions_edit.php";
 require "includes/functions_import.php";
 require $INDEX_DIRECTORY."pgv_changes.php";

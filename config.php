@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.5 2006/10/04 12:07:53 lsces Exp $
+ * @version $Id: config.php,v 1.6 2007/05/27 10:31:35 lsces Exp $
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -35,7 +35,6 @@ if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
 }
 
 $INDEX_DIRECTORY = "./index/";					//-- Readable and Writeable Directory to store index files (include the trailing "/")
-$AUTHENTICATION_MODULE = "authentication.php";	//-- File that contains authentication functions
 $PGV_STORE_MESSAGES = true;						//-- allow messages sent to users to be stored in the PGV system
 $PGV_SIMPLE_MAIL = true;						//-- allow admins to set this so that they can override the name <emailaddress> combination in the emails
 $USE_REGISTRATION_MODULE = false;				//-- turn on the user self registration module

@@ -138,7 +138,6 @@ $pgv_lang["ZOOM_BOXES"]			= "Çizgelerdeki kutuların büyültüp küçültmesin
 $pgv_lang["LINK_ICONS"]			= "Çizgelerdeki bağlantı kutularının otomatik açılmasına izin ver";
 $pgv_lang["ABBREVIATE_CHART_LABELS"]			= "Çizgelerdeki hadise başlıklarını kısalt";
 $pgv_lang["SHOW_PARENTS_AGE"]			= "Ebeveyn yaşlarını çocukların doğum tarihinin yanında göster";
-$pgv_lang["AUTHENTICATION_MODULE"]	= "Dogrulama modülü dosyası";
 $pgv_lang["HIDE_LIVE_PEOPLE"]		= "Mahremiyet kurallarını kullan";
 $pgv_lang["REQUIRE_AUTHENTICATION"]	= "Ziyaretçi denetlemesini kullan";
 $pgv_lang["WELCOME_TEXT_AUTH_MODE"]	= "Ziyaretçi denetlemesi yapılacaksa giriş sayfasında kullanılacak karşılama mesajı";

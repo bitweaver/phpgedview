@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Edit
  * @see functions_places.php
- * @version $Id: functions_edit.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: functions_edit.php,v 1.3 2007/05/27 10:31:40 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -142,7 +142,7 @@ function get_prev_xref($gid, $type='INDI') {
  * @param string $linkpid	Tells whether or not this record change is linked with the record change of another record identified by $linkpid
  */
 function replace_gedrec($gid, $gedrec, $chan=true, $linkpid='') {
-	global $fcontents, $GEDCOM, $pgv_changes, $manual_save;
+	global $fcontents, $GEDCOM, $pgv_changes, $manual_save, $gBitUser;
 
 	$gid = strtoupper($gid);
 	$pos1 = strpos($fcontents, "0 @".$gid."@");
@@ -193,7 +193,7 @@ function replace_gedrec($gid, $gedrec, $chan=true, $linkpid='') {
 			$change["gedcom"] = $GEDCOM;
 			$change["type"] = "replace";
 			$change["status"] = "submitted";
-			$change["user"] = getUserName();
+			$change["user"] = $gBitUser->mUsername;
 			$change["time"] = time();
 			if (!empty($linkpid)) $change["linkpid"] = $linkpid;
 			$change["undo"] = $undo;
@@ -201,7 +201,7 @@ function replace_gedrec($gid, $gedrec, $chan=true, $linkpid='') {
 			$pgv_changes[$gid."_".$GEDCOM][] = $change;
 		}
 		if (!isset($manual_save) || ($manual_save==false)) {
-			AddToChangeLog("Replacing gedcom record $gid ->" . getUserName() ."<-");
+			AddToChangeLog("Replacing gedcom record $gid ->" . $gBitUser->mUsername ."<-");
 			return write_file();
 		}
 		else return true;
@@ -209,11 +209,12 @@ function replace_gedrec($gid, $gedrec, $chan=true, $linkpid='') {
 	return false;
 }
 
-//-------------------------------------------- append_gedrec
-//-- this function will append a new gedcom record at
-//-- the end of the gedcom file.
+/**-------------------------------------------- append_gedrec
+ *-- this function will append a new gedcom record at
+ *-- the end of the gedcom file.
+ */
 function append_gedrec($gedrec, $chan=true, $linkpid='') {
-	global $fcontents, $GEDCOM, $pgv_changes, $manual_save;
+	global $fcontents, $GEDCOM, $pgv_changes, $manual_save, $gBitUser;
 
 	if (($gedrec = check_gedcom($gedrec, $chan))!==false) {
 		$ct = preg_match("/0 @(.*)@ (.*)/", $gedrec, $match);
@@ -235,14 +236,14 @@ function append_gedrec($gedrec, $chan=true, $linkpid='') {
 			$change["gedcom"] = $GEDCOM;
 			$change["type"] = "append";
 			$change["status"] = "submitted";
-			$change["user"] = getUserName();
+			$change["user"] = $gBitUser->mUsername;
 			$change["time"] = time();
 			if (!empty($linkpid)) $change["linkpid"] = $linkpid;
 			$change["undo"] = "";
 			if (!isset($pgv_changes[$xref."_".$GEDCOM])) $pgv_changes[$xref."_".$GEDCOM] = array();
 			$pgv_changes[$xref."_".$GEDCOM][] = $change;
 		}
-		AddToChangeLog("Appending new $type record $xref ->" . getUserName() ."<-");
+		AddToChangeLog("Appending new $type record $xref ->" . $gBitUser->mUsername ."<-");
 		if (!isset($manual_save) || ($manual_save==false)) {
 			if (write_file()) return $xref;
 			else return false;
@@ -256,7 +257,7 @@ function append_gedrec($gedrec, $chan=true, $linkpid='') {
 //-- this function will delete the gedcom record with
 //-- the given $gid
 function delete_gedrec($gid, $linkpid='') {
-	global $fcontents, $GEDCOM, $pgv_changes, $manual_save;
+	global $fcontents, $GEDCOM, $pgv_changes, $manual_save, $gBitUser;
 	$pos1 = strpos($fcontents, "0 @$gid@");
 	if ($pos1===false) {
 		//-- first check if the record is not already deleted
@@ -265,7 +266,7 @@ function delete_gedrec($gid, $linkpid='') {
 			if ($change["type"]=="delete") return true;
 		}
 		print "ERROR 4: Could not find gedcom record with xref:$gid Line ".__LINE__."\n";
-		AddToChangeLog("ERROR 4: Could not find gedcom record with xref:$gid Line ".__LINE__."->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 4: Could not find gedcom record with xref:$gid Line ".__LINE__."->" . $gBitUser->mUsername ."<-");
 		return false;
 	}
 	$pos2 = strpos($fcontents, "\n0", $pos1+1);
@@ -283,14 +284,14 @@ function delete_gedrec($gid, $linkpid='') {
 		$change["gedcom"] = $GEDCOM;
 		$change["type"] = "delete";
 		$change["status"] = "submitted";
-		$change["user"] = getUserName();
+		$change["user"] = $gBitUser->mUsername;
 		$change["time"] = time();
 		if (!empty($linkpid)) $change["linkpid"] = $linkpid;
 		$change["undo"] = $undo;
 		if (!isset($pgv_changes[$gid."_".$GEDCOM])) $pgv_changes[$gid."_".$GEDCOM] = array();
 		$pgv_changes[$gid."_".$GEDCOM][] = $change;
 	}
-	AddToChangeLog("Deleting gedcom record $gid ->" . getUserName() ."<-");
+	AddToChangeLog("Deleting gedcom record $gid ->" . $gBitUser->mUsername ."<-");
 	if (!isset($manual_save)) return write_file();
 	else return true;
 }
@@ -298,7 +299,7 @@ function delete_gedrec($gid, $linkpid='') {
 //-------------------------------------------- check_gedcom
 //-- this function will check a GEDCOM record for valid gedcom format
 function check_gedcom($gedrec, $chan=true) {
-	global $pgv_lang, $DEBUG, $USE_RTL_FUNCTIONS;
+	global $pgv_lang, $DEBUG, $USE_RTL_FUNCTIONS, $gBitUser;
 
 	$gedrec = trim(stripslashes($gedrec));
 
@@ -314,7 +315,7 @@ function check_gedcom($gedrec, $chan=true) {
 	$ct = preg_match("/0 @(.*)@ (.*)/", $gedrec, $match);
 	if ($ct==0) {
 		print "ERROR 20: Invalid GEDCOM 5.5 format.\n";
-		AddToChangeLog("ERROR 20: Invalid GEDCOM 5.5 format.->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 20: Invalid GEDCOM 5.5 format.->" . $gBitUser->mUsername ."<-");
 		if ($GLOBALS["DEBUG"]) {
 			print "<pre>$gedrec</pre>\n";
 			print debug_print_backtrace();
@@ -330,14 +331,14 @@ function check_gedcom($gedrec, $chan=true) {
 			$newgedrec = substr($gedrec, 0, $pos1);
 			$newgedrec .= "1 CHAN\r\n2 DATE ".strtoupper(date("d M Y"))."\r\n";
 			$newgedrec .= "3 TIME ".date("H:i:s")."\r\n";
-			$newgedrec .= "2 _PGVU ".getUserName()."\r\n";
+			$newgedrec .= "2 _PGVU ".$gBitUser->mUsername."\r\n";
 			$newgedrec .= substr($gedrec, $pos2);
 			$gedrec = $newgedrec;
 		}
 		else {
 			$newgedrec = "\r\n1 CHAN\r\n2 DATE ".strtoupper(date("d M Y"))."\r\n";
 			$newgedrec .= "3 TIME ".date("H:i:s")."\r\n";
-			$newgedrec .= "2 _PGVU ".getUserName();
+			$newgedrec .= "2 _PGVU ".$gBitUser->mUsername;
 			$gedrec .= $newgedrec;
 		}
 	}
@@ -363,7 +364,7 @@ function check_gedcom($gedrec, $chan=true) {
  * @return boolean	true if undo successful
  */
 function undo_change($cid, $index) {
-	global $fcontents, $pgv_changes, $GEDCOMS, $GEDCOM, $manual_save;
+	global $fcontents, $pgv_changes, $GEDCOMS, $GEDCOM, $manual_save, $gBitUser;
 
 	if (isset($pgv_changes[$cid])) {
 		$changes = $pgv_changes[$cid];
@@ -381,7 +382,7 @@ function undo_change($cid, $index) {
 			$pos1 = strpos($fcontents, "0 @".$change["gid"]."@");
 			if ($pos1===false) {
 				print "ERROR 4: Could not find gedcom record with gid:".$change["gid"]."\n";
-				AddToChangeLog("ERROR 4: Could not find gedcom record with gid:".$change["gid"]." ->" . getUserName() ."<-");
+				AddToChangeLog("ERROR 4: Could not find gedcom record with gid:".$change["gid"]." ->" . $gBitUser->mUsername ."<-");
 				return false;
 			}
 			$pos2 = strpos($fcontents, "\n0", $pos1+1);
@@ -419,7 +420,7 @@ function undo_change($cid, $index) {
 			}
 			if (count($pgv_changes[$cid])==0) unset($pgv_changes[$cid]);
 		}
-		AddToChangeLog("Undoing change $cid - $index ".$change["type"]." ->" . getUserName() ."<-");
+		AddToChangeLog("Undoing change $cid - $index ".$change["type"]." ->" . $gBitUser->mUsername ."<-");
 		if (!isset($manual_save) || ($manual_save==false)) {
 			return write_file();
 		}
@@ -432,33 +433,33 @@ function undo_change($cid, $index) {
 //-- this function writes the $fcontents back to the
 //-- gedcom file
 function write_file() {
-	global $fcontents, $GEDCOMS, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY;
+	global $fcontents, $GEDCOMS, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY, $gBitUser;
 
 	if (preg_match("/0 TRLR/", $fcontents)==0) $fcontents.="0 TRLR\n";
 	//-- write the gedcom file
 	if (!is_writable($GEDCOMS[$GEDCOM]["path"])) {
 		print "ERROR 5: GEDCOM file is not writable.  Unable to complete request.\n";
-		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . $gBitUser->mUsername ."<-");
 		return false;
 	}
 	lock_file();
 	$fp = fopen($GEDCOMS[$GEDCOM]["path"], "wb");
 	if ($fp===false) {
 		print "ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request.\n";
-		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . $gBitUser->mUsername ."<-");
 		return false;
 	}
 // 	$fl = flock($fp, LOCK_EX);
 // 	if (!$fl) {
 // 		print "ERROR 7: Unable to obtain file lock.\n";
-// 		AddToChangeLog("ERROR 7: Unable to obtain file lock. ->" . getUserName() ."<-");
+// 		AddToChangeLog("ERROR 7: Unable to obtain file lock. ->" . $gBitUser->mUsername ."<-");
 // 		fclose($fp);
 // 		return false;
 // 	}
 	$fw = fwrite($fp, $fcontents);
 	if ($fw===false) {
 		print "ERROR 7: Unable to write to GEDCOM file.\n";
-		AddToChangeLog("ERROR 7: Unable to write to GEDCOM file. ->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 7: Unable to write to GEDCOM file. ->" . $gBitUser->mUsername ."<-");
 //		$fl = flock($fp, LOCK_UN);
 		fclose($fp);
 		return false;
@@ -466,7 +467,7 @@ function write_file() {
 //	$fl = flock($fp, LOCK_UN);
 	fclose($fp);
 	unlock_file();
-	$logline = AddToLog($GEDCOMS[$GEDCOM]["path"]." updated by >".getUserName()."<");
+	$logline = AddToLog($GEDCOMS[$GEDCOM]["path"]." updated by >".$gBitUser->mUsername."<");
  	if (!empty($COMMIT_COMMAND)) check_in($logline, basename($GEDCOMS[$GEDCOM]["path"]), dirname($GEDCOMS[$GEDCOM]["path"]));
 
 	return write_changes();
@@ -497,7 +498,7 @@ function file_locked_wait() {
 	if ($sleep_count>100) {
 		print "ERROR 30: Unable to obtain lock on file after 10 seconds.";
 		debug_print_backtrace();
-		AddToChangeLog("ERROR 30: Unable to obtain lock on file after 10 seconds. ->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 30: Unable to obtain lock on file after 10 seconds. ->" . $gBitUser->mUsername ."<-");
 		exit;
 	}
 }

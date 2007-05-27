@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.5 2006/10/28 20:17:04 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.6 2007/05/27 10:31:35 lsces Exp $
  */
 
 /**
@@ -131,7 +131,7 @@ else {
 
 function print_gedcom() {
 	global $GEDCOMS, $GEDCOM, $ged, $convert, $remove, $zip, $VERSION, $VERSION_RELEASE, $pgv_lang, $gedout;
-	global $privatize_export, $privatize_export_level;
+	global $privatize_export, $privatize_export_level, $gGedcom;
 
 	if ($privatize_export == "yes") {
 		create_export_user($privatize_export_level);
@@ -239,10 +239,10 @@ function print_gedcom() {
 		}
 	}
 	
-	$sql = "SELECT o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=".$GEDCOMS[$GEDCOM]['id']." ORDER BY m_media";
+	$sql = "SELECT m_gedrec FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=".$GEDCOMS[$GEDCOM]['id']." ORDER BY m_media";
 	$res = $gGedcom->mDb->query($sql); 
 	while($row = $res->fetchRow()) {
-		$rec = trim($row['o_gedcom'])."\r\n";
+		$rec = trim($row['m_gedrec'])."\r\n";
 		$rec = remove_custom_tags($rec, $remove);
 		if ($privatize_export == "yes") $rec = privatize_gedcom($rec);
 		if ($convert=="yes") $rec = utf8_decode($rec);

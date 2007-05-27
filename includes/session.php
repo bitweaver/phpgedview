@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.10 2006/10/29 23:18:39 lsces Exp $
+ * @version $Id: session.php,v 1.11 2007/05/27 10:31:39 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -296,7 +296,6 @@ $CONFIG_VARS = array(
 	"DBNAME",
 	"TBLPREFIX",
 	"INDEX_DIRECTORY",
-	"AUTHENTICATION_MODULE",
 	"USE_REGISTRATION_MODULE",
 	"ALLOW_USER_THEMES",
 	"ALLOW_REMEMBER_ME",

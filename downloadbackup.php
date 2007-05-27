@@ -21,9 +21,20 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadbackup.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: downloadbackup.php,v 1.3 2007/05/27 10:31:36 lsces Exp $
  */
 
+/**
+ * load the main configuration and context
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require "config.php";
 
 if ((!userGedcomAdmin(getUserName()))||(empty($fname))) {

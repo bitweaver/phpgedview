@@ -32,7 +32,6 @@ if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
  * These need replacing with bitweaver 
  */
 $INDEX_DIRECTORY = "./index/";					//-- Readable and Writeable Directory to store index files (include the trailing "/")
-$AUTHENTICATION_MODULE = "authentication.php";	//-- File that contains authentication functions
 $PGV_STORE_MESSAGES = true;						//-- allow messages sent to users to be stored in the PGV system
 $PGV_SIMPLE_MAIL = true;						//-- allow admins to set this so that they can override the name <emailaddress> combination in the emails
 $USE_REGISTRATION_MODULE = false;				//-- turn on the user self registration module
@@ -325,7 +324,6 @@ $CONFIG_VARS = array(
 	"DBNAME",
 	"TBLPREFIX",
 	"INDEX_DIRECTORY",
-	"AUTHENTICATION_MODULE",
 	"USE_REGISTRATION_MODULE",
 	"ALLOW_USER_THEMES",
 	"ALLOW_REMEMBER_ME",

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_interface.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: edit_interface.php,v 1.4 2007/05/27 10:31:35 lsces Exp $
  */
 
 /**
@@ -58,6 +58,7 @@ if (isset($text)){
 	}
 }
 //$DEBUG=1;
+if ( isset($_POST['action'] ) ) $action=$_POST['action'];
 if (!isset($action)) $action="";
 if (!isset($linenum)) $linenum="";
 $uploaded_files = array();
