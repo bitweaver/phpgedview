@@ -787,7 +787,7 @@ class IndividualControllerRoot extends BaseController {
 			if ($sex=="M") {
 				$label = $labels["father"];
 			}
-			if ($husb->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+			if ($husb->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 			$husb->setLabel($label);
 		}
 		//-- set the label for the wife
@@ -800,7 +800,7 @@ class IndividualControllerRoot extends BaseController {
 			if ($sex=="M") {
 				$label = $labels["father"];
 			}
-			if ($wife->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+			if ($wife->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 			$wife->setLabel($label);
 		}
 		if ($this->show_changes=="yes") {
@@ -817,7 +817,7 @@ class IndividualControllerRoot extends BaseController {
 					if ($sex=="M") {
 						$label = $labels["father"];
 					}
-					if ($newhusb->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+					if ($newhusb->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 					$newhusb->setLabel($label);
 				}
 				else $newhusb = null;
@@ -832,7 +832,7 @@ class IndividualControllerRoot extends BaseController {
 					if ($sex=="M") {
 						$label = $labels["father"];
 					}
-					if ($newwife->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+					if ($newwife->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 					$newwife->setLabel($label);
 				}
 				else $newwife = null;
@@ -885,7 +885,7 @@ class IndividualControllerRoot extends BaseController {
 				if ($sex=="M") {
 					$label = $labels["brother"];
 				}
-				if ($children[$i]->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+				if ($children[$i]->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 				$children[$i]->setLabel($label);
 			}
 		}
@@ -899,7 +899,7 @@ class IndividualControllerRoot extends BaseController {
 			if ($sex=="M") {
 				$label = $labels["brother"];
 			}
-			if ($newchildren[$i]->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+			if ($newchildren[$i]->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 			$newchildren[$i]->setLabel($label);
 		}
 		$num = count($delchildren);
@@ -912,7 +912,7 @@ class IndividualControllerRoot extends BaseController {
 			if ($sex=="M") {
 				$label = $labels["brother"];
 			}
-			if ($delchildren[$i]->getXref()==$this->pid) $label = "<img src=\"image/selected.png\" alt=\"\" />";
+			if ($delchildren[$i]->getXref()==$this->pid) $label = "<img src=\"images/selected.png\" alt=\"\" />";
 			$delchildren[$i]->setLabel($label);
 		}
 		if (!is_null($newhusb)) $people['newhusb'] = $newhusb;
