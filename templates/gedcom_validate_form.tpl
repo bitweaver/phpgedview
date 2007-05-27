@@ -21,8 +21,8 @@
 			<input type = "hidden" name="ok" value="{$ok}" />
 			<tr><td class="topbottombar $TEXT_DIRECTION" colspan="2">
 				<a href="javascript: {tr}Verify GEDCOM{/tr}" onclick="expand_layer('verify_gedcom'); return false;"> 
-					{if $startimport eq "true"} <img id="upload_gedcom_img" src="image/minus.gif" border="0" width="11" height="11" alt="" > 
-					{else} <img id="upload_gedcom_img" src="image/plus.gif" border="0" width="11" height="11" alt="" >
+					{if $startimport eq "true"} <img id="upload_gedcom_img" src="images/minus.gif" border="0" width="11" height="11" alt="" > 
+					{else} <img id="upload_gedcom_img" src="images/plus.gif" border="0" width="11" height="11" alt="" >
 					{/if}
 				</a>
 			{* print_help_link("validate_gedcom_help", "qm","validate_gedcom") *}

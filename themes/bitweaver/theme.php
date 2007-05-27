@@ -36,7 +36,7 @@ $print_footerfile = $THEME_DIR."print_footer.html";	//-- Print Preview Footer in
 $print_headerfile = $THEME_DIR."print_header.html";	//-- Print Preview Header information for the site
 
 $PGV_USE_HELPIMG = true;		// set to true to use image for help questionmark, set to false to use $pgv_lang["qm"]
-$PGV_IMAGE_DIR = "image";		//-- directory to look for images
+$PGV_IMAGE_DIR = "images";		//-- directory to look for images
 
 //-- variables for image names
 //- PGV main icons

@@ -2,7 +2,7 @@
 	print "<a href=\"javascript: ";
 	if ($import_existing) print "ged_import";
 	else print "add_gedcom";
-	print "\" onclick=\"expand_layer('add-form');return false\"><img id=\"add-form_img\" src=\"image/";
+	print "\" onclick=\"expand_layer('add-form');return false\"><img id=\"add-form_img\" src=\"images/";
 	if ($startimport != "true") print "minus.gif";
 	else print "plus.gif";
 	print "\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" /></a>";

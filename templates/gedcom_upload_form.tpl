@@ -18,8 +18,8 @@
 			<table class="facts_table center $text_dir">
 				<tr><td class="topbottombar $text_dir" colspan="2">
 				<a href="javascript: upload_gedcom" onclick="expand_layer('upload_gedcom'); return false;"> 
-					{if $startimport != "true"} <img id="upload_gedcom_img" src="image/minus.gif" border="0" width="11" height="11" alt="" > 
-					{else} <img id="upload_gedcom_img" src="image/plus.gif" border="0" width="11" height="11" alt="" >
+					{if $startimport != "true"} <img id="upload_gedcom_img" src="images/minus.gif" border="0" width="11" height="11" alt="" > 
+					{else} <img id="upload_gedcom_img" src="images/plus.gif" border="0" width="11" height="11" alt="" >
 					{/if}
 				</a>
 				<a href="javascript: upload_gedcom" onclick="expand_layer('upload_gedcom');return false">GEDCOM File:</a>"
