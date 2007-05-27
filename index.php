@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.8 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: index.php,v 1.9 2007/05/27 20:02:20 lsces Exp $
  */
 
 // Initialization
@@ -80,7 +80,6 @@ if ( !$gBitUser->isValid() ) {
 	}
 	$command="gedcom";
 }
-// else $user = fillUser($gBitUser);
 
 if (empty($command)) $command="user";
 

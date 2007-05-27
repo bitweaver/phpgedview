@@ -26,7 +26,7 @@
  * 
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: client.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: client.php,v 1.4 2007/05/27 20:02:20 lsces Exp $
  */
 
 require "config.php";
@@ -64,6 +64,7 @@ else if ($action=='version') {
 }
 else if ($action=='connect') {
 	if (!empty($username)) {
+// TODO - need to create a bitweaver user object for these connections
 		$userStat = authenticateUser($username,$password);
 		if (!$userStat) {
 			addDebugLog($action." username=$username ERROR 10: Username and password key failed to authenticate.");

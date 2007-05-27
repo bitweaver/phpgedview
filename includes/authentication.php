@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.13 2007/05/27 17:46:58 lsces Exp $
+ * $Id: authentication.php,v 1.14 2007/05/27 20:02:21 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -36,99 +36,6 @@ if (strstr($_SERVER["SCRIPT_NAME"],"authentication")) {
 }
 
 /**
- * authenticate a username and password
- *
- * This function takes the given <var>$username</var> and <var>$password</var> and authenticates
- * them against the database.  The passwords are encrypted using the crypt() function.
- * The username is stored in the <var>$_SESSION["pgv_user"]</var> session variable.
- * @param string $username the username for the user attempting to login
- * @param string $password the plain text password to test
- * @param boolean $basic true if the userName and password were retrived via Basic HTTP authentication. Defaults to false. At this point, this is only used for logging
- * @return bool return true if the username and password credentials match a user in the database return false if they don't
- */
-function authenticateUser($username, $password, $basic=false) {
-	global $GEDCOM, $pgv_lang;
-	checkTableExists();
-	$user = getUser($username);
-	//-- make sure that we have the actual username as it was stored in the DB
-	$username = $user['username'];
-	if ($user!==false) {
-		if (crypt($password, $user["password"])==$user["password"]) {
-	        if (!isset($user["verified"])) $user["verified"] = "";
-	        if (!isset($user["verified_by_admin"])) $user["verified_by_admin"] = "";
-	        if ((($user["verified"] == "yes") and ($user["verified_by_admin"] == "yes")) or ($user["canadmin"] != "")){
-		        $sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='Y', u_sessiontime='".time()."' WHERE u_username='$username'";
-		        $res = $gGedcom->mDb->query($sql);
-
-				AddToLog(($basic ? "Basic HTTP Authentication" :"Login"). " Successful ->" . $username ."<-");
-				//-- reset the user's session
-				$_SESSION = array();
-				$_SESSION['pgv_user'] = $username;
-				//-- unset the cookie_login session var to show that they have logged in with their password
-				$_SESSION['cookie_login'] = false;
-				if (isset($pgv_lang[$user["language"]])) $_SESSION['CLANGUAGE'] = $user['language'];
-				//-- only change the gedcom if the user does not have an gedcom id
-				//-- for the currently active gedcom
-				if (empty($user["gedcomid"][$GEDCOM])) {
-					//-- if the user is not in the currently active gedcom then switch them
-					//-- to the first gedcom for which they have an ID
-					foreach($user["gedcomid"] as $ged=>$id) {
-						if (!empty($id)) {
-							$_SESSION['GEDCOM']=$ged;
-							break;
-						}
-					}
-				}
-				return true;
-			}
-		}
-	}
-	AddToLog(($basic ? "Basic HTTP Authentication" : "Login") . " Failed ->" . $username ."<-");
-	return false;
-}
-
-/**
- * logs a user out of the system
- * @param string $username	optional parameter to logout a specific user
- */
-function userLogout($username = "") {
-	global $GEDCOM, $LANGUAGE;
-
-	if ($username=="") {
-		if (isset($_SESSION["pgv_user"])) $username = $_SESSION["pgv_user"];
-		else if (isset($_COOKIE["pgv_rem"])) $username = $_COOKIE["pgv_rem"];
-		else return;
-	}
-	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_loggedin='N' WHERE u_username='".$username."'";
-	$res = $gGedcom->mDb->query($sql);
-
-	AddToLog("Logout - " . $username);
-
-	if ((isset($_SESSION['pgv_user']) && ($_SESSION['pgv_user']==$username)) || (isset($_COOKIE['pgv_rem'])&&$_COOKIE['pgv_rem']==$username)) {
-		if ($_SESSION['pgv_user']==$username) {
-			$_SESSION['pgv_user'] = "";
-			unset($_SESSION['pgv_user']);
-			if (isset($_SESSION["pgv_counter"])) $tmphits = $_SESSION["pgv_counter"];
-			else $tmphits = -1;
-			@session_destroy();
-			$_SESSION["gedcom"]=$GEDCOM;
-			$_SESSION["show_context_help"]="yes";
-			@setcookie("pgv_rem", "", -1000);
-			if($tmphits>=0) $_SESSION["pgv_counter"]=$tmphits; //set since it was set before so don't get double hits
-		}
-	}
-}
-
-/**
- * Updates the login time in the database of the given user
- * The login time is used to automatically logout users who have been
- * inactive for the defined session time
- * @param string $username	the username to update the login info for
- */
-function userUpdateLogin($username) {
-}
-
-/**
  * return a sorted array of user
  *
  * returns a sorted array of the users in the system
@@ -142,7 +49,7 @@ function getUsers($field = "username", $order = "asc", $sort2 = "firstname") {
 
 	$listHash['last_get'] = 3600;
 	$online_users = $gBitUser->getUserActivity( $listHash );
-vd($online_users);
+
 	$users = array();
 	foreach( $online_users as $user_row ) {
 		$user = array();
@@ -282,26 +189,6 @@ function userAutoAccept($username = "") {
 	$user = getUser($username);
 //	if ($user["auto_accept"]) return true;
 	return $user["auto_accept"];
-}
-
-/**
- * does an admin user exits
- *
- * Checks to see if an admin user has been created
- * @return boolean true if an admin user has been defined
- */
-function adminUserExists() {
-}
-
-/**
- * check if the user database tables exist
- *
- * If the tables don't exist then create them
- * If the tables do exist check if they need to be upgraded
- * to the latest version of the database schema.
- */
-function checkTableExists() {
-	return true;
 }
 
 /**
@@ -605,24 +492,6 @@ function getUserFavorites($username) {
 
 	$favorites = array();
 	//-- make sure we don't try to look up favorites for unconfigured sites
-/*	if (!$CONFIGURED) return $favorites;
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_username=?";
-	$result = $gGedcom->mDbx->query($sql, array($username));
-
-	while( $row = $result->fetchRow()){
-		if (isset($GEDCOMS[$row["fv_file"]])) {
-			$favorite = array();
-			$favorite["id"] = $row["fv_id"];
-			$favorite["username"] = $row["fv_username"];
-			$favorite["gid"] = $row["fv_gid"];
-			$favorite["type"] = $row["fv_type"];
-			$favorite["file"] = $row["fv_file"];
-			$favorite["title"] = $row["fv_title"];
-			$favorite["note"] = $row["fv_note"];
-			$favorite["url"] = $row["fv_url"];
-			$favorites[] = $favorite;
-		}
-	} */
 	return $favorites;
 }
 

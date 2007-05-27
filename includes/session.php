@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.11 2007/05/27 10:31:39 lsces Exp $
+ * @version $Id: session.php,v 1.12 2007/05/27 20:02:21 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -445,11 +445,6 @@ if (!isset($DBPERSIST)) $DBPERSIST = false;
 if (empty($PGV_MEMORY_LIMIT)) $PGV_MEMORY_LIMIT = "32M";
 @ini_set('memory_limit', $PGV_MEMORY_LIMIT);
 
-//-- backwards compatibility with v < 3.1
-if (isset($PGV_DATABASE) && $PGV_DATABASE=="mysql") {
-	$DBTYPE = 'mysql';
-	$PGV_DATABASE = 'db';
-}
 //--load common functions
 require_once("includes/functions.php");
 require_once("includes/menu.php");
@@ -689,8 +684,6 @@ if (($ENABLE_MULTI_LANGUAGE) && (empty($SEARCH_SPIDER))) {
 	}
 }
 
-if (!isset($pgv_username)) $pgv_username = getUserName();
-
 // Load all the language variables and language-specific functions
 loadLanguage($LANGUAGE, true);
 
@@ -734,73 +727,6 @@ $monthtonum["tmz"] = 11;
 $monthtonum["aav"] = 12;
 $monthtonum["ell"] = 13;
 
-if (!isset($show_context_help)) $show_context_help = "";
-if (!isset($_SESSION["show_context_help"])) $_SESSION["show_context_help"] = $SHOW_CONTEXT_HELP;
-if (!isset($_SESSION["pgv_user"])) $_SESSION["pgv_user"] = "";
-if (!isset($_SESSION["cookie_login"])) $_SESSION["cookie_login"] = false;
-if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='yes') $_SESSION["show_context_help"] = true;
-if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='no') $_SESSION["show_context_help"] = false;
-if (!isset($USE_THUMBS_MAIN)) $USE_THUMBS_MAIN = false;
-if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
-   &&(strstr($SCRIPT_NAME, "editconfig_help.php")===false)) {
-//   if ((!check_db())||(!adminUserExists())) {
-//      header("Location: editconfig.php");
-//      exit;
-//   }
-
-   if ((strstr($SCRIPT_NAME, "editconfig_gedcom.php")===false)
-   &&(strstr($SCRIPT_NAME, "help_text.php")===false)
-   &&(strstr($SCRIPT_NAME, "editconfig_help.php")===false)
-   &&(strstr($SCRIPT_NAME, "editgedcoms.php")===false)
-   &&(strstr($SCRIPT_NAME, "uploadgedcom.php")===false)
-   &&(strstr($SCRIPT_NAME, "login.php")===false)
-   &&(strstr($SCRIPT_NAME, "admin.php")===false)
-   &&(strstr($SCRIPT_NAME, "config_download.php")===false)
-   &&(strstr($SCRIPT_NAME, "addnewgedcom.php")===false)
-   &&(strstr($SCRIPT_NAME, "validategedcom.php")===false)
-   &&(strstr($SCRIPT_NAME, "addmedia.php")===false)
-   &&(strstr($SCRIPT_NAME, "importgedcom.php")===false)
-   &&(strstr($SCRIPT_NAME, "client.php")===false)
-   &&(strstr($SCRIPT_NAME, "edit_privacy.php")===false) ) {
-//   	if ((count($GEDCOMS)==0)||(!check_for_import($GEDCOM))) {
-//		header("Location: editgedcoms.php");
-//		exit;
- //  	}
-   }
-
-	//-----------------------------------
-	//-- if user wishes to logout this is where we will do it
-	if ((!empty($_REQUEST['logout']))&&($_REQUEST['logout']==1)) {
-		userLogout();
-		if ($REQUIRE_AUTHENTICATION) {
-			header("Location: ".$HOME_SITE_URL);
-			exit;
-		}
-	}
-
-
-	if ($REQUIRE_AUTHENTICATION) {
-		if (empty($pgv_username)) {
-			if ((strstr($SCRIPT_NAME, "login.php")===false)
-				&&(strstr($SCRIPT_NAME, "login_register.php")===false)
-				&&(strstr($SCRIPT_NAME, "client.php")===false)
-				&&(strstr($SCRIPT_NAME, "help_text.php")===false)
-				&&(strstr($SCRIPT_NAME, "message.php")===false)) {
-				$url = basename($_SERVER["SCRIPT_NAME"])."?".$QUERY_STRING;
-				if (stristr($url, "index.php")!==false) {
-					if (stristr($url, "command=")===false) {
-						if ((!isset($_SERVER['HTTP_REFERER'])) || (stristr($_SERVER['HTTP_REFERER'],$SERVER_URL)===false)) $url .= "&command=gedcom";
-					}
-				}
-				if (stristr($url, "ged=")===false)  {
-					$url.="&ged=".$GEDCOM;
-				}
-//				header("Location: login.php?url=".urlencode($url));
-//				exit;
-			}
-		}
-	}
-
    // -- setup session information for tree clippings cart features
    if ((!isset($_SESSION['cart'])) || (!empty($_SESSION['last_spider_name']))) {	// reset cart everytime for spiders
      $_SESSION['cart'] = array();
@@ -813,7 +739,8 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
    }
 
    //-- load any editing changes
-   if (userCanEdit($pgv_username)) {
+   global $gBitUser;
+   if ($gBitUser->isAdmin()) {
       if (file_exists($INDEX_DIRECTORY."pgv_changes.php")) require_once($INDEX_DIRECTORY."pgv_changes.php");
       else $pgv_changes = array();
    }
@@ -821,9 +748,7 @@ if ((strstr($SCRIPT_NAME, "editconfig.php")===false)
 
    if (empty($LOGIN_URL)) $LOGIN_URL = "login.php";
 
-} else {
 	check_db();
-}
 
 $THEME_DIR="standard/";
 if (file_exists($THEME_DIR."theme.php")) require_once($THEME_DIR."theme.php");
