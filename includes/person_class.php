@@ -3,7 +3,7 @@
  * Class file for a person
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	John Finlay and Others
+ * Copyright (C) 2002 to 2007	John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Page does not validate see line number 1109 -> 15 August 2005
- *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: person_class.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: person_class.php,v 1.3 2007/05/27 14:45:32 lsces Exp $
  */
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
 require_once 'includes/gedcomrecord.php';
 require_once 'includes/family_class.php';
 
@@ -44,6 +48,10 @@ class Person extends GedcomRecord {
 	var $drec = "";
 	var $best = false;
 	var $dest = false;
+	var $bdate2 = "";
+	var $ddate2 = "";
+	var $brec2 = "";
+	var $drec2 = "";
 	var $fams = null;
 	var $famc = null;
 	var $spouseFamilies = null;
@@ -51,6 +59,8 @@ class Person extends GedcomRecord {
 	var $label = "";
 	var $highlightedimage = null;
 	var $file = "";
+	var $age = null;
+	
 	/**
 	 * Constructor for person object
 	 * @param string $gedrec	the raw individual gedcom record
@@ -70,15 +80,19 @@ class Person extends GedcomRecord {
 	/**
 	 * Static function used to get an instance of a person object
 	 * @param string $pid	the ID of the person to retrieve
+	 * @return Person	returns an instance of a person object
 	 */
 	function &getInstance($pid, $simple=true) {
 		global $indilist, $GEDCOM, $GEDCOMS, $pgv_changes;
 
-		if (isset($indilist[$pid]) && $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($indilist[$pid])
+			&& isset($indilist[$pid]['gedfile'])
+			&& $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
 			if (isset($indilist[$pid]['object'])) return $indilist[$pid]['object'];
 		}
 
 		$indirec = find_person_record($pid);
+
 		if (empty($indirec)) {
 			$ct = preg_match("/(\w+):(.+)/", $pid, $match);
 			if ($ct>0) {
@@ -91,19 +105,28 @@ class Person extends GedcomRecord {
 		}
 		if (empty($indirec)) {
 			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
-				$indirec = find_record_in_file($pid);
+				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
 		}
 		if (empty($indirec)) return null;
 		$person = new Person($indirec, $simple);
 		if (!empty($fromfile)) $person->setChanged(true);
+		//-- update the cache
+		if ($person->isRemote()) {
+			global $indilist, $GEDCOM, $GEDCOMS;
+			$indilist[$pid]['gedcom'] = $person->gedrec;
+			$indilist[$pid]['names'] = get_indi_names($person->gedrec);
+			$indilist[$pid]["isdead"] = is_dead($person->gedrec);
+			$indilist[$pid]["gedfile"] = $GEDCOMS[$GEDCOM]['id'];
+			if (isset($indilist[$pid]['privacy'])) unset($indilist[$pid]['privacy']);
+		}
 		$indilist[$pid]['object'] = &$person;
 		return $person;
 	}
 
 	/**
-	 * get the persons name
+	 * get the name
 	 * @return string
 	 */
 	function getName() {
@@ -113,8 +136,55 @@ class Person extends GedcomRecord {
 		if (empty($name)) return $pgv_lang["unknown"];
 		return $name;
 	}
+
 	/**
-	 * get the persons surname
+	 * get the sortable name
+	 * @param string $subtag optional subtag _AKA _HEB etc...
+	 * @param int $num which matching subtag to get
+	 * @param boolean $starred option to add starredname html code
+	 * @return string
+	 */
+	function getSortableName($subtag="", $num=1, $starred=true) {
+		global $pgv_lang, $NAME_REVERSE, $UNDERLINE_NAME_QUOTES;
+		global $unknownNN, $unknownPN;
+		if (!$this->canDisplayName()) {
+			if (empty($subtag)) return $pgv_lang["private"];
+			else return "";
+		}
+		// if subtag contains '/' we assume this is a name to change as sortable
+		// else we get name from gedcom record
+		if (stristr($subtag, "/")) $name = $subtag;
+		else if (empty($subtag)) {
+			$namerec = get_sub_record(1, "1 NAME", $this->gedrec, $num);
+			$name = get_gedcom_value("NAME", 1, $namerec, '', false);
+		}
+		else {
+			$namerec = get_sub_record(2, "2 ".$subtag, $this->gedrec, $num);
+			$name = get_gedcom_value($subtag, 2, $namerec, '', false);
+		}
+		if (empty($name)) return "";
+		// get GIVN and SURN
+		list($givn, $surn, $nsfx) = explode("/", $name."//");
+		$exp = explode(",",$givn); $givn = trim($exp[0]);
+		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") {
+			$lang = whatLanguage($givn);
+			$surn = $unknownNN[$lang];
+		}
+		if (empty($givn) or trim("@".$givn,"_")=="@" or $givn=="@P.N.") {
+			$lang = whatLanguage($surn);
+			$givn = $unknownPN[$lang];
+		}
+		else if ($starred) {
+			if ($UNDERLINE_NAME_QUOTES) $givn = preg_replace("/\"(.+)\"/", "<span class=\"starredname\">$1</span>", $givn);
+			$givn = preg_replace("/([^ ]+)\*/", "<span class=\"starredname\">$1</span>", $givn);
+		}
+		if ($nsfx) $surn .= " ".trim($nsfx);
+//		if ($NAME_REVERSE) return trim($givn.", ".$surn);
+		return trim($surn.", ".$givn);
+	}
+
+	/**
+	 * get the surname
 	 * @return string
 	 */
 	function getSurname() {
@@ -127,12 +197,13 @@ class Person extends GedcomRecord {
 		return $name;
 	}
 	/**
-	 * get the persons given names
+	 * get the given names
 	 * @return string
 	 */
 	function getGivenNames(){
 		global $pgv_lang, $indilist;
 		if (!$this->canDisplayName()) return $pgv_lang["private"];
+		if (!isset($indilist[$this->getXref()]['names'])) return $pgv_lang['unknown'];
 		$ct = preg_match("~^([^\s]*)~",$indilist[$this->getXref()]['names'][0][0], $match);//pregmatch
 		$name = trim($match[1]);
 		if (empty($name)) return $pgv_lang["unknown"];
@@ -184,11 +255,16 @@ class Person extends GedcomRecord {
 	 * parse birth and death records
 	 */
 	function _parseBirthDeath() {
-		global $MAX_ALIVE_AGE;
+		global $MAX_ALIVE_AGE, $pgv_lang;
 		$this->brec = trim(get_sub_record(1, "1 BIRT", $this->gedrec));
 		$this->drec = trim(get_sub_record(1, "1 DEAT", $this->gedrec));
 		$this->bdate = get_gedcom_value("DATE", 2, $this->brec, '', false);
 		$this->ddate = get_gedcom_value("DATE", 2, $this->drec, '', false);
+		//-- 2nd record with alternate date (hebrew...)
+		$this->brec2 = trim(get_sub_record(1, "1 BIRT", $this->gedrec, 2));
+		$this->drec2 = trim(get_sub_record(1, "1 DEAT", $this->gedrec, 2));
+		$this->bdate2 = get_gedcom_value("DATE", 2, $this->brec2, '', false);
+		$this->ddate2 = get_gedcom_value("DATE", 2, $this->drec2, '', false);
 		//-- if no birthdate look for christening
 		if (empty($this->bdate)) {
 			$this->bdate = get_gedcom_value("CHR:DATE", 1, $this->gedrec, '', false);
@@ -202,40 +278,40 @@ class Person extends GedcomRecord {
 			$pdate=parse_date($this->bdate);
 			if ($pdate[0]["year"]>0) {
 				$this->dest = true;
-//				$this->drec = "2 DATE EST BEF ".($pdate[0]["year"]+$MAX_ALIVE_AGE);
-				$this->drec = "2 DATE BEF ".($pdate[0]["year"]+$MAX_ALIVE_AGE);
+				$this->drec .= "\n2 DATE BEF ".($pdate[0]["year"]+$MAX_ALIVE_AGE);
 				$this->ddate = get_gedcom_value("DATE", 2, $this->drec, '', false);
 			}
+			else if (!empty($this->drec)) $this->ddate = $pgv_lang["yes"];
 		}
 		//-- if no birth estimate from death
 		if (empty($this->bdate) && !empty($this->ddate)) {
 			$pdate=parse_date($this->ddate);
 			if ($pdate[0]["year"]>0) {
 				$this->best = true;
-//				$this->brec = "2 DATE EST AFT ".($pdate[0]["year"]-$MAX_ALIVE_AGE);
-				$this->brec = "2 DATE AFT ".($pdate[0]["year"]-$MAX_ALIVE_AGE);
+				$this->brec .= "\n2 DATE AFT ".($pdate[0]["year"]-$MAX_ALIVE_AGE);
 				$this->bdate = get_gedcom_value("DATE", 2, $this->brec, '', false);
 			}
+			else if (!empty($this->brec)) $this->bdate = $pgv_lang["yes"];
 		}
 	}
 	/**
 	 * get birth record
-	 * @param boolean $esitmate		Provide an estimated birth date for people without a birth record
+	 * @param boolean $estimate		Provide an estimated birth date for people without a birth record
 	 * @return string
 	 */
 	function getBirthRecord($estimate=true) {
 		if (empty($this->brec)) $this->_parseBirthDeath();
-		if (!$estimate && $this->best) return '';
+		if (!$estimate && $this->best) return get_sub_record(1, "1 BIRT", $this->gedrec);
 		return $this->brec;
 	}
 	/**
 	 * get death record
-	 * @param boolean $esitmate		Provide an estimated death date for people without a death record
+	 * @param boolean $estimate		Provide an estimated death date for people without a death record
 	 * @return string
 	 */
 	function getDeathRecord($estimate=true) {
 		if (empty($this->drec)) $this->_parseBirthDeath();
-		if (!$estimate && $this->dest && !$this->isDead()) return '';
+		if (!$estimate && $this->dest) return get_sub_record(1, "1 DEAT", $this->gedrec);
 		return $this->drec;
 	}
 	/**
@@ -243,8 +319,39 @@ class Person extends GedcomRecord {
 	 * @return string the birth date in the GEDCOM format of '1 JAN 2006'
 	 */
 	function getBirthDate() {
+		global $pgv_lang;
+		if (!$this->disp) return $pgv_lang["private"];
 		if (empty($this->bdate)) $this->_parseBirthDeath();
 		return $this->bdate;
+	}
+
+	/**
+	 * get sortable birth date
+	 * @return string the birth date in sortable format YYYY-MM-DD HH:MM
+	 */
+	function getSortableBirthDate($est = true) {
+		global $pgv_lang;
+		if (!$this->disp) return "0000-00-00";
+		if (empty($this->bdate)) $this->_parseBirthDeath();
+		$pdate = parse_date($this->bdate);
+		if ($this->best) {
+			if ($est) return $pdate[0]["sort"]." ".$pgv_lang["est"];
+			else return $pdate[0]["sort"];
+		}
+		if (!$est) return $pdate[0]["sort"];
+		$hms = get_gedcom_value("DATE:TIME", 2, $this->brec);
+		return $pdate[0]["sort"]." ".$hms;
+	}
+
+	/**
+	 * get sortable birth date2
+	 * @return string the birth date2 in sortable format YYYY-MM-DD HH:MM
+	 */
+	function getSortableBirthDate2() {
+		if (empty($this->bdate2)) $this->_parseBirthDeath();
+		$pdate = parse_date($this->bdate2);
+		$hms = get_gedcom_value("DATE:TIME", 2, $this->brec2);
+		return $pdate[0]["sort"]." ".$hms;
 	}
 
 	/**
@@ -260,18 +367,19 @@ class Person extends GedcomRecord {
 	 * @return string
 	 */
 	function getBirthPlace() {
-		return get_gedcom_value("PLAC", 2, $this->getBirthRecord());
+		return get_gedcom_value("PLAC", 2, $this->getBirthRecord(), '', false);
 	}
 
 	/**
-	 * get the persons birth year
+	 * get the birth year
 	 * @return string
 	 */
 	function getBirthYear(){
-		$birthyear = $this->getBirthDate();
+		return substr($this->getSortableBirthDate(),0,4);
+		/**$birthyear = $this->getBirthDate();
 		$bdate = parse_date($birthyear);
 		$byear = $bdate[0]['year'];
-		return $byear;
+		return $byear;**/
 	}
 
 	/**
@@ -279,8 +387,40 @@ class Person extends GedcomRecord {
 	 * @return string the death date in the GEDCOM format of '1 JAN 2006'
 	 */
 	function getDeathDate() {
+		global $pgv_lang;
+		if (!$this->disp) return $pgv_lang["private"];
 		if (empty($this->ddate)) $this->_parseBirthDeath();
 		return $this->ddate;
+	}
+
+	/**
+	 * get sortable death date
+	 * @return string the death date in sortable format YYYY-MM-DD HH:MM
+	 */
+	function getSortableDeathDate($est = true) {
+		global $pgv_lang;
+		if (!$this->disp) return "0000-00-00";
+		if (empty($this->ddate)) $this->_parseBirthDeath();
+		//if ($this->isDead() and $this->dest) return "0000-00-01";
+		$pdate = parse_date($this->ddate);
+		if ($this->isDead() and $this->dest) {
+			if ($est) return $pdate[0]["sort"]." ".$pgv_lang["est"];
+			else return $pdate[0]["sort"];
+		}
+		if (!$est) return $pdate[0]["sort"];
+		$hms = get_gedcom_value("DATE:TIME", 2, $this->drec);
+		return $pdate[0]["sort"]." ".$hms;
+	}
+
+	/**
+	 * get sortable death date2
+	 * @return string the death date2 in sortable format YYYY-MM-DD HH:MM
+	 */
+	function getSortableDeathDate2() {
+		if (empty($this->ddate2)) $this->_parseBirthDeath();
+		$pdate = parse_date($this->ddate2);
+		$hms = get_gedcom_value("DATE:TIME", 2, $this->drec2);
+		return $pdate[0]["sort"]." ".$hms;
 	}
 
 	/**
@@ -296,26 +436,56 @@ class Person extends GedcomRecord {
 	 * @return string
 	 */
 	function getDeathPlace() {
-		return get_gedcom_value("PLAC", 2, $this->getDeathRecord());
+		return get_gedcom_value("PLAC", 2, $this->getDeathRecord(), '', false);
 	}
 
 	/**
-	 * get the persons death year
+	 * get the death year
 	 * @return string the year of death
 	 */
-	function getDeathYear(){
-		$deathyear = $this->getDeathDate();
-		$ddate = parse_date($deathyear);
-		$dyear = $ddate[0]['year'];
-		return $dyear;
+	function getDeathYear() {
+		return substr($this->getSortableDeathDate(),0,4);
 	}
 
 	/**
-	 * get the person's sex
+	 * get the age
+	 * @param string $birtrec	gedcom record containing BIRT date
+	 * @param string $when	ending date to calculate age
+	 * @return string the age
+	 */
+	function getAge($birtrec="", $when="") {
+		if (empty($birtrec) && empty($when)) {
+			if (!is_null($this->age)) return $this->age;
+			else $keepage = true;
+		}
+		if (empty($birtrec)) $birtrec=$this->gedrec;
+		if (empty($when)) {
+			if ($this->isDead()) $when = $this->ddate; // age at death
+			else $when = date("d M Y"); // today
+		}
+		$age = get_age($birtrec, $when, 0);
+		if (isset($keepage)) $this->age = $age;
+		return $age;
+	}
+
+	/**
+	 * get the sex
 	 * @return string 	return M, F, or U
 	 */
 	function getSex() {
 		return $this->sex;
+	}
+
+	/**
+	 * get the person's sex image
+	 * @return string 	<img ... />
+	 */
+	function getSexImage() {
+		global $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES;
+		if ($this->getSex()=="M") $s = "sex";
+		else if ($this->getSex()=="F") $s = "sexf";
+		else $s = "sexn";
+		return "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$s]["small"]."\" alt=\"\" class=\"sex_image\" />";
 	}
 
 	/**
@@ -352,17 +522,39 @@ class Person extends GedcomRecord {
 	 * @return array	array of Family objects
 	 */
 	function getSpouseFamilies() {
+		global $pgv_lang;
 		if (!is_null($this->spouseFamilies)) return $this->spouseFamilies;
 		$fams = $this->getSpouseFamilyIds();
 		$families = array();
 		foreach($fams as $key=>$famid) {
 			if (!empty($famid)) {
 				$family = Family::getInstance($famid);
-				$families[$famid] = $family;
+				if (!is_null($family)) $families[$famid] = $family;
+				else echo "<span class=\"warning\">".$pgv_lang["unable_to_find_family"]." ".$famid."</span>";
 			}
 		}
 		$this->spouseFamilies = $families;
 		return $families;
+	}
+
+	/**
+	 * get the number of children for this person
+	 * @return int 	the number of children
+	 */
+	function getNumberOfChildren() {
+		global $indilist, $GEDCOMS, $GEDCOM;
+		
+		//-- first check for the value in the gedcom record
+		$nchi = get_gedcom_value("NCHI", 1, $this->gedrec);
+		if ($nchi!="") return $nchi.".";
+		
+		//-- check if the value was stored in the cache 
+		if (isset($indilist[$this->xref])
+				&& $indilist[$this->xref]["gedfile"] == $GEDCOMS[$GEDCOM]['id'] 
+				&& isset($indilist[$this->xref]["numchil"])) return $indilist[$this->xref]["numchil"];
+		$nchi=0;
+		foreach ($this->getSpouseFamilies() as $famid=>$family) $nchi+=$family->getNumberOfChildren();
+		return $nchi;
 	}
 	/**
 	 * get family with child ids
@@ -378,13 +570,15 @@ class Person extends GedcomRecord {
 	 * @return array	array of Family objects indexed by family id
 	 */
 	function getChildFamilies() {
+		global $pgv_lang;
 		if (!is_null($this->childFamilies)) return $this->childFamilies;
 		$fams = $this->getChildFamilyIds();
 		$families = array();
 		foreach($fams as $key=>$famid) {
 			if (!empty($famid)) {
 				$family = Family::getInstance($famid);
-				$families[$famid] = $family;
+				if (!is_null($family)) $families[$famid] = $family;
+				else echo "<span class=\"warning\">".$pgv_lang["unable_to_find_family"]." ".$famid."</span>";
 			}
 		}
 		$this->childFamilies = $families;
@@ -433,6 +627,7 @@ class Person extends GedcomRecord {
 		$this->parseFacts();
 		return $this->indifacts;
 	}
+	
 	/**
 	 * get other facts
 	 * @return array
@@ -530,7 +725,7 @@ class Person extends GedcomRecord {
 		if ($this->changed) return null;
 		if (userCanEdit(getUserName())&&($this->disp)) {
 			if (isset($pgv_changes[$this->xref."_".$GEDCOM])) {
-				$newrec = find_record_in_file($this->xref);
+				$newrec = find_updated_record($this->xref);
 				if (!empty($newrec)) {
 					$new = new Person($newrec);
 					$new->setChanged(true);
@@ -610,22 +805,23 @@ class Person extends GedcomRecord {
 	}
 	/**
 	 * add facts from the family record
+	 * @param boolean $otherfacts	whether or not to add other related facts such as parents facts, associated people facts, and historical facts
 	 */
-	function add_family_facts() {
+	function add_family_facts($otherfacts = true) {
 		global $GEDCOM, $nonfacts, $nonfamfacts;
 
 		if (!$this->canDisplayDetails()) return;
 		$this->parseFacts();
 		//-- Get the facts from the family with spouse (FAMS)
-		$ct = preg_match_all("/1\s+FAMS\s+@(.*)@/", $this->gedrec, $fmatch, PREG_SET_ORDER);
-		for($j=0; $j<$ct; $j++) {
-			$famid = $fmatch[$j][1];
+		foreach ($this->getSpouseFamilyIds() as $key=>$famid) {
 			$family = Family::getInstance($famid);
+			if (is_null($family)) continue;
 			$famrec = $family->getGedcomRecord();
-			$parents=find_parents_in_record($famrec);
-			if ($parents['HUSB']==$this->xref) $spouse=$parents['WIFE'];
-			else $spouse=$parents['HUSB'];
-			$indilines = split("\n", $famrec);	 // -- find the number of lines in the individuals record
+			$updfamily = $family->getUpdatedFamily(); //-- updated family ?
+			if ($updfamily) $famrec = $updfamily->getGedcomRecord();
+			if ($family->getHusbId()==$this->xref) $spouse = $family->getWifeId();
+			else $spouse = $family->getHusbId();
+			$indilines = split("\n", $famrec);	 // -- find the number of lines in the record
 			$lct = count($indilines);
 			$factrec = "";	 // -- complete fact record
 			$line = "";   // -- temporary line buffer
@@ -644,6 +840,7 @@ class Person extends GedcomRecord {
 						if ((!in_array($fact, $nonfacts))&&(!in_array($fact, $nonfamfacts))) {
 							$factrec.="\r\n1 _PGVS @$spouse@\r\n";
 							$factrec.="1 _PGVFS @$famid@\r\n";
+							if ($updfamily) $factrec .= "PGV_NEW\r\n";
 							$this->indifacts[]=array($linenum, $factrec);
 						}
 					}
@@ -657,13 +854,18 @@ class Person extends GedcomRecord {
 				}
 				else $factrec .= "\n".$line;
 			}
-			$this->add_spouse_facts($spouse, $famrec);
-			$this->add_children_facts($famid);
+			if($otherfacts){
+				$this->add_spouse_facts($spouse, $famrec);
+				$this->add_children_facts($famid);
+			}
 		}
 		//$sosamax=7;
-		$this->add_parents_facts($this->xref);
-		$this->add_historical_facts();
-		$this->add_asso_facts($this->xref);
+		if($otherfacts){
+			$this->add_parents_facts($this->xref);
+			$this->add_historical_facts();
+			$this->add_asso_facts($this->xref);
+		}
+	
 	}
 	/**
 	 * add parents events to individual facts array
@@ -1136,7 +1338,7 @@ class Person extends GedcomRecord {
 		}
 		//-- compare new and old media facts
 		/**
-		 * @depricated by new media system
+		 * @deprecated by new media system
 		for($i=0; $i<count($this->mediafacts); $i++) {
 			$found=false;
 			foreach($diff->mediafacts as $indexval => $newfact) {
@@ -1234,7 +1436,7 @@ class Person extends GedcomRecord {
 				}
 			}
 		}
-		return $url;
+		return $url."#content";
 	}
 }
 ?>

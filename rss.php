@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: rss.php,v 1.4 2006/10/02 10:33:26 lsces Exp $
+ * $Id: rss.php,v 1.5 2007/05/27 14:45:29 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  * @TODO add Basic HTTP authentication to allow RSS agrigators to "log on"
@@ -72,7 +72,7 @@ $rss->description = $rssDesc;
 
 $image = new FeedImage();
 $image->title = $pgv_lang["rss_logo_descr"];
-$image->url = $SERVER_URL."image/gedview.gif";
+$image->url = $SERVER_URL."images/gedview.gif";
 $image->link = "http://www.phpgedview.net";
 $image->description = $pgv_lang["rss_logo_descr"];
 

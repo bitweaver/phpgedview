@@ -23,14 +23,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.9 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: functions.php,v 1.10 2007/05/27 14:45:34 lsces Exp $
  */
 
-/**
- * security check to prevent hackers from directly accessing this file
- */
-if (strstr($_SERVER["PHP_SELF"],"functions.php")) {
-	print "Why do you want to do that?";
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
 }
 
@@ -84,14 +81,20 @@ function check_db($ignore_previous=false) {
  */
 function get_config_file() {
 	global $GEDCOMS, $GEDCOM;
+	$config = "config_gedcom.php";
 	if (count($GEDCOMS)==0) {
-		return "config_gedcom.php";
+		return $config;
 	}
-	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) return $GEDCOMS[$GEDCOM]["config"];
-	foreach($GEDCOMS as $GEDCOM=>$gedarray) {
-		$_SESSION["GEDCOM"] = $GEDCOM;
-		return $gedarray["config"];
+	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) $config = $GEDCOMS[$GEDCOM]["config"];
+	else {
+		foreach($GEDCOMS as $GEDCOM=>$gedarray) {
+			$_SESSION["GEDCOM"] = $GEDCOM;
+			$config = $gedarray["config"];
+			break;
+		}
 	}
+	if (!file_exists($config)) $config = "config_gedcom.php";
+	return $config;
 }
 
 /**
@@ -390,45 +393,43 @@ function get_first_tag($level, $tag, $gedrec, $num=1) {
  * @return string the subrecord that was found or an empty string "" if not found.
  */
 function get_sub_record($level, $tag, $gedrec, $num=1) {
+	if (empty($gedrec)) return "";
+	// -- adding \n before and after gedrec
+	$gedrec = "\n".$gedrec."\n";
 	$pos1=0;
 	$subrec = "";
 	$tag = trim($tag);
-	$searchTarget = "/".preg_replace("~/~","\\/",$tag)."[\W]/"; // see [ 1492470 ] and [ 1507176 ]
-	if (empty($gedrec)) return "";
-
+	//$searchTarget = "/".preg_replace("~/~","\\/",$tag)."[\W]/"; // see [ 1492470 ] and [ 1507176 ]
+	$searchTarget = "/[\r\n]".preg_replace("~/~","\\/",$tag)."[\s\r\n]/";
+	$ct = preg_match_all($searchTarget, $gedrec, $match, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+	if ($ct==0) {
+		$tag = preg_replace("/(\w+)/", "_$1", $tag);
 		$ct = preg_match_all($searchTarget, $gedrec, $match, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
-		if ($ct==0) {
-			$tag = preg_replace("/(\w+)/", "_$1", $tag);
-			$ct = preg_match_all($searchTarget, $gedrec, $match, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
-			if ($ct==0) return "";
-		}
-		//print_r($match);
-		if (count($match)<$num) return "";
-		$pos1 = $match[$num-1][0][1];
-		if ($pos1===false) return "";
-		$pos2 = @strpos($gedrec, "\n$level", $pos1+5);
-		if (!$pos2) $pos2 = @strpos($gedrec, "\n1", $pos1+5);
-		if (!$pos2) $pos2 = @strpos($gedrec, "\nPGV_", $pos1+5); // PGV_SPOUSE, PGV_FAMILY_ID ...
-		if (!$pos2) {
-			return substr($gedrec, $pos1);
-		}
-		$subrec = substr($gedrec, $pos1, $pos2-$pos1);
-		//-- does anybody know what this is for?
-		if ($num==1) {
-			$lowtag = "\n".($level-1).(substr($tag, 1));
-			if (phpversion() < 5) {
-				if ($newpos = strrpos4($subrec, $lowtag)) {
-				$pos2 = $pos2 - (strlen($subrec) - $newpos);
-				$subrec = substr($gedrec, $pos1, $pos2-$pos1);
-				}
-			}
-			else if ($newpos = strripos($subrec, $lowtag)) {
-				$pos2 = $pos2 - (strlen($subrec) - $newpos);
-				$subrec = substr($gedrec, $pos1, $pos2-$pos1);
+		if ($ct==0) return "";
+	}
+	if ($ct<$num) return "";
+	$pos1 = $match[$num-1][0][1];
+	$pos2 = strpos($gedrec, "\n$level", $pos1+1);
+	if (!$pos2) $pos2 = strpos($gedrec, "\n1", $pos1+1);
+	if (!$pos2) $pos2 = strpos($gedrec, "\nPGV_", $pos1+1); // PGV_SPOUSE, PGV_FAMILY_ID ...
+	if (!$pos2) return ltrim(substr($gedrec, $pos1));
+	$subrec = substr($gedrec, $pos1, $pos2-$pos1);
+	//-- does anybody know what this is for?
+	/**
+	if ($num==1) {
+		$lowtag = "\n".($level-1).(substr($tag, 1));
+		if (phpversion() < 5) {
+			if ($newpos = strrpos4($subrec, $lowtag)) {
+			$pos2 = $pos2 - (strlen($subrec) - $newpos);
+			$subrec = substr($gedrec, $pos1, $pos2-$pos1);
 			}
 		}
-
-	return $subrec;
+		else if ($newpos = strripos($subrec, $lowtag)) {
+			$pos2 = $pos2 - (strlen($subrec) - $newpos);
+			$subrec = substr($gedrec, $pos1, $pos2-$pos1);
+		}
+	}**/
+	return ltrim($subrec);
 }
 
 /**

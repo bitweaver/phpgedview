@@ -2,7 +2,7 @@
 /**
  * Functions used Tools to cleanup and manipulate Gedcoms before they are imported
  *
- * $Id: functions_tools.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * $Id: functions_tools.php,v 1.3 2007/05/27 14:45:34 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003  John Finlay and Others
@@ -25,9 +25,43 @@
  * @see validategedcom.php
  */
  
-if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
-	print "Now, why would you want to do that.  You're not hacking are you?";
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
+}
+
+/**
+ * check if Gedcom needs BOM cleanup
+ *
+ * If the first 3 bytes of the GECOM are a Byte Order Mark, the file is UTF-8
+ * and the BOM needs to be stripped.
+ * @return boolean	returns true if we need to cleanup the head, false if we don't
+ * @see BOM_cleanup()
+ */
+function need_BOM_cleanup() {
+	global $fcontents;
+
+	$BOM = chr(0xEF).chr(0xBB).chr(0xBF);
+	if (substr($fcontents,0,3)==$BOM) return true;
+	else return false;
+}
+
+/**
+ * cleanup the BOM
+ *
+ * Removes the BOM from the front of the file.
+ * @return boolean	whether or not the cleanup was successful
+ * @see need_BOM_cleanup()
+ */
+function BOM_cleanup() {
+	global $fcontents;
+
+	$BOM = chr(0xEF).chr(0xBB).chr(0xBF);
+	if (substr($fcontents,0,3)==$BOM) {
+		$fcontents = substr($fcontents, 3);
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -42,10 +76,12 @@ if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 function need_head_cleanup() {
 	global $fcontents;
 
+	$BOM = chr(0xEF).chr(0xBB).chr(0xBF);
 	$pos1 = strpos($fcontents, "0 HEAD");
-	//-- don't force BOM cleanup
-	if ($pos1>3) return true;
-	else return false;
+	if ($pos1==0) return false;
+	// Don't report BOM as data preceding 0 HEAD
+	if ($pos1==3 && substr($fcontents,0,3)==$BOM) return false;
+	else return true;
 }
 
 /**
@@ -309,7 +345,7 @@ function xref_change($tag="RIN")
   $ct = preg_match_all("/0 @(.*)@ INDI/", $fcontents, $match, PREG_SET_ORDER);
   for($i=0; $i<$ct; $i++) {
   	$xref = trim($match[$i][1]);
-  	$indirec = find_record_in_file($xref);
+  	$indirec = find_updated_record($xref);
   	if ($indirec!==false) {
 		  $rt = preg_match("/1 NAME (.*)/", $indirec, $rmatch);
 			if($rt>0)

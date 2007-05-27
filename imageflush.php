@@ -19,11 +19,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: imageflush.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * $Id: imageflush.php,v 1.3 2007/05/27 14:45:30 lsces Exp $
  *
  * @package PhpGedView
  * @subpackage Charts
  */
+ 
+/**
+ * Initialization
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require("config.php");
 
 /**
@@ -56,7 +70,7 @@ unset($_SESSION['image_data']);
 if (empty($image_data)) ImageFlushError("Error : \$_SESSION['image_data'] is empty");
 
 // send data to browser
-Header("Content-Type: image/$image_type");
+Header("Content-Type: images/$image_type");
 Header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 Header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
 Header('Pragma: no-cache');

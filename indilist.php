@@ -17,7 +17,24 @@
  * Beneath the details list is the option to skip the surname list or show it.
  * Depending on the current status of the list.
  *
- * $Id: indilist.php,v 1.3 2006/10/02 22:05:51 lsces Exp $
+ * phpGedView: Genealogy Viewer
+ * Copyright (C) 2002 to 2007  PGV Development Team
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * $Id: indilist.php,v 1.4 2007/05/27 14:45:30 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -33,6 +50,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
+global $SEARCH_SPIDER;
 require("config.php");
 require_once("includes/functions_print_lists.php");
 print_header($pgv_lang["individual_list"]);
@@ -46,12 +64,11 @@ if(!(empty($SEARCH_SPIDER))) {
 else {
 	if (empty($surname_sublist)) $surname_sublist = "yes";
 	}
-	
+
 if (empty($show_all)) $show_all = "no";
 if (empty($show_all_firstnames)) $show_all_firstnames = "no";
 
-$minNamesPerColumn = 8;		// Number of names required before list switches to two columns
-$sublistTrigger = 500;		// Number of names required before list starts sub-listing by first name
+$sublistTrigger = 200;		// Number of names required before list starts sub-listing by first name
 
 // Remove slashes
 $lrm = chr(0xE2).chr(0x80).chr(0x8E);
@@ -59,10 +76,23 @@ $rlm = chr(0xE2).chr(0x80).chr(0x8F);
 if (isset($alpha)) {
 	$alpha = stripslashes($alpha);
 	$alpha = str_replace(array($lrm, $rlm), "", $alpha);
+	$doctitle = $pgv_lang["individual_list"]." : ".$alpha;
 }
 if (isset($surname)) {
 	$surname = stripslashes($surname);
 	$surname = str_replace(array($lrm, $rlm), "", $surname);
+	$doctitle = $pgv_lang["individual_list"]." : ";
+	if (empty($surname) or trim("@".$surname,"_")=="@" or $surname=="@N.N.") $doctitle .= $pgv_lang["NN"];
+	else $doctitle .= $surname;
+}
+if (isset($doctitle)) {
+	?>
+	<script language="JavaScript" type="text/javascript">
+	<!--
+		document.title = '<?php print $doctitle; ?>';
+	//-->
+	</script>
+	<?php
 }
 
 /**
@@ -152,8 +182,24 @@ $expalpha = $alpha;
 if ($expalpha=="(" || $expalpha=="[" || $expalpha=="?" || $expalpha=="/" || $expalpha=="*" || $expalpha=="+" || $expalpha==')') $expalpha = "\\".$expalpha;
 
 print "<br /><br />";
+
+if(empty($SEARCH_SPIDER)) {
+	if ($alpha != "@") {
+		if ($surname_sublist=="yes") {
+			print_help_link("skip_sublist_help", "qm", "skip_surnames");
+			print "<a href=\"?alpha=$alpha&amp;surname_sublist=no&amp;show_all=$show_all\">".$pgv_lang["skip_surnames"]."</a>";
+		} else {
+			print_help_link("skip_sublist_help", "qm", "show_surnames");
+			print "<a href=\"?alpha=$alpha&amp;surname_sublist=yes&amp;show_all=$show_all\">".$pgv_lang["show_surnames"]."</a>";
+		}
+	}
+}
+
+print "<br /><br />";
 print_help_link("name_list_help", "qm");
-print "<table class=\"list_table $TEXT_DIRECTION\"><tr>";
+print "<br /><br />";
+
+//print "<table class=\"list_table $TEXT_DIRECTION\"><tr>";
 
 $TableTitle = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["indis"]["small"]."\" border=\"0\" title=\"".$pgv_lang["individuals"]."\" alt=\"".$pgv_lang["individuals"]."\" />&nbsp;&nbsp;";
 
@@ -163,8 +209,8 @@ if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&($show_all=="yes")) {
 	$surnames = array();
 	$indi_hide=array();
 	foreach($indilist as $gid=>$indi) {
-		//-- make sure that favorites from other gedcoms are not shown 
-		if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) { 
+		//-- make sure that favorites from other gedcoms are not shown
+		if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
 			if (displayDetailsById($gid)||showLivingNameById($gid)) {
 				foreach($indi["names"] as $indexval => $name) {
 					surname_count($name[2]);
@@ -175,57 +221,7 @@ if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&($show_all=="yes")) {
 	}
 	$i = 0;
 	uasort($surnames, "itemsort");
-	$count = count($surnames);
-	$count_indi = 0;
-	$col = 1;
-	if ($count>$minNamesPerColumn) $col=2;
-	if ($count>($minNamesPerColumn << 1)) $col=3;
-	if ($count>($minNamesPerColumn << 2)) $col=4;
-	$newcol=ceil($count/$col);
-	print "<td class=\"list_label\" colspan=\"$col\">";
-	print $TableTitle;
-	print $pgv_lang["surnames"]."</td></tr><tr>\n";
-	print "<td class=\"list_value wrap";
-	if ($col==4) print " width25";
-	if ($col==3) print " width33";
-	if ($col==2) print " width50";
-	print "\" style=\"padding: 14px;\">\n";
-
-// Surnames with starting and ending letters in 2 text orientations is shown in a wrong way on the page with different orientation from the orientation of the first name letter
-	
-	foreach($surnames as $surname=>$namecount) {
-		if (begRTLText($namecount["name"])) {
- 			print "<div class =\"rtl\" dir=\"rtl\">&nbsp;<a href=\"?alpha=".urlencode($namecount["alpha"])."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">&nbsp;".PrintReady($namecount["name"]) . "&rlm; - [".($namecount["match"])."]&rlm;";
-		}
-		else if (substr($namecount["name"], 0, 4) == "@N.N") {
-			print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"?alpha=".$namecount["alpha"]."&amp;surname_sublist=".$surname_sublist."&amp;surname=@N.N.\">&nbsp;".$pgv_lang["NN"] . "&lrm; - [".($namecount["match"])."]&lrm;&nbsp;";
-		}
-		else {
-			print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"?alpha=".urlencode($namecount["alpha"])."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">".PrintReady($namecount["name"]) . "&lrm; - [".($namecount["match"])."]&lrm;";
-		} 
-
- 		print "</a></div>\n";
-		$count_indi += $namecount["match"];
-		$i++;
-		if ($i==$newcol && $i<$count) {
-			print "</td><td class=\"list_value wrap";
-			if ($col==4) print " width25";
-			if ($col==3) print " width33";
-			if ($col==2) print " width50";
-			print "\" style=\"padding: 14px;\">\n";
-			$newcol=$i+ceil($count/$col);
-		}
-	}
-	print "</td>\n";
-	if ($count>1 || count($indi_hide)>0) {
-		print "</tr><tr><td colspan=\"$col\" align=\"center\">&nbsp;";
-		if ($SHOW_MARRIED_NAMES && $count>1) print $pgv_lang["total_names"]." ".$count_indi."<br />";
-		if ($count>1) print $pgv_lang["total_indis"]." ".count($indilist)."&nbsp;";
-		if ($count>1 && count($indi_hide)>0) print "--&nbsp;";
-		if (count($indi_hide)>0) print $pgv_lang["hidden"]." ".count($indi_hide);
-		if ($count>1) print "<br />".$pgv_lang["surnames"]." ".$count;
-		print "</td>\n";
-	}	
+	print_surn_table($surnames);
 }
 else if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	if (!isset($alpha)) $alpha="";
@@ -241,7 +237,7 @@ else if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&(empty($surname))&&
 				$trueHit = false;
 				$firstLetter = get_first_letter(strip_prefix($name[2]));
 				if ($alpha==$firstLetter) $trueHit = true;
-				
+
 				if (!$trueHit && $DICTIONARY_SORT[$LANGUAGE]) {
 					if (strlen($firstLetter)==2) {
 						//-- strip diacritics before checking equality
@@ -273,54 +269,7 @@ else if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&(empty($surname))&&
 
 	$i = 0;
 	uasort($surnames, "itemsort");
-	$count = count($surnames);
-	$count_indi = 0;
-	$col = 1;
-	if ($count>$minNamesPerColumn) $col=2;
-	if ($count>($minNamesPerColumn << 1)) $col=3;
-	if ($count>($minNamesPerColumn << 2)) $col=4;
-	$newcol=ceil($count/$col);
-	print "<td class=\"list_label\" colspan=\"$col\">";
-	print $TableTitle;
-	print $pgv_lang["surnames"]."</td></tr><tr>\n";
-	print "<td class=\"list_value wrap";
-	if ($col==4) print " width25";
-	if ($col==3) print " width33";
-	if ($col==2) print " width50";
-	print "\" style=\"padding: 14px;\">\n";
-	
-	foreach($surnames as $surname=>$namecount) {
-		if (begRTLText($namecount["name"])) {
- 			print "<div class =\"rtl\" dir=\"rtl\">&nbsp;<a href=\"?alpha=".$alpha."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">&nbsp;".PrintReady($namecount["name"]) . "&rlm; - [".($namecount["match"])."]&rlm;";	
-		}
-		else if (substr($namecount["name"], 0, 5) == "@N.N.") {
-			print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"?alpha=".$namecount["alpha"]."&amp;surname_sublist=".$surname_sublist."&amp;surname=@N.N.\">&nbsp;".$pgv_lang["NN"] . "&lrm; - [".($namecount["match"])."]&lrm;&nbsp;";
-		}
-		else {
-			print "<div class =\"ltr\" dir=\"ltr\">&nbsp;<a href=\"?alpha=".$alpha."&amp;surname_sublist=".$surname_sublist."&amp;surname=".urlencode($namecount["name"])."\">".PrintReady($namecount["name"]) . "&lrm; - [".($namecount["fam"])."]&lrm;"; 
-		} 		
-		print "</a>&nbsp;</div>\n";
-		$count_indi += $namecount["match"];
-		$i++;
-		if ($i==$newcol && $i<$count) {
-			print "</td><td class=\"list_value wrap";
-			if ($col==4) print " width25";
-			if ($col==3) print " width33";
-			if ($col==2) print " width50";
-			print "\" style=\"padding: 14px;\">\n";
-			$newcol=$i+ceil($count/$col);
-		}	
-	}
-	print "</td>\n";
-	if (count($indi_show)>1 || count($indi_hide)>0) {
-		print "</tr><tr><td colspan=\"$col\" align=\"center\">&nbsp;";
-		if ($SHOW_MARRIED_NAMES && $count>1) print $pgv_lang["total_names"]." ".$count_indi."<br />";
-		if (count($indi_show)>1) print $pgv_lang["total_indis"]." ".count($indi_show)."&nbsp;";
-		if (count($indi_show)>1 && count($indi_hide)>0) print "--&nbsp;";
-		if (count($indi_hide)>0) print $pgv_lang["hidden"]." ".count($indi_hide);
-		if (count($indi_show)>1) print "<br />".$pgv_lang["surnames"]." ".$count;
-		print "</td>\n";
-	}
+	print_surn_table($surnames);
 }
 else {
 	$firstname_alpha = false;
@@ -335,44 +284,23 @@ else {
 	if (($surname_sublist=="no")&&(!empty($alpha))&&($show_all=="no")) {
 		$tindilist = get_alpha_indis($alpha);
 	}
-	
-	//-- simplify processing for ALL indilist	
+
+	//-- simplify processing for ALL indilist
 	if (($surname_sublist=="no")&&($show_all=="yes")) {
 		$tindilist = get_indi_list();
 		$names = array();
 		foreach($tindilist as $gid => $indi) {
-			//-- make sure that favorites from other gedcoms are not shown 
-			if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) { 
+			//-- make sure that favorites from other gedcoms are not shown
+			if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
 	            foreach($indi["names"] as $indexval => $namearray) {
 		            if ($SHOW_MARRIED_NAMES || $namearray[3]!='C') {
-		            	$names[] = array($namearray[0], $namearray[1], $namearray[2], $namearray[3], $gid);
+			            $names[] = array($namearray[0], $namearray[1], $namearray[2], $namearray[3], $gid);
 		            }
 	            }
 			}
 		}
 		uasort($names, "itemsort");
 		reset($names);
-		$count = count($names);
-		$indi_show = array();
-		$total_indis = count($indilist);
-		$i=0;
-		print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
-		print $TableTitle;
-		print $pgv_lang["individuals"]."</td></tr><tr>\n";
-		print "<td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
-		foreach($names as $indexval => $namearray) {
-			$name = check_NN(sortable_name_from_name($namearray[0]));
-			print_list_person($namearray[4], array($name, $GEDCOM));
-			$indi_show[$namearray[4]] = 1;
-			$i++;
-			if ($i==ceil($count/2) && $count>$minNamesPerColumn) print "</ul></td><td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";			
-		}
-		print "</ul></td>\n";
-		if ($count>1) {
-			print "</tr><tr><td colspan=\"2\" align=\"center\">";
-			if ($SHOW_MARRIED_NAMES) print $pgv_lang["total_names"]." ".$count."<br />\n";
-			print $pgv_lang["total_indis"]." ".count($indi_show)."</td>\n";
-		}
 	}
 	else {
 		//--- the list is really long so divide it up again by the first letter of the first name
@@ -394,7 +322,6 @@ else {
 			}
 			else $firstalpha = $_SESSION[$surname."_firstalpha"];
 			print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
-			print $TableTitle;
 			print PrintReady(str_replace("#surname#", check_NN($surname), $pgv_lang["indis_with_surname"]));
 			print "</td></tr><tr>\n";
 			print "<td style=\"text-align:center;\" colspan=\"2\">";
@@ -422,37 +349,28 @@ else {
 			if ($show_all_firstnames=="yes") print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=no\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
 			else print "<a href=\"?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=yes\">".$pgv_lang["all"]."</a>\n";
 			print_help_link("firstname_alpha_help", "qm");
-//			print "</div>\n";
 			if (isset($fstartalpha)) $falpha = $fstartalpha;
 			if ($show_all_firstnames=="no") {
 				$findilist = array();
 				$ids = preg_split("/,/", $firstalpha[$falpha]["ids"]);
 				foreach($ids as $indexval => $id) {
-					$findilist[$id] = $indilist[$id];
+					if (isset($indilist[$id])) $findilist[$id] = $indilist[$id];
 				}
 				$tindilist = $findilist;
 			}
 			print "</td></tr><tr>\n";
 		}
-		if ($firstname_alpha==false) {
-			print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
-			print $TableTitle;
-			if (!empty($surname) && $surname_sublist=="yes") print PrintReady(str_replace("#surname#", check_NN($surname), $pgv_lang["indis_with_surname"]));
-			else print $pgv_lang["individuals"];
-			print "</td></tr><tr>\n";
-		}
-		print "<td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
 		$names = array();
 		foreach ($tindilist as $gid => $indi) {
 			foreach($indi["names"] as $name) {
             	// Make sure we only display true "hits"
 				$trueHit = false;
 				if (!empty($surname)) {
-					if ($surname==strip_prefix($name[2])) $trueHit = true;
+					if (strcasecmp(strip_prefix($surname), strip_prefix($name[2]))==0) $trueHit = true;
 				} else {
 					$firstLetter = get_first_letter(strip_prefix($name[2]));
-					if ($alpha==$firstLetter) $trueHit = true;
-					
+					if (strcasecmp($alpha, $firstLetter)==0) $trueHit = true;
+
 					if (!$trueHit && $DICTIONARY_SORT[$LANGUAGE]) {
 						if (strlen($firstLetter)==2) {
 							//-- strip diacritics before checking equality
@@ -467,16 +385,16 @@ else {
 									$firstLetter = substr($LCDiacritStrip, $aPos, 1);
 								}
 							}
-							if ($alpha==$firstLetter) $trueHit = true;
+							if (strcasecmp($alpha, $firstLetter)==0) $trueHit = true;
 						}
 					}
 				}
-				if ($trueHit && $firstname_alpha) {
+				if ($trueHit && $firstname_alpha && $show_all_firstnames=="no") {
 					// Make sure we only display true "hits" on the first name
 					$trueHit = false;
 					$firstLetter = get_first_letter($name[0]);
-					if ($falpha==$firstLetter) $trueHit = true;
-					
+					if (strcasecmp($falpha, $firstLetter)==0) $trueHit = true;
+
 					if (!$trueHit && $DICTIONARY_SORT[$LANGUAGE]) {
 						if (strlen($firstLetter)==2) {
 							//-- strip diacritics before checking equality
@@ -491,7 +409,7 @@ else {
 									$firstLetter = substr($LCDiacritStrip, $aPos, 1);
 								}
 							}
-							if ($falpha==$firstLetter) $trueHit = true;
+							if (strcasecmp($falpha, $firstLetter)==0) $trueHit = true;
 						}
 					}
 				}
@@ -502,43 +420,19 @@ else {
 			}
 		}
 		uasort($names, "itemsort");
-		$count = count($names);
-		$indi_show = array();
-		$i=0;
-		foreach($names as $indexval => $namearray) {
-			$gid = $namearray["gid"];
-			$name = $namearray["name"];
-			$indi = $tindilist[$gid];
-			print_list_person($gid, array($name, get_gedcom_from_id($indi["gedfile"])));
-			$indi_show[$gid] = 1;
-			$i++;
-			if ($i==ceil($count/2) && $count>$minNamesPerColumn) print "</ul></td><td class=\"list_value wrap width50 $TEXT_DIRECTION\"><ul>\n";
-		}
-		print "</ul></td>\n";
-		if ($count>1) {
-			print "</tr><tr><td colspan=\"2\" align=\"center\">";
-			if ($SHOW_MARRIED_NAMES) print $pgv_lang["total_names"]." ".$i."<br />\n";
-			print $pgv_lang["total_indis"]." ".count($indi_show);
-			if (count($indi_private)>0) print "&nbsp;(".$pgv_lang["private"]." ".count($indi_private).")";
-			if (count($indi_hide)>0) print "&nbsp;--&nbsp;";
-			if (count($indi_hide)>0) print $pgv_lang["hidden"]." ".count($indi_hide);
-			print "</td>\n";
-		}
 	}
 }
-print "</tr></table>";
+//print "</tr></table>";
 
+if ($show_all=="yes") unset($alpha);
+if (!empty($surname) && $surname_sublist=="yes") $legend = str_replace("#surname#", check_NN($surname), $pgv_lang["indis_with_surname"]);
+else if (isset($alpha)) $legend = str_replace("#surname#", $alpha.".", $pgv_lang["indis_with_surname"]);
+else $legend = $pgv_lang["individuals"];
+if ($show_all_firstnames=="yes") $falpha = "@";
+if (isset($falpha) and $falpha!="@") $legend .= " ".$falpha.".";
+$legend = PrintReady($legend);
+if (isset($names)) print_indi_table($names, $legend);
 
-print "<br />";
-if(empty($SEARCH_SPIDER)) {
-	if ($alpha != "@") {
-		if ($surname_sublist=="yes") print_help_link("skip_sublist_help", "qm", "skip_surnames");
-		else print_help_link("skip_sublist_help", "qm", "show_surnames");
-		if ($surname_sublist=="yes") print "<a href=\"?alpha=$alpha&amp;surname_sublist=no&amp;show_all=$show_all\">".$pgv_lang["skip_surnames"]."</a>";
-		else print "<a href=\"?alpha=$alpha&amp;surname_sublist=yes&amp;show_all=$show_all\">".$pgv_lang["show_surnames"]."</a>";
-	}
-}
-print "<br /><br />\n";
 print "</div>\n";
 if(empty($SEARCH_SPIDER)) {
 	print_footer();

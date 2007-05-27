@@ -7,15 +7,14 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportheader.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: reportheader.php,v 1.3 2007/05/27 14:45:33 lsces Exp $
  */
 
-//-- do not allow direct access to this file
-if (strstr($_SERVER["SCRIPT_NAME"],"reportheader.php")) {   
-	print "Why do you want to do that?";   
-	exit;   
-} 
- 
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
 /**
  * element handlers array
  *

@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.7 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: editconfig.php,v 1.8 2007/05/27 14:45:30 lsces Exp $
  */
 
 // Initialization
@@ -246,30 +246,6 @@ if ($action=="update" && !isset($security_user)) {
 <form method="post" name="configform" action="editconfig.php">
 <input type="hidden" name="action" value="update" />
 <?php
-	if (($CONFIGURED || $action=="update") && !check_db(true)) {
-		print "<span class=\"error\">";
-		print $pgv_lang["db_setup_bad"];
-		print "</span><br />";
-//		print "<span class=\"error\">".$gBitUser->getMessage()." ".$gBitUser->getUserInfo()."</span><br />";
-		if ($CONFIGURED==true) {
-			//-- force the incoming user to enter the database password before they can configure the site for security.
-			if (!isset($_POST["security_check"]) || !isset($_POST["security_user"]) || (($_POST["security_check"]!=$DBPASS)&&($_POST["security_user"]==$DBUSER))) {
-				print "<br /><br />";
-				print_text("enter_db_pass");
-				print "<br />";
-				print $pgv_lang["DBUSER"];
-				print " <input type=\"text\" name=\"security_user\" /><br />\n";
-				print $pgv_lang["DBPASS"];
-				print " <input type=\"password\" name=\"security_check\" /><br />\n";
-				print "<input type=\"submit\" value=\"";
-				print $pgv_lang["login"];
-				print "\" />\n";
-				print "</form>\n";
-				print_footer();
-				exit;
-			}
-		}
-	}
 	print "<table class=\"facts_table\">";
 	print "<tr><td class=\"topbottombar\" colspan=\"2\">";
 	print "<span class=\"subheaders\">";
@@ -289,39 +265,10 @@ if ($action=="update" && !isset($security_user)) {
 ?>
 	<table class="facts_table">
 	<tr>
-		<td class="descriptionbox width20 wrap"><?php print_help_link("DBTYPE_help", "qm", "DBTYPE"); print $pgv_lang["DBTYPE"];?></td>
-		<td class="optionbox"><select name="NEW_DBTYPE" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('DBTYPE_help');" onchange="changeDBtype(this);">
-				<!--<option value="dbase" <?php if ($DBTYPE=='dbase') print "selected=\"selected\""; ?>><?php print $pgv_lang["dbase"];?></option>-->
-				<!--<option value="fbsql" <?php if ($DBTYPE=='fbsql') print "selected=\"selected\""; ?>><?php print $pgv_lang["fbsql"];?></option>-->
-				<option value="ibase" <?php if ($DBTYPE=='ibase') print "selected=\"selected\""; ?>><?php print $pgv_lang["ibase"];?></option>
-				<!--<option value="ifx" <?php if ($DBTYPE=='ifx') print "selected=\"selected\""; ?>><?php print $pgv_lang["ifx"];?></option>-->
-				<!--<option value="msql" <?php if ($DBTYPE=='msql') print "selected=\"selected\""; ?>><?php print $pgv_lang["msql"];?></option>-->
-				<option value="mssql" <?php if ($DBTYPE=='mssql') print "selected=\"selected\""; ?>><?php print $pgv_lang["mssql"];?></option>
-				<option value="mysql" <?php if ($DBTYPE=='mysql') print "selected=\"selected\""; ?>><?php print $pgv_lang["mysql"];?></option>
-				<option value="mysqli" <?php if ($DBTYPE=='mysqli') print "selected=\"selected\""; ?>><?php print $pgv_lang["mysqli"];?></option>
-				<!--<option value="oci8" <?php if ($DBTYPE=='oci8') print "selected=\"selected\""; ?>><?php print $pgv_lang["oci8"];?></option>-->
-				<option value="pgsql" <?php if ($DBTYPE=='pgsql') print "selected=\"selected\""; ?>><?php print $pgv_lang["pgsql"];?></option>
-				<option value="sqlite" <?php if ($DBTYPE=='sqlite') print "selected=\"selected\""; ?>><?php print $pgv_lang["sqlite"];?></option>
-				<!--<option value="txtdb" <?php if ($DBTYPE=='txtdbapi') print "selected=\"selected\""; ?>><?php /* print $pgv_lang["sqlite"]; */?>TxtDB</option>-->
-				<!--<option value="sybase" <?php if ($DBTYPE=='sybase') print "selected=\"selected\""; ?>><?php print $pgv_lang["sybase"];?></option>-->
-			</select>
+		<td class="topbottombar" colspan="2"><input type="submit" tabindex="<?php $i++; print $i?>" value="<?php print $pgv_lang["save_config"];?>" onclick="closeHelp();" />
+		&nbsp;&nbsp;
+		<input type="reset" tabindex="<?php $i++; print $i?>" value="<?php print $pgv_lang["reset"];?>" />
 		</td>
-	</tr>
-	<tr>
-		<td class="descriptionbox"><?php print_help_link("DBHOST_help", "qm", "DBHOST"); print $pgv_lang["DBHOST"];?></td>
-		<td class="optionbox"><input type="text" dir="ltr" name="NEW_DBHOST" value="<?php print $DBHOST?>" size="40" tabindex="<?php $i++; print $i?>" onfocus="getHelp('DBHOST_help');" /></td>
-	</tr>
-	<tr>
-		<td class="descriptionbox"><?php print_help_link("DBUSER_help", "qm", "DBUSER"); print $pgv_lang["DBUSER"];?></td>
-		<td class="optionbox"><input type="text" name="NEW_DBUSER" value="<?php print $DBUSER?>" size="40" tabindex="<?php $i++; print $i?>" onfocus="getHelp('DBUSER_help');" /></td>
-	</tr>
-	<tr>
-		<td class="descriptionbox"><?php print_help_link("DBPASS_help", "qm", "DBPASS"); print $pgv_lang["DBPASS"];?></td>
-		<td class="optionbox"><input type="password" name="NEW_DBPASS" value="" tabindex="<?php $i++; print $i?>" onfocus="getHelp('DBPASS_help');" /></td>
-	</tr>
-	<tr>
-		<td class="descriptionbox"><?php print_help_link("DBNAME_help", "qm", "DBNAME"); print $pgv_lang["DBNAME"];?></td>
-		<td class="optionbox"><input type="text" name="NEW_DBNAME" value="<?php print $DBNAME?>" size="40" tabindex="<?php $i++; print $i?>" onfocus="getHelp('DBNAME_help');" /></td>
 	</tr>
 	<tr>
 		<td class="descriptionbox width20 wrap"><?php print_help_link("DBPERSIST_help", "qm", "DBPERSIST"); print $pgv_lang["DBPERSIST"];?></td>
@@ -534,14 +481,6 @@ if ($action=="update" && !isset($security_user)) {
 		</td>
 	</tr>
 <?php
-	if (!file_is_writeable("config.php")) {
-			print "<tr><td class=\"descriptionbox wrap\" colspan=\"2\"><span class=\"largeError\">";
-			print_text("not_writable");
-			print "</span></td></tr>";
-			print "<tr><td class=\"topbottombar\" colspan=\"2\"><input type=\"submit\" value=\"";
-			print $pgv_lang["download_file"];
-			print "\" name=\"download\" /></td></tr>\n";
-	}
 ?>
 </table>
 </form>

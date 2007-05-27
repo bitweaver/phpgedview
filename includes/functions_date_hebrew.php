@@ -23,14 +23,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_date_hebrew.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: functions_date_hebrew.php,v 1.3 2007/05/27 14:45:31 lsces Exp $
  */
 
-/**
- * security check to prevent hackers from directly accessing this file
- */
-if (strstr($_SERVER["SCRIPT_NAME"],"functions_date_hebrew.php")) {
-	print "Why do you want to do that?";
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
 }
 
@@ -304,10 +301,13 @@ function jewishGedcomDateToGregorian($datearray){
 		if (isset($date["year"])) {
 			if (empty($date["mon"])) $date["mon"] = 1;
 			if (empty($date["day"])) $date["day"] = 1;
-			$julianDate =  jewishtojd ( $date["mon"], $date["day"], $date["year"] );
-			$gregdate = jdtogregorian ( $julianDate );
+			
+ 			$julianDate =  jewishtojd ( $date["mon"], trim($date["day"]), $date["year"] );
+ 			$gregdate = jdtogregorian ( $julianDate );
 			$pieces = preg_split("~/~", $gregdate);
-			$dates[] = array("mon"=>$pieces[0], "day"=>$pieces[1], "year"=>$pieces[2], "month"=>array_search($pieces[0], $monthtonum), "ext"=>"converted jewish");
+			$sort = "";
+			if (isset($date['sort'])) $sort = $date['sort'];
+			$dates[] = array("mon"=>$pieces[0], "day"=>$pieces[1], "year"=>$pieces[2], "month"=>array_search($pieces[0], $monthtonum), "ext"=>"converted jewish", "sort"=>$sort);
 		}
 	}
 	return $dates;
@@ -371,7 +371,7 @@ function jewishGedcomDateToCurrentGregorian($datearray){
  * @param  $datearray		The Gregorian date
  * @return array
  *
- * @TODO Improve !!
+ * @TODO Improve 
  */
 function gregorianToJewishGedcomDate($datearray){
 	global $monthtonum;
@@ -382,7 +382,7 @@ function gregorianToJewishGedcomDate($datearray){
 			if (empty($date["day"])) $date["day"] = 1;
 			if (empty($date["mon"])) $date["mon"] = 1;
 		}
-	
+			
 		$jd = gregoriantojd($date["mon"], $date["day"], $date["year"]);
 		$hebrewDate = jdtojewish($jd);
 		list ($hMon, $hDay, $hYear) = split ('/', $hebrewDate);
@@ -417,7 +417,7 @@ function get_date_url_hebrew($datestr) {
 	    else if (trim($match_bet[5][0])==trim($match_bet[5][4]) && trim($match_bet[11][0])==trim($match_bet[11][4]))
 	    							$date[0]["day"]   = '30';
 	    else               			$date[0]["day"]   = '01';
-	    if ($match_bet[5][4]!="")   $date[0]["mon"]   = $monthtonum[str2lower($match_bet[5][4])];
+	    if ($match_bet[5][4]!="" && isset($monthtonum[str2lower($match_bet[5][4])]))   $date[0]["mon"]   = $monthtonum[str2lower($match_bet[5][4])];
 		else               			$date[0]["mon"]   = '01';
 		if (isset($match_bet[5][5]) && $match_bet[5][5]!="") $date[0]["year"]  = $match_bet[5][5];
 		$date[0]["month"] = "";

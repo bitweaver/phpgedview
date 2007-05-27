@@ -18,7 +18,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repolist.php,v 1.3 2006/10/30 15:00:45 lsces Exp $
+ * @version $Id: repolist.php,v 1.4 2007/05/27 14:45:30 lsces Exp $
  */
 
 /**
@@ -45,51 +45,10 @@ print_header($pgv_lang["repo_list"]);
 print "<div class=\"center\">";
 print "<h2>".$pgv_lang["repo_list"]."</h2>\n\t";
 
-print "\n\t<table class=\"list_table $TEXT_DIRECTION\">\n\t\t<tr><td class=\"list_label\"";
-if($cr>12) print " colspan=\"2\"";
-print ">";
-if (isset($PGV_IMAGES["repository"]["small"])) {
-	print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["repository"]["small"]."\" border=\"0\" title=\"".$pgv_lang["titles_found"]."\" alt=\"".$pgv_lang["titles_found"]."\" />&nbsp;&nbsp;";
-}
-print $pgv_lang["titles_found"];
-print_help_link("repolist_listbox_help", "qm");
-print "</td></tr><tr><td class=\"$TEXT_DIRECTION list_value_wrap";
-if($cr>12) print " width50";
-print "\"><ul>";
-
-if ($cr>0){
-	$i=1;
-	// -- print the array
-	foreach ($repolist as $key => $value) {
-		print_list_repository($key, $value);
-		if ($i==ceil($cr/2) && $cr>12) {
-			print "</ul></td><td class=\"list_value_wrap";
-			if($cr>12) print " width50";
-			print "\"><ul>\n";
-		}
-		$i++;
-	}
-	// -- print the additional array
-	foreach ($addrepolist as $key => $value) {
-		print_list_repository($key, $value);
-		if ($i==ceil($cr/2) && $cr>12) {
-			print "</ul></td><td class=\"list_value_wrap";
-			if($cr>12) print " width50";
-			print "\"><ul>\n";
-		}
-		$i++;
-	}
-
-	print "\n\t\t</ul></td>\n\t\t";
- 
-	print "</tr><tr><td class=\"center\" colspan=\"2\">".$pgv_lang["total_repositories"]." ".count($repo_total)."<br /";
-	if (count($repo_hide)>0) print "  --  ".$pgv_lang["hidden"]." ".count($repo_hide);
-}
-else print "<span class=\"warning\"><i>".$pgv_lang["no_results"]."</span>";
-
-print "</td>\n\t\t</tr>\n\t</table>";
+print_repo_table(array_merge($repolist, $addrepolist));
 
 print "</div>";
 print "<br /><br />";
+load_behaviour();
 print_footer();
 ?>

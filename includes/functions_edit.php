@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Edit
  * @see functions_places.php
- * @version $Id: functions_edit.php,v 1.3 2007/05/27 10:31:40 lsces Exp $
+ * @version $Id: functions_edit.php,v 1.4 2007/05/27 14:45:35 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -1092,7 +1092,7 @@ function add_simple_tag($tag, $upperlevel="", $label="", $readOnly="", $noClose=
 			print " value=\"".$resnv."\"";
 			if ($value==$resnv) print " checked=\"checked\"";
 			print " /><small>".$pgv_lang[$resn_val]."</small>";
-			print "<br />&nbsp;<img id=\"RESN_".$resn_val."\" src=\"image/RESN_".$resn_val.".gif\"  alt=\"".$pgv_lang[$resn_val]."\" title=\"".$pgv_lang[$resn_val]."\" border=\"0\"";
+			print "<br />&nbsp;<img id=\"RESN_".$resn_val."\" src=\"images/RESN_".$resn_val.".gif\"  alt=\"".$pgv_lang[$resn_val]."\" title=\"".$pgv_lang[$resn_val]."\" border=\"0\"";
 			if ($value==$resnv) print " style=\"display:inline\""; else print " style=\"display:none\"";
 			print " /></td>\n";
 		}

@@ -21,30 +21,41 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: functions_charts.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: functions_charts.php,v 1.3 2007/05/27 14:45:32 lsces Exp $
  */
-require_once("includes/person_class.php");
-if (strstr($_SERVER["SCRIPT_NAME"], "functions")) {
-	print "Now, why would you want to do that.	You're not hacking are you?";
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
 }
+
+require_once("includes/person_class.php");
 
 /**
  * print a table cell with sosa number
  *
  * @param int $sosa
  * @param string $pid optional pid
+ * @param string $arrowDirection   direction of link arrow
  */
-function print_sosa_number($sosa, $pid = "") {
+function print_sosa_number($sosa, $pid = "", $arrowDirection = "up") {
 	global $view, $pbwidth, $pbheight;
 	global $PGV_IMAGE_DIR, $PGV_IMAGES;
 
-	print "<td class=\"subheaders\" style=\"vertical-align: middle; white-space: nowrap;\">";
-	print $sosa;
-	if ($sosa != "1") {
+	if (substr($sosa,-1,1)==".") $personLabel = substr($sosa,0,-1);
+	else $personLabel = $sosa;
+	if ($arrowDirection=="blank") $visibility = "hidden";
+	else $visibility = "normal";
+	print "<td class=\"subheaders center\" style=\"vertical-align: middle; text-indent: 0px; margin-top: 0px; white-space: nowrap; visibility: $visibility;\">";
+	print "&lrm;$personLabel&lrm;";
+	if ($sosa != "1" && $pid != "") {
+		if ($arrowDirection=="left") $dir = 0;
+		else if ($arrowDirection=="right") $dir = 1;
+		else if ($arrowDirection== "down") $dir = 3;
+		else $dir = 2;		// either "blank" or "up"
 		print "<br />";
-		print_url_arrow($pid, "#$pid", "#$pid");
-		print "&nbsp;";
+		print_url_arrow($pid, "#$pid", "$pid", $dir);
+//		print "&nbsp;";
 	}
 	print "</td>";
 }
@@ -83,7 +94,7 @@ function print_family_header($famid) {
  */
 function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="", $personcount="1") {
 	global $pgv_lang, $view, $show_full, $show_famlink;
-	global $TEXT_DIRECTION, $SHOW_EMPTY_BOXES, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS, $LANGUAGE;
+	global $TEXT_DIRECTION, $SHOW_EMPTY_BOXES, $SHOW_ID_NUMBERS, $LANGUAGE;
 	global $pbwidth, $pbheight;
 	global $PGV_IMAGE_DIR, $PGV_IMAGES;
 	global $show_changes, $pgv_changes, $GEDCOM;
@@ -102,7 +113,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 
 	// -- get the new record and parents if in editing show changes mode
 	if ((userCanEdit(getUserName())) && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
-		$newrec = find_record_in_file($famid);
+		$newrec = find_updated_record($famid);
 		$newparents = find_parents_in_record($newrec);
 	}
 
@@ -114,7 +125,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	print "\n\t<table style=\"width: " . ($pbwidth) . "px; height: " . $pbheight . "px;\" border=\"0\"><tr>";
 	if ($parid) {
 		if ($husb->getXref()==$parid) print_sosa_number($label);
-		else print_sosa_number(str_repeat("&nbsp; ", strlen($label)-1));
+		else print_sosa_number($label, "", "blank");
 	}
 	else if ($sosa > 0) print_sosa_number($sosa * 2);
 	if (isset($newparents) && $husb->getXref() != $newparents["HUSB"]) {
@@ -144,7 +155,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 		if ($hparents or ($sosa != 0 and $SHOW_EMPTY_BOXES)) {
 			// husband's father
 			print "\n\t<table style=\"width: " . ($pbwidth) . "px; height: " . $pbheight . "px;\" border=\"0\"><tr>";
-			if ($sosa > 0) print_sosa_number($sosa * 4);
+			if ($sosa > 0) print_sosa_number($sosa * 4, $hparents['HUSB'], "down");
 			if (!empty($gparid) and $hparents['HUSB']==$gparid) print_sosa_number(trim(substr($label,0,-3),".").".");
 			print "\n\t<td valign=\"top\">";
 			print_pedigree_person($hparents['HUSB'], 1, $show_famlink, 4, $personcount);
@@ -154,14 +165,14 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	}
 	if (!empty($upfamid) and ($sosa!=-1) and ($view != "preview")) {
 		print "<td valign=\"middle\" rowspan=\"2\">";
-		print_url_arrow($upfamid, ($sosa==0 ? "?famid=$upfamid&amp;show_full=$show_full" : "#$upfamid"), "#$upfamid", 1);
+		print_url_arrow($upfamid, ($sosa==0 ? "?famid=$upfamid&amp;show_full=$show_full" : "#$upfamid"), "$upfamid", 1);
 		print "</td>\n";
 	}
 	if ($hparents or ($sosa != 0 and $SHOW_EMPTY_BOXES)) {
 		// husband's mother
 		print "</tr><tr><td><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" alt=\"\" /></td><td>";
 		print "\n\t<table style=\"width: " . ($pbwidth) . "px; height: " . $pbheight . "px;\" border=\"0\"><tr>";
-		if ($sosa > 0) print_sosa_number($sosa * 4 + 1);
+		if ($sosa > 0) print_sosa_number($sosa * 4 + 1, $hparents['WIFE'], "down");
 		if (!empty($gparid) and $hparents['WIFE']==$gparid) print_sosa_number(trim(substr($label,0,-3),".").".");
 		print "\n\t<td valign=\"top\">";
 		print_pedigree_person($hparents['WIFE'], 1, $show_famlink, 5, $personcount);
@@ -171,7 +182,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	print "</tr></table>\n\n";
 	if ($sosa!=0) {
 		print "<a href=\"family.php?famid=$famid\" class=\"details1\">";
-		if ($SHOW_FAM_ID_NUMBERS) print "($famid)&nbsp;&nbsp;";
+		if ($SHOW_ID_NUMBERS) print "&lrm;($famid)&lrm;&nbsp;&nbsp;";
 		else print str_repeat("&nbsp;", 10);
 		if (showFact("MARR", $famid)) print_simple_fact($family->getGedcomRecord(), "MARR", $wife->getXref()); else print $pgv_lang["private"];
 		print "</a>";
@@ -186,7 +197,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	print "\n\t<table style=\"width: " . ($pbwidth) . "px; height: " . $pbheight . "px;\"><tr>";
 	if ($parid) {
 		if ($wife->getXref()==$parid) print_sosa_number($label);
-		else print_sosa_number(str_repeat("&nbsp; ", strlen($label)-1));
+		else print_sosa_number($label, "", "blank");
 	}
 	else if ($sosa > 0) print_sosa_number($sosa * 2 + 1);
 	if (isset($newparents) && $wife->getXref() != $newparents["WIFE"]) {
@@ -216,7 +227,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 		if ($hparents or ($sosa != 0 and $SHOW_EMPTY_BOXES)) {
 			// wife's father
 			print "\n\t<table style=\"width: " . ($pbwidth) . "px; height: " . $pbheight . "px;\"><tr>";
-			if ($sosa > 0) print_sosa_number($sosa * 4 + 2);
+			if ($sosa > 0) print_sosa_number($sosa * 4 + 2, $hparents['HUSB'], "down");
 			if (!empty($gparid) and $hparents['HUSB']==$gparid) print_sosa_number(trim(substr($label,0,-3),".").".");
 			print "\n\t<td valign=\"top\">";
 			print_pedigree_person($hparents['HUSB'], 1, $show_famlink, 6, $personcount);
@@ -226,14 +237,14 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	}
 	if (!empty($upfamid) and ($sosa!=-1) and ($view != "preview")) {
 		print "<td valign=\"middle\" rowspan=\"2\">";
-		print_url_arrow($upfamid.$label, ($sosa==0 ? "?famid=$upfamid&amp;show_full=$show_full" : "#$upfamid"), "#$upfamid", 1);
+		print_url_arrow($upfamid.$label, ($sosa==0 ? "?famid=$upfamid&amp;show_full=$show_full" : "#$upfamid"), "$upfamid", 1);
 		print "</td>\n";
 	}
 	if ($hparents or ($sosa != 0 and $SHOW_EMPTY_BOXES)) {
 		// wife's mother
 		print "</tr><tr><td><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" alt=\"\" /></td><td>";
 		print "\n\t<table style=\"width: " . ($pbwidth) . "px; height: " . $pbheight . "px;\"><tr>";
-		if ($sosa > 0) print_sosa_number($sosa * 4 + 3);
+		if ($sosa > 0) print_sosa_number($sosa * 4 + 3, $hparents['WIFE'], "down");
 		if (!empty($gparid) and $hparents['WIFE']==$gparid) print_sosa_number(trim(substr($label,0,-3),".").".");
 		print "\n\t<td valign=\"top\">";
 		print_pedigree_person($hparents['WIFE'], 1, $show_famlink, 7, $personcount);
@@ -253,7 +264,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
  */
 function print_family_children($famid, $childid = "", $sosa = 0, $label="", $personcount="1") {
 	global $pgv_lang, $pbwidth, $pbheight, $view, $show_famlink, $show_cousins;
-	global $PGV_IMAGE_DIR, $PGV_IMAGES, $show_changes, $pgv_changes, $GEDCOM, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS, $TEXT_DIRECTION;
+	global $PGV_IMAGE_DIR, $PGV_IMAGES, $show_changes, $pgv_changes, $GEDCOM, $SHOW_ID_NUMBERS, $TEXT_DIRECTION;
 
 	$children = get_children_ids($famid);
 	print "<table border=\"0\" cellpadding=\"0\" cellspacing=\"2\"><tr>";
@@ -266,7 +277,7 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 	$oldchildren = array();
 	if (userCanEdit(getUserName())) {
 		if ((isset($_REQUEST['show_changes'])&&$_REQUEST['show_changes']=='yes') && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
-			$newrec = find_record_in_file($famid);
+			$newrec = find_updated_record($famid);
 			$ct = preg_match_all("/1 CHIL @(.*)@/", $newrec, $match, PREG_SET_ORDER);
 			if ($ct > 0) {
 				$oldchil = array();
@@ -342,7 +353,7 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 						if ($famid) {
 							print "<br />";
 							print "<a class=\"details1\" href=\"family.php?famid=$famid\">";
-							if ($SHOW_FAM_ID_NUMBERS) print "&lrm;&nbsp;($famid)&nbsp;&lrm;";
+							if ($SHOW_ID_NUMBERS) print "&lrm;&nbsp;($famid)&nbsp;&lrm;";
 							print "</a>";
 						}
 						print "</td>\n";
@@ -383,15 +394,16 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 		print "<tr><td></td><td valign=\"top\" >";
 
 		$nchi = "";
-		$newrec = find_record_in_file($famid);
-		$ct = preg_match("/1 NCHI (\w+)/", $newrec, $match);
+		if (isset($pgv_changes[$famid."_".$GEDCOM])) $famrec = find_updated_record($famid);
+		else $famrec = find_family_record($famid);
+		$ct = preg_match("/1 NCHI (\w+)/", $famrec, $match);
 		if ($ct>0) $nchi = $match[1];
 		else {
 			$famrec = find_family_record($famid);
 			$ct = preg_match("/1 NCHI (\w+)/", $famrec, $match);
 			if ($ct>0) $nchi = $match[1];
 		}
-		if ($nchi=="0") print "<img src=\"image/small/childless.gif\" alt=\"".$pgv_lang["childless_family"]."\" title=\"".$pgv_lang["childless_family"]."\" /> ".$pgv_lang["childless_family"];
+		if ($nchi=="0") print "<img src=\"images/small/childless.gif\" alt=\"".$pgv_lang["childless_family"]."\" title=\"".$pgv_lang["childless_family"]."\" /> ".$pgv_lang["childless_family"];
 		else print $pgv_lang["no_children"];
 		print "</td></tr>";
    }
@@ -423,7 +435,7 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 function print_family_facts($famid, $sosa = 0) {
 	global $pgv_lang, $pbwidth, $pbheight, $view;
 	global $nonfacts, $factarray;
-	global $TEXT_DIRECTION, $GEDCOM, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS;
+	global $TEXT_DIRECTION, $GEDCOM, $SHOW_ID_NUMBERS;
 	global $show_changes, $pgv_changes;
 	global $linkToID;
 
@@ -474,7 +486,7 @@ function print_family_facts($famid, $sosa = 0) {
 		}
 		if (($sosa == 0) && userCanEdit(getUserName())) {
 			if ((isset($_REQUEST['show_changes'])&&($_REQUEST['show_changes']=='yes')) && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
-				if (empty($newrec)) $newrec = find_record_in_file($famid);
+				if (empty($newrec)) $newrec = find_updated_record($famid);
 				$indilines = split("\n", $newrec); // -- find the number of lines in the individuals record
 				$lct = count($indilines);
 				$factrec = ""; // -- complete fact record
@@ -571,7 +583,7 @@ function print_family_facts($famid, $sosa = 0) {
 		if ((count($indifacts) > 0) || (count($otheritems) > 0)) {
 			usort($indifacts, "compare_facts");
 			print "\n\t<span class=\"subheaders\">" . $pgv_lang["family_group_info"];
-			if ($SHOW_FAM_ID_NUMBERS and $famid != "") print "&nbsp;&nbsp;&nbsp;($famid)";
+			if ($SHOW_ID_NUMBERS and $famid != "") print "&nbsp;&nbsp;&nbsp;($famid)";
 			print "</span><br />\n\t<table class=\"facts_table\">";
 			foreach ($indifacts as $key => $value) {
 				print_fact($value[1], $famid, $value[0]);
@@ -599,7 +611,7 @@ function print_family_facts($famid, $sosa = 0) {
 		else {
 			if ($sosa==0) {
 				print "\n\t<span class=\"subheaders\">" . $pgv_lang["family_group_info"];
-				if ($SHOW_FAM_ID_NUMBERS and $famid != "") print "&nbsp;&nbsp;&nbsp;($famid)";
+				if ($SHOW_ID_NUMBERS and $famid != "") print "&nbsp;&nbsp;&nbsp;($famid)";
 				print "</span><br />\n\t";
 			}
 			print "<table class=\"facts_table\">";
@@ -729,20 +741,12 @@ function ancestry_array($rootid, $maxgen=0) {
 		$treeid[($i * 2)] = false; // -- father
 		$treeid[($i * 2) + 1] = false; // -- mother
 		if (!empty($treeid[$i])) {
-			print " ";
-			$famids = find_family_ids($treeid[$i]);
-			if (count($famids) > 0) {
-				$parents = false;
-				$j = 0;
-				while ((!$parents) && ($j < count($famids))) {
-					$parents = find_parents($famids[$j]);
-					$j++;
-				}
-
-				if ($parents) {
-					$treeid[($i * 2)] = $parents["HUSB"]; // -- set father id
-					$treeid[($i * 2) + 1] = $parents["WIFE"]; // -- set mother id
-				}
+			$person = Person::getInstance($treeid[$i]);
+			$families = $person->getChildFamilies();
+			foreach($families as $famid=>$family) {
+				/*@var $family Family */
+				if (empty($treeid[($i * 2)])) $treeid[($i * 2)] = $family->getHusbId(); // -- set father id
+				if (empty($treeid[($i * 2) + 1])) $treeid[($i * 2) + 1] = $family->getWifeId(); // -- set mother id
 			}
 		}
 	}
@@ -764,57 +768,12 @@ function ancestry_array($rootid, $maxgen=0) {
  */
 function pedigree_array($rootid) {
 	global $PEDIGREE_GENERATIONS, $SHOW_EMPTY_BOXES;
-	// -- maximum size of the id array is 2^$PEDIGREE_GENERATIONS - 1
-	$treesize = pow(2, (int)($PEDIGREE_GENERATIONS))-1;
 
-	$treeid = array();
-	$treeid[0] = $rootid;
-	// -- fill in the id array
-	for($i = 0; $i < ($treesize / 2); $i++) {
-		if (!empty($treeid[$i])) {
-			//print " ";
-			$person = Person::getInstance($treeid[$i], false);
-			if (!is_null($person)) {
-				$famids = $person->getChildFamilies();
-				//$famids = find_family_ids($treeid[$i]);
-				if (count($famids) > 0) {
-					$parents = false;
-					$j = 0;
-					$wife = null;
-					$husb = null;
-					foreach($famids as $famid=>$family) {
-						if (!is_null($family)) {
-							$wife = $family->getWife();
-							$husb = $family->getHusband();
-							if (!is_null($wife) || !is_null($husb)) {
-								$parents = true;
-								break;
-							}
-						}
-						//$parents = find_parents($famids[$j]);
-						$j++;
-					}
+	$treeid = ancestry_array($rootid);
+	$treesize = count($treeid)-1;
+	//-- ancestry_array puts everyone at $i+1
+	for($i=0; $i<$treesize-1; $i++) $treeid[$i] = $treeid[$i+1]; 
 
-					if ($parents) {
-						if (!is_null($husb)) $treeid[($i * 2) + 1] = $husb->getXref(); // -- set father id
-						else $treeid[($i * 2) + 1] = false;
-						if (!is_null($wife)) $treeid[($i * 2) + 2] = $wife->getXref(); // -- set mother id
-						else $treeid[($i * 2) + 2] = false;
-					}
-				} else {
-					$treeid[($i * 2) + 1] = false; // -- father not found
-					$treeid[($i * 2) + 2] = false; // -- mother not found
-				}
-			}
-			else {
-				$treeid[($i * 2) + 1] = false; // -- father not found
-				$treeid[($i * 2) + 2] = false; // -- mother not found
-			}
-		} else {
-			$treeid[($i * 2) + 1] = false; // -- father not found
-			$treeid[($i * 2) + 2] = false; // -- mother not found
-		}
-	}
 	// -- detect the highest generation that actually has a person in it and use it for the pedigree generations
 	if (!$SHOW_EMPTY_BOXES) {
 		for($i = ($treesize-1); empty($treeid[$i]); $i--);
@@ -883,7 +842,35 @@ function get_sosa_name( $sosa ) {
 	$sosanr = floor($sosa/2);
 	$gen = floor( log($sosanr) / log(2) );
 
+    // first try a generic algorithm, this is later overridden
+	// by language specific algorithms.
+	if (isset($pgv_lang["sosa_$sosa"]) && !empty($pgv_lang["sosa_$sosa"]))
+	{
+	    $sosaname = $pgv_lang["sosa_$sosa"];
+	}
+	else if($gen > 2)
+	{
+        $paternal = (floor($sosa/pow(2,$gen)) == 2);
+		if ($sosa%2){
+			if($paternal && !empty($pgv_lang["sosa_paternal_male_n_generations"])) {
+				$sosaname = sprintf($pgv_lang["sosa_paternal_male_n_generations"], $gen+1, $gen, $gen-1);
+			}
+			else if ( !empty($pgv_lang["sosa_maternal_male_n_generations"])){
+				$sosaname = sprintf($pgv_lang["sosa_maternal_male_n_generations"], $gen+1, $gen, $gen-1);
+			}
+		}
+		else {
+			if($paternal && !empty($pgv_lang["sosa_paternal_female_n_generations"])) {
+				$sosaname = sprintf($pgv_lang["sosa_paternal_female_n_generations"], $gen+1, $gen, $gen-1);
+			}
+			else if (!empty($pgv_lang["sosa_maternal_female_n_generations"])){
+				$sosaname = sprintf($pgv_lang["sosa_maternal_female_n_generations"], $gen+1, $gen, $gen-1);
+			}
+		}
+    }
+
 	if ($LANGUAGE == "danish" || $LANGUAGE == "norwegian" || $LANGUAGE == "swedish") {
+		$sosaname = "";
 		$addname = "";
 		$father = strtolower($pgv_lang["father"]);
 		$mother = strtolower($pgv_lang["mother"]);
@@ -914,6 +901,7 @@ function get_sosa_name( $sosa ) {
 		if ($LANGUAGE != "swedish") if (!empty($addname)) $sosaname .= ($gen>5?"<br />&nbsp;&nbsp;&nbsp;&nbsp;":"")." <small>(".$addname.")</small>";
 	}
 	if ($LANGUAGE == "dutch") {
+	    $sosaname = "";
 		if ($gen & 256) $sosaname .= $pgv_lang["sosa_11"];
 		if ($gen & 128) $sosaname .= $pgv_lang["sosa_10"];
 		if ($gen & 64) $sosaname .= $pgv_lang["sosa_9"];
@@ -930,16 +918,8 @@ function get_sosa_name( $sosa ) {
 		$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
 		return $sosaname;
 	}
-	if ($LANGUAGE == "english") {
-		for($i = $gen; $i > 1; $i--) {
-			$sosaname .= "Great-";
-		}
-		if ($gen >= 1) $sosaname .= "Grand";
-		if (!($sosa%2)) $sosaname .= strtolower($pgv_lang["father"]);
-		else $sosaname .= strtolower($pgv_lang["mother"]);
-		$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
-	}
 	if ($LANGUAGE == "finnish") {
+	    $sosaname = "";
 		$father = str2lower($pgv_lang["father"]);
 		$mother = str2lower($pgv_lang["mother"]);
 //		$father = "isä";
@@ -955,22 +935,8 @@ function get_sosa_name( $sosa ) {
 		if (substr($sosaname, 0,1)=="i") $sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
 		else $sosaname = str2upper(substr($mother, 0,2)).substr($sosaname,2);
 	}
-	if ($LANGUAGE == "french") {
-		if ($gen>4) $sosaname = "Arrière(x". ($gen-1) . ")-";
-		else for($i = $gen; $i > 1; $i--) {
-			$sosaname .= "Arrière-";
-		}
-		if ($gen >= 1) $sosaname .= "Grand-";
-		if (!($sosa%2)) $sosaname .= $pgv_lang["father"];
-		else $sosaname .= $pgv_lang["mother"];
-		if ($gen == 1){
-			if ($sosa<6) $sosaname .= " Pater";
-			else $sosaname .= " Mater";
-			$sosaname .= "nel";
-			if ($sosa%2) $sosaname .= "le";
-		}
-	}
 	if ($LANGUAGE == "german") {
+	    $sosaname = "";
 		for($i = $gen; $i > 1; $i--) {
 			$sosaname .= "Ur-";
 		}
@@ -980,6 +946,7 @@ function get_sosa_name( $sosa ) {
 		$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
 	}
 	if ($LANGUAGE == "hebrew") {
+	    $sosaname = "";
 		$addname = "";
 		$father = $pgv_lang["father"];
 		$mother = $pgv_lang["mother"];
@@ -1021,9 +988,7 @@ function get_sosa_name( $sosa ) {
 		}
 	}
 	if (!empty($sosaname)) return "$sosaname<!-- sosa=$sosa nr=$sosanr gen=$gen -->";
-
-	if (isset($pgv_lang["sosa_$sosa"])) return $pgv_lang["sosa_$sosa"];
-	else return (($sosa%2) ? $pgv_lang["mother"] : $pgv_lang["father"]) . " " . floor($sosa/2);
+	else return  "<!-- sosa=$sosa nr=$sosanr gen=$gen -->";
 }
 
 /**
@@ -1152,7 +1117,7 @@ function find_last_spouse($pid) {
  */
 function print_cousins($famid, $personcount="1") {
 	global $show_full, $bheight, $bwidth;
-	global $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang;
+	global $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $TEXT_DIRECTION;
 
 	$fchildren = get_children_ids($famid);
 	$kids = count($fchildren);
@@ -1169,7 +1134,10 @@ function print_cousins($famid, $personcount="1") {
 		$ctkids = count($fchildren);
 		$i = 1;
 		foreach ($fchildren as $indexval => $fchil) {
-			print "<td><img width=\"7px\" height=\"3px\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" alt=\"\" /></td><td>";
+			print "<td><img width=\"10px\" height=\"3px\" style=\"padding-";
+			if ($TEXT_DIRECTION=="ltr") print "right";
+			else print "left";
+			print ": 2px;\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" alt=\"\" /></td><td>";
 			print_pedigree_person($fchil, 1 , false, 0, $personcount);
 			$personcount++;
 			print "</td></tr>";
@@ -1185,7 +1153,7 @@ function print_cousins($famid, $personcount="1") {
 		$ct = preg_match("/1 NCHI (\w+)/", $famrec, $match);
 		if ($ct>0) $nchi = $match[1];
 		else $nchi = "";
-		if ($nchi=="0") print "&nbsp;<img src=\"image/small/childless.gif\" alt=\"".$pgv_lang["childless_family"]."\" title=\"".$pgv_lang["childless_family"]."\" />";
+		if ($nchi=="0") print "&nbsp;<img src=\"images/small/childless.gif\" alt=\"".$pgv_lang["childless_family"]."\" title=\"".$pgv_lang["childless_family"]."\" />";
 	}
 	$show_full = $save_show_full;
 	if ($save_show_full) {

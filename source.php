@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: source.php,v 1.3 2006/10/30 15:00:45 lsces Exp $
+ * @version $Id: source.php,v 1.4 2007/05/27 14:45:30 lsces Exp $
  */
 
 /**
@@ -77,18 +77,17 @@ $linkToID = $controller->sid;	// -- Tell addmedia.php what to link to
 				<tr>
 					<?php if ($editmenu!==false) { ?>
 					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
+					<?php $editmenu->printMenu(); ?>
+					</td>
 					<?php
-						$editmenu->printMenu();
 					}
 					if ($othermenu!==false) {
 					?>
-					</td>
+
 					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
-					<?php
-					$othermenu->printMenu();
-					} // other
-					?>
+					<?php $othermenu->printMenu(); ?>
 					</td>
+					<?php } ?>
 				</tr>
 			</table>
 			<?php }
@@ -137,94 +136,30 @@ if ((!$controller->isPrintPreview())&&($controller->userCanEdit())) {
 ?>
 		</table>
 		<br /><br />
-
+		</td></tr>
+		<tr class="center"><td colspan="2">
 <?php
 //Print the tasks table
 if (file_exists("modules/research_assistant/research_assistant.php") && ($SHOW_RESEARCH_ASSISTANT>=getUserAccessLevel())) {
- include_once('modules/research_assistant/research_assistant.php'); 
+ include_once('modules/research_assistant/research_assistant.php');
  $mod = new ra_functions();
+	$mod->Init();
  $out = $mod->getSourceTasks($controller->sid);
  print $out;
-}?>
- 
- 
-<?php print_help_link("sources_listbox_help", "qm","other_records"); ?>
-<span class="label"><?php print $pgv_lang["other_records"]; ?></span>
-<?php
+	echo "</td></tr>";
+	echo "<tr class=\"center\"><td colspan=\"2\">";
+}
+
+
 // -- array of names
 $myindilist = $controller->source->getSourceIndis();
 $myfamlist = $controller->source->getSourceFams();
 $ci=count($myindilist);
 $cf=count($myfamlist);
-if (($ci>0)||($cf>0)) {
-	?>
-	<table class="list_table">
-		<tr>
-		<?php if ($ci>0) { ?>
-			<td class="list_label">
-				<?php print $pgv_lang["individuals"]; ?>
-			</td>
-		<?php }
-		if ($cf>0) { ?>
-			<td class="list_label">
-				<?php print $pgv_lang["families"]; ?>
-			</td>
-		<?php } ?>
-		</tr>
-		<tr>
-			<?php if ($ci>0) { ?>
-			<td class="list_value_wrap">
-				<ul>
-				<?php
-				foreach ($myindilist as $key => $value) {
-					print_list_person($key, array(check_NN(get_sortable_name($key)), get_gedcom_from_id($value["gedfile"])));
-					print "\n";
-				}
-				if (count($indi_hide)>0) {
-					print "<li>".$pgv_lang["hidden"]." (".count($indi_hide).")";
-					print_help_link("privacy_error_help", "qm");
-					print "</li>";
-				}
-				?>
-				</ul>
-			</td>
-			<?php }
-			if ($cf>0) { ?>
-			<td class="list_value_wrap">
-				<ul>
-				<?php
-				foreach ($myfamlist as $key => $value) {
-					print_list_family($key, array(get_sortable_family_descriptor($key), get_gedcom_from_id($value["gedfile"])));
-				}
-				if (count($fam_hide)>0) {
-					print "<li>".$pgv_lang["hidden"]." (".count($fam_hide).")";
-					print_help_link("privacy_error_help", "qm");
-					print "</li>";
-				}
-				?>
-				</ul>
-			</td>
-			<?php } ?>
-		</tr>
-		<tr>
-			<?php if ($ci>0) { ?>
-			<td>
-				<?php print $pgv_lang["total_indis"]." ".$ci; ?>
-				<?php if (count($indi_private)>0) print "&nbsp;(".$pgv_lang["private"]." ".count($indi_private).")"; ?>
-				<?php if (count($indi_hide)>0) print "&nbsp;--&nbsp;".$pgv_lang["hidden"]." ".count($indi_hide); ?>
-			</td>
-			<?php }
-			if ($cf>0) { ?>
-			<td>
-			<?php print $pgv_lang["total_fams"]." ".$cf; ?>
-			<?php if (count($fam_private)>0) print "&nbsp;(".$pgv_lang["private"]." ".count($fam_private).")"; ?>
-			<?php if (count($fam_hide)>0) print "&nbsp;--&nbsp;".$pgv_lang["hidden"]." ".count($fam_hide); ?>
-			</td>
-			<?php } ?>
-		</tr>
-	</table>
-<?php }
-else print "&nbsp;&nbsp;&nbsp;<span class=\"warning\"><i>".$pgv_lang["no_results"]."</span>";
+
+if ($ci>0) print_indi_table($myindilist, $pgv_lang["individuals"]." @ ".$controller->source->getTitle());
+if ($cf>0) print_fam_table($myfamlist, $pgv_lang["families"]." @ ".$controller->source->getTitle());
+
 ?>
 	<br />
 	<br />

@@ -21,8 +21,13 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: source_class.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: source_class.php,v 1.3 2007/05/27 14:45:36 lsces Exp $
  */
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
 
 require_once('includes/gedcomrecord.php');
 
@@ -69,7 +74,7 @@ class Source extends GedcomRecord {
 		}
 		if (empty($sourcerec)) {
 			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
-				$sourcerec = find_record_in_file($pid);
+				$sourcerec = find_updated_record($pid);
 				$fromfile = true;
 			}
 		}
@@ -94,7 +99,7 @@ class Source extends GedcomRecord {
 	 */
 	function getTitle() {
 		global $pgv_lang;
-
+		if (!$this->canDisplayDetails()) return $pgv_lang["private"];
 		if (empty($this->name)) return $pgv_lang["unknown"];
 		return $this->name;
 	}
@@ -109,7 +114,7 @@ class Source extends GedcomRecord {
 	}
 
 	/**
-	 * Parse the facts from the individual record
+	 * Parse the facts from the source record
 	 */
 	function parseFacts() {
 		if (!is_null($this->sourcefacts)) return;
@@ -176,6 +181,14 @@ class Source extends GedcomRecord {
 	}
 
 	/**
+	 * get the count of individuals connected to this source
+	 * @return array
+	 */
+	function countSourceIndis() {
+		return get_list_size("indilist", "SOUR @".$this->xref."@");
+	}
+
+	/**
 	 * get the list of individuals connected to this source
 	 * @return array
 	 */
@@ -191,6 +204,14 @@ class Source extends GedcomRecord {
 	}
 
 	/**
+	 * get the count of families connected to this source
+	 * @return array
+	 */
+	function countSourceFams() {
+		return get_list_size("famlist", "SOUR @".$this->xref."@");
+	}
+
+	/**
 	 * get the list of families connected to this source
 	 * @return array
 	 */
@@ -203,6 +224,97 @@ class Source extends GedcomRecord {
 		$this->famlist = search_fams($query);
 		uasort($this->famlist, "itemsort");
 		return $this->famlist;
+	}
+
+	/**
+	 * get the count of objects connected to this source
+	 * @return array
+	 */
+	function countSourceObjects() {
+		return get_list_size("objectlist", "SOUR @".$this->xref."@");
+	}
+
+	/**
+	 * get the source name
+	 * @return string
+	 */
+	function getName() {
+		return $this->getTitle();
+	}
+
+	/**
+	 * get the source sortable name
+	 * @return string
+	 */
+	function getSortableName($subtag="") {
+		global $pgv_lang;
+		if (!$this->canDisplayDetails()) {
+			if (empty($subtag)) return $pgv_lang["private"];
+			else return "";
+		}
+		if (empty($subtag)) return get_gedcom_value("TITL", 1, $this->gedrec, '', false);
+		else return get_gedcom_value("TITL:".$subtag, 1, $this->gedrec, '', false);
+	}
+
+	/**
+	 * get the source additional name
+	 * @return string
+	 */
+	function getAddName() {
+		$addn = get_gedcom_value("TITL:_HEB", 1, $this->gedrec, '', false);
+		if (empty($addn)) $addn = get_gedcom_value("TITL:ROMN", 1, $this->gedrec, '', false);
+		return $addn;
+	}
+
+	/**
+	 * get the repository of this source record
+	 * @return string
+	 */
+	function getRepo() {
+		if (!isset($this->repo)) $this->repo = get_gedcom_value("REPO", 1, $this->gedrec, '', false);
+		return $this->repo;
+	}
+
+	/**
+	 * get the author of this source record
+	 * @return string
+	 */
+	function getAuth() {
+		if (!isset($this->auth)) $this->auth = get_gedcom_value("AUTH", 1, $this->gedrec, '', false);
+		return $this->auth;
+	}
+
+	/**
+	 * get the URL to link to this source
+	 * @string a url that can be used to link to this source
+	 */
+	function getLinkUrl() {
+		global $GEDCOM;
+
+		$url = "source.php?sid=".$this->getXref()."&amp;ged=".$GEDCOM;
+		if ($this->isRemote()) {
+			$parts = preg_split("/:/", $this->rfn);
+			if (count($parts)==2) {
+				$servid = $parts[0];
+				$aliaid = $parts[1];
+				if (!empty($servid)&&!empty($aliaid)) {
+					$serviceClient = ServiceClient::getInstance($servid);
+					if (!empty($serviceClient)) {
+						$surl = $serviceClient->getURL();
+						$url = "source.php?sid=".$aliaid;
+						if ($serviceClient->getType()=="remote") {
+							if (!empty($surl)) $url = dirname($surl)."/".$url;
+						}
+						else {
+							$url = $surl.$url;
+						}
+						$gedcom = $serviceClient->getGedfile();
+						if (!empty($gedcom)) $url.="&amp;ged=".$gedcom;
+					}
+				}
+			}
+		}
+		return $url;
 	}
 }
 ?>

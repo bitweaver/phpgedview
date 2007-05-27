@@ -235,7 +235,7 @@ function print_fact($factrec, $pid, $linenum, $indirec=false) {
 		  $user = getUser(getUserName());
 		  if ((showFactDetails($factref, $pid)) && (FactViewRestricted($pid, $factrec))) {
 			   if (isset($resn_value)) {
-					print "<img src=\"image/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
+					print "<img src=\"images/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
 					// print_help_link("RESN_help", "qm");
 				}
 			   /**
@@ -350,7 +350,7 @@ function print_fact($factrec, $pid, $linenum, $indirec=false) {
 			   if ($ct>0) print $factarray["_PGVU"].": ".$match[1];
 			   // -- Find RESN tag
 			   if (isset($resn_value)) {
-				   print "<img src=\"image/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
+				   print "<img src=\"images/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
 					print_help_link("RESN_help", "qm");
 			   }
 				if ($fact!="ADDR") {
@@ -865,7 +865,7 @@ function print_main_sources($factrec, $level, $pid, $linenum) {
 	 			if ($resn_tag > 0) $resn_value = strtolower(trim($rmatch[1]));
 			    // -- Find RESN tag
 			   if (isset($resn_value)) {
-				   print "<img src=\"image/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
+				   print "<img src=\"images/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
 					print_help_link("RESN_help", "qm");
 			   }
 			   if ($source) {
@@ -1011,7 +1011,7 @@ function print_main_notes($factrec, $level, $pid, $linenum) {
 	 			if ($resn_tag > 0) $resn_value = strtolower(trim($match[1]));
 			    // -- Find RESN tag
 			   if (isset($resn_value)) {
-				   print "<br /><img src=\"image/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
+				   print "<br /><img src=\"images/RESN_".$resn_value.".gif\" alt=\"".$pgv_lang[$resn_value]."\" title=\"".$pgv_lang[$resn_value]."\" />\n";
 					print_help_link("RESN_help", "qm");
 			   }
 			   print "<br />\n";

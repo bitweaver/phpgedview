@@ -23,14 +23,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_rtl.php,v 1.3 2006/10/02 22:05:51 lsces Exp $
+ * @version $Id: functions_rtl.php,v 1.4 2007/05/27 14:45:35 lsces Exp $
  */
 
-/**
- * security check to prevent hackers from directly accessing this file
- */
-if (strstr($_SERVER["SCRIPT_NAME"],"functions_rtl.php")) {
-	print "Why do you want to do that?";
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
 }
 

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: findmedia.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: findmedia.php,v 1.3 2007/05/27 14:45:30 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
@@ -327,7 +327,7 @@ if ($action=="filter") {
 
 		print "<form action=\"findmedia.php\" method=\"get\"><input type=\"hidden\" name=\"embed\" value=\"".$embed."\" /><input type=\"hidden\" name=\"directory\" value=\"".$directory."\" />";
 		print "<input type=\"hidden\" name=\"thumbdir\" value=\"".$thumbdir."\" /><input type=\"hidden\" name=\"level\" value=\"".$level."\" /><input type=\"hidden\" name=\"action\" value=\"newdir\" />";
-		print "<a href=\"javascript:;\" onclick=\"return expand_layer('newdir');\"><img id=\"newnote_img\" src=\"image/plus.gif\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" />".$pgv_lang["add_directory"]."</a>\n";
+		print "<a href=\"javascript:;\" onclick=\"return expand_layer('newdir');\"><img id=\"newnote_img\" src=\"images/plus.gif\" border=\"0\" width=\"11\" height=\"11\" alt=\"\" />".$pgv_lang["add_directory"]."</a>\n";
 		print_help_link("new_dir_help","qm");
 		print "<br /><div id=\"newdir\" style=\"display: none;\"><table class=\"list_table\"><td class=\"list_value\"><input name=\"newdir\"/>";
 		print "<input type=\"submit\" value=\" &gt; \"</td></td></tr></table></div></div><form><center>";

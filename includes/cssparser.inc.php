@@ -4,12 +4,17 @@
  *
  * See the readme file : http://www.phpclasses.org/browse/file/4685.html
  *
- * $Id: cssparser.inc.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * $Id: cssparser.inc.php,v 1.3 2007/05/27 14:45:31 lsces Exp $
  *
  * @author http://www.phpclasses.org/browse/package/1289.html
  * @package PhpGedView
  * @subpackage Charts
  */
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
 
 class cssparser {
   var $css;
@@ -238,7 +243,7 @@ class cssparser {
       foreach($values as $key => $value) {
         $result .= "  $key: $value;\n";
       }
-      $result .= "}\n\n";
+      $result .= "}*\n\n";
     }
     return $result;
   }

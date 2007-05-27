@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: functions_places.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: functions_places.php,v 1.3 2007/05/27 14:45:34 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -139,7 +139,7 @@ function print_place_subfields($element_id) {
 				img.useMap='#'+ctry;
 			}
 			else {
-				img.src='image/pix1.gif'; // show image only if mapname exists
+				img.src='images/pix1.gif'; // show image only if mapname exists
 				document.getElementsByName('PLAC_CTRY_div')[0].style.height='auto';
 			}
 			// refresh state image
@@ -157,7 +157,7 @@ function print_place_subfields($element_id) {
 				img.useMap='#'+stae;
 			}
 			else {
-				img.src='image/pix1.gif'; // show image only if mapname exists
+				img.src='images/pix1.gif'; // show image only if mapname exists
 				document.getElementsByName('PLAC_STAE_div')[0].style.height='auto';
 			}
 			// refresh county image
@@ -175,7 +175,7 @@ function print_place_subfields($element_id) {
 				img.useMap='#'+cnty;
 			}
 			else {
-				img.src='image/pix1.gif'; // show image only if mapname exists
+				img.src='images/pix1.gif'; // show image only if mapname exists
 				document.getElementsByName('PLAC_CNTY_div')[0].style.height='auto';
 			}
 			// refresh city image
@@ -302,7 +302,7 @@ function print_place_subfields($element_id) {
 		}
 		// clickable map
 		if ($i<$icountry or $i>$icounty) print "<br />\n";
-		else print "<div id='".$subtagname."_div' name='".$subtagname."_div' style='overflow:hidden; height:32px; width:auto; border-width:thin; border-style:none;'><img name='".$subtagname."_img' src='image/spacer.gif' usemap='usemap' border='0' alt='' title='' style='height:inherit; width:inherit;' /></div>";
+		else print "<div id='".$subtagname."_div' name='".$subtagname."_div' style='overflow:hidden; height:32px; width:auto; border-width:thin; border-style:none;'><img name='".$subtagname."_img' src='images/spacer.gif' usemap='usemap' border='0' alt='' title='' style='height:inherit; width:inherit;' /></div>";
 	}
 	print "</div>";
 }

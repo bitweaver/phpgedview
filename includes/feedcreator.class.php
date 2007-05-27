@@ -26,7 +26,7 @@
  * @author www.bitfolge.de
  * @package PhpGedView
  * @subpackage RSS
- * @version $Id: feedcreator.class.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: feedcreator.class.php,v 1.3 2007/05/27 14:45:32 lsces Exp $
  *
  * Changelog:
  *
@@ -111,7 +111,7 @@ class FeedItem extends HtmlDescribable {
 	 *
 	 *
 	 * display :
-	 * <enclosure length="17691" url="http://something.com/picture.jpg" type="image/jpeg" />
+	 * <enclosure length="17691" url="http://something.com/picture.jpg" type="images/jpeg" />
 	 *
 	 */
 	var $enclosure;

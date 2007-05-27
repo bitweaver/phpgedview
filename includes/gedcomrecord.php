@@ -3,7 +3,7 @@
  * Base class for all gedcom records
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	John Finlay and Others
+ * Copyright (C) 2002 to 2006	John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Page does not validate see line number 1109 -> 15 August 2005
- *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: gedcomrecord.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: gedcomrecord.php,v 1.3 2007/05/27 14:45:36 lsces Exp $
  */
- 
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
 require_once('includes/person_class.php');
 require_once('includes/family_class.php');
 require_once('includes/source_class.php');
+require_once('includes/repository_class.php');
+require_once('includes/media_class.php');
 class GedcomRecord {
 	var $gedrec = "";
 	var $xref = "";
@@ -69,13 +74,13 @@ class GedcomRecord {
 			$this->type = trim($match[2]);
 		}
 	}
-	
+
 	/**
 	 * Static function used to get an instance of an object
 	 * @param string $pid	the ID of the object to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $indilist, $famlist, $sourcelist, $otherlist, $GEDCOM, $GEDCOMS, $pgv_changes;
+		global $indilist, $famlist, $sourcelist, $repolist, $otherlist, $GEDCOM, $GEDCOMS, $pgv_changes;
 
 		//-- first check for the object in the cache
 		if (isset($indilist[$pid]) && $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
@@ -86,6 +91,12 @@ class GedcomRecord {
 		}
 		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
 			if (isset($sourcelist[$pid]['object'])) return $sourcelist[$pid]['object'];
+		}
+		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+			if (isset($repolist[$pid]['object'])) return $repolist[$pid]['object'];
+		}
+		if (isset($objectlist[$pid]) && $objectlist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+			if (isset($objectlist[$pid]['object'])) return $objectlist[$pid]['object'];
 		}
 		if (isset($otherlist[$pid]) && $otherlist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
 			if (isset($otherlist[$pid]['object'])) return $otherlist[$pid]['object'];
@@ -108,43 +119,55 @@ class GedcomRecord {
 		//-- check if it is a new object not yet in the database
 		if (empty($indirec)) {
 			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
-				$indirec = find_record_in_file($pid);
+				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
 		}
 		if (empty($indirec)) return null;
-		
+
 		$ct = preg_match("/0 @.*@ (\w*)/", $indirec, $match);
 		if ($ct>0) {
 			$type = trim($match[1]);
 			if ($type=="INDI") {
-				$person = new Person($indirec, $simple);
-				if (!empty($fromfile)) $person->setChanged(true);
-				$indilist[$pid]['object'] = &$person;
-				return $person;
+				$record = new Person($indirec, $simple);
+				if (!empty($fromfile)) $record->setChanged(true);
+				$indilist[$pid]['object'] = &$record;
+				return $record;
 			}
 			else if ($type=="FAM") {
-				$person = new Family($indirec, $simple);
-				if (!empty($fromfile)) $person->setChanged(true);
-				$famlist[$pid]['object'] = &$person;
-				return $person;
+				$record = new Family($indirec, $simple);
+				if (!empty($fromfile)) $record->setChanged(true);
+				$famlist[$pid]['object'] = &$record;
+				return $record;
 			}
 			else if ($type=="SOUR") {
-				$person = new Source($indirec, $simple);
-				if (!empty($fromfile)) $person->setChanged(true);
-				$sourcelist[$pid]['object'] = &$person;
-				return $person;
+				$record = new Source($indirec, $simple);
+				if (!empty($fromfile)) $record->setChanged(true);
+				$sourcelist[$pid]['object'] = &$record;
+				return $record;
+			}
+			else if ($type=="REPO") {
+				$record = new Repository($indirec, $simple);
+				if (!empty($fromfile)) $record->setChanged(true);
+				$repolist[$pid]['object'] = &$record;
+				return $record;
+			}
+			else if ($type=="OBJE") {
+				$record = new Media($indirec, $simple);
+				if (!empty($fromfile)) $record->setChanged(true);
+				$objectlist[$pid]['object'] = &$record;
+				return $record;
 			}
 			else {
-				$person = new GedcomRecord($indirec, $simple);
-				if (!empty($fromfile)) $person->setChanged(true);
-				$otherlist[$pid]['object'] = &$person;
-				return $person;
+				$record = new GedcomRecord($indirec, $simple);
+				if (!empty($fromfile)) $record->setChanged(true);
+				$otherlist[$pid]['object'] = &$record;
+				return $record;
 			}
 		}
 		return null;
 	}
-	
+
 	/**
 	 * get the xref
 	 */
@@ -209,20 +232,21 @@ class GedcomRecord {
 	}
 
 	/**
-	 * get the URL to link to this person
+	 * get the URL to link to this record
 	 * This method should be overriden in child sub-classes
 	 * @string a url that can be used to link to this person
 	 */
 	function getLinkUrl() {
 		global $GEDCOM, $SERVER_URL;
 
-		$url = "index.php";
+		//$url = "index.php";
+		$url = "gedrecord.php?pid=".$this->xref; // no class yet for NOTE record
 		if ($this->isRemote()) {
 			$parts = preg_split("/:/", $this->rfn);
 			$servid = $parts[0];
 			$aliaid = $parts[1];
 			$servrec = find_gedcom_record($servid);
-			if (empty($servrec)) $servrec = find_record_in_file($servid);
+			if (empty($servrec)) $servrec = find_updated_record($servid);
 			if (!empty($servrec)) {
 				$surl = get_gedcom_value("URL", 1, $servrec);
 				$url = dirname($surl);
@@ -231,6 +255,30 @@ class GedcomRecord {
 			}
 		}
 		return $url;
+	}
+	
+	/**
+	 * Get the title that should be used in the link
+	 * @return string
+	 */
+	function getLinkTitle() {
+		global $GEDCOM, $GEDCOMS;
+
+		$title = $GEDCOMS[$GEDCOM]['title'];
+		if ($this->isRemote()) {
+			$parts = preg_split("/:/", $this->rfn);
+			if (count($parts)==2) {
+				$servid = $parts[0];
+				$aliaid = $parts[1];
+				if (!empty($servid)&&!empty($aliaid)) {
+					$serviceClient = ServiceClient::getInstance($servid);
+					if (!empty($serviceClient)) {
+						$title = $serviceClient->getTitle();
+					}
+				}
+			}
+		}
+		return $title;
 	}
 
 	/**
@@ -271,13 +319,101 @@ class GedcomRecord {
 
 		return false;
 	}
-	
+
 	/**
 	 * can the details of this record be shown
 	 * This method should be overridden in sub classes
-	 * @return boolean 
+	 * @return boolean
 	 */
 	function canDisplayDetails() {
 		return displayDetails($this->gedrec, $this->type);
 	}
+
+	/**
+	 * get the URL to link to a date
+	 * @string a url that can be used to link to calendar
+	 */
+	function getDateUrl($gedcom_date) {
+		global $GEDCOM;
+		$ged_months = array("", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC");
+		$pdate = parse_date($gedcom_date);
+		list($y, $m, $d) = explode("-", $pdate[0]["sort"]);
+		$d+=0; $m+=0; $y+=0; // convert to num
+		if ($y<1) $y = date('Y');
+		if ($m<1 or $m>12) $url = "calendar.php?action=year&amp;year=".$y."&amp;ged=".$GEDCOM;
+		else if ($d<1 or $d>31) $url = "calendar.php?action=calendar&amp;month=".$ged_months[$m+0]."&amp;year=".$y."&amp;ged=".$GEDCOM;
+		else $url = "calendar.php?action=today&amp;day=".$d."&amp;month=".$ged_months[$m+0]."&amp;year=".$y."&amp;ged=".$GEDCOM;
+		return $url;
+	}
+	
+	/**
+	 * get the URL to link to a place
+	 * @string a url that can be used to link to placelist
+	 */
+	function getPlaceUrl($gedcom_place) {
+		global $GEDCOM;
+		$exp = explode(",", $gedcom_place);
+		$level = count($exp);
+		$url = "placelist.php?action=show&amp;level=".$level;
+		for ($i=0; $i<$level; $i++) $url .= "&amp;parent[".$i."]=".urlencode(trim($exp[$level-$i-1]));
+		$url .= "&amp;ged=".$GEDCOM;
+		return $url;
+	}
+
+	/**
+	 * get the first part of a place record
+	 * @string a url that can be used to link to placelist
+	 */
+	function getPlaceShort($gedcom_place) {
+		global $GEDCOM;
+		$gedcom_place = trim($gedcom_place, " ,");
+		$exp = explode(",", $gedcom_place);
+		return trim($exp[0]);
+	}
+
+	/**
+	 * get the sortable name
+	 * This method should be overriden in child sub-classes
+	 * (no class yet for NOTE record)
+	 * @return string
+	 */
+	function getSortableName() {
+		return $this->type." ".$this->xref;
+	}
+
+	/**
+	 * get  lastchange record
+	 * @return string the lastchange record
+	 */
+	function getLastchangeRecord() {
+		return trim(get_sub_record(1, "1 CHAN", $this->gedrec));
+	}
+
+	/**
+	 * get  lastchange date
+	 * @return string the lastchange date
+	 */
+	function getLastchangeDate() {
+		return get_gedcom_value("DATE", 2, $this->getLastchangeRecord(), '', false);
+	}
+
+	/**
+	 * get sortable lastchange date
+	 * @return string the lastchange date in sortable format YYYY-MM-DD HH:MM
+	 */
+	function getSortableLastchangeDate() {
+		$pdate = parse_date($this->getLastchangeDate());
+		$ptime = get_gedcom_value("DATE:TIME", 2, $this->getLastchangeRecord());
+		$sdate = sprintf("%04d-%02d-%02d %s", $pdate[0]["year"], $pdate[0]["mon"], $pdate[0]["day"], $ptime);
+		return $sdate;
+	}
+
+	/**
+	 * get lastchange PGV user
+	 * @return string the lastchange user
+	 */
+	function getLastchangeUser() {
+		return get_gedcom_value("_PGVU", 2, $this->getLastchangeRecord(), '', false);
+	}
 }
+?>
