@@ -27,7 +27,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig_gedcom.php
- * @version $Id: config_gedcom.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: config_gedcom.php,v 1.5 2007/05/28 11:21:58 lsces Exp $
  */
 
 if (preg_match("/\Wconfig_gedcom\.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -85,6 +85,7 @@ $CHECK_CHILD_DATES  = true;             // -- When checking if a person is alive
 $SHOW_GEDCOM_RECORD = true;				// -- a true value will provide a link on detail pages that will
 										// --allow people to view the actual lines from the gedcom file
 $ALLOW_EDIT_GEDCOM = true;				//-- allow users with canEdit privileges to edit the gedcom
+$SYNC_GEDCOM_FILE = true;				//-- synchronize the gedcom file with online edits.  when set to false no changes will be written to the gedcom file
 $POSTAL_CODE = true;              //-- allow users to choose where to print the postal code. True is after the city name, false is before the city name
 $ALPHA_INDEX_LISTS = true;				// -- for very long individual and family lists, set this to true to split the list into
 										// -- pages by the first letter of their last name.
@@ -96,7 +97,7 @@ $NAME_FROM_GEDCOM = false;				// -- By default phpGedView uses the name stored i
 $SHOW_MARRIED_NAMES = false;			// -- Option to show the married name for females in the indilist
 
 $SHOW_ID_NUMBERS = true;				// -- Show gedcom id numbers on charts next to individual names
-$SHOW_FAM_ID_NUMBERS = true;			// -- Show gedcom id numbers on charts next to family names
+$SHOW_LAST_CHANGE = true;				// -- Show gedcom record last change on lists
 $SHOW_PEDIGREE_PLACES = "9";			// -- What level to show the birth and death places next to the birth and death dates on the pedigree and descendency charts.
 
 $MULTI_MEDIA = true;            		// -- if you have no multi-media files, set this to false
@@ -107,6 +108,7 @@ $SHOW_HIGHLIGHT_IMAGES = true;			// -- show highlighted photos on pedigree tree 
 $USE_THUMBS_MAIN = false;				// -- for the main image on the individual page, whether or not to use the full res image or the thumbnail
 $THUMBNAIL_WIDTH = "100";				// -- the width to use when automatically generating thumbnails
 $AUTO_GENERATE_THUMBS = true;			// -- whether PGV should try to automatically generate thumbnails
+$USE_MEDIA_VIEWER = true;				// -- If set to true, when a user clicks on an image they will be taken to the mediaviewer.php page.  If set to false a new window will open at imageview.php
 
 $HIDE_GEDCOM_ERRORS = false;			//-- a true value will disable error messages for undefined GEDCOM codes.  See the
 										//-- non-standard gedcom codes section of the readme file for more information.
@@ -116,6 +118,7 @@ $WORD_WRAPPED_NOTES = false;			//-- some programs wrap notes at word boundaries 
 $GEDCOM_DEFAULT_TAB = "0";				//-- this setting controls which tab on the individual page should first be displayed to visitors
 
 $SHOW_CONTEXT_HELP = true;				// show ? links on the page for contextual popup help
+$PHPGEDVIEW_EMAIL = "";		    		// -- "From:" address for automatically generated e-mails
 $CONTACT_EMAIL   = "you@yourdomain.com";		    // -- this is who the user should contact for more information
 $CONTACT_METHOD = "messaging2";						// -- the method to allow users to contact you. options are: mailto, messaging, messaging2
 $WEBMASTER_EMAIL = "webmaster@yourdomain.com";		// -- this is who the user should contact in case of errors
@@ -131,6 +134,7 @@ $SECURITY_CHECK_GEDCOM_DOWNLOADABLE = true;	//-- check for downloadability of GE
 
 $SHOW_STATS = false;					//-- Show execution stats at the bottom of the page
 $SHOW_COUNTER = false;        //-- Show hit counters on portal and individual pages
+$SHOW_SPIDER_TAGLINE = true;         //-- On pages generated for search engines, name the engine as the last line
 $DAYS_TO_SHOW_LIMIT = "30";			//-- Maximum number of days in Upcoming Events block
 $COMMON_NAMES_THRESHOLD	= "40";		//-- The minimum number of times a surname must appear before it is shown on the most common surnames list
 $COMMON_NAMES_ADD	= "";			//-- a comma seperated list of surnames the admin can add to the common surnames list
