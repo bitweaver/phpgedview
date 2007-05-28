@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.10 2007/05/28 11:50:59 lsces Exp $
+ * @version $Id: editconfig.php,v 1.11 2007/05/28 14:52:03 lsces Exp $
  */
 
 // Initialization
@@ -36,14 +36,13 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require "config.php";
+require "includes/bitsession.php";
 require $confighelpfile["english"];
 if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 require $helptextfile["english"];
 if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
 
 if (empty($action)) $action="";
-if (!isset($LOGIN_URL)) $LOGIN_URL = "";
 if (!isset($COMMIT_COMMAND)) $COMMIT_COMMAND="";
 
 print_header($pgv_lang["configure_head"]);
@@ -91,12 +90,6 @@ if ($action=="update" && !isset($security_user)) {
 	$configtext = preg_replace('/\$MAX_VIEW_TIME\s*=\s*".*";/', "\$MAX_VIEW_TIME = \"".$_POST["NEW_MAX_VIEW_TIME"]."\";", $configtext);
 	$configtext = preg_replace('/\$SERVER_URL\s*=\s*".*";/', "\$SERVER_URL = \"".$_POST["NEW_SERVER_URL"]."\";", $configtext);
 	$configtext = preg_replace('/\$COMMIT_COMMAND\s*=\s*".*";/', "\$COMMIT_COMMAND = \"".$_POST["NEW_COMMIT_COMMAND"]."\";", $configtext);
-	if (preg_match('/\$DBTYPE\s*=\s*".*";/', $configtext)>0) {
-		$configtext = preg_replace('/\$LOGIN_URL\s*=\s*".*";/', "\$LOGIN_URL = \"".$_POST["NEW_LOGIN_URL"]."\";", $configtext);
-	}
-	else {
-		$configtext = preg_replace('/\$PGV_MEMORY_LIMIT/', "\$LOGIN_URL = \"".$_POST["NEW_LOGIN_URL"]."\";\r\n\$PGV_MEMORY_LIMIT", $configtext);
-	}
 	$configtext = preg_replace('/\$PGV_MEMORY_LIMIT\s*=\s*".*";/', "\$PGV_MEMORY_LIMIT = \"".$_POST["NEW_PGV_MEMORY_LIMIT"]."\";", $configtext);
 	$DBHOST = $_POST["NEW_DBHOST"];
 	$DBTYPE = $_POST["NEW_DBTYPE"];
@@ -417,11 +410,6 @@ if ($action=="update" && !isset($security_user)) {
 			$GUESS_URL = stripslashes("http://".$_SERVER["SERVER_NAME"].dirname($SCRIPT_NAME)."/");
 			print_text("server_url_note");
 			?>
-		</td>
-	</tr>
-	<tr>
-		<td class="descriptionbox wrap"><?php print_help_link("LOGIN_URL_help", "qm", "LOGIN_URL"); print $pgv_lang["LOGIN_URL"];?></td>
-		<td class="optionbox"><input type="text" name="NEW_LOGIN_URL" value="<?php print $LOGIN_URL?>" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('LOGIN_URL_help');" size="100" />
 		</td>
 	</tr>
 	<tr>

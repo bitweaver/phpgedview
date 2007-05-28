@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: manageservers.php,v 1.3 2006/10/28 20:17:04 lsces Exp $
+ * @version $Id: manageservers.php,v 1.4 2007/05/28 14:52:03 lsces Exp $
  * @author rbennett
  */
 
@@ -38,8 +38,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
-require_once("includes/functions.php");
+require("includes/bitsession.php");
 require($factsfile["english"]);
 if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 require_once("includes/functions_edit.php");
@@ -188,9 +187,9 @@ function delete_search_engine_ip($ip) {
 
 
  // print_simple_header("Manage Servers");
-print_header($pgv_lang["administration"]);
+print_header( tra("Administration") );
 //-- only allow gedcom admins here
-if (!userGedcomAdmin(getUserName())) {
+if ( !$gBitUser->isAdmin() ) {
 	print $pgv_lang["access_denied"];
 	//-- display messages as to why the editing access was denied
 	if (!userGedcomAdmin(getUserName())) print "<br />".$pgv_lang["user_cannot_edit"];
