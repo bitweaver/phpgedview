@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.7 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: config.php,v 1.8 2007/05/28 14:52:39 lsces Exp $
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -46,7 +46,6 @@ $PGV_SESSION_SAVE_PATH = "c:/network/Apache2/tmp/";					//-- Path to save PHP se
 												//-- leaving it blank will use the default path for your php configuration as found in php.ini
 $PGV_SESSION_TIME = "7200";						//-- number of seconds to wait before an inactive session times out
 $SERVER_URL = "http://localhost/bitweaverdev/phpGedView/";								//-- the URL used to access this server
-$LOGIN_URL = "";								//-- the URL to use to go to the login page, use this value if you want to redirect to a different site when users login, useful for switching from http to https
 $MAX_VIEWS = "100";								//-- the maximum number of page views per xx seconds per session
 $MAX_VIEW_TIME = "0";							//-- the number of seconds in which the maximum number of views must not be reached
 $PGV_MEMORY_LIMIT = "32M";						//-- the maximum amount of memory that PGV should be allowed to consume
