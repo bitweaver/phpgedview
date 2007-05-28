@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: admin.php,v 1.8 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: admin.php,v 1.9 2007/05/28 14:50:26 lsces Exp $
  */
 
 /**
@@ -39,11 +39,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require "config.php";
-if (!userGedcomAdmin(getUserName())) {
-	header("Location: login.php?url=admin.php");
-	exit;
-}
+require "includes/bitsession.php";
 
 require  $confighelpfile["english"];
 if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
@@ -98,15 +94,8 @@ if (file_exists("img_editconfig.php")) $d_img_module_str = "<a href=\"img_editco
 
 $err_write = file_is_writeable("config.php");
 
-$users = getUsers();
 $verify_msg = false;
 $warn_msg = false;
-foreach($users as $indexval => $user) {
-	if (!empty($user["comment_exp"])) {
-		if ((strtotime($user["comment_exp"]) != "-1") && (strtotime($user["comment_exp"]) < time("U"))) $warn_msg = true;
-	}
-	if (($verify_msg) && ($warn_msg)) break;
-}
 
 ?>
 <script type="text/javascript">
@@ -123,12 +112,12 @@ function showchanges() {
       <td colspan="2" class="topbottombar">
       <?php
       	global $gBitUser;
-      	print "<h2>PhpGedView v" . $VERSION . " " . $VERSION_RELEASE . "<br />";
-      	print $pgv_lang["administration"];
+      	print "<h2>Bitweaver PhpGedView Port" . $VERSION . "<br />";
+      	print tra("Administration");
       	print "</h2>";
-      	print $pgv_lang["system_time"];
+      	print tra("Current System Time");
       	print " ".get_changed_date(date("j M Y"))." - ".date($TIME_FORMAT);
-      	print "<br />".$pgv_lang["user_time"];
+      	print "<br />".tra("User Time");
       	print " ".get_changed_date(date("j M Y", time()-$_SESSION["timediff"]))." - ".date($TIME_FORMAT, time()-$_SESSION["timediff"]);
       	if ( $gBitUser->IsAdmin() ) {
 		  if ($err_write) {
@@ -161,11 +150,7 @@ function showchanges() {
 	</tr>
 	<tr>
 	  <td class="optionbox width50"><?php print_help_link("readmefile_help", "qm"); ?><a href="readme.txt" target="manual" title="<?php print $pgv_lang["view_readme"]; ?>"><?php print $pgv_lang["readme_documentation"];?></a></td>
-      <td class="optionbox width50"><?php print_help_link("phpinfo_help", "qm"); ?><a href="pgvinfo.php?action=phpinfo" title="<?php print $pgv_lang["show_phpinfo"]; ?>"><?php print $pgv_lang["phpinfo"];?></a></td>
-	</tr>
-	<tr>
       <td class="optionbox width50"><?php print_help_link("config_help_help", "qm"); ?><a href="pgvinfo.php?action=confighelp"><?php print $pgv_lang["config_help"];?></a></td>
-	  <td class="optionbox width50"><?php print_help_link("changelog_help", "qm"); ?><a href="changelog.php" target="manual" title="<?php print $pgv_lang["view_changelog"]; ?>"><?php print_text("changelog"); ?></a></td>
 	</tr>
 	<tr>
       <td class="optionbox width50"><?php print_help_link("registry_help", "qm"); ?><a href="http://phpgedview.sourceforge.net/registry.php" target="_blank"><?php print $pgv_lang["pgv_registry"];?></a></td>
@@ -178,7 +163,7 @@ function showchanges() {
 	  <td class="optionbox width50"><?php print_help_link("edit_gedcoms_help", "qm"); ?><a href="editgedcoms.php"><?php print $pgv_lang["manage_gedcoms"];?></a></td>
 	  <td class="optionbox width50"><?php print_help_link("help_edit_merge.php", "qm"); ?><a href="edit_merge.php"><?php print $pgv_lang["merge_records"]; ?></a></td>
 	</tr>
-<?php if (userCanEdit(getUserName())) { ?>
+<?php if ($gBitUser->isAdmin()) { ?>
 	<tr>
      <td class="optionbox with50"><?php print_help_link("edit_add_unlinked_person_help", "qm"); ?><a href="javascript: <?php print $pgv_lang["add_unlinked_person"]; ?>" onclick="addnewchild(''); return false;"><?php print $pgv_lang["add_unlinked_person"]; ?></a></td>
      <td class="optionbox width50"><?php print_help_link("edit_add_unlinked_source_help", "qm"); ?><a href="javascript: <?php print $pgv_lang["add_unlinked_source"]; ?>" onclick="addnewsource(''); return false;"><?php print $pgv_lang["add_unlinked_source"]; ?></a></td>
@@ -192,33 +177,12 @@ function showchanges() {
    <tr>
 	  <td colspan="2" class="topbottombar" style="text-align:center; "><?php print $pgv_lang["admin_site"]; ?></td>
    </tr>
-   <tr>
-      <td class="optionbox width50"><?php print_help_link("help_editconfig.php", "qm"); ?><a href="editconfig.php"><?php print $pgv_lang["configuration"];?></a></td>
-      <td class="optionbox width50"><?php print_help_link("um_tool_help", "qm"); ?><a href="usermigrate.php?proceed=migrate"><?php print $pgv_lang["um_header"];?></a></td>
+	<tr>
+		<td class="optionbox width50"><?php print_help_link("help_editconfig.php", "qm"); ?><a href="editconfig.php"><?php print $pgv_lang["configuration"];?></a></td>
+		<td class="optionbox width50"><?php print_help_link("help_faq.php", "qm"); ?><a href="faq.php"><?php print $pgv_lang["faq_list"];?></a></td>
    </tr>
    <tr>
-   	<td class="optionbox width50"><?php print_help_link("help_useradmin.php", "qm"); ?><a href="useradmin.php"><?php print $pgv_lang["user_admin"];?></a></td>
-	<td class="optionbox width50"><?php print_help_link("um_bu_help", "qm"); ?><a href="usermigrate.php?proceed=backup"><?php print $pgv_lang["um_backup"];?></a></td>
-   </tr>
-   <tr>
-   	<td class="optionbox width50"><?php print_help_link("help_faq.php", "qm"); ?><a href="faq.php"><?php print $pgv_lang["faq_list"];?></a></td>
 	<td class="optionbox width50"><?php print_help_link("help_managesites", "qm"); ?><a href="manageservers.php"><?php print $pgv_lang["link_manage_servers"];?></a></td>
-   </tr>
-   <tr>
-      <td class="optionbox width50"><?php print_help_link("help_changelanguage.php", "qm"); ?><a href="changelanguage.php?action=editold"><?php print $pgv_lang["enable_disable_lang"];?></a>
-	     <?php
-	     if (!file_exists($INDEX_DIRECTORY . "lang_settings.php")) {
-	     	print "<br /><span class=\"error\">";
-	     	print $pgv_lang["LANGUAGE_DEFAULT"];
-	     	print "</span>";
-         }
-	     ?>
-	  </td>
-      <td class="optionbox width50"><?php print_help_link("add_new_language_help", "qm"); ?><a href="changelanguage.php?action=addnew"><?php print $pgv_lang["add_new_language"];?></a>
-	  </td>
-   </tr>
-   <tr>
-      <td class="optionbox width50"><?php print_help_link("help_editlang.php", "qm"); ?><a href="editlang.php"><?php print $pgv_lang["translator_tools"];?></a>
 	  </td>
       <td class="optionbox width50"><?php print $d_logfile_str; ?></td>
    </tr>
