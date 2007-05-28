@@ -30,6 +30,7 @@ if (strstr($_SERVER["SCRIPT_NAME"], "functions")) {
 }
 
 require_once ('includes/media_class.php');
+require_once('includes/index_cache.php');
 
 /**
  * import record into database
@@ -244,6 +245,7 @@ function import_record($indirec, $update = false) {
 								$indirec .= "\r\n1 DATE " . date("d") . " " . date("M") . " " . date("Y");
 							}
 						}
+						if ($gid=="") $gid = $type;
 						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "other VALUES ( ?, ?, ?, ? )";
 						$res = $gBitSystem->mDb->query( $sql, array( $gid, $GEDCOMS[$FILE]["id"], $type, $indirec ) );
 
@@ -335,9 +337,11 @@ function update_places($gid, $indirec, $update = false) {
 				else $search = false;
 				$res->free();
 			}
-			
+
 			//-- if we are not searching then we have to insert the place into the db
 			if (!$search) {
+				$std_soundex = soundex($place);
+				$dm_soundex = DMSoundex($place);
 				$p_id = get_next_id("places", "p_id");
 				$sql = 'INSERT INTO '.PHPGEDVIEW_DB_PREFIX.'places (p_id, p_place, p_level, p_parent_id, p_file) VALUES( ?, ?, ?, ?, ? )';
 				$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $place, $level, $parent_id, $GEDCOMS[$FILE]["id"] ) );
@@ -378,45 +382,133 @@ function update_dates($gid, $indirec) {
 		$pt = preg_match_all("/2 DATE (.*)/", $factrec, $match, PREG_SET_ORDER);
 		for ($i = 0; $i < $pt; $i++) {
 			$datestr = trim($match[$i][1]);
-			$date = parse_date($datestr);
-			if (empty ($date[0]["day"]))
-				$date[0]["day"] = 0;
-			if (empty ($date[0]["mon"]))
-				$date[0]["mon"] = 0;
-			if (empty ($date[0]["year"]))
-				$date[0]["year"] = 0;
-			$datestamp = $date[0]['year'];
-			if ($date[0]['mon'] < 10)
+			$dates = parse_date($datestr);
+			foreach($dates as $di=>$date) {
+				if (empty ($date["day"]))
+					$date["day"] = 0;
+				if (empty ($date["mon"]))
+					$date["mon"] = 0;
+				if (empty ($date["year"]))
+					$date["year"] = 0;
+				$datestamp = $date['year'];
+				if ($date['mon'] < 10)
 				$datestamp .= '0';
-			$datestamp .= (int) $date[0]['mon'];
-			if ($date[0]['day'] < 10)
+				$datestamp .= (int) $date['mon'];
+				if ($date['day'] < 10)
 				$datestamp .= '0';
-			$datestamp .= (int) $date[0]['day'];
-			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "dates VALUES( ?, ?, ?, ?, ?, ?, ?, ?,";
-			if (isset ($date[0]["ext"])) {
-				preg_match("/@#D(.*)@/", $date[0]["ext"], $extract_type);
-				$date_types = array (
-					"@#DGREGORIAN@",
-					"@#DJULIAN@",
-					"@#DHEBREW@",
-					"@#DFRENCH R@",
-					"@#DROMAN@",
-					"@#DUNKNOWN@"
-				);
-				if (isset ($extract_type[0]) && in_array($extract_type[0], $date_types))
-					$sql .= "'" . $extract_type[0] . "')";
-				else
+				$datestamp .= (int) $date['day'];
+				$sql = 'INSERT INTO ' . $TBLPREFIX . 'dates VALUES(\'' . $DBCONN->escapeSimple($date["day"]) . '\',\'' . $DBCONN->escapeSimple(str2upper($date["month"])) . "','" . $DBCONN->escapeSimple($date["mon"]) . "','" . $DBCONN->escapeSimple($date["year"]) . "','" . $DBCONN->escapeSimple($datestamp) . "','" . $DBCONN->escapeSimple($fact) . "','" . $DBCONN->escapeSimple($gid) . "','" . $DBCONN->escapeSimple($GEDCOMS[$FILE]["id"]) . "',";
+				if (isset ($date["ext"])) {
+					preg_match("/@#D(.*)@/", $date["ext"], $extract_type);
+					$date_types = array (
+						"@#DGREGORIAN@",
+						"@#DJULIAN@",
+						"@#DHEBREW@",
+						"@#DFRENCH R@",
+						"@#DROMAN@",
+						"@#DUNKNOWN@"
+					);
+					if (isset ($extract_type[0]) && in_array($extract_type[0], $date_types))
+						$sql .= "'" . $extract_type[0] . "')";
+					else
+						$sql .= "NULL)";
+				} else
 					$sql .= "NULL)";
-			} else
-				$sql .= "NULL)";
-			$res = $gBitSystem->mDb->query($sql, array ( $date[0]["day"], str2upper($date[0]["month"] ), $date[0]["mon"], $date[0]["year"], $datestamp, $fact, $gid, $GEDCOMS[$FILE]["id"] ) );
+				$res = $gBitSystem->mDb->query($sql, array ( $date[0]["day"], str2upper($date[0]["month"] ), $date[0]["mon"], $date[0]["year"], $datestamp, $fact, $gid, $GEDCOMS[$FILE]["id"] ) );
 
-			$count++;
+				$count++;
+			}
 		}
 	}
 	return $count;
 }
 
+/**
+ * Insert media items into the database
+ * This method is used in conjuction with the gedcom import/update routines
+ * @param string $objrec	The OBJE subrecord
+ * @param int $objlevel		The original level of this OBJE
+ * @param boolean $update	Whether or not this is an update or an import
+ * @param string $gid		The XREF ID of the record this OBJE is related to
+ * @param int $count		The count of OBJE records in the parent record
+ */
+function insert_media($objrec, $objlevel, $update, $gid, $count) {
+	global $TBLPREFIX, $media_count, $GEDCOMS, $FILE, $DBCONN, $found_ids, $fpnewged;
+
+	//-- check for linked OBJE records
+	//-- linked records don't need to insert to media table
+	$ct = preg_match("/OBJE @(.*)@/", $objrec, $match);
+	if ($ct>0) {
+		//-- get the old id
+		$old_m_media = $match[1];
+		$objref = $objrec;
+		/**
+		 * Hiding some code in order to fix a very annoying bug
+		 * [ 1579889 ] Upgrading breaks Media links
+		 *
+		 * Don't understand the logic of renumbering media objects ??
+		 *
+		//-- if this is an import not an update get the updated ID
+		if (!$update) {
+			if (isset ($found_ids[$old_m_media])) {
+				$new_m_media = $found_ids[$old_m_media]["new_id"];
+			} else {
+				$new_m_media = get_new_xref("OBJE");
+				$found_ids[$old_m_media]["old_id"] = $old_m_media;
+				$found_ids[$old_m_media]["new_id"] = $new_m_media;
+			}
+		}
+		//-- an update so the ID won't change
+		else $new_m_media = $old_m_media;
+		**/
+		$new_m_media = $old_m_media;
+		$m_media = $new_m_media;
+		//print "LINK: old $old_m_media new $new_m_media $objref<br />";
+		if ($m_media != $old_m_media) $objref = preg_replace("/@$old_m_media@/", "@$m_media@", $objref);
+	}
+	//-- handle embedded OBJE records
+	else {
+		$m_media = get_new_xref("OBJE", true);
+		$objref = subrecord_createobjectref($objrec, $objlevel, $m_media);
+
+		//-- restructure the record to be a linked record
+		$objrec = preg_replace("/ OBJE/", " @" . $m_media . "@ OBJE", $objrec);
+		//-- renumber the lines
+		$objrec = preg_replace("/^(\d+) /me", "($1-$objlevel).' '", $objrec);
+		
+		//-- check if another picture with the same file and title was previously imported
+		$media = new Media($objrec);
+		$new_media = Media :: in_obje_list($media);
+		if ($new_media === false) {
+			//-- add it to the media database table
+			$m_id = get_next_id("media", "m_id");
+			$sql = "INSERT INTO " . $TBLPREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
+			$sql .= " VALUES('" . $DBCONN->escapeSimple($m_id) . "', '" . $DBCONN->escapeSimple($m_media) . "', '" . $DBCONN->escapeSimple($media->ext) . "', '" . $DBCONN->escapeSimple($media->title) . "', '" . $DBCONN->escapeSimple($media->file) . "', '" . $DBCONN->escapeSimple($GEDCOMS[$FILE]["id"]) . "', '" . $DBCONN->escapeSimple($objrec) . "')";
+			$res = dbquery($sql);
+			$media_count++;
+			//-- if this is not an update then write it to the new gedcom file
+			if (!$update && !empty ($fpnewged))
+				fwrite($fpnewged, trim($objrec) . "\r\n");
+			//print "LINE ".__LINE__;
+		} else {
+			//-- already added so update the local id
+			$objref = preg_replace("/@$m_media@/", "@$new_media@", $objref);
+			$m_media = $new_media;
+		}
+	}
+	if (isset($m_media)) {
+	//-- add the entry to the media_mapping table
+	$mm_id = get_next_id("media_mapping", "mm_id");
+	$sql = "INSERT INTO " . $TBLPREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
+	$sql .= " VALUES ('" . $DBCONN->escapeSimple($mm_id) . "', '" . $DBCONN->escapeSimple($m_media) . "', '" . $DBCONN->escapeSimple($gid) . "', '" . $DBCONN->escapeSimple($count) . "', '" . $DBCONN->escapeSimple($GEDCOMS[$FILE]['id']) . "', '" . $DBCONN->escapeSimple($objref) . "')";
+	$res = dbquery($sql);
+	return $objref;
+	}
+	else {
+		print "Media reference error ".$objrec;
+		return "";
+	}
+} 
 /**
  * import media items from record
  * @todo Decide whether or not to update the original gedcom file
@@ -432,14 +524,28 @@ function update_media($gid, $indirec, $update = false) {
 		$found_ids = array ();
 	if (!isset ($zero_level_media))
 		$zero_level_media = false;
-	if (!$update && !isset ($MAX_IDS["OBJE"]))
-		$MAX_IDS["OBJE"] = 1;
+	if (!$update && !isset ($MAX_IDS["OBJE"])) {
+		if (!$keepmedia) $MAX_IDS["OBJE"] = 1;
+		else {
+			$sql = "SELECT ni_id FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_type='OBJE' AND ni_gedfile='".$GEDCOMS[$FILE]['id']."'";
+			$res = $gBitSystem->mDb->query($sql);
+			$row = $res->fetchRow();
+			$MAX_IDS["OBJE"] = $row[0];
+			$res->free();
+		}
+	}
 
 	//-- handle level 0 media OBJE seperately
 	$ct = preg_match("/0 @(.*)@ OBJE/", $indirec, $match);
 	if ($ct > 0) {
 		$old_m_media = $match[1];
 		$m_id = get_next_id("media", "m_id");
+		/**
+		 * Hiding some code in order to fix a very annoying bug
+		 * [ 1579889 ] Upgrading breaks Media links
+		 *
+		 * Don't understand the logic of renumbering media objects ??
+		 *
 		if ($update) {
 			$new_m_media = $old_m_media;
 		} else {
@@ -451,6 +557,9 @@ function update_media($gid, $indirec, $update = false) {
 				$found_ids[$old_m_media]["new_id"] = $new_m_media;
 			}
 		}
+		**/
+		$new_m_media = $old_m_media;
+		//print "RECORD: old $old_m_media new $new_m_media<br />";
 		$indirec = preg_replace("/@" . $old_m_media . "@/", "@" . $new_m_media . "@", $indirec);
 		$media = new Media($indirec);
 		//--check if we already have a similar object
@@ -472,12 +581,20 @@ function update_media($gid, $indirec, $update = false) {
 		return $indirec;
 	}
 
+	if ($keepmedia) {
+		$sql = "SELECT mm_media, mm_gedrec FROM ".$TBLPREFIX."media_mapping WHERE mm_gid='".$gid."' AND mm_gedfile='".$GEDCOMS[$FILE]['id']."'";
+		$res = dbquery($sql);
+		$old_linked_media = array();
+		while($row =& $res->fetchRow()) {
+			$old_linked_media[] = $row;
+		}
+		$res->free();
+	}
+
 	//-- check to see if there are any media records
 	//-- if there aren't any media records then don't look for them just return
 	$pt = preg_match("/\d OBJE/", $indirec, $match);
-	if ($pt == 0)
-		return $indirec;
-
+	if ($pt > 0) {
 	//-- go through all of the lines and replace any local
 	//--- OBJE to referenced OBJEs
 	$newrec = "";
@@ -493,193 +610,69 @@ function update_media($gid, $indirec, $update = false) {
 			// NOTE: Match lines that resemble n OBJE @0000@
 			// NOTE: Renumber the old ID to a new ID and save the old ID
 			// NOTE: in case there are more references to it
-			if (preg_match("/[1-9]\sOBJE\s@(.*)@/", $line, $match) != 0) {
-				// NOTE: Check if objlevel greater is than 0, if so then store the current object record
-				if ($objlevel > 0) {
-					$m_media = get_new_xref("OBJE");
-					$objrec = preg_replace("/ OBJE/", " @" . $m_media . "@ OBJE", $objrec);
-					$objrec = preg_replace("/^(\d+) /me", "($1-$objlevel).' '", $objrec);
-					$media = new Media($objrec);
-					$new_media = Media :: in_obje_list($media);
-					if ($new_media === false) {
-						$m_id = get_next_id("media", "m_id");
-						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
-						$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-						$res = $gBitSystem->mDb->query($sql, array ( $m_id, $new_m_media, $media->ext, $media->title, $media->file, $GEDCOMS[$FILE]["id"], $objrec ));
-						$media_count++;
-						//-- if this is not an update then write it to the new gedcom file
-						if (!$update && !empty ($fpnewged))
-							fwrite($fpnewged, trim($objrec) . "\r\n");
-						//print "LINE ".__LINE__;
-						$objelist[$m_media] = $media;
-					} else
-						$m_media = $new_media;
-					$mm_id = get_next_id("media_mapping", "mm_id");
-					$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
-					$sql .= " VALUES ( ?, ?, ?, ?, ?, ? )";
-					$res = $gBitSystem->mDb->query($sql, array( $mm_id, $m_media, $gid, $count, $GEDCOMS[$FILE]['id'], $objlevel . ' OBJE @' . $m_media . '@' ) );
-					$count++;
-					// NOTE: Add the new media object to the record
-					$newrec .= $objlevel . " OBJE @" . $m_media . "@\r\n";
-
-					// NOTE: Set the details for the next media record
-					$objlevel = $match[0] { 0 };
-					$inobj = true;
-					$objrec = $line . "\r\n";
-				} else {
-					// NOTE: Set object level
-					$objlevel = $match[0] { 0 };
-					$inobj = true;
-					$objrec = $line . "\r\n";
-				}
-
-				// NOTE: Retrieve the old media ID
-				$old_mm_media = $match[1];
-
-				//-- use the old id if we are updating from an online edit
-				if ($update) {
-					$new_mm_media = $old_mm_media;
-				} else {
-					// 	NOTE: Check if the id already exists and there is a value behind OBJE (n OBJE @M001@)
-					if (!isset ($found_ids[$old_mm_media]) && !empty ($match[1])) {
-						// NOTE: Get a new media ID
-						$new_mm_media = get_new_xref("OBJE");
-					} else {
-						$new_mm_media = $found_ids[$old_mm_media]['new_id'];
-					}
-				}
-				$m_id = get_next_id("media", "m_id");
-
-				// NOTE: Put both IDs in the found_ids array in case we later find the 0-level
-				// NOTE: The 0-level ID will have to be changed also
-				$found_ids[$old_mm_media]["old_id"] = $old_mm_media;
-				$found_ids[$old_mm_media]["new_id"] = $new_mm_media;
-				$line = preg_replace("/@(.*)@/", "@$new_mm_media@", $line);
-				// NOTE: We found an existing media reference, we only add it to the database, nothing else
-				//-- don't need to cread a media record for linked media
-				//$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec) VALUES('".$m_id."', '".$new_mm_media."', '', '', '', '".$GEDCOMS[$FILE]["id"]."', '')";
-				//$res = $gBitSystem->mDb->query($sql);
-				$mm_id = get_next_id("media_mapping", "mm_id");
-				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec) VALUES ( ?, ?, ?, ?, ?, ? )";
-				$res = & $gBitSystem->mDb->query($sql, array ( $mm_id, $new_mm_media, $gid, $count, $GEDCOMS[$FILE]['id'], $line ) );
-				//print "LINE ".__LINE__;
+			$level = $line{0};
+			//-- putting this code back since $objlevel, $objrec, etc vars will be 
+			//-- reset in sections after this
+			if ($objlevel>0 && ($level<=$objlevel)) {
+				$objref = insert_media($objrec, $objlevel, $update, $gid, $count);
 				$count++;
+				// NOTE: Add the new media object to the record
+				//$newrec .= $objlevel . " OBJE @" . $m_media . "@\r\n";
+				$newrec .= $objref;
+
+				// NOTE: Set the details for the next media record
 				$objlevel = 0;
-				$objrec = "";
 				$inobj = false;
-			} else
-				if (preg_match("/[1-9]\sOBJE/", $line, $match)) {
-					if (!empty ($objrec)) {
-						$m_id = get_next_id("media", "m_id");
-						$m_media = get_new_xref("OBJE");
-						$objrec = preg_replace("/ OBJE/", " @" . $m_media . "@ OBJE", $objrec);
-						$objrec = preg_replace("/^(\d+) /me", "($1-$objlevel).' '", $objrec);
-						$media = new Media($objrec);
-						$new_media = Media :: in_obje_list($media);
-						if ($new_media === false) {
-							$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
-							$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-							$res = $gBitSystem->mDb->query($sql, array( $m_id, $m_media, $media->ext, $media->title, $media->file, $GEDCOMS[$FILE]["id"], $objrec ) );
-							//-- if this is not an update then write it to the new gedcom file
-							if (!$update && !empty ($fpnewged))
-								fwrite($fpnewged, trim($objrec) . "\r\n");
-							//print "LINE ".__LINE__;
-							$media_count++;
-							$objelist[$m_media] = $media;
-						} else
-							$m_media = $new_media;
-						$mm_id = get_next_id("media_mapping", "mm_id");
-						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
-						$sql .= " VALUES ( ?, ?, ?, ?, ?, ? )";
-						$res = $gBitSystem->mDb->query($sql, array( $mm_id, $m_media, $gid, $count, $GEDCOMS[$FILE]['id'], $objlevel . ' OBJE @' . $m_media . '@' ) );
-						$count++;
-						// NOTE: Add the new media object to the record
-						$newrec .= $objlevel . " OBJE @" . $m_media . "@\r\n";
-					}
-					// NOTE: Set the details for the next media record
-					$objlevel = $match[0] { 0 };
+			}
+			if (preg_match("/[1-9]\sOBJE\s@(.*)@/", $line, $match) != 0) {
+					// NOTE: Set object level
+					$objlevel = $level;
 					$inobj = true;
 					$objrec = $line . "\r\n";
-				} else {
-					$ct = preg_match("/(\d+)\s(\w+)(.*)/", $line, $match);
-					if ($ct > 0) {
-						$level = $match[1];
-						$fact = $match[2];
-						$desc = trim($match[3]);
-						if ($fact == "FILE") {
-							// Correct Media depth and other common mistakes in file name
-							//$desc = check_media_depth($desc, "FRONT", "QUIET");
-							$match[3] = $desc;
-							$line = $match[1] . " " . $match[2] . " " . $match[3];
-						}
-						if ($inobj && ($level <= $objlevel || $key == $ct_lines -1)) {
-							if ($key == $ct_lines -1 && $level > $objlevel) {
-								$objrec .= $line . "\r\n";
-							}
-							$m_id = get_next_id("media", "m_id");
-							if ($objrec {
-								0 }
-							!= 0) {
-								$m_media = get_new_xref("OBJE");
-								$objrec = preg_replace("/ OBJE/", " @" . $m_media . "@ OBJE", $objrec);
-								$objrec = preg_replace("/^(\d+) /me", "($1-$objlevel).' '", $objrec);
-								$media = new Media($objrec);
-								$new_media = Media :: in_obje_list($media);
-								if ($new_media === false) {
-									$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
-									$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-									$res = $gBitSystem->mDb->query($sql, array( $m_id, $m_media, $media->ext, $media->title, $media->file, $GEDCOMS[$FILE]["id"], $objrec ) );
-									//-- if this is not an update then write it to the new gedcom file
-									if (!$update && !empty ($fpnewged))
-										fwrite($fpnewged, trim($objrec) . "\r\n");
-									//print "LINE ".__LINE__;
-									$media_count++;
-									$objelist[$m_media] = $media;
-								} else
-									$m_media = $new_media;
-								$mm_id = get_next_id("media_mapping", "mm_id");
-								$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
-								$sql .= " VALUES ( ?, ?, ?, ?, ?, ? )";
-								$res = $gBitSystem->mDb->query($sql, array( $mm_id, $m_media, $gid, $count, $GEDCOMS[$FILE]['id'], $objlevel . ' OBJE @' . $m_media . '@' ) );
-							}
-							//-- what is this for?  it shouldn't be used anymore because of code above
-							/*
-							else {
-								$oldid = preg_match("/0\s@(.*)@\sOBJE/", $objrec, $newmatch);
-								$m_media = $newmatch[1];
-								$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."media SET m_ext = $ext, m_titl = $title, m_file = $file, m_gedrec = $objrec WHERE m_media = $m_media";
-								$res = $gBitSystem->mDb->query($sql);
-								//print "LINE ".__LINE__;
-							}
-							*/
-
-							$count++;
-							$objrec = "";
-							$newrec .= $objlevel . " OBJE @" . $m_media . "@\r\n";
-							$inobj = false;
-							$objlevel = 0;
-						} else {
-							if ($inobj)
-								$objrec .= $line . "\r\n";
-						}
-						if ($fact == "OBJE") {
-							$inobj = true;
-							$objlevel = $level;
-							$objrec = "";
-						}
-					}
+			} 
+			else if (preg_match("/[1-9]\sOBJE/", $line, $match)) {
+				// NOTE: Set the details for the next media record
+				$objlevel = $level;
+				$inobj = true;
+				$objrec = $line . "\r\n";
+			} else {
+				$ct = preg_match("/(\d+)\s(\w+)(.*)/", $line, $match);
+				if ($ct > 0) {
+					if ($inobj)
+						$objrec .= $line . "\r\n";
+					else $newrec .= $line . "\r\n";
 				}
-			if (!$inobj)
-				$newrec .= $line . "\r\n";
+				else $newrec .= $line . "\r\n";
+			}
 		}
 	}
+	//-- make sure the last line gets handled
+	if ($inobj) {
+		$objref = insert_media($objrec, $objlevel, $update, $gid, $count);
+		$count++;
+		$newrec .= $objref;
+
+		// NOTE: Set the details for the next media record
+		$objlevel = 0;
+		$inobj = false;
+	}
+	}
+	else $newrec = $indirec;
+	
+	if ($keepmedia) {
+		$newrec = trim($newrec)."\r\n";
+		foreach($old_linked_media as $i=>$row) {
+			$newrec .= trim($row[1])."\r\n";
+		}
+	}
+	
 	return $newrec;
 }
 /**
  * Create database schema
  *
  * function that checks if the database exists and creates tables
- * automatically handles version updates
+ * but has been replaced by the bitweaver package installer
  */
 function setup_database() {
 	global $pgv_lang, $gGedcom, $gBitDbType;
@@ -689,8 +682,9 @@ function setup_database() {
  *
  * deletes all of the imported data about a gedcom from the database
  * @param string $FILE	the gedcom to remove from the database
+ * @param boolean $keepmedia	Whether or not to keep media and media links in the tables
  */
-function empty_database($FILE) {
+function empty_database($FILE, $keepmedia=false) {
 	global $gGedcom, $GEDCOMS, $gBitSystem;
 
 	$FILE = $GEDCOMS[$FILE]["id"];
@@ -718,17 +712,108 @@ function empty_database($FILE) {
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "dates WHERE d_file='$FILE'";
 	$res = $gBitSystem->mDb->query($sql);
 
+	if (!$keepmedia) {
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media WHERE m_gedfile='$FILE'";
 	$res = $gBitSystem->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media_mapping WHERE mm_gedfile='$FILE'";
 	$res = $gBitSystem->mDb->query($sql);
+	}
+	else {
+		//-- make sure that we keep the correct IDs for media
+		$sql = "SELECT ni_id FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_type='OBJE' AND ni_gedfile='".$FILE."'";
+		$res = $gBitSystem->mDb->dbquery($sql);
+		if ($res->numRows() > 0) {
+			$row =& $res->fetchRow();
+			$num = $row[0];
+		}
+	}
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_gedfile='$FILE'";
 	$res = $gBitSystem->mDb->query($sql);
+	if ($keepmedia && isset($num)) {
+		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "nextid VALUES('".$DBCONN->escapeSimple($num-1)."', 'OBJE', '".$FILE."')";
+		$res2 = dbquery($sql);
+	}
+	
+	$sql = "DELETE FROM ".$TBLPREFIX."soundex WHERE sx_file='$FILE'";
+	$res = $gBitSystem->mDb->query($sql);
+	
+	//-- clear all of the cache files for this gedcom
+	clearCache();
 
 }
 
+/**
+ * read the contents of a gedcom file
+ *
+ * opens a gedcom file and reads the contents into the <var>$fcontents</var> global string
+ */
+function read_gedcom_file() {
+	global $fcontents;
+	global $GEDCOM, $GEDCOMS;
+	global $pgv_lang;
+	$fcontents = "";
+	if (isset($GEDCOMS[$GEDCOM])) {
+		//-- only allow one thread to write the file at a time
+		$mutex = new Mutex($GEDCOM);
+		$mutex->Wait();
+		$fp = fopen($GEDCOMS[$GEDCOM]["path"], "r");
+		$fcontents = fread($fp, filesize($GEDCOMS[$GEDCOM]["path"]));
+		fclose($fp);
+		$mutex->Release();
+	}
+}
+
+//-------------------------------------------- write_file
+//-- this function writes the $fcontents back to the
+//-- gedcom file
+function write_file() {
+	global $fcontents, $GEDCOMS, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY;
+
+	if (empty($fcontents)) return;
+	if (preg_match("/0 TRLR/", $fcontents)==0) $fcontents.="0 TRLR\n";
+	//-- write the gedcom file
+	if (!is_writable($GEDCOMS[$GEDCOM]["path"])) {
+		print "ERROR 5: GEDCOM file is not writable.  Unable to complete request.\n";
+		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . getUserName() ."<-");
+		return false;
+	}
+	//-- only allow one thread to write the file at a time
+	$mutex = new Mutex($GEDCOM);
+	$mutex->Wait();
+	//-- what to do if file changed while waiting
+	
+	$fp = fopen($GEDCOMS[$GEDCOM]["path"], "wb");
+	if ($fp===false) {
+		print "ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request.\n";
+		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . getUserName() ."<-");
+		return false;
+	}
+	$fl = @flock($fp, LOCK_EX);
+	if (!$fl) {
+//		print "ERROR 7: Unable to obtain file lock.\n";
+		AddToChangeLog("ERROR 7: Unable to obtain file lock. ->" . getUserName() ."<-");
+//		fclose($fp);
+//		return false;
+	}
+	$fw = fwrite($fp, $fcontents);
+	if ($fw===false) {
+		print "ERROR 7: Unable to write to GEDCOM file.\n";
+		AddToChangeLog("ERROR 7: Unable to write to GEDCOM file. ->" . getUserName() ."<-");
+		$fl = @flock($fp, LOCK_UN);
+		fclose($fp);
+		return false;
+	}
+	$fl = @flock($fp, LOCK_UN);
+	fclose($fp);
+	//-- always release the mutex
+	$mutex->Release();
+	$logline = AddToLog($GEDCOMS[$GEDCOM]["path"]." updated by >".getUserName()."<");
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, basename($GEDCOMS[$GEDCOM]["path"]), dirname($GEDCOMS[$GEDCOM]["path"]));
+
+	return true;;
+}
 /**
  * Accpet changed gedcom record into database
  *
@@ -748,12 +833,56 @@ function accept_changes($cid) {
 		}
 		$FILE = $GEDCOM;
 		$gid = $change["gid"];
-		$indirec = find_record_in_file($gid);
+		$indirec = $change["undo"];
 		if (empty ($indirec)) {
 			$indirec = find_gedcom_record($gid);
 		}
 
-		update_record($indirec, $change["type"] == "delete");
+		update_record($indirec, $change["type"]=="delete");
+		
+		//-- write the changes back to the gedcom file
+		if ($SYNC_GEDCOM_FILE) {
+			if (!isset($manual_save) || $manual_save==false) {
+				//-- only allow one thread to accept changes at a time
+				$mutex = new Mutex("accept_changes");
+				$mutex->Wait();
+			}
+			
+			if (empty($fcontents)) read_gedcom_file();
+			if ($change["type"]=="delete") {
+				$pos1 = strpos($fcontents, "\n0 @".$gid."@");
+				if ($pos1!==false) {
+					$pos2 = strpos($fcontents, "\n0", $pos1+5);
+					if ($pos2===false) {
+						$fcontents = substr($fcontents, 0, $pos1+1)."0 TRLR";
+						AddToLog("Corruption found in GEDCOM $GEDCOM Attempted to correct");
+					}
+					else $fcontents = substr($fcontents, 0, $pos1+1).substr($fcontents, $pos2+1);
+				}
+				else {
+					AddToLog("Corruption found in GEDCOM $GEDCOM Attempted to correct.  Deleted gedcom record $gid was not found in the gedcom file.");
+				}
+			}
+			else if ($change["type"]=="append") {
+				$pos1 = strpos($fcontents, "\n0 TRLR");
+				$fcontents = substr($fcontents, 0, $pos1+1).trim($indirec)."\r\n0 TRLR";
+			}
+			else if ($change["type"]=="replace") {
+				$pos1 = strpos($fcontents, "\n0 @".$gid."@");
+				if ($pos1!==false) {
+					$pos2 = strpos($fcontents, "\n0", $pos1+5);
+					if ($pos2===false) {
+						$fcontents = substr($fcontents, 0, $pos1+1)."0 TRLR";
+						AddToLog("Corruption found in GEDCOM $GEDCOM Attempted to correct");
+					}
+					else $fcontents = substr($fcontents, 0, $pos1+1).trim($indirec)."\r\n".substr($fcontents, $pos2+1);
+				}
+			}
+			if (!isset($manual_save) || $manual_save==false) {
+				write_file();
+				$mutex->Release();
+			}
+		}
 
 		if ($change["type"] != "delete") {
 			//-- synchronize the gedcom record with any user account
@@ -782,7 +911,7 @@ function accept_changes($cid) {
 */		}
 
 		unset ($pgv_changes[$cid]);
-		write_changes();
+		if (!isset($manual_save) || $manual_save==false) write_changes();
 		if (isset ($_SESSION["recent_changes"]["user"][$GEDCOM]))
 			unset ($_SESSION["recent_changes"]["user"][$GEDCOM]);
 		if (isset ($_SESSION["recent_changes"]["gedcom"][$GEDCOM]))
@@ -948,4 +1077,58 @@ function uuid() {
 	// 8 bits for "clk_seq_low"
 	mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535) // 48 bits for "node" 
 	));
+}
+
+/**
+ * parse out specific subrecords (NOTE, _PRIM, _THUM) from a given OBJE record
+ * 
+ * @author Joseph King 
+ * @param string $objrec the OBJE record to retrieve the subrecords from
+ * @param int $objlevel the level of the OBJE record
+ * @param string $m_media that media id of the OBJE record
+ * @return string containing NOTE, _PRIM, and _THUM subrecords parsed from the passed object record
+ */
+function subrecord_createobjectref($objrec, $objlevel, $m_media){
+	
+	//- level of subrecords is object record level + 1
+	$level = $objlevel + 1;
+	
+	//- get and concatenate NOTE subrecords
+	$n = 1;
+	$nt = "";
+	$note = "";
+	do
+	{
+		$nt = get_sub_record($level, $level . " NOTE", $objrec, $n);
+		if($nt != "") $note = $note . trim($nt)."\r\n";
+		$n++;
+	}while($nt != "");
+	//- get and concatenate PRIM subrecords
+	$n = 1;
+	$pm = "";
+	$prim = "";
+	do
+	{
+		$pm = get_sub_record($level, $level . " _PRIM", $objrec, $n);
+		if($pm != "") $prim = $prim . trim($pm)."\r\n";
+		$n++;
+	}while($pm != "");
+	//- get and concatenate THUM subrecords
+	$n = 1;
+	$tm = "";
+	$thum = "";
+	do
+	{
+		$tm = get_sub_record($level, $level . " _THUM", $objrec, $n);
+		if($tm != ""){
+			//- call image cropping function ($tm contains thum data)
+			$thum = $thum . trim($tm)."\r\n";
+		}
+		$n++;
+	}while($tm != "");
+	//- add object reference
+	$objmed = addslashes($objlevel . ' OBJE @' . $m_media . "@\r\n" . $note . $prim . $thum);
+	
+	//- return the object media reference
+	return $objmed;
 }

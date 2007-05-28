@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.16 2007/05/28 11:50:59 lsces Exp $
+ * @version $Id: functions_db.php,v 1.17 2007/05/28 17:34:11 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -52,14 +52,20 @@ $SQL_LOG = false;
 function check_for_import($ged) {
 	global $BUILDING_INDEX, $GEDCOMS, $gBitSystem;
 
-	$sql = "SELECT count(i_id) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
-	$res = $gBitSystem->mDb->query($sql, array($GEDCOMS[$ged]["id"]));
+	if (!isset($GEDCOMS[$ged]["imported"])) {
+		$GEDCOMS[$ged]["imported"] = false;
+		$sql = "SELECT count(i_id) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
+		$res = $gBitSystem->mDb->query($sql, array($ged));
 
-	if ($res) {
-		$row = $res->fetchRow();
-		if ($row['count']>0) return true;
+		if ($res) {
+			$row = $res->fetchRow();
+			if ($row[0]>0) {
+				$GEDCOMS[$ged]["imported"] = true;
+			}
+		}
+		store_gedcoms();
 	}
-	return false;
+	return $GEDCOMS[$ged]["imported"];
 }
 
 /**
@@ -96,6 +102,51 @@ function find_family_record($famid, $gedfile="") {
 }
 
 /**
+ * Load up a group of families into the cache by their ids from an array
+ * This function is useful for optimizing pages that need to reference large
+ * sets of families without loading them up individually 
+ * @param array $ids	an array of ids to load up
+ */
+function load_families($ids, $gedfile='') {
+	global $pgv_lang;
+	global $TBLPREFIX;
+	global $GEDCOM, $GEDCOMS;
+	global $BUILDING_INDEX, $famlist, $DBCONN;
+	
+	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (!is_int($gedfile)) $gedfile = get_gedcom_from_id($gedfile);
+	
+	$sql = "SELECT f_gedcom, f_file, f_husb, f_wife, f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_id IN (";
+	//-- don't load up families who are already loaded
+	$idsadded = false;
+	foreach($ids as $k=>$id) {
+		if ((!isset($famlist[$id]["gedcom"])) || ($famlist[$id]["gedfile"]!=$GEDCOMS[$gedfile]["id"])) {
+			$sql .= "'".($id)."',";
+			$idsadded = true;
+		}
+	}
+	if (!$idsadded) return;
+	$sql = rtrim($sql,',');
+	$sql .= ") AND f_file = ? ";
+	
+	$res = $gBitSystem->mDb->query($sql, array($GEDCOMS[$gedfile]["id"]));
+
+	if (!$res) {
+		if ($res->numRows()==0) {
+			return false;
+		}
+		while($row = $res->fetchRow()) {
+			$famlist[$row["f_id"]]["gedcom"] = $row["f_gedcom"];
+			$famlist[$row["f_id"]]["gedfile"] = $row["f_file"];
+			$famlist[$row["f_id"]]["husb"] = $row["f_husb"];
+			$famlist[$row["f_id"]]["wife"] = $row["f_wife"];
+			find_person_record($row["f_husb"]);
+			find_person_record($row["f_wife"]);
+		}
+	}
+}
+
+/**
  * find the gedcom record for an individual
  *
  * This function first checks the <var>$indilist</var> cache to see if the individual has already
@@ -126,13 +177,63 @@ function find_person_record($pid, $gedfile="") {
 			return false;
 		}
 		$row =& $res->fetchRow();
+		//-- don't cache records from other gedcoms
+		if (!isset($indilist[$pid]) || $indilist[$pid]['gedfile']==$gedfile) {
 
 		$indilist[$pid]["gedcom"] = $row['i_gedcom'];
 		$indilist[$pid]["names"] = get_indi_names($row['i_gedcom']);
 		$indilist[$pid]["isdead"] = $row['i_isdead'];
 		$indilist[$pid]["gedfile"] = $row['i_file'];
-		$res->free();
+			if (isset($indilist[$pid]['privacy'])) unset($indilist[$pid]['privacy']);
+		}
 		return $row['i_gedcom'];
+	}
+}
+
+/**
+ * Load up a group of people into the cache by their ids from an array
+ * This function is useful for optimizing pages that need to reference large
+ * sets of people without loading them up individually 
+ * @param array $ids	an array of ids to load up
+ */
+function load_people($ids, $gedfile='') {
+	global $pgv_lang;
+	global $TBLPREFIX;
+	global $GEDCOM, $GEDCOMS;
+	global $BUILDING_INDEX, $indilist, $DBCONN;
+	
+	if (count($ids)==0) return false;
+	
+	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (!is_int($gedfile)) $gedfile = get_gedcom_from_id($gedfile);
+	
+	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_id FROM ".$TBLPREFIX."individuals WHERE i_id IN (";
+	//-- don't load up people who are already loaded
+	$idsadded = false;
+	foreach($ids as $k=>$id) {
+		if ((!isset($indilist[$id]["gedcom"])) || ($indilist[$id]["gedfile"]!=$GEDCOMS[$gedfile]["id"])) {
+			$sql .= "'".$DBCONN->escapeSimple($id)."',";
+			$idsadded = true;
+		}
+	}
+	if (!$idsadded) return;
+	$sql = rtrim($sql,',');
+	$sql .= ") AND i_file='".$DBCONN->escapeSimple($GEDCOMS[$gedfile]["id"])."'";
+	
+	$res = dbquery($sql);
+
+	if (!DB::isError($res)) {
+		if ($res->numRows()==0) {
+			return false;
+		}
+		while($row =& $res->fetchRow()) {
+			$indilist[$row[4]]["gedcom"] = $row[0];
+			$indilist[$row[4]]["names"] = get_indi_names($row[0]);
+			$indilist[$row[4]]["isdead"] = $row[2];
+			$indilist[$row[4]]["gedfile"] = $row[3];
+			if (isset($indilist[$row[4]]['privacy'])) unset($indilist[$row[4]]['privacy']);
+		}
+		$res->free();
 	}
 }
 
