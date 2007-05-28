@@ -13,7 +13,7 @@ PHPGEDVIEW_DB_PREFIX.'gedcom' => "
 
 PHPGEDVIEW_DB_PREFIX.'individuals' => "
 	i_id C(250) PRIMARY,
-	i_file I4,
+	i_file I4 PRIMARY,
 	i_rin C(250),
 	i_name C(250),
 	i_isdead I1 DEFAULT 1,
@@ -24,7 +24,7 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 
 PHPGEDVIEW_DB_PREFIX.'families' => "
 	f_id C(250) PRIMARY,
-	f_file I4,
+	f_file I4 PRIMARY,
 	f_husb C(250),
 	f_wife C(250),
 	f_chil X,
@@ -34,21 +34,21 @@ PHPGEDVIEW_DB_PREFIX.'families' => "
 
 PHPGEDVIEW_DB_PREFIX.'sources' => "
 	s_id C(250) PRIMARY,
-	s_file I4,
+	s_file I4 PRIMARY,
 	s_name C(250),
 	s_GEDCOM X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'other' => "
 	o_id C(250) PRIMARY,
-	o_file I4,
+	o_file I4 PRIMARY,
 	o_type C(20),
 	o_GEDCOM X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'names' => "
 	n_gid C(250) PRIMARY,
-	n_file I4,
+	n_file I4 PRIMARY,
 	n_name C(250),
 	n_letter C(5),
 	n_surname C(100),
@@ -167,7 +167,7 @@ PHPGEDVIEW_DB_PREFIX.'temple_code' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'status_code' => "
-	sc_id I4 PRIMARY,
+	sc_id I4 PRIMARY AUTO,
 	sc_name C(20),
 	sc_title C(100)
 ",
@@ -409,4 +409,11 @@ $gBitInstaller->registerSchemaDefault( PHPGEDVIEW_PKG_NAME, array(
 "INSERT INTO `".PHPGEDVIEW_DB_PREFIX."status_code`(`sc_name`, `sc_title`) VALUES ('DNS/CAN', 'Do Not Seal, previous sealing cancelled')",
 ) );
 
+/* Hold until RSS completed
+if( defined( 'RSS_PKG_NAME' )) {
+	$gBitInstaller->registerPreferences( RSS_PKG_NAME, array(
+		array( RSS_PKG_NAME, PHPGEDVIEW_PKG_NAME.'_rss', 'y'),
+	));
+}
+*/
 ?>
