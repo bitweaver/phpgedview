@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: clippings_ctrl.php,v 1.1 2007/05/28 11:21:03 lsces Exp $
+ * @version $Id: clippings_ctrl.php,v 1.2 2007/05/28 14:39:38 lsces Exp $
  */
 /**
 * Main controller class for the Clippings page.
@@ -81,7 +81,7 @@ class ClippingsControllerRoot extends BaseController {
 	//----------------beginning of function definitions for ClippingsControllerRoot
 	function init() {
 		global $action, $PRIV_HIDE, $PRIV_PUBLIC, $ENABLE_CLIPPINGS_CART, $SCRIPT_NAME, $remove, $pgv_lang, $SERVER_URL, $CONTACT_EMAIL, $HOME_SITE_TEXT, $HOME_SITE_URL, $MEDIA_DIRECTORY, $others, $cart, $item, $type, $GEDCOM, $id, $filetype, $convert, $IncludeMedia, $Zip;
-		global $VERSION, $VERSION_RELEASE, $CHARACTER_SET,$dom;
+		global $CHARACTER_SET, $dom, $VERSION;
 
 		if (!isset ($ENABLE_CLIPPINGS_CART))
 			$ENABLE_CLIPPINGS_CART = $PRIV_HIDE;
@@ -232,7 +232,7 @@ class ClippingsControllerRoot extends BaseController {
 							$media = array ();
 							$mediacount = 0;
 							$ct = count($cart);
-							$filetext = "0 HEAD\r\n1 SOUR PhpGedView\r\n2 NAME PhpGedView Online Genealogy\r\n2 VERS $VERSION $VERSION_RELEASE\r\n1 DEST DISKETTE\r\n1 DATE " . date("j M Y") . "\r\n2 TIME " . date("H:i:s") . "\r\n";
+							$filetext = "0 HEAD\r\n1 SOUR PhpGedView\r\n2 NAME Bitweaver PhpGedView Online Genealogy\r\n2 VERS $VERSION\r\n1 DEST DISKETTE\r\n1 DATE " . date("j M Y") . "\r\n2 TIME " . date("H:i:s") . "\r\n";
 							$filetext .= "1 GEDC\r\n2 VERS 5.5\r\n2 FORM LINEAGE-LINKED\r\n1 CHAR $CHARACTER_SET\r\n";
 							$head = find_gedcom_record("HEAD");
 							$placeform = trim(get_sub_record(1, "1 PLAC", $head));
@@ -403,7 +403,7 @@ class ClippingsControllerRoot extends BaseController {
  */	
 function zip_cart()
 {
-	global $filetype,$INDEX_DIRECTORY,$pgv_lang,$VERSION,$VERSION_RELEASE,$IncludeMedia;
+	global $filetype,$INDEX_DIRECTORY,$pgv_lang,$VERSION,$IncludeMedia;
 		require "includes/pclzip.lib.php";
 		switch ($filetype) {
 	case 'gedcom':
@@ -428,7 +428,7 @@ function zip_cart()
 		fclose($fp);
 		$zipName = "clippings".rand(0, 1500).".zip";
 		$fname = $INDEX_DIRECTORY.$zipName;
-		$comment = "Created by PhpGedView ".$VERSION." ".$VERSION_RELEASE." on ".date("d M Y").".";
+		$comment = "Created by Bitweaver PhpGedView ".$VERSION." on ".date("d M Y").".";
 		$archive = new PclZip($fname);
 		$this->media_list[]= $tempFileName;
 		$c = count($this->media_list);
