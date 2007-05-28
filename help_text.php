@@ -24,9 +24,20 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: help_text.php,v 1.5 2007/05/28 11:25:04 lsces Exp $
  */
 
+// Initialization
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require "config.php";
 require($factsfile["english"]);
 if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
