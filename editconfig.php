@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.9 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: editconfig.php,v 1.10 2007/05/28 11:50:59 lsces Exp $
  */
 
 // Initialization
@@ -77,7 +77,6 @@ if ($action=="update" && !isset($security_user)) {
 	if (!empty($_POST["NEW_DBPASS"])) $configtext = preg_replace('/\$DBPASS\s*=\s*".*";/', "\$DBPASS = \"".$_POST["NEW_DBPASS"]."\";", $configtext);
 	$configtext = preg_replace('/\$DBNAME\s*=\s*".*";/', "\$DBNAME = \"".$_POST["NEW_DBNAME"]."\";", $configtext);
 	$configtext = preg_replace('/\$DBPERSIST\s*=\s*.*;/', "\$DBPERSIST = ".$boolarray[$_POST["NEW_DBPERSIST"]].";", $configtext);
-	$configtext = preg_replace('/\PHPGEDVIEW_DB_PREFIX\s*=\s*".*";/', "\PHPGEDVIEW_DB_PREFIX = \"".$_POST["NEW_TBLPREFIX"]."\";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_CHANGE_GEDCOM\s*=\s*.*;/', "\$ALLOW_CHANGE_GEDCOM = ".$boolarray[$_POST["NEW_ALLOW_CHANGE_GEDCOM"]].";", $configtext);
 	$configtext = preg_replace('/\$USE_REGISTRATION_MODULE\s*=\s*.*;/', "\$USE_REGISTRATION_MODULE = ".$boolarray[$_POST["NEW_USE_REGISTRATION_MODULE"]].";", $configtext);
 	$configtext = preg_replace('/\$REQUIRE_ADMIN_AUTH_REGISTRATION\s*=\s*.*;/', "\$REQUIRE_ADMIN_AUTH_REGISTRATION = ".$boolarray[$_POST["NEW_REQUIRE_ADMIN_AUTH_REGISTRATION"]].";", $configtext);
@@ -276,10 +275,6 @@ if ($action=="update" && !isset($security_user)) {
 				<option value="no" <?php if (!$DBPERSIST) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
 			</select>
 		</td>
-	</tr>
-	<tr>
-		<td class="descriptionbox"><?php print_help_link("TBLPREFIX_help", "qm", "TBLPREFIX"); print $pgv_lang["TBLPREFIX"];?></td>
-		<td class="optionbox"><input type="text" name="NEW_TBLPREFIX" value="<?php print PHPGEDVIEW_DB_PREFIX?>" size="40" tabindex="<?php $i++; print $i?>" onfocus="getHelp('TBLPREFIX_help');" /></td>
 	</tr>
 	<tr>
 		<td class="descriptionbox width20 wrap"><?php print_help_link("ALLOW_CHANGE_GEDCOM_help", "qm", "ALLOW_CHANGE_GEDCOM"); print $pgv_lang["ALLOW_CHANGE_GEDCOM"];?></td>

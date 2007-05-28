@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.15 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: functions_db.php,v 1.16 2007/05/28 11:50:59 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -293,7 +293,7 @@ function find_media_record($rid, $gedfile='') {
 	$res = $gBitSystem->mDb->query($sql, array( $rid, $GEDCOMS[$gedfile]["id"] ));
 	if (!$res) return false;
 	if ($res->numRows()!=0) {
-		$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
+		$row = $res->fetchRow();
 		$objectlist[$rid]["ext"] = $row["m_ext"];
 		$row["m_titl"] = trim($row["m_titl"]);
 		if (empty($row["m_titl"])) $row["m_titl"] = $row["m_file"];
@@ -662,7 +662,7 @@ function get_media_list() {
 	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 	$ct = $res->numRows();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->fetchRow()){
 		$source = array();
 		$source["gedcom"] = $row["m_gedrec"];
 		$source["ext"] = $row["m_ext"];
@@ -1701,10 +1701,10 @@ function get_media_list() {
 	if (!isset($medialinks)) $medialinks = array();
 	$sqlmm = "SELECT mm_gid, mm_media FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY mm_id ASC";
 	$resmm =@ $gBitSystem->mDb->query($sqlmm);
-	while($rowmm =& $resmm->FetchRow(DB_FETCHMODE_ASSOC)){
+	while($rowmm =& $resmm->FetchRow()){
 		$sqlm = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media = '".$rowmm["mm_media"]."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
 		$resm =@ $gBitSystem->mDb->query($sqlm);
-		while($rowm =& $resm->FetchRow(DB_FETCHMODE_ASSOC)){
+		while($rowm =& $resm->FetchRow()){
 			$filename = check_media_depth($rowm["m_file"], "NOTRUNC");
 			$thumbnail = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $filename);
 			$title = $rowm["m_titl"];
@@ -2172,7 +2172,7 @@ function get_alpha_fams($letter) {
 		$res = $gBitSystem->mDb->query( $sql, array ( $GEDCOMS[$GEDCOM]["id"] ) );
 
 		if ($res->numRows()>0) {
-			while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+			while($row =& $res->fetchRow()){
 				$fam = array();
 				$hname = get_sortable_name($row["f_husb"]);
 				$wname = get_sortable_name($row["f_wife"]);
@@ -2256,7 +2256,7 @@ function get_surname_fams($surname) {
 		$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 		if ($res->numRows()>0) {
-			while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+			while($row =& $res->fetchRow()){
 				$fam = array();
 				$hname = get_sortable_name($row["f_husb"]);
 				$wname = get_sortable_name($row["f_wife"]);
@@ -2287,7 +2287,7 @@ function find_rin_id($rin) {
 	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_rin='$rin' AND i_file=?";
 	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
-	while($row =& $res->FetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->FetchRow()){
 		return $row["i_id"];
 	}
 	return $rin;

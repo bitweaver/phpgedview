@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: functions_export.php,v 1.2 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: functions_export.php,v 1.3 2007/05/28 11:50:59 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -34,7 +34,7 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
  */
 function gedcom_header($gedfile)
 {
-	global $CHARACTER_SET, $GEDCOMS, $VERSION, $VERSION_RELEASE, $pgv_lang, $TBLPREFIX;
+	global $CHARACTER_SET, $GEDCOMS, $VERSION, $VERSION_RELEASE, $pgv_lang;
 
 	// Default values for a new header
 	$SOUR="1 SOUR PhpGedView\r\n2 NAME PhpGedView Online Genealogy\r\n2 VERS $VERSION $VERSION_RELEASE\r\n";
@@ -63,23 +63,17 @@ function gedcom_header($gedfile)
 		if (preg_match("/(1 COPR [^\r\n]+)/", $head, $match))
 			$COPR=$match[1]."\r\n";
 		// Link to SUBM/SUBN records, if they exist
-		$sql="SELECT o_id FROM ${TBLPREFIX}other WHERE o_type='SUBN' AND o_file=".$GEDCOMS[$gedfile]["id"];
-		$res=dbquery($sql);
-		if ($res!==false && !DB::isError($res)) {
-			if ($res->numRows()>0) {
-				$row=$res->fetchRow();
-				$SUBN="1 SUBN @".$row[0]."@\r\n";
-			}
-			$res->free();
+		$sql="SELECT o_id FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='SUBN' AND o_file=".$GEDCOMS[$gedfile]["id"];
+		$res = $gBitSystem->mDb->query($sql);
+		if ($res->numRows()>0) {
+			$row=$res->fetchRow();
+			$SUBN="1 SUBN @".$row[0]."@\r\n";
 		}
-		$sql="SELECT o_id FROM ${TBLPREFIX}other WHERE o_type='SUBM' AND o_file=".$GEDCOMS[$gedfile]["id"];
-		$res=dbquery($sql);
-		if ($res!==false && !DB::isError($res)) {
-			if ($res->numRows()>0) {
-				$row=$res->fetchRow();
-				$SUBM="1 SUBM @".$row[0]."@\r\n";
-			}
-			$res->free();
+		$sql="SELECT o_id FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='SUBM' AND o_file=".$GEDCOMS[$gedfile]["id"];
+		$res = $gBitSystem->mDb->query($sql);
+		if ($res->numRows()>0) {
+			$row=$res->fetchRow();
+			$SUBM="1 SUBM @".$row[0]."@\r\n";
 		}
 	}
 
@@ -87,8 +81,8 @@ function gedcom_header($gedfile)
 }
 
 function print_gedcom($privatize_export='', $privatize_export_level='', $convert='', $remove='', $zip='', $gedout='') {
-		global $GEDCOMS, $GEDCOM, $ged, $VERSION, $VERSION_RELEASE, $pgv_lang, $CHARACTER_SET;
-		global $TBLPREFIX, $GEDCOM_ID_PREFIX, $SOURCE_ID_PREFIX, $FAM_ID_PREFIX, $REPO_ID_PREFIX, $MEDIA_ID_PREFIX;
+		global $GEDCOMS, $GEDCOM, $ged, $VERSION, $VERSION_RELEASE, $pgv_lang, $CHARACTER_SET, $gBitSystem;
+		global $GEDCOM_ID_PREFIX, $SOURCE_ID_PREFIX, $FAM_ID_PREFIX, $REPO_ID_PREFIX, $MEDIA_ID_PREFIX;
 
 		if ($privatize_export == "yes") {
 			create_export_user($privatize_export_level);
@@ -115,8 +109,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		else
 			print $head;
 
-		$sql = "SELECT i_gedcom, REPLACE(i_id,'$GEDCOM_ID_PREFIX','')+0 as id FROM " . $TBLPREFIX . "individuals WHERE i_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
-		$res = dbquery($sql);
+		$sql = "SELECT i_gedcom, REPLACE(i_id,'$GEDCOM_ID_PREFIX','')+0 as id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -131,8 +125,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT f_gedcom, REPLACE(f_id,'$FAM_ID_PREFIX','')+0 as id FROM " . $TBLPREFIX . "families WHERE f_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
-		$res = dbquery($sql);
+		$sql = "SELECT f_gedcom, REPLACE(f_id,'$FAM_ID_PREFIX','')+0 as id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -147,8 +141,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT s_gedcom, REPLACE(s_id,'$SOURCE_ID_PREFIX','')+0 as id FROM " . $TBLPREFIX . "sources WHERE s_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
-		$res = dbquery($sql);
+		$sql = "SELECT s_gedcom, REPLACE(s_id,'$SOURCE_ID_PREFIX','')+0 as id FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -163,8 +157,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT o_gedcom, o_type, REPLACE(o_id,'$REPO_ID_PREFIX','')+0 as id FROM " . $TBLPREFIX . "other WHERE o_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
-		$res = dbquery($sql);
+		$sql = "SELECT o_gedcom, o_type, REPLACE(o_id,'$REPO_ID_PREFIX','')+0 as id FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$key = $row[1];
@@ -182,8 +176,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT m_gedrec, REPLACE(m_media,'$MEDIA_ID_PREFIX','')+0 as id FROM " . $TBLPREFIX . "media WHERE m_gedfile=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
-		$res = dbquery($sql);
+		$sql = "SELECT m_gedrec, REPLACE(m_media,'$MEDIA_ID_PREFIX','')+0 as id FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -215,14 +209,14 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 	}
 	function print_gramps($privatize_export='', $privatize_export_level='', $convert='', $remove='', $zip='', $gedout='') {
 		global $GEDCOMS, $GEDCOM, $ged, $VERSION, $VERSION_RELEASE, $pgv_lang;
-		global $TBLPREFIX;
+		global $gBitSystem;
 
 		require_once ("includes/GEDownloadGedcom.php");
 		$geDownloadGedcom = new GEDownloadGedcom();
 		$geDownloadGedcom->begin_xml();
 
-		$sql = "SELECT i_gedcom, i_id FROM " . $TBLPREFIX . "individuals WHERE i_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY i_id";
-		$res = dbquery($sql);
+		$sql = "SELECT i_gedcom, i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY i_id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -230,8 +224,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT f_gedcom, f_id FROM " . $TBLPREFIX . "families WHERE f_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY f_id";
-		$res = dbquery($sql);
+		$sql = "SELECT f_gedcom, f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY f_id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -239,8 +233,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT s_gedcom, s_id FROM " . $TBLPREFIX . "sources WHERE s_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY s_id";
-		$res = dbquery($sql);
+		$sql = "SELECT s_gedcom, s_id FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY s_id";
+		$res = $gBitSystem->mDb->query($sql);
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
 			$rec = remove_custom_tags($rec, $remove);
@@ -248,8 +242,8 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 		$res->free();
 
-		$sql = "SELECT m_gedrec, m_media FROM " . $TBLPREFIX . "media WHERE m_gedfile=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY m_media";
-		$res = dbquery($sql);
+		$sql = "SELECT m_gedrec, m_media FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=" . $GEDCOMS[$GEDCOM]['id'] . " ORDER BY m_media";
+		$res = $gBitSystem->mDb->query($sql);
 		
 		while ($row = $res->fetchRow()) {
 			$rec = trim($row[0]) . "\r\n";
@@ -275,7 +269,7 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 	}
 	
 function um_export($proceed) {
-	global $INDEX_DIRECTORY, $TBLPREFIX, $DBCONN, $pgv_lang;
+	global $INDEX_DIRECTORY, $DBCONN, $pgv_lang, $gBitSystem;
 	
 	// Get user array and create authenticate.php
 	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"authenticate.php\"<br /><br />";
@@ -320,11 +314,10 @@ function um_export($proceed) {
 	// Get favorites and create favorites.dat 
 	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"favorites.dat\"<br /><br />";
 	$favorites = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."favorites";
-	$tempsql = dbquery($sql);
-	$res =& $tempsql;
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."favorites";
+	$res = $gBitSystem->mDb->query($sql);
 	$favid = 1;
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->fetchRow()){
 		$row = db_cleanup($row);
 		$favorite = array();
 		$favorite["id"] = $favid;
@@ -359,52 +352,15 @@ function um_export($proceed) {
 		if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_nofav"]." ".$pgv_lang["um_file_not_created"]."<br /><br />";
 	}
 
-	// Get news and create news.dat 
-	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"news.dat\"<br /><br />";
-	$allnews = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."news ORDER BY n_date DESC";
-	$tempsql = dbquery($sql);
-$res =& $tempsql;
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$news = array();
-		$news["id"] = $row["n_id"];
-		$news["username"] = $row["n_username"];
-		$news["date"] = $row["n_date"];
-		$news["title"] = stripslashes($row["n_title"]);
-		$news["text"] = stripslashes($row["n_text"]);
-		$allnews[$row["n_id"]] = $news;
-	}
-	if (count($allnews) > 0) {
-		$mstring = serialize($allnews);
-		if (file_exists($INDEX_DIRECTORY."news.dat")) {
-			print $pgv_lang["um_file_create_fail1"].$INDEX_DIRECTORY."news.dat<br /><br />";
-			}
-		else {
-			$fp = fopen($INDEX_DIRECTORY."news.dat", "wb");
-			if ($fp) {
-				fwrite($fp, $mstring);
-				fclose($fp);
-				$logline = AddToLog("news.dat updated by >".getUserName()."<");
- 				if (!empty($COMMIT_COMMAND)) check_in($logline, "news.dat", $INDEX_DIRECTORY);	
-				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." news.dat<br /><br />";
-			}
-			else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."news.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
-		}
-	}
-	else {
-		if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_nonews"]." ".$pgv_lang["um_file_not_created"]."<br /><br />";
-	}
-
 	// Get blocks and create blocks.dat 
 	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"blocks.dat\"<br /><br />";
 	$allblocks = array();
 	$blocks["main"] = array();
 	$blocks["right"] = array();
-	$sql = "SELECT * FROM ".$TBLPREFIX."blocks ORDER BY b_location, b_order";
-	$tempsql = dbquery($sql);
-$res =& $tempsql;
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."blocks ORDER BY b_location, b_order";
+	$res = $gBitSystem->mDb->query($sql);
+
+	while($row =& $res->fetchRow()){
 		$row = db_cleanup($row);
 		$blocks = array();
 		$blocks["username"] = $row["b_username"];

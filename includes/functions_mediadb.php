@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: functions_mediadb.php,v 1.8 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: functions_mediadb.php,v 1.9 2007/05/28 11:50:59 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -221,10 +221,10 @@ function get_db_media_list() {
 
 	$medialist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY m_id";
-	$tempsql = $gBitSystem->mDb->query($sql);
-	$res =& $tempsql;
+	$res = $gBitSystem->mDb->query($sql);
+
 	$ct = $res->numRows();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->fetchRow()){
 		$media = array();
 		$media["ID"] = $row["m_id"];
 		$media["XREF"] = stripslashes($row["m_media"]);
@@ -260,10 +260,10 @@ function get_db_mapping_list() {
 
 	$mappinglist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY mm_gid, mm_order";
-	$tempsql = $gBitSystem->mDb->query($sql);
-	$res =& $tempsql;
+	$res = $gBitSystem->mDb->query($sql);
+
 	$ct = $res->numRows();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->fetchRow()){
 		$mapping = array();
 		$mapping["ID"] = $row["mm_id"];
 		$mapping["INDI"] = stripslashes($row["mm_gid"]);
@@ -300,10 +300,9 @@ function get_db_indi_mapping_list($indi) {
 
 	$mappinglist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile=? AND mm_gid=? ORDER BY mm_order";
-	$tempsql = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"], $indi ) );
-	$res =& $tempsql;
+	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"], $indi ) );
 	$ct = $res->numRows();
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while($row =& $res->fetchRow()){
 		$mapping = array();
 		$mapping["ID"] = $row["mm_id"];
 		$mapping["INDI"] = stripslashes($row["mm_gid"]);
