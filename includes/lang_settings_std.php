@@ -21,7 +21,7 @@
  * along with this program; if not;write to the Free Software
  * Foundation;Inc.;59 Temple Place;Suite 330;Boston;MA  02111-1307  USA
  *
- * $Id: lang_settings_std.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
+ * $Id: lang_settings_std.php,v 1.5 2007/05/28 08:32:54 lsces Exp $
  *
  * @package PhpGedView
  * @subpackage Languages
@@ -45,7 +45,7 @@ $lang["langcode"]    = "en;en-us;en-au;en-bz;en-ca;en-ie;en-jm;en-nz;en-ph;en-za
 $lang["pgv_language"]    = "languages/lang.en.php";
 $lang["confighelpfile"]    = "languages/configure_help.en.php";
 $lang["helptextfile"]    = "languages/help_text.en.php";
-$lang["flagsfile"]    = "../users/icons/flags/United_States.gif";
+$lang["flagsfile"]    = "../users/icons/flags/Great_Britain.gif.gif";
 $lang["factsfile"]    = "languages/facts.en.php";
 $lang["DATE_FORMAT"]    = "D M Y";
 $lang["TIME_FORMAT"]    = "g:i:sa";
