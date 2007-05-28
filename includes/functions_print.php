@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.8 2007/05/28 14:41:03 lsces Exp $
+ * @version $Id: functions_print.php,v 1.9 2007/05/28 19:22:18 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -1004,7 +1004,7 @@ function print_user_links() {
 
 	 if ( $gBitUser->mUserId > 0 ) {
 		  print '<a href="'.$gBitUser->getDisplayUrl().'" class="link">Logged in as ('.$gBitUser->getDisplayName().')</a><br />';
-		  if ( $gBitUser->isAdmin() ) print "<a href=\"admin.php\" class=\"link\">".$pgv_lang["admin"]."</a> | ";
+		  if ( $gBitUser->isAdmin() ) print "<a href=\"admin/admin_gedcoms.php\" class=\"link\">".$pgv_lang["admin"]."</a> | ";
 		print "<a href=\"../users/logout.php\" class=\"link\">".$pgv_lang["logout"]."</a>";
 	 }
 	 else {

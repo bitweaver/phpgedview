@@ -178,29 +178,28 @@ class BitGEDCOM extends LibertyAttachable {
 			uue.`real_name` AS modifier_real_name,
 			uuc.`login` AS creator_user,
 			uuc.`real_name` AS creator_real_name,
-			`content_id`,
-			tc.`title`,
-			tc.`format_guid`,
+			lc.`title`, 
+			lc.`format_guid`,
 			ged.`g_name` AS `name`,
 			ged.`g_path` AS `path`,
 			ged.`g_config` AS `config`,
 			ged.`g_privacy` AS `privacy`,
-			tc.`last_modified`,
-			tc.`created`,
-			`ip`,
-			tc.`content_id`
+			lc.`last_modified`,
+			lc.`created`,
+			lc.`ip`,
+			lc.`content_id`
 				FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
-				INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`),
+				INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`g_content_id`),
 				`".BIT_DB_PREFIX."users_users` uue,
 				`".BIT_DB_PREFIX."users_users` uuc
-				  WHERE tc.`content_type_guid`=?
-				  AND tc.`modifier_user_id`=uue.`user_id`
-				  AND tc.`user_id`=uuc.`user_id` $mid
-				  ORDER BY ".$this->mDb->convert_sortmode( $sort_mode );
+				  WHERE lc.`content_type_guid`=?
+				  AND lc.`modifier_user_id`=uue.`user_id`
+				  AND lc.`user_id`=uuc.`user_id` $mid
+				  ORDER BY ".$this->mDb->convertSortmode( $sort_mode );
 		$query_cant = "SELECT COUNT(*)
 			FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
-			INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`)
-			WHERE tc.`content_type_guid`=? $mid";
+			INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`g_content_id`)
+			WHERE lc.`content_type_guid`=? $mid";
 
 		// If sort mode is versions then offset is 0, maxRecords is -1 (again) and sort_mode is nil
 		// If sort mode is links then offset is 0, maxRecords is -1 (again) and sort_mode is nil
