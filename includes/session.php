@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.13 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: session.php,v 1.14 2007/05/28 11:27:30 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -631,7 +631,6 @@ foreach ($language_settings as $key => $value) {
 	}
 }
 
-
 /**
  * The following business rules are used to choose currently active language
  * 1. If the user has chosen a language from the list or the flags, use their choice.
@@ -743,15 +742,13 @@ if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='no') $_SESSION["show_cont
 
    //-- load any editing changes
    global $gBitUser;
-   if ($gBitUser->isAdmin()) {
+   if ($gBitUser && $gBitUser->isAdmin()) {
       if (file_exists($INDEX_DIRECTORY."pgv_changes.php")) require_once($INDEX_DIRECTORY."pgv_changes.php");
       else $pgv_changes = array();
    }
    else $pgv_changes = array();
 
    if (empty($LOGIN_URL)) $LOGIN_URL = "login.php";
-
-	check_db();
 
 $THEME_DIR="standard/";
 if (file_exists($THEME_DIR."theme.php")) require_once($THEME_DIR."theme.php");
