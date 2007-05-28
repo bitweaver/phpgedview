@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.7 2007/05/27 17:46:58 lsces Exp $
+ * @version $Id: menu.php,v 1.8 2007/05/28 14:43:11 lsces Exp $
  */
 
 class Menu
@@ -390,7 +390,7 @@ class MenuBar
 				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
 				$menu->addSubmenu($submenu);
 			}
-			if (($gBitUser->isAdmin()) || (userGedcomAdmin($username, $GEDCOM))){
+/*			if (($gBitUser->isAdmin()) || (userGedcomAdmin($username, $GEDCOM))){
 				$menu->addSeperator();
 				//-- admin submenu
 				$submenu = new Menu($pgv_lang["admin"], "admin.php");
@@ -413,7 +413,9 @@ class MenuBar
 					$menu->addSubmenu($submenu);
 				}
 			}
-			else if (userCanEdit($username)) {
+			else 
+*/	
+			if (userCanEdit($username)) {
 				//-- upload_media submenu
 				 if (is_writable($MEDIA_DIRECTORY) && $MULTI_MEDIA) {
 					$menu->addSeperator();
