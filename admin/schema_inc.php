@@ -3,7 +3,7 @@ $tables = array(
 
 PHPGEDVIEW_DB_PREFIX.'gedcom' => "
 	g_id I4 PRIMARY,
-	g_content_id I4,
+	g_content_id I8,
 	g_name C(250),
 	g_path C(250),
 	g_config C(250),
@@ -20,6 +20,7 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 	i_GEDCOM X,
 	i_letter C(5),
 	i_surname C(100)
+	i_content_id I8,
 ",
 
 PHPGEDVIEW_DB_PREFIX.'families' => "
@@ -30,6 +31,7 @@ PHPGEDVIEW_DB_PREFIX.'families' => "
 	f_chil X,
 	f_GEDCOM X,
 	f_numchil I1
+	f_content_id I8,
 ",
 
 PHPGEDVIEW_DB_PREFIX.'sources' => "
@@ -120,37 +122,6 @@ PHPGEDVIEW_DB_PREFIX.'media_mapping' => "
 	mm_order I4 NOTNULL DEFAULT '0',
 	mm_gedfile I4,
 	mm_gedrec X
-",
-
-PHPGEDVIEW_DB_PREFIX.'users' => "
-	u_username  C(30) NOTNULL,
-	u_firstname	C(250),
-	u_lastname	C(250),
-	u_GEDCOMid  X,
-	u_rootid 	X,
-	u_password	c(250),
-	u_canadmin	C(2),
-	u_canedit	X,
-	u_email		X,
-	u_verified	C(20),
-	u_verified_by_admin	 C(20),
-	u_language	C(50),
-	u_pwrequested	 C(20),
-	u_reg_timestamp	 C(50),
-	u_reg_hashcode	 C(255),
-	u_theme	 	C(50),
-	u_loggedin	C(2),
-	u_sessiontime	I4,
-	u_contacymethod	C(20),
-	u_visibleonline	C(2),
-	u_editaccount	C(2),
-	u_defaulttab	I4,
-	u_comment	 	C(255),
-	u_comment_exp	C(20),
-	u_sync_gedcom	C(2),
-	u_relationship_privacy	 C(2),
-	u_max_relation_path	 I4,
-	u_auto_accept	C(2)
 ",
 
 PHPGEDVIEW_DB_PREFIX.'remotelinks' => " 
