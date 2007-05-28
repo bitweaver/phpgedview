@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.6 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: editconfig_gedcom.php,v 1.7 2007/05/28 11:23:50 lsces Exp $
  */
 
 /**
@@ -222,6 +222,7 @@ $error_msg = "";
 
 if (!file_exists($path.$GEDFILENAME) && $source != "add_new_form") $action="add";
 if ($action=="update") {
+
 	$errors = false;
 	if (!isset($_POST)) $_POST = $HTTP_POST_VARS;
 	$FILE=$GEDFILENAME;
@@ -298,7 +299,7 @@ if ($action=="update") {
 	$configtext = preg_replace('/\$DISPLAY_JEWISH_THOUSANDS\s*=\s*.*;/', "\$DISPLAY_JEWISH_THOUSANDS = ".$boolarray[$_POST["NEW_DISPLAY_JEWISH_THOUSANDS"]].";", $configtext);
 	$configtext = preg_replace('/\$EDIT_AUTOCLOSE\s*=\s*.*;/', "\$EDIT_AUTOCLOSE = ".$boolarray[$_POST["NEW_EDIT_AUTOCLOSE"]].";", $configtext);
 	$configtext = preg_replace('/\$ENABLE_MULTI_LANGUAGE\s*=\s*.*;/', "\$ENABLE_MULTI_LANGUAGE = ".$boolarray[$_POST["NEW_ENABLE_MULTI_LANGUAGE"]].";", $configtext);
-	$configtext = preg_replace('/\$ENABLE_RSS\s*=\s*.*;/', "\$ENABLE_RSS = ".$boolarray[$_POST["NEW_ENABLE_RSS"]].";", $configtext);
+	$configtext = preg_replace('/\$ENABLE_RSS\s*=\s*.*;/', "\$ENABLE_RSS = \"".$boolarray[$_POST["NEW_ENABLE_RSS"]]."\";", $configtext);
 	$configtext = preg_replace('/\$EXPAND_RELATIVES_EVENTS\s*=\s*.*;/', "\$EXPAND_RELATIVES_EVENTS = ".$boolarray[$_POST["NEW_EXPAND_RELATIVES_EVENTS"]].";", $configtext);
 	$configtext = preg_replace('/\$EXPAND_SOURCES\s*=\s*.*;/', "\$EXPAND_SOURCES = ".$boolarray[$_POST["NEW_EXPAND_SOURCES"]].";", $configtext);
 	$configtext = preg_replace('/\$FAM_FACTS_ADD\s*=\s*".*";/', "\$FAM_FACTS_ADD = \"".$_POST["NEW_FAM_FACTS_ADD"]."\";", $configtext);
@@ -335,7 +336,7 @@ if ($action=="update") {
 	$configtext = preg_replace('/\$META_PUBLISHER\s*=\s*".*";/', "\$META_PUBLISHER = \"".$_POST["NEW_META_PUBLISHER"]."\";", $configtext);
 	$configtext = preg_replace('/\$META_REVISIT\s*=\s*".*";/', "\$META_REVISIT = \"".$_POST["NEW_META_REVISIT"]."\";", $configtext);
 	$configtext = preg_replace('/\$META_ROBOTS\s*=\s*".*";/', "\$META_ROBOTS = \"".$_POST["NEW_META_ROBOTS"]."\";", $configtext);
-	$configtext = preg_replace('/\$META_SURNAME_KEYWORDS\s*=\s*.*;/', "\$META_SURNAME_KEYWORDS = ".$boolarray[$_POST["NEW_META_SURNAME_KEYWORDS"]].";", $configtext);
+	$configtext = preg_replace('/\$META_SURNAME_KEYWORDS\s*=\s*.*;/', "\$META_SURNAME_KEYWORDS = \"".$boolarray[$_POST["NEW_META_SURNAME_KEYWORDS"]]."\";", $configtext);
 	$configtext = preg_replace('/\$META_TITLE\s*=\s*".*";/', "\$META_TITLE = \"".$_POST["NEW_META_TITLE"]."\";", $configtext);
 	$configtext = preg_replace('/\$MULTI_MEDIA\s*=\s*.*;/', "\$MULTI_MEDIA = ".$boolarray[$_POST["NEW_MULTI_MEDIA"]].";", $configtext);
 	$configtext = preg_replace('/\$NAME_FROM_GEDCOM\s*=\s*.*;/', "\$NAME_FROM_GEDCOM = ".$boolarray[$_POST["NEW_NAME_FROM_GEDCOM"]].";", $configtext);
@@ -438,15 +439,6 @@ if ($action=="update") {
  	$gedcomconfname = $FILE."_conf.php";
  	if (!empty($COMMIT_COMMAND)) check_in($logline, $gedcomconfname, $INDEX_DIRECTORY);
 	if (!$errors) {
-		$gednews = getUserNews($FILE);
-		if (count($gednews)==0) {
-			$news = array();
-			$news["title"] = "#default_news_title#";
-			$news["username"] = $FILE;
-			$news["text"] = "#default_news_text#";
-			$news["date"] = time()-$_SESSION["timediff"];
-			addNews($news);
-		}
 		if ($source == "upload_form") $check = "upload";
 		else if ($source == "add_form") $check = "add";
 		else if ($source == "add_new_form") $check = "add_new";
@@ -1577,15 +1569,8 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["contact_conf"]."\" onclick=\"exp
 		<td class="descriptionbox wrap width20"><?php print_help_link("CONTACT_EMAIL_help", "qm", "CONTACT_EMAIL"); print $pgv_lang["CONTACT_EMAIL"];?></td>
 		<td class="optionbox"><select name="NEW_CONTACT_EMAIL" tabindex="<?php $i++; print $i?>" onfocus="getHelp('CONTACT_EMAIL_help');">
 		<?php
-			if ($CONTACT_EMAIL=="you@yourdomain.com") $CONTACT_EMAIL = getUserName();
-			$users = getUsers();
-			foreach($users as $indexval => $user) {
-				if ($user["verified_by_admin"]=="yes") {
-					print "<option value=\"".$user["username"]."\"";
-					if ($CONTACT_EMAIL==$user["username"]) print " selected=\"selected\"";
-					print ">".$user["lastname"].", ".$user["firstname"]." - ".$user["username"]."</option>\n";
-				}
-			}
+			print "<option value=\"dummy\"";
+			print ">dummy data until ported to bitweaver users</option>\n";
 		?>
 		</select>
 		</td>
@@ -1603,16 +1588,8 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["contact_conf"]."\" onclick=\"exp
 		<td class="descriptionbox wrap"><?php print_help_link("WEBMASTER_EMAIL_help", "qm", "WEBMASTER_EMAIL"); print $pgv_lang["WEBMASTER_EMAIL"];?></td>
 		<td class="optionbox"><select name="NEW_WEBMASTER_EMAIL" tabindex="<?php $i++; print $i?>" onfocus="getHelp('WEBMASTER_EMAIL_help');">
 		<?php
-			$users = getUsers();
-			if ($WEBMASTER_EMAIL=="webmaster@yourdomain.com") $WEBMASTER_EMAIL = getUserName();
-			uasort($users, "usersort");
-			foreach($users as $indexval => $user) {
-				if (userIsAdmin($user["username"])) {
-					print "<option value=\"".$user["username"]."\"";
-					if ($WEBMASTER_EMAIL==$user["username"]) print " selected=\"selected\"";
-					print ">".$user["lastname"].", ".$user["firstname"]." - ".$user["username"]."</option>\n";
-				}
-			}
+			print "<option value=\"dummy\"";
+			print ">dummy data until ported to bitweaver users</option>\n";
 		?>
 		</select>
 		</td>
