@@ -373,7 +373,6 @@ $pgv_lang["total_dead"]				= "Total dead";
 $pgv_lang["total_not_born"]			= "Total not yet born";
 $pgv_lang["remove_custom_tags"]		= "Remove custom PGV tags? (eg. _PGVU, _THUM)";
 $pgv_lang["download_zipped"]		= "Download GEDCOM as ZIP file?";
-$pgv_lang["cookie_login_help"]		= "This site remembered you from a previous login.  This allows you to access private information and other user-based features, but in order to edit or administer the site, you must login again for increased security.";
 $pgv_lang["remember_me"]			= "Remember me from this computer?";
 $pgv_lang["add_unlinked_person"]	= "Add an unlinked person";
 $pgv_lang["add_unlinked_source"]	= "Add an unlinked source";
