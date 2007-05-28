@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.11 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: functions.php,v 1.12 2007/05/28 11:28:32 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -3082,7 +3082,7 @@ function check_in($logline, $filename, $dirname, $bInsert = false) {
  *
  */
 function loadLanguage($desiredLanguage="english", $forceLoad=false) {
-	global $LANGUAGE, $pgv_language, $lang_short_cut, $pgv_lang;
+	global $LANGUAGE, $pgv_language, $lang_short_cut, $pgv_lang, $factsfile, $factarray;
 	global $TEXT_DIRECTION, $TEXT_DIRECTION_array;
 	global $DATE_FORMAT, $DATE_FORMAT_array;
 	global $TIME_FORMAT, $TIME_FORMAT_array;
@@ -3097,6 +3097,7 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 	if ($forceLoad) {
 		$LANGUAGE = "english";
 		require ($pgv_language[$LANGUAGE]);			// Load English
+		require ($factsfile[$LANGUAGE]);			// Load English facts
 
 		$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
 		$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
