@@ -25,7 +25,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see index/gedcoms.php
- * @version $Id: editgedcoms.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: editgedcoms.php,v 1.6 2007/05/28 18:54:17 lsces Exp $
  */
 
 /**
@@ -279,6 +279,7 @@ $GedCount = 0;
 			print "</td>";
 
 			unset($SEARCHLOG_CREATE);
+
 			require($gedarray["config"]);
 			print "<td valign=\"top\">";		// Column 2  (notices)
 			if (!isset($SEARCHLOG_CREATE)) {

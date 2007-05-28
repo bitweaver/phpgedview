@@ -584,7 +584,7 @@ require_once(get_config_file());
 
 require_once("includes/functions_name.php");
 
-// require_once("includes/authentication.php");      // -- load the authentication system
+require_once("includes/authentication.php");      // -- load the authentication system
 
 /**
  * do not include print functions when using the gdbi protocol

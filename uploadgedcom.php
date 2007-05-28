@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.10 2007/05/28 17:34:11 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.11 2007/05/28 18:54:17 lsces Exp $
  */
 // TODO: Progress bars don't show until </table> or </div>
 // TODO: Upload ZIP support alternative path and name
@@ -67,7 +67,7 @@ if (!$gBitUser->isAdmin()) {
 	header("Location: ../");
 	exit;
 }
-vd($_REQUEST);
+
 @ini_set('zlib.output_compression','0');
 
 if (empty ($action)) $action = "upload_form";
@@ -916,7 +916,7 @@ if ($stage == 1) {
 	print "</td></tr>";
 	print "</table>";
 
-	print $pgv_lang['progress_bars_info'];
+	print 'Progress bars info';
 	//print "<tr><td class=\"optionbox\">";
 	setup_progress_bar($FILE_SIZE);
 	//print "</td></tr>";
@@ -1311,7 +1311,7 @@ if ($stage == 1) {
 	}
 	print "</td></tr></table>\n";
 	// NOTE: Finished Links
-	cleanup_database();
+//	cleanup_database();
 	$GEDCOMS[$ged]["imported"] = true;
 	store_gedcoms();
 	print "</td></tr>";

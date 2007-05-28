@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.17 2007/05/28 17:34:11 lsces Exp $
+ * @version $Id: functions_db.php,v 1.18 2007/05/28 18:54:17 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -51,15 +51,14 @@ $SQL_LOG = false;
  */
 function check_for_import($ged) {
 	global $BUILDING_INDEX, $GEDCOMS, $gBitSystem;
-
 	if (!isset($GEDCOMS[$ged]["imported"])) {
 		$GEDCOMS[$ged]["imported"] = false;
 		$sql = "SELECT count(i_id) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
-		$res = $gBitSystem->mDb->query($sql, array($ged));
+		$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$ged]["id"] ));
 
 		if ($res) {
 			$row = $res->fetchRow();
-			if ($row[0]>0) {
+			if ($row['count'] > 0) {
 				$GEDCOMS[$ged]["imported"] = true;
 			}
 		}
@@ -111,7 +110,7 @@ function load_families($ids, $gedfile='') {
 	global $pgv_lang;
 	global $TBLPREFIX;
 	global $GEDCOM, $GEDCOMS;
-	global $BUILDING_INDEX, $famlist, $DBCONN;
+	global $BUILDING_INDEX, $famlist;
 	
 	if (empty($gedfile)) $gedfile = $GEDCOM;
 	if (!is_int($gedfile)) $gedfile = get_gedcom_from_id($gedfile);
@@ -200,27 +199,27 @@ function load_people($ids, $gedfile='') {
 	global $pgv_lang;
 	global $TBLPREFIX;
 	global $GEDCOM, $GEDCOMS;
-	global $BUILDING_INDEX, $indilist, $DBCONN;
+	global $BUILDING_INDEX, $indilist;
 	
 	if (count($ids)==0) return false;
 	
 	if (empty($gedfile)) $gedfile = $GEDCOM;
 	if (!is_int($gedfile)) $gedfile = get_gedcom_from_id($gedfile);
 	
-	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_id FROM ".$TBLPREFIX."individuals WHERE i_id IN (";
+	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_id IN (";
 	//-- don't load up people who are already loaded
 	$idsadded = false;
 	foreach($ids as $k=>$id) {
 		if ((!isset($indilist[$id]["gedcom"])) || ($indilist[$id]["gedfile"]!=$GEDCOMS[$gedfile]["id"])) {
-			$sql .= "'".$DBCONN->escapeSimple($id)."',";
+			$sql .= "'".$id."',";
 			$idsadded = true;
 		}
 	}
 	if (!$idsadded) return;
 	$sql = rtrim($sql,',');
-	$sql .= ") AND i_file='".$DBCONN->escapeSimple($GEDCOMS[$gedfile]["id"])."'";
+	$sql .= ") AND i_file= ?";
 	
-	$res = dbquery($sql);
+	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$gedfile]["id"] ) );
 
 	if (!DB::isError($res)) {
 		if ($res->numRows()==0) {
@@ -2561,13 +2560,12 @@ function get_server_list(){
 
 	//if (isset($sitelist)) return $sitelist;
 	$sitelist = array();
-
 	if (isset($GEDCOMS[$GEDCOM]) && check_for_import($GEDCOM)) {
 		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=? AND s_gedcom LIKE '%1 _DBID%' ORDER BY s_name";
 		$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 		$ct = $res->numRows();
-		while($row =& $res->fetchRow()){
+		while($row = $res->fetchRow()) {
 			$source = array();
 			$source["name"] = $row["s_name"];
 			$source["gedcom"] = $row["s_gedcom"];
@@ -2575,9 +2573,7 @@ function get_server_list(){
 			$sitelist[$row["s_id"]] = $source;
 			$sourcelist[$row["s_id"]] = $source;
 		}
-		$res->free();
 	}
-
 	return $sitelist;
 }
 

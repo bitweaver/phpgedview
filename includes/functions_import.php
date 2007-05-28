@@ -397,7 +397,7 @@ function update_dates($gid, $indirec) {
 				if ($date['day'] < 10)
 				$datestamp .= '0';
 				$datestamp .= (int) $date['day'];
-				$sql = 'INSERT INTO ' . $TBLPREFIX . 'dates VALUES(\'' . $DBCONN->escapeSimple($date["day"]) . '\',\'' . $DBCONN->escapeSimple(str2upper($date["month"])) . "','" . $DBCONN->escapeSimple($date["mon"]) . "','" . $DBCONN->escapeSimple($date["year"]) . "','" . $DBCONN->escapeSimple($datestamp) . "','" . $DBCONN->escapeSimple($fact) . "','" . $DBCONN->escapeSimple($gid) . "','" . $DBCONN->escapeSimple($GEDCOMS[$FILE]["id"]) . "',";
+				$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'dates VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ';
 				if (isset ($date["ext"])) {
 					preg_match("/@#D(.*)@/", $date["ext"], $extract_type);
 					$date_types = array (
@@ -414,7 +414,7 @@ function update_dates($gid, $indirec) {
 						$sql .= "NULL)";
 				} else
 					$sql .= "NULL)";
-				$res = $gBitSystem->mDb->query($sql, array ( $date[0]["day"], str2upper($date[0]["month"] ), $date[0]["mon"], $date[0]["year"], $datestamp, $fact, $gid, $GEDCOMS[$FILE]["id"] ) );
+				$res = $gBitSystem->mDb->query($sql, array ( $date["day"], str2upper($date["month"] ), $date["mon"], $date["year"], $datestamp, $fact, $gid, $GEDCOMS[$FILE]["id"] ) );
 
 				$count++;
 			}
@@ -433,7 +433,7 @@ function update_dates($gid, $indirec) {
  * @param int $count		The count of OBJE records in the parent record
  */
 function insert_media($objrec, $objlevel, $update, $gid, $count) {
-	global $TBLPREFIX, $media_count, $GEDCOMS, $FILE, $DBCONN, $found_ids, $fpnewged;
+	global $TBLPREFIX, $media_count, $GEDCOMS, $gBitSystem, $FILE, $found_ids, $fpnewged;
 
 	//-- check for linked OBJE records
 	//-- linked records don't need to insert to media table
@@ -482,9 +482,9 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
 		if ($new_media === false) {
 			//-- add it to the media database table
 			$m_id = get_next_id("media", "m_id");
-			$sql = "INSERT INTO " . $TBLPREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
-			$sql .= " VALUES('" . $DBCONN->escapeSimple($m_id) . "', '" . $DBCONN->escapeSimple($m_media) . "', '" . $DBCONN->escapeSimple($media->ext) . "', '" . $DBCONN->escapeSimple($media->title) . "', '" . $DBCONN->escapeSimple($media->file) . "', '" . $DBCONN->escapeSimple($GEDCOMS[$FILE]["id"]) . "', '" . $DBCONN->escapeSimple($objrec) . "')";
-			$res = dbquery($sql);
+			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
+			$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
+			$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $media->ext, $media->title, $media->file, $GEDCOMS[$FILE]['id'], $objref ));
 			$media_count++;
 			//-- if this is not an update then write it to the new gedcom file
 			if (!$update && !empty ($fpnewged))
@@ -499,9 +499,8 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
 	if (isset($m_media)) {
 	//-- add the entry to the media_mapping table
 	$mm_id = get_next_id("media_mapping", "mm_id");
-	$sql = "INSERT INTO " . $TBLPREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec)";
-	$sql .= " VALUES ('" . $DBCONN->escapeSimple($mm_id) . "', '" . $DBCONN->escapeSimple($m_media) . "', '" . $DBCONN->escapeSimple($gid) . "', '" . $DBCONN->escapeSimple($count) . "', '" . $DBCONN->escapeSimple($GEDCOMS[$FILE]['id']) . "', '" . $DBCONN->escapeSimple($objref) . "')";
-	$res = dbquery($sql);
+	$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec) VALUES ( ?, ?, ?, ?, ?, ? )";
+	$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $gid, $count,  $GEDCOMS[$FILE]['id'], $objref ) );
 	return $objref;
 	}
 	else {
@@ -514,7 +513,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
  * @todo Decide whether or not to update the original gedcom file
  * @return string	an updated record
  */
-function update_media($gid, $indirec, $update = false) {
+function update_media($gid, $indirec, $update = false, $keepmedia = false) {
 	global $GEDCOMS, $FILE, $gGedcom, $gBitSystem, $MEDIA_ID_PREFIX, $media_count, $found_ids;
 	global $zero_level_media, $fpnewged, $objelist, $MAX_IDS;
 
@@ -729,15 +728,15 @@ function empty_database($FILE, $keepmedia=false) {
 		}
 	}
 
-	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_gedfile='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_gedfile = ?";
+	$res = $gBitSystem->mDb->query($sql, array( $FILE ));
 	if ($keepmedia && isset($num)) {
-		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "nextid VALUES('".$DBCONN->escapeSimple($num-1)."', 'OBJE', '".$FILE."')";
-		$res2 = dbquery($sql);
+		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "nextid VALUES( ?, 'OBJE', ? )";
+		$res2 = $gBitSystem->mDb->query($sql, array( $num-1, $FILE ));
 	}
 	
-	$sql = "DELETE FROM ".$TBLPREFIX."soundex WHERE sx_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+//	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "soundex WHERE sx_file='$FILE'";
+//	$res = $gBitSystem->mDb->query($sql);
 	
 	//-- clear all of the cache files for this gedcom
 	clearCache();

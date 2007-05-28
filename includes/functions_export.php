@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: functions_export.php,v 1.4 2007/05/28 14:41:03 lsces Exp $
+ * @version $Id: functions_export.php,v 1.5 2007/05/28 18:54:17 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -269,16 +269,16 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 	}
 	
 function um_export($proceed) {
-	global $INDEX_DIRECTORY, $DBCONN, $pgv_lang, $gBitSystem;
+	global $INDEX_DIRECTORY, $pgv_lang, $gBitSystem;
 	
 	// Get user array and create authenticate.php
 	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"authenticate.php\"<br /><br />";
 	$authtext = "<?php\n\n\$users = array();\n\n";
 	$users = GetUsers();
 	foreach($users as $key=>$user) {
-		$user["firstname"] = $DBCONN->escapeSimple($user["firstname"]);
-		$user["lastname"] = $DBCONN->escapeSimple($user["lastname"]);
-		$user["comment"] = $DBCONN->escapeSimple($user["comment"]);
+//		$user["firstname"] = $user["firstname"];
+//		$user["lastname"] = $user["lastname"];
+//		$user["comment"] = $user["comment"];
 		$authtext .= "\$user = array();\n";
 		foreach($user as $ukey=>$value) {
 			if (!is_array($value)) {
