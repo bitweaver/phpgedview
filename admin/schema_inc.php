@@ -19,8 +19,8 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 	i_isdead I1 DEFAULT 1,
 	i_GEDCOM X,
 	i_letter C(5),
-	i_surname C(100)
-	i_content_id I8,
+	i_surname C(100),
+	i_content_id I8
 ",
 
 PHPGEDVIEW_DB_PREFIX.'families' => "
@@ -30,8 +30,8 @@ PHPGEDVIEW_DB_PREFIX.'families' => "
 	f_wife C(250),
 	f_chil X,
 	f_GEDCOM X,
-	f_numchil I1
-	f_content_id I8,
+	f_numchil I1,
+	f_content_id I8
 ",
 
 PHPGEDVIEW_DB_PREFIX.'sources' => "
@@ -78,15 +78,6 @@ PHPGEDVIEW_DB_PREFIX.'favorites' => "
 	fv_url C(250),
 	fv_title C(250),
 	fv_note X
-",
-
-PHPGEDVIEW_DB_PREFIX.'messages' => "
-	m_id I4 PRIMARY,
-	m_from C(250),
-	m_to C(30),
-	m_subject C(250),
-	m_note X,
-	m_created C(250)
 ",
 
 PHPGEDVIEW_DB_PREFIX.'places' => "
