@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_quickupdate.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: edit_quickupdate.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
  */
 
 /**
@@ -43,11 +43,6 @@ require("config.php");
 require("includes/functions_edit.php");
 require($factsfile["english"]);
 if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
-
-if ($_SESSION["cookie_login"]) {
-	header("Location: login.php?type=simple&url=edit_interface.php");
-	exit;
-}
 
 //-- @TODO make list a configurable list
 $addfacts = preg_split("/[,; ]/", $QUICK_ADD_FACTS);

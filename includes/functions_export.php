@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: functions_export.php,v 1.1 2007/05/27 14:45:33 lsces Exp $
+ * @version $Id: functions_export.php,v 1.2 2007/05/28 08:25:52 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -315,46 +315,6 @@ function um_export($proceed) {
 			if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." authenticate.php<br /><br />";
 		}
 		else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."authenticate.php. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
-	}
-
-	// Get messages and create messages.dat 
-	if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_creating"]." \"messages.dat\"<br /><br />";
-	$messages = array();
-	$mesid = 1;
-	$sql = "SELECT * FROM ".$TBLPREFIX."messages ORDER BY m_id DESC";
-	$tempsql = dbquery($sql);
-$res =& $tempsql;
-	while($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$message = array();
-		$message["id"] = $mesid;
-		$mesid = $mesid + 1;
-		$message["to"] = $row["m_to"];
-		$message["from"] = $row["m_from"];
-		$message["subject"] = stripslashes($row["m_subject"]);
-		$message["body"] = stripslashes($row["m_body"]);
-		$message["created"] = $row["m_created"];
-		$messages[] = $message;
-	}	
-	if ($mesid > 1) {
-		$mstring = serialize($messages);
-			if (file_exists($INDEX_DIRECTORY."messages.dat")) {
-			print $pgv_lang["um_file_create_fail1"]." ".$INDEX_DIRECTORY."messages.dat<br /><br />";
-		}
-		else {
-			$fp = fopen($INDEX_DIRECTORY."messages.dat", "wb");
-			if ($fp) {
-				fwrite($fp, $mstring);
-				fclose($fp);
-				$logline = AddToLog("messages.dat updated by >".getUserName()."<");
- 				if (!empty($COMMIT_COMMAND)) check_in($logline, "messages.dat", $INDEX_DIRECTORY);	
-				if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_file_create_succ1"]." messages.dat<br /><br />";
-			}
-		else print $pgv_lang["um_file_create_fail2"]." ".$INDEX_DIRECTORY."messages.dat. ".$pgv_lang["um_file_create_fail3"]."<br /><br />";
-		}
-	}
-	else {
-		if (($proceed == "export") || ($proceed == "exportovr")) print $pgv_lang["um_nomsg"]." ".$pgv_lang["um_file_not_created"]."<br /><br />";
 	}
 
 	// Get favorites and create favorites.dat 

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: editlang.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: editlang.php,v 1.3 2007/05/28 08:25:52 lsces Exp $
  */
 
 require "config.php";
@@ -772,7 +772,6 @@ $pgv_lang_name 			= array();
 $langcode				= array();
 $ALPHABET_upper			= array();
 $ALPHABET_lower			= array();
-$MULTI_LETTER_ALPHABET	= array();
 $DICTIONARY_SORT		= array();
 $DATE_FORMAT_array		= array();
 $TIME_FORMAT_array		= array();
@@ -793,7 +792,6 @@ foreach ($language_settings as $key => $value) {
 	$factsfile[$key]			= $value["factsfile"];
 	$ALPHABET_upper[$key]		= $value["ALPHABET_upper"];
 	$ALPHABET_lower[$key]		= $value["ALPHABET_lower"];
-	$MULTI_LETTER_ALPHABET[$key] = $value["ALPHABET_lower"];
 	$DICTIONARY_SORT[$key]		= $value["ALPHABET_lower"];
 	$DATE_FORMAT_array[$key]	= $value["DATE_FORMAT"];
 	$TIME_FORMAT_array[$key]	= $value["TIME_FORMAT"];;

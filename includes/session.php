@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.12 2007/05/27 20:02:21 lsces Exp $
+ * @version $Id: session.php,v 1.13 2007/05/28 08:25:52 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -592,7 +592,6 @@ $pgv_lang_name 			= array();
 $langcode				= array();
 $ALPHABET_upper			= array();
 $ALPHABET_lower			= array();
-$MULTI_LETTER_ALPHABET	= array();
 $DICTIONARY_SORT		= array();
 $DATE_FORMAT_array		= array();
 $TIME_FORMAT_array		= array();
@@ -613,8 +612,7 @@ foreach ($language_settings as $key => $value) {
 	$factsfile[$key]			= $value["factsfile"];
 	$ALPHABET_upper[$key]		= $value["ALPHABET_upper"];
 	$ALPHABET_lower[$key]		= $value["ALPHABET_lower"];
-	$MULTI_LETTER_ALPHABET[$key] = $value["MULTI_LETTER_ALPHABET"];
-	$DICTIONARY_SORT[$key]		= $value["DICTIONARY_SORT"];
+	$DICTIONARY_SORT[$key]		= $value["ALPHABET_lower"];
 	$DATE_FORMAT_array[$key]	= $value["DATE_FORMAT"];
 	$TIME_FORMAT_array[$key]	= $value["TIME_FORMAT"];;
 	$WEEK_START_array[$key]		= $value["WEEK_START"];
@@ -726,6 +724,11 @@ $monthtonum["svn"] = 10;
 $monthtonum["tmz"] = 11;
 $monthtonum["aav"] = 12;
 $monthtonum["ell"] = 13;
+
+if (!isset($show_context_help)) $show_context_help = "";
+if (!isset($_SESSION["show_context_help"])) $_SESSION["show_context_help"] = $SHOW_CONTEXT_HELP;
+if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='yes') $_SESSION["show_context_help"] = true;
+if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='no') $_SESSION["show_context_help"] = false;
 
    // -- setup session information for tree clippings cart features
    if ((!isset($_SESSION['cart'])) || (!empty($_SESSION['last_spider_name']))) {	// reset cart everytime for spiders

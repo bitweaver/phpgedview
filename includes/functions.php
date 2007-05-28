@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.10 2007/05/27 14:45:34 lsces Exp $
+ * @version $Id: functions.php,v 1.11 2007/05/28 08:25:52 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -3088,7 +3088,7 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 	global $TIME_FORMAT, $TIME_FORMAT_array;
 	global $WEEK_START, $WEEK_START_array;
 	global $NAME_REVERSE, $NAME_REVERSE_array;
-	global $MULTI_LETTER_ALPHABET, $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
+	global $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $unknownNN, $unknownPN;
 
@@ -3135,49 +3135,10 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 	$digraph = array();
 	$trigraph = array();
 	$quadgraph = array();
-	if (!isset($MULTI_LETTER_ALPHABET[$LANGUAGE])) $MULTI_LETTER_ALPHABET[$LANGUAGE] = "";
-	if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
-		$myList = str2upper($MULTI_LETTER_ALPHABET[$LANGUAGE]);
-		$myList = str_replace(array(";", ","), " ", $myList);
-		$myList = preg_replace("/\s\s+/", " ", $myList);
-		$myList = trim($myList);
-		$wholeList = explode(" ", $myList);
-		$sortValue = array();
-		foreach ($wholeList as $letter) {
-			$first = substr($letter, 0, 1);
-			if ($letter=="CH") $first = "H";	// This one doesn't follow the rule
-			if (!isset($sortValue[$first])) $sortValue[$first] = 0;
-			$sortValue[$first] ++;
-			if (strlen($letter)==2) $digraph[$letter] = $sortValue[$first];
-			if (strlen($letter)==3) $trigraph[$letter] = $sortValue[$first];
-			if (strlen($letter)==4) $quadgraph[$letter] = $sortValue[$first];
-		}
-		$MULTI_LETTER_ALPHABET[$LANGUAGE] = " ".$myList." ";
-	}
 
 	$digraphAll = array();
 	$trigraphAll = array();
 	$quadgraphAll = array();
-	$MULTI_LETTER_ALPHABET["all"] = "";
-	foreach ($MULTI_LETTER_ALPHABET as $lang => $letters) {
-		if ($lang!="all") $MULTI_LETTER_ALPHABET["all"] .= $letters." ";
-	}
-	$MULTI_LETTER_ALPHABET["all"] = str2upper($MULTI_LETTER_ALPHABET["all"]);
-	$MULTI_LETTER_ALPHABET["all"] = str_replace(array(";", ","), " ", $MULTI_LETTER_ALPHABET["all"]);
-	$MULTI_LETTER_ALPHABET["all"] = preg_replace("/\s\s+/", " ", $MULTI_LETTER_ALPHABET["all"]);
-	$wholeList = explode(" ", $MULTI_LETTER_ALPHABET["all"]);
-	$sortValue = array();
-	foreach ($wholeList as $letter) {
-		$first = substr($letter, 0, 1);
-		if ($letter=="CH") $first = "H";	// This one doesn't follow the rule
-		if (!isset($sortValue[$first])) $sortValue[$first] = 0;
-		$sortValue[$first] ++;
-		if (strlen($letter)==2) $digraphAll[$letter] = $sortValue[$first];
-		if (strlen($letter)==3) $trigraphAll[$letter] = $sortValue[$first];
-		if (strlen($letter)==4) $quadgraphAll[$letter] = $sortValue[$first];
-	}
-	$MULTI_LETTER_ALPHABET["all"] = " ".trim($MULTI_LETTER_ALPHABET["all"])." ";
-
 
 /**
  *		Build the tables required for the Dictionary sort

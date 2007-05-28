@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: uploadmedia.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: uploadmedia.php,v 1.3 2007/05/28 08:25:52 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
@@ -27,11 +27,6 @@ require "config.php";
 
 if (!userCanEdit(getUserName())) {
 	header("Location: login.php?url=uploadmedia.php");
-	exit;
-}
-
-if (isset($_SESSION["cookie_login"]) && $_SESSION["cookie_login"]==true) {
-	header("Location: login.php?ged=$GEDCOM&url=uploadmedia.php");
 	exit;
 }
 

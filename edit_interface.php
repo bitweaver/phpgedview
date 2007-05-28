@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_interface.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: edit_interface.php,v 1.6 2007/05/28 08:25:52 lsces Exp $
  */
 
 /**
@@ -43,11 +43,6 @@ require("includes/functions_edit.php");
 require("languages/countries.en.php");
 if (file_exists("languages/countries.".$lang_short_cut[$LANGUAGE].".php")) require("languages/countries.".$lang_short_cut[$LANGUAGE].".php");
 asort($countries);
-
-if ($_SESSION["cookie_login"]) {
-	header("Location: login.php?type=simple&ged=$GEDCOM&url=edit_interface.php".urlencode("?".$QUERY_STRING));
-	exit;
-}
 
 // Remove slashes
 if (isset($text)){

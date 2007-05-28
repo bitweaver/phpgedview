@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.4 2007/05/27 10:31:39 lsces Exp $
+ * @version $Id: functions_name.php,v 1.5 2007/05/28 08:25:52 lsces Exp $
  */
 
 /**
@@ -679,18 +679,9 @@ function surname_count($nsurname) {
  */
 function get_first_letter($text, $import=false) {
 	global $LANGUAGE, $CHARACTER_SET;
-	global $MULTI_LETTER_ALPHABET, $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
-
-	$danishFrom = array("AA", "Aa", "AE", "Ae", "OE", "Oe", "aa", "ae", "oe");
-	$danishTo 	= array("Å", "Å", "Æ", "Æ", "Ø", "Ø", "å", "æ", "ø");
+	global $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
 
 	$text=trim(str2upper($text));
-	if (!$import) {
-		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") {
-			$text = str_replace($danishFrom, $danishTo, $text);
-		}
-	}
-
 	$multiByte = false;
 	// Look for 4-byte combinations that should be treated as a single character
 	$letter = substr($text, 0, 4);

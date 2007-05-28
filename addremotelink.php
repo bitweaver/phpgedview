@@ -23,18 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: addremotelink.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: addremotelink.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
  */
 
 require_once("config.php");
 require_once("includes/functions_edit.php");
 require_once("includes/serviceclient_class.php");
 
-//-- require that the user have entered their password
-if ($_SESSION["cookie_login"]) {
-	header("Location: login.php?type=simple&ged=$GEDCOM&url=edit_interface.php".urlencode("?".$QUERY_STRING));
-	exit;
-}
 $success = false;
 //check for pid
 if(!isset($pid)){

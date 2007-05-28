@@ -25,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.6 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: addmedia.php,v 1.7 2007/05/28 08:25:52 lsces Exp $
  */
 
 /**
@@ -48,11 +48,6 @@ require_once("includes/functions_edit.php");
 
 if (empty($ged)) $ged = $GEDCOM;
 $GEDCOM = $ged;
-
-if ($_SESSION["cookie_login"]) {
-	header("Location: login.php?type=simple&ged=$GEDCOM&url=addmedia.php");
-	exit;
-}
 
 print_simple_header($pgv_lang["add_media_tool"]);
 $disp = true;

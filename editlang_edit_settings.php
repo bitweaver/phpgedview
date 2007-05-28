@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editlang_edit_settings.php,v 1.3 2006/10/02 12:48:41 lsces Exp $
+ * @version $Id: editlang_edit_settings.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
  */
 
 require "config.php";
@@ -127,7 +127,6 @@ if ($action == "new_lang") {
   $NAME_REVERSE_array[$ln]  = false;
   $ALPHABET_upper[$ln]    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   $ALPHABET_lower[$ln]    = "abcdefghijklmnopqrstuvwxyz";
-  $MULTI_LETTER_ALPHABET[$ln] = "";
   $DICTIONARY_SORT[$ln]   = true;
 
   $pgv_lang[$d_LangName]  = $lng_codes[$new_shortcut][0];
@@ -417,17 +416,6 @@ if ($action != "save" and $action != "toggleActive") {
   print "</tr>";
 
   print "<tr>";
-  if (!isset($v_multi_letter_alphabet)) $v_multi_letter_alphabet = $MULTI_LETTER_ALPHABET[$ln];
-  print "<td class=\"facts_label\" >";
-  print $pgv_lang["multi_letter_alphabet"];
-  print " <a href=\"javascript:;\" onclick=\"return helpPopup('multi_letter_alphabet_help'); \"><b style=\"color: red; cursor: help; \">?</b></a>";
-  print "</td>";
-  write_td_with_textdir_check();
-  print "<input type=\"text\" name=\"v_multi_letter_alphabet\" size=\"50\" value=\"" . $v_multi_letter_alphabet . "\" />";
-  print "</td>";
-  print "</tr>";
-
-  print "<tr>";
   if (!isset($v_dictionary_sort)) $v_dictionary_sort = $DICTIONARY_SORT[$ln];
   print "<td class=\"facts_label\" >";
   print $pgv_lang["dictionary_sort"];
@@ -528,7 +516,6 @@ if ($action == "save") {
 
   $ALPHABET_upper[$ln]  = $_POST["v_alphabet_upper"];
   $ALPHABET_lower[$ln]  = $_POST["v_alphabet_lower"];
-  $MULTI_LETTER_ALPHABET[$ln]  = $_POST["v_multi_letter_alphabet"];
   $DICTIONARY_SORT[$ln]  = $_POST["v_dictionary_sort"];
   $DATE_FORMAT_array[$ln]  = $_POST["v_date_format"];
   $TIME_FORMAT_array[$ln]  = $_POST["v_time_format"];
@@ -578,7 +565,6 @@ if ($action == "save" or $action=="toggleActive") {
         fwrite($fp, ";\r\n");
         fwrite($fp, "\$lang[\"ALPHABET_upper\"]    = \"" . $ALPHABET_upper[$key] . "\";\r\n");
         fwrite($fp, "\$lang[\"ALPHABET_lower\"]    = \"" . $ALPHABET_lower[$key] . "\";\r\n");
-        fwrite($fp, "\$lang[\"MULTI_LETTER_ALPHABET\"]    = \"" . $MULTI_LETTER_ALPHABET[$key] . "\";\r\n");
         fwrite($fp, "\$lang[\"DICTIONARY_SORT\"]    = ");
         if ($DICTIONARY_SORT[$key]) fwrite($fp, "true"); else fwrite($fp, "false");
         fwrite($fp, ";\r\n");

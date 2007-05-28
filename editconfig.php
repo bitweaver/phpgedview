@@ -24,7 +24,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.8 2007/05/27 14:45:30 lsces Exp $
+ * @version $Id: editconfig.php,v 1.9 2007/05/28 08:25:52 lsces Exp $
  */
 
 // Initialization
@@ -82,7 +82,6 @@ if ($action=="update" && !isset($security_user)) {
 	$configtext = preg_replace('/\$USE_REGISTRATION_MODULE\s*=\s*.*;/', "\$USE_REGISTRATION_MODULE = ".$boolarray[$_POST["NEW_USE_REGISTRATION_MODULE"]].";", $configtext);
 	$configtext = preg_replace('/\$REQUIRE_ADMIN_AUTH_REGISTRATION\s*=\s*.*;/', "\$REQUIRE_ADMIN_AUTH_REGISTRATION = ".$boolarray[$_POST["NEW_REQUIRE_ADMIN_AUTH_REGISTRATION"]].";", $configtext);
 	$configtext = preg_replace('/\$PGV_SIMPLE_MAIL\s*=\s*.*;/', "\$PGV_SIMPLE_MAIL = ".$boolarray[$_POST["NEW_PGV_SIMPLE_MAIL"]].";", $configtext);
-	$configtext = preg_replace('/\$PGV_STORE_MESSAGES\s*=\s*.*;/', "\$PGV_STORE_MESSAGES = ".$boolarray[$_POST["NEW_PGV_STORE_MESSAGES"]].";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_USER_THEMES\s*=\s*.*;/', "\$ALLOW_USER_THEMES = ".$boolarray[$_POST["NEW_ALLOW_USER_THEMES"]].";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_REMEMBER_ME\s*=\s*.*;/', "\$ALLOW_REMEMBER_ME = ".$boolarray[$_POST["NEW_ALLOW_REMEMBER_ME"]].";", $configtext);
 	$configtext = preg_replace('/\$INDEX_DIRECTORY\s*=\s*".*";/', "\$INDEX_DIRECTORY = \"".$_POST["NEW_INDEX_DIRECTORY"]."\";", $configtext);
@@ -293,14 +292,6 @@ if ($action=="update" && !isset($security_user)) {
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("INDEX_DIRECTORY_help", "qm", "INDEX_DIRECTORY"); print $pgv_lang["INDEX_DIRECTORY"];?></td>
 		<td class="optionbox"><input type="text" size="50" name="NEW_INDEX_DIRECTORY" value="<?php print $INDEX_DIRECTORY?>" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('INDEX_DIRECTORY_help');" /></td>
-	</tr>
-	<tr>
-		<td class="descriptionbox wrap"><?php print_help_link("PGV_STORE_MESSAGES_help", "qm", "PGV_STORE_MESSAGES"); print $pgv_lang["PGV_STORE_MESSAGES"];?></td>
-		<td class="optionbox"><select name="NEW_PGV_STORE_MESSAGES" tabindex="<?php $i++; print $i?>" onfocus="getHelp('PGV_STORE_MESSAGES_help');">
-				<option value="yes" <?php if ($PGV_STORE_MESSAGES) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
-				<option value="no" <?php if (!$PGV_STORE_MESSAGES) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
-			</select>
-		</td>
 	</tr>
 
 	<tr>

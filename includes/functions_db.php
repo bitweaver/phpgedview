@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.14 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: functions_db.php,v 1.15 2007/05/28 08:25:52 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -1755,22 +1755,15 @@ function get_media_list() {
  */
 function get_indi_alpha() {
 	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $SHOW_MARRIED_NAMES, $GEDCOMS;
-	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $gBitSystem;
 	$indialpha = array();
-
-	$danishex = array("OE", "AE", "AA");
-	$danishFrom = array("AA", "AE", "OE");
-	$danishTo = array("Å", "Æ", "Ø");
 
 	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY 1";
 	$res = $gBitSystem->mDb->query($sql,array($GEDCOMS[$GEDCOM]["id"]));
 
 	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
-		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") $letter = str_replace($danishFrom, $danishTo, $letter);
-		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($inArray===false) {
 			if ((ord(substr($letter, 0, 1)) & 0x80)==0x00) $letter = substr($letter, 0, 1);
 		}
@@ -1798,8 +1791,6 @@ function get_indi_alpha() {
 
 	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
-		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") $letter = str_replace($danishFrom, $danishTo, $letter);
-		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($inArray===false) {
 			if ((ord(substr($letter, 0, 1)) & 0x80)==0x00) $letter = substr($letter, 0, 1);
 		}
@@ -1826,22 +1817,15 @@ function get_indi_alpha() {
 //-- get the first character in the list
 function get_fam_alpha() {
 	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $famalpha, $gBitSystem, $GEDCOMS;
-	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 
 	$famalpha = array();
-
-	$danishex = array("OE", "AE", "AA");
-	$danishFrom = array("AA", "AE", "OE");
-	$danishTo = array("Å", "Æ", "Ø");
 
 	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file = ? AND i_gedcom LIKE '%1 FAMS%' ORDER BY 1";
 	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
 
 	while($row =& $res->FetchRow()){
 		$letter = str2upper($row["alpha"]);
-		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") $letter = str_replace($danishFrom, $danishTo, $letter);
-		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($inArray===false) {
 			if ((ord(substr($letter, 0, 1)) & 0x80)==0x00) $letter = substr($letter, 0, 1);
 		}
@@ -1867,8 +1851,6 @@ function get_fam_alpha() {
 
 	while($row =& $res->FetchRow()){
 		$letter = str2upper($row["alpha"]);
-		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") $letter = str_replace($danishFrom, $danishTo, $letter);
-		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($inArray===false) {
 			if ((ord(substr($letter, 0, 1)) & 0x80)==0x00) $letter = substr($letter, 0, 1);
 		}
@@ -1910,15 +1892,10 @@ function get_fam_alpha() {
  */
 function get_alpha_indis($letter) {
 	global $GEDCOM, $LANGUAGE, $indilist, $surname, $SHOW_MARRIED_NAMES, $GEDCOMS;
-	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $gBitSystem;
 	
 	$tindilist = array();
-
-	$danishex = array("OE", "AE", "AA");
-	$danishFrom = array("AA", "AE", "OE");
-	$danishTo = array("Å", "Æ", "Ø");
 
 	$checkDictSort = true;
 
@@ -1931,12 +1908,6 @@ function get_alpha_indis($letter) {
 		else if ($letter=="A") $sql .= "i_letter LIKE '".$letter."' ";
 		else $sql .= "i_letter LIKE '".$letter."%' ";
 		$checkDictSort = false;
-	} else if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
-		$isMultiLetter = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
-		if ($isMultiLetter!==false) {
-			$sql .= "i_letter = '".$letter."' ";
-			$checkDictSort = false;
-		}
 	}
 	if ($checkDictSort) {
 		$text = "";
@@ -1949,8 +1920,7 @@ function get_alpha_indis($letter) {
 					if ($inArray > strlen($UCDiacritStrip)) break;
 					if (substr($UCDiacritStrip, $inArray, 1)!=$letter) break;
 				}
-				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(i_letter LIKE '".$letter."%'".$text.") ";
-				else $sql .= "(i_letter = '".$letter."'".$text.") ";
+				$sql .= "(i_letter = '".$letter."'".$text.") ";
 			} else {
 				$inArray = strpos($LCDiacritStrip, $letter);
 				if ($inArray!==false) {
@@ -1960,14 +1930,12 @@ function get_alpha_indis($letter) {
 						if ($inArray > strlen($LCDiacritStrip)) break;
 						if (substr($LCDiacritStrip, $inArray, 1)!=$letter) break;
 					}
-					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(i_letter LIKE '".$letter."%'".$text.") ";
-					else $sql .= "(i_letter = '".$letter."'".$text.") ";
+					$sql .= "(i_letter = '".$letter."'".$text.") ";
 				}
 			}
 		}
 		if ($text=="") {
-			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "i_letter LIKE '".$letter."%'";
-			else $sql .= "i_letter = '".$letter."'";
+			$sql .= "i_letter = '".$letter."'";
 		}
 	}
 
@@ -2001,12 +1969,6 @@ function get_alpha_indis($letter) {
 		else if ($letter=="A") $sql .= "n_letter LIKE '".$letter."' ";
 		else $sql .= "n_letter LIKE '".$letter."%' ";
 		$checkDictSort = false;
-	} else if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
-		$isMultiLetter = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
-		if ($isMultiLetter!==false) {
-			$sql .= "n_letter = '".$letter."' ";
-			$checkDictSort = false;
-		}
 	}
 	if ($checkDictSort) {
 		$text = "";
@@ -2019,8 +1981,7 @@ function get_alpha_indis($letter) {
 					if ($inArray > strlen($UCDiacritStrip)) break;
 					if (substr($UCDiacritStrip, $inArray, 1)!=$letter) break;
 				}
-				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(n_letter LIKE '".$letter."%'".$text.")";
-				else $sql .= "(n_letter = '".$letter."'".$text.")";
+				$sql .= "(n_letter = '".$letter."'".$text.")";
 			} else {
 				$inArray = strpos($LCDiacritStrip, $letter);
 				if ($inArray!==false) {
@@ -2030,14 +1991,12 @@ function get_alpha_indis($letter) {
 						if ($inArray > strlen($LCDiacritStrip)) break;
 						if (substr($LCDiacritStrip, $inArray, 1)!=$letter) break;
 					}
-					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "(n_letter LIKE '".$letter."%'".$text.")";
-					else $sql .= "(n_letter = '".$letter."'".$text.")";
+					$sql .= "(n_letter = '".$letter."'".$text.")";
 				}
 			}
 		}
 		if ($text=="") {
-			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="") $sql .= "n_letter LIKE '".$letter."%'";
-			else $sql .= "n_letter = '".$letter."'";
+			$sql .= "n_letter = '".$letter."'";
 		}
 	}
 	//-- add some optimization if the surname is set to speed up the lists
@@ -2128,7 +2087,6 @@ function get_surname_indis($surname) {
  */
 function get_alpha_fams($letter) {
 	global $GEDCOM, $famlist, $indilist, $pgv_lang, $LANGUAGE, $SHOW_MARRIED_NAMES, $gBitSystem, $GEDCOMS;
-	global $MULTI_LETTER_ALPHABET;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 
 	$danishex = array("OE", "AE", "AA");

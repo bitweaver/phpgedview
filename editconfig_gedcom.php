@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: editconfig_gedcom.php,v 1.6 2007/05/28 08:25:52 lsces Exp $
  */
 
 /**
@@ -1593,12 +1593,7 @@ print "&nbsp;<a href=\"javascript: ".$pgv_lang["contact_conf"]."\" onclick=\"exp
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("CONTACT_METHOD_help", "qm", "CONTACT_METHOD"); print $pgv_lang["CONTACT_METHOD"];?></td>
 		<td class="optionbox"><select name="NEW_CONTACT_METHOD" tabindex="<?php $i++; print $i?>" onfocus="getHelp('CONTACT_METHOD_help');">
-		<?php if ($PGV_STORE_MESSAGES) { ?>
 				<option value="messaging" <?php if ($CONTACT_METHOD=='messaging') print "selected=\"selected\""; ?>><?php print $pgv_lang["messaging"];?></option>
-				<option value="messaging2" <?php if ($CONTACT_METHOD=='messaging2') print "selected=\"selected\""; ?>><?php print $pgv_lang["messaging2"];?></option>
-		<?php } else { ?>
-				<option value="messaging3" <?php if ($CONTACT_METHOD=='messaging3') print "selected=\"selected\""; ?>><?php print $pgv_lang["messaging3"];?></option>
-		<?php } ?>
 				<option value="mailto" <?php if ($CONTACT_METHOD=='mailto') print "selected=\"selected\""; ?>><?php print $pgv_lang["mailto"];?></option>
 				<option value="none" <?php if ($CONTACT_METHOD=='none') print "selected=\"selected\""; ?>><?php print $pgv_lang["no_messaging"];?></option>
 			</select>

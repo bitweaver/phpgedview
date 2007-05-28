@@ -164,8 +164,8 @@ function import_record($indirec, $update = false) {
 		} else
 			$indi["rin"] = $gid;
 
-		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "individuals VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $indi["gedfile"], $indi["rin"], $names[0][0], -1, $indi["gedcom"], $names[0][1], $names[0][2] ) );
+		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "individuals VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )";
+		$res = $gBitSystem->mDb->query($sql, array( $gid, $indi["gedfile"], $indi["rin"], $names[0][0], -1, $indi["gedcom"], $names[0][1], $names[0][2], 0 ) );
 
 		//-- PEAR supports prepared statements in mysqli we will use this code instead of the code above
 		//if (!isset($prepared_statement)) $prepared_statement = $gBitSystem->mDb->prepare("INSERT INTO ".PHPGEDVIEW_DB_PREFIX."individuals VALUES (?,?,?,?,?,?,?,?)");

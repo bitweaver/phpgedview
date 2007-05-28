@@ -32,7 +32,6 @@ if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
  * These need replacing with bitweaver 
  */
 $INDEX_DIRECTORY = "./index/";					//-- Readable and Writeable Directory to store index files (include the trailing "/")
-$PGV_STORE_MESSAGES = true;						//-- allow messages sent to users to be stored in the PGV system
 $PGV_SIMPLE_MAIL = true;						//-- allow admins to set this so that they can override the name <emailaddress> combination in the emails
 $USE_REGISTRATION_MODULE = false;				//-- turn on the user self registration module
 $REQUIRE_ADMIN_AUTH_REGISTRATION = true;		//-- require an admin user to authorize a new registration before a user can login
@@ -625,7 +624,6 @@ $pgv_lang_name 			= array();
 $langcode				= array();
 $ALPHABET_upper			= array();
 $ALPHABET_lower			= array();
-$MULTI_LETTER_ALPHABET	= array();
 $DICTIONARY_SORT		= array();
 $DATE_FORMAT_array		= array();
 $TIME_FORMAT_array		= array();
@@ -646,8 +644,7 @@ foreach ($language_settings as $key => $value) {
 	$factsfile[$key]			= $value["factsfile"];
 	$ALPHABET_upper[$key]		= $value["ALPHABET_upper"];
 	$ALPHABET_lower[$key]		= $value["ALPHABET_lower"];
-	$MULTI_LETTER_ALPHABET[$key] = $value["MULTI_LETTER_ALPHABET"];
-	$DICTIONARY_SORT[$key]		= $value["DICTIONARY_SORT"];
+	$DICTIONARY_SORT[$key]		= $value["ALPHABET_lower"];
 	$DATE_FORMAT_array[$key]	= $value["DATE_FORMAT"];
 	$TIME_FORMAT_array[$key]	= $value["TIME_FORMAT"];;
 	$WEEK_START_array[$key]		= $value["WEEK_START"];
