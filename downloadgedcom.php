@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.7 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.8 2007/05/28 14:48:36 lsces Exp $
  */
 
 /**
@@ -81,7 +81,7 @@ if ($action == "download" && $zip == "yes") {
 	else
 		print_gramps($privatize_export, $privatize_export_level, $convert, $remove, $zip, $gedout);
 	fclose($gedout);
-	$comment = "Created by PhpGedView " . $VERSION . " " . $VERSION_RELEASE . " on " . adodb_date("r") . ".";
+	$comment = "Created by Bitweaver PhpGedView " . $VERSION . " on " . adodb_date("r") . ".";
 	$archive = new PclZip(filename_decode($zipfile));
 	$v_list = $archive->create(filename_decode($gedname), PCLZIP_OPT_COMMENT, $comment, PCLZIP_OPT_REMOVE_PATH, filename_decode($temppath));
 	if ($v_list == 0)

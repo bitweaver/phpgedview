@@ -135,8 +135,8 @@ else
 					$fp = fopen($INDEX_DIRECTORY.$GEDFILENAME, "wb");
 				if ($fp) {
 					$newgedcom = "0 HEAD\r\n" .
-							"1 SOUR PhpGedView\r\n" .
-							"2 VERS $VERSION $VERSION_RELEASE\r\n" .
+							"1 SOUR Bitweaver PhpGedView\r\n" .
+							"2 VERS $VERSION\r\n" .
 							"1 DEST ANSTFILE\r\n" .
 							"1 GEDC\r\n2 VERS 5.5\r\n" .
 							"2 FORM Lineage-Linked\r\n" .
@@ -169,8 +169,8 @@ else
 					$fp = fopen($INDEX_DIRECTORY.$GEDFILENAME.".bak", "wb");
 				if ($fp) {
 					$newgedcom = "0 HEAD\r\n" .
-							"1 SOUR PhpGedView\r\n" .
-							"2 VERS $VERSION $VERSION_RELEASE\r\n" .
+							"1 SOUR Bitweaver PhpGedView\r\n" .
+							"2 VERS $VERSION\r\n" .
 							"1 DEST ANSTFILE\r\n" .
 							"1 GEDC\r\n2 VERS 5.5\r\n" .
 							"2 FORM Lineage-Linked\r\n" .

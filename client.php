@@ -26,7 +26,7 @@
  * 
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: client.php,v 1.4 2007/05/27 20:02:20 lsces Exp $
+ * @version $Id: client.php,v 1.5 2007/05/28 14:48:35 lsces Exp $
  */
 
 require "config.php";
@@ -59,8 +59,8 @@ else if (!check_for_import($GEDCOM)) {
 	exit;
 }
 else if ($action=='version') {
-	addDebugLog($action." SUCCESS\n$VERSION $VERSION_RELEASE\n");
-	print "SUCCESS\n$VERSION $VERSION_RELEASE\n";
+	addDebugLog($action." SUCCESS\n$VERSION\n");
+	print "SUCCESS\n$VERSION\n";
 }
 else if ($action=='connect') {
 	if (!empty($username)) {

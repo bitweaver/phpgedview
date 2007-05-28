@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.8 2006/10/28 20:17:04 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.9 2007/05/28 14:48:36 lsces Exp $
  */
 // TODO: Progress bars don't show until </table> or </div>
 // TODO: Upload ZIP support alternative path and name
@@ -131,8 +131,8 @@ else
 					$fp = fopen($INDEX_DIRECTORY.$GEDFILENAME, "wb");
 				if ($fp) {
 					$newgedcom = "0 HEAD\r\n" .
-							"1 SOUR PhpGedView\r\n" .
-							"2 VERS $VERSION $VERSION_RELEASE\r\n" .
+							"1 SOUR Bitweaver PhpGedView\r\n" .
+							"2 VERS $VERSION\r\n" .
 							"1 DEST ANSTFILE\r\n" .
 							"1 GEDC\r\n2 VERS 5.5\r\n" .
 							"2 FORM Lineage-Linked\r\n" .
@@ -165,8 +165,8 @@ else
 					$fp = fopen($INDEX_DIRECTORY.$GEDFILENAME.".bak", "wb");
 				if ($fp) {
 					$newgedcom = "0 HEAD\r\n" .
-							"1 SOUR PhpGedView\r\n" .
-							"2 VERS $VERSION $VERSION_RELEASE\r\n" .
+							"1 SOUR Bitweaver PhpGedView\r\n" .
+							"2 VERS $VERSION\r\n" .
 							"1 DEST ANSTFILE\r\n" .
 							"1 GEDC\r\n2 VERS 5.5\r\n" .
 							"2 FORM Lineage-Linked\r\n" .
