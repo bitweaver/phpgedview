@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.15 2007/05/28 11:50:59 lsces Exp $
+ * @version $Id: session.php,v 1.16 2007/05/28 14:41:03 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -281,8 +281,7 @@ if (file_exists($INDEX_DIRECTORY."search_engines.php")) {
 if (!isset($_SERVER['REQUEST_URI'])) $_SERVER['REQUEST_URI'] = "";
 
 //-- version of phpgedview
-$VERSION = "4.0.1";
-$VERSION_RELEASE = "stable";
+$VERSION = "4.1 Aplha Source";
 $REQUIRED_PRIVACY_VERSION = "3.1";
 
 //-- list of critical configuration variables
@@ -305,7 +304,6 @@ $CONFIG_VARS = array(
 	"PGV_SESSION_TIME",
 	"GEDCOMS",
 	"SERVER_URL",
-	"LOGIN_URL",
 	"PGV_MEMORY_LIMIT",
 	"PGV_STORE_MESSAGES",
 	"PGV_SIMPLE_MAIL",
@@ -747,14 +745,8 @@ if (isset($SHOW_CONTEXT_HELP) && $show_context_help==='no') $_SESSION["show_cont
    }
    else $pgv_changes = array();
 
-   if (empty($LOGIN_URL)) $LOGIN_URL = "login.php";
-
-$THEME_DIR="standard/";
-if (file_exists($THEME_DIR."theme.php")) require_once($THEME_DIR."theme.php");
-else {
-	$THEME_DIR = "themes/standard/";
-	require_once($THEME_DIR."theme.php");
-}
+$THEME_DIR = "themes/standard/";
+require_once($THEME_DIR."theme.php");
 
 require_once("hitcount.php"); //--load the hit counter
 

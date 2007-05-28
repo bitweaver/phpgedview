@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.7 2007/05/27 17:46:58 lsces Exp $
+ * @version $Id: functions_print.php,v 1.8 2007/05/28 14:41:03 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -562,7 +562,7 @@ function print_header($title, $head="",$use_alternate_styles=true) {
 	}
 	print "<link rel=\"stylesheet\" href=\"$print_stylesheet\" type=\"text/css\" media=\"print\"></link>\n\t";
 	if ($BROWSERTYPE == "msie") print "<style type=\"text/css\">\nFORM { margin-top: 0px; margin-bottom: 0px; }\n</style>\n";
-	print "<!-- PhpGedView v$VERSION -->\n";
+	print "<!-- Bitweaver PhpGedView v$VERSION -->\n";
 	if (isset($changelanguage)) {
 		$terms = preg_split("/[&?]/", $QUERY_STRING);
 		$vars = "";
@@ -618,7 +618,7 @@ function print_header($title, $head="",$use_alternate_styles=true) {
 			print "<meta name=\"robots\" content=\"noindex,nofollow\" />\n";
 		  }
 	 	  if (!empty($META_REVISIT)) print "<meta name=\"revisit-after\" content=\"$META_REVISIT\" />\n";
-		  print "<meta name=\"generator\" content=\"PhpGedView v$VERSION - http://www.phpgedview.net\" />\n";
+		  print "<meta name=\"generator\" content=\"Bitweaver PhpGedView v$VERSION - http://www.bitweaver.org\" />\n";
 		 $META_AUTHOR = $old_META_AUTHOR;
 		 $META_PUBLISHER = $old_META_PUBLISHER;
 		 $META_COPYRIGHT = $old_META_COPYRIGHT;
@@ -820,7 +820,7 @@ function print_simple_header($title) {
 			print "<meta name=\"robots\" content=\"noindex,nofollow\" />\n";
 		  }
 	 	  if (!empty($META_REVISIT)) print "<meta name=\"revisit-after\" content=\"$META_REVISIT\" />\n";
-		  print "<meta name=\"generator\" content=\"PhpGedView v$VERSION - http://www.phpgedview.net\" />\n";
+		  print "<meta name=\"generator\" content=\"Bitweaver PhpGedView v$VERSION - http://www.bitweaver.org\" />\n";
 		 $META_AUTHOR = $old_META_AUTHOR;
 		 $META_PUBLISHER = $old_META_PUBLISHER;
 		 $META_COPYRIGHT = $old_META_COPYRIGHT;
@@ -873,8 +873,8 @@ function message(username, method, url, subject) {
 }
 // -- print the html to close the page
 function print_footer() {
-	 global $without_close, $pgv_lang, $view, $buildindex, $pgv_changes, $VERSION_RELEASE, $DBTYPE;
-	 global $VERSION, $SHOW_STATS, $SCRIPT_NAME, $QUERY_STRING, $footerfile, $print_footerfile, $GEDCOMS, $ALLOW_CHANGE_GEDCOM, $printlink;
+	 global $without_close, $pgv_lang, $view, $buildindex, $pgv_changes, $DBTYPE;
+	 global $SHOW_STATS, $SCRIPT_NAME, $QUERY_STRING, $footerfile, $print_footerfile, $GEDCOMS, $ALLOW_CHANGE_GEDCOM, $printlink;
 	 global $PGV_IMAGE_DIR, $theme_name, $PGV_IMAGES, $TEXT_DIRECTION, $footer_count, $DEBUG;
 
 	 if (!isset($footer_count)) $footer_count = 1;
@@ -910,7 +910,7 @@ function print_simple_footer() {
 	 }
 	 print "\n\t<br /><br /><div align=\"center\" style=\"width: 99%;\">";
 	 print_contact_links();
-	 print "\n\t<a href=\"http://www.phpgedview.net\" target=\"_blank\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["gedview"]["other"]."\" border=\"0\" alt=\"PhpGedView Version $VERSION\" title=\"PhpGedView Version $VERSION\" /></a><br />";
+	 print "\n\t<a href=\"http://www.phpgedview.net\" target=\"_blank\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["gedview"]["other"]."\" border=\"0\" alt=\"Bitweaver PhpGedView Version $VERSION\" title=\"Bitweaver PhpGedView Version $VERSION\" /></a><br />";
 	 if ($SHOW_STATS || (isset($DEBUG) && ($DEBUG==true))) print_execution_stats();
 	 print "</div>";
 	 print "\n\t</body>\n</html>";
@@ -1000,18 +1000,16 @@ function print_lang_form($option=0) {
  */
 function print_user_links() {
 	 global $pgv_lang, $SCRIPT_NAME, $QUERY_STRING, $GEDCOM, $PRIV_USER, $PRIV_PUBLIC, $USE_REGISTRATION_MODULE, $pid;
-	 global $LOGIN_URL, $SEARCH_SPIDER;
-	 $username = getUserName();
-	 $user = getUser($username);
-	 if ($user && !empty($username)) {
-		  print '<a href="edituser.php" class="link">'.$pgv_lang["logged_in_as"].' ('.$username.')</a><br />';
-		  if ($user["canadmin"] || (userGedcomAdmin($username, $GEDCOM))) print "<a href=\"admin.php\" class=\"link\">".$pgv_lang["admin"]."</a> | ";
-		  print "<a href=\"index.php?logout=1\" class=\"link\">".$pgv_lang["logout"]."</a>";
+	 global $SEARCH_SPIDER, $gBitUser;
+
+	 if ( $gBitUser->mUserId > 0 ) {
+		  print '<a href="'.$gBitUser->getDisplayUrl().'" class="link">Logged in as ('.$gBitUser->getDisplayName().')</a><br />';
+		  if ( $gBitUser->isAdmin() ) print "<a href=\"admin.php\" class=\"link\">".$pgv_lang["admin"]."</a> | ";
+		print "<a href=\"../users/logout.php\" class=\"link\">".$pgv_lang["logout"]."</a>";
 	 }
 	 else {
-		  $QUERY_STRING = preg_replace("/logout=1/", "", $QUERY_STRING);
 		  if(empty($SEARCH_SPIDER)) {
-		  	print "<a href=\"$LOGIN_URL?url=".urlencode(basename($SCRIPT_NAME)."?".$QUERY_STRING."&amp;ged=$GEDCOM")."\" class=\"link\">".$pgv_lang["login"]."</a>";
+		  	print "<a href=\"../users/login.php\" class=\"link\">".$pgv_lang["login"]."</a>";
 		  }
 	 }
 	 print "<br />";
@@ -1146,7 +1144,7 @@ function print_contact_links($style=0) {
 	}
 }
 //-- print user favorites
-function print_favorite_selector($option=0) {
+function print_favorite_selector_xx($option=0) {
 	global $pgv_lang, $GEDCOM, $SCRIPT_NAME, $SHOW_ID_NUMBERS, $pid, $INDEX_DIRECTORY, $indilist, $famlist, $sourcelist, $medialist, $QUERY_STRING, $famid, $sid;
 	global $TEXT_DIRECTION, $REQUIRE_AUTHENTICATION, $PGV_IMAGE_DIR, $PGV_IMAGES, $SEARCH_SPIDER;
 	$username = getUserName();
@@ -1686,7 +1684,7 @@ function print_help_link($help, $helpText, $show_desc="", $use_print_text=false,
  * @param int $noprint		The switch if the text needs to be printed or returned
  */
 function print_text($help, $level=0, $noprint=0){
-	 global $pgv_lang, $factarray, $VERSION, $VERSION_RELEASE, $COMMON_NAMES_THRESHOLD;
+	 global $pgv_lang, $factarray, $VERSION, $COMMON_NAMES_THRESHOLD;
 	 global $INDEX_DIRECTORY, $GEDCOMS, $GEDCOM, $GEDCOM_TITLE, $LANGUAGE;
 	 global $GUESS_URL, $UpArrow, $DAYS_TO_SHOW_LIMIT, $MEDIA_DIRECTORY;
 	 global $repeat, $thumbnail, $xref, $pid;

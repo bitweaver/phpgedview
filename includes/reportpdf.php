@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportpdf.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: reportpdf.php,v 1.3 2007/05/28 14:41:03 lsces Exp $
  */
 
 //-- do not allow direct access to this file
@@ -139,7 +139,7 @@ class PGVReport {
 		$this->processing = "H";
 		if ($showGenText) {
 			$element = new PGVRCell(0,10, "C", "");
-			$element->addText("$pgv_lang[generated_by] PhpGedView $VERSION");
+			$element->addText("$pgv_lang[generated_by] Bitweaver PhpGedView $VERSION");
 			$element->setUrl("http://www.phpgedview.net/");
 			$this->pdf->addFooter($element);
 		}

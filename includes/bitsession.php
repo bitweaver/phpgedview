@@ -43,7 +43,6 @@ $PGV_SESSION_SAVE_PATH = "c:/network/Apache2/tmp/";					//-- Path to save PHP se
 												//-- leaving it blank will use the default path for your php configuration as found in php.ini
 $PGV_SESSION_TIME = "7200";						//-- number of seconds to wait before an inactive session times out
 $SERVER_URL = "http://localhost/bitweaverdev/phpGedView/";								//-- the URL used to access this server
-$LOGIN_URL = "";								//-- the URL to use to go to the login page, use this value if you want to redirect to a different site when users login, useful for switching from http to https
 $MAX_VIEWS = "100";								//-- the maximum number of page views per xx seconds per session
 $MAX_VIEW_TIME = "0";							//-- the number of seconds in which the maximum number of views must not be reached
 $PGV_MEMORY_LIMIT = "32M";						//-- the maximum amount of memory that PGV should be allowed to consume
@@ -308,8 +307,7 @@ if (file_exists($INDEX_DIRECTORY."search_engines.php")) {
 if (!isset($_SERVER['REQUEST_URI'])) $_SERVER['REQUEST_URI'] = "";
 
 //-- version of phpgedview
-$VERSION = "4.0.1";
-$VERSION_RELEASE = "stable";
+$VERSION = "R2 Alpha Port";
 $REQUIRED_PRIVACY_VERSION = "3.1";
 
 //-- list of critical configuration variables
@@ -332,7 +330,6 @@ $CONFIG_VARS = array(
 	"PGV_SESSION_TIME",
 	"GEDCOMS",
 	"SERVER_URL",
-	"LOGIN_URL",
 	"PGV_MEMORY_LIMIT",
 	"PGV_STORE_MESSAGES",
 	"PGV_SIMPLE_MAIL",
@@ -774,16 +771,8 @@ $monthtonum["ell"] = 13;
    }
    else $pgv_changes = array();
 
-   if (empty($LOGIN_URL)) $LOGIN_URL = "login.php";
-
-	check_db();
-
-$THEME_DIR="bitweaver/";
-if (file_exists($THEME_DIR."theme.php")) require_once($THEME_DIR."theme.php");
-else {
-	$THEME_DIR = "themes/bitweaver/";
-	require_once($THEME_DIR."theme.php");
-}
+$THEME_DIR = "themes/bitweaver/";
+require_once($THEME_DIR."theme.php");
 
 require_once("hitcount.php"); //--load the hit counter
 

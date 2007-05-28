@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: functions_export.php,v 1.3 2007/05/28 11:50:59 lsces Exp $
+ * @version $Id: functions_export.php,v 1.4 2007/05/28 14:41:03 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -34,10 +34,10 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
  */
 function gedcom_header($gedfile)
 {
-	global $CHARACTER_SET, $GEDCOMS, $VERSION, $VERSION_RELEASE, $pgv_lang;
+	global $CHARACTER_SET, $GEDCOMS, $VERSION, $pgv_lang;
 
 	// Default values for a new header
-	$SOUR="1 SOUR PhpGedView\r\n2 NAME PhpGedView Online Genealogy\r\n2 VERS $VERSION $VERSION_RELEASE\r\n";
+	$SOUR="1 SOUR PhpGedView\r\n2 NAME Bitweaver PhpGedView Online Genealogy\r\n2 VERS $VERSION\r\n";
 	$DEST="1 DEST DISKETTE\r\n";
 	$DATE="1 DATE ".strtoupper(date("d M Y"))."\r\n2 TIME ".date("H:i:s")."\r\n";
 	$GEDC="1 GEDC\r\n2 VERS 5.5.1\r\n2 FORM Lineage-Linked\r\n";
@@ -81,7 +81,7 @@ function gedcom_header($gedfile)
 }
 
 function print_gedcom($privatize_export='', $privatize_export_level='', $convert='', $remove='', $zip='', $gedout='') {
-		global $GEDCOMS, $GEDCOM, $ged, $VERSION, $VERSION_RELEASE, $pgv_lang, $CHARACTER_SET, $gBitSystem;
+		global $GEDCOMS, $GEDCOM, $ged, $pgv_lang, $CHARACTER_SET, $gBitSystem;
 		global $GEDCOM_ID_PREFIX, $SOURCE_ID_PREFIX, $FAM_ID_PREFIX, $REPO_ID_PREFIX, $MEDIA_ID_PREFIX;
 
 		if ($privatize_export == "yes") {
@@ -208,7 +208,7 @@ function print_gedcom($privatize_export='', $privatize_export_level='', $convert
 		}
 	}
 	function print_gramps($privatize_export='', $privatize_export_level='', $convert='', $remove='', $zip='', $gedout='') {
-		global $GEDCOMS, $GEDCOM, $ged, $VERSION, $VERSION_RELEASE, $pgv_lang;
+		global $GEDCOMS, $GEDCOM, $ged, $pgv_lang;
 		global $gBitSystem;
 
 		require_once ("includes/GEDownloadGedcom.php");
