@@ -26,5 +26,4 @@ if( !defined( 'PHPGEDVIEW_DB_PREFIX' ) ) {
 	define( 'PHPGEDVIEW_DB_PREFIX', $prefix.'pgv_' );
 }
 
-$INDEX_DIRECTORY = 'c:\\Data\\';
 ?>
