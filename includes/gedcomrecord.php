@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: gedcomrecord.php,v 1.3 2007/05/27 14:45:36 lsces Exp $
+ * @version $Id: gedcomrecord.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -29,11 +29,12 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-require_once('includes/person_class.php');
-require_once('includes/family_class.php');
-require_once('includes/source_class.php');
-require_once('includes/repository_class.php');
-require_once('includes/media_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_privacy.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/person_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/family_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/source_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/repository_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/media_class.php');
 class GedcomRecord {
 	var $gedrec = "";
 	var $xref = "";

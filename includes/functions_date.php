@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_date.php,v 1.4 2007/05/27 14:45:33 lsces Exp $
+ * @version $Id: functions_date.php,v 1.5 2007/05/29 19:21:11 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -31,16 +31,16 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-if ($CALENDAR_FORMAT=="hijri" || $CALENDAR_FORMAT=="arabic") {
-	require_once("includes/functions_date_hijri.php");
-}
+//if ($CALENDAR_FORMAT=="hijri" || $CALENDAR_FORMAT=="arabic") {
+//	require_once("includes/functions_date_hijri.php");
+//}
 
 // Removed Hebrew check because one can have Hebrew disabled but the Gedcom can contain
 // Hebrew dates.
 // I have turned this check back on to save on memory - enabling the USE_RTL_FUNCTIONS will cause this to be included
-if ((stristr($CALENDAR_FORMAT, "hebrew")!==false) || (stristr($CALENDAR_FORMAT, "jewish")!==false) || $USE_RTL_FUNCTIONS) {
-	require_once("includes/functions_date_hebrew.php");
-}
+//if ((stristr($CALENDAR_FORMAT, "hebrew")!==false) || (stristr($CALENDAR_FORMAT, "jewish")!==false) || $USE_RTL_FUNCTIONS) {
+//	require_once("includes/functions_date_hebrew.php");
+//}
 
 /**
  * convert a date to other languages or formats
@@ -442,10 +442,10 @@ function get_changed_date($datestr, $linebr=false) {
 			// already in english !
 			if ($LANGUAGE!="english") {
 				foreach (array("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December") as $indexval => $item) {
-					// February => Février
+					// February => Fï¿½vrier
 					$translated = $pgv_lang[substr(strtolower($item),0,3)];
 					$adate = str_replace($item, $translated, $adate);
-					// Feb => Fév
+					// Feb => Fï¿½v
 					$item = substr($item, 0, 3);
 					$translated = substr($translated, 0, 3);
 					$adate = str_replace($item, $translated, $adate);

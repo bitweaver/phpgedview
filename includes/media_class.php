@@ -21,10 +21,10 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: media_class.php,v 1.4 2006/10/28 20:17:03 lsces Exp $
+ * @version $Id: media_class.php,v 1.5 2007/05/29 19:21:11 lsces Exp $
  */
 
-require_once('includes/gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/gedcomrecord.php');
 
 class Media extends GedcomRecord {
 	var $title = "";

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: repository_class.php,v 1.1 2007/05/27 14:45:33 lsces Exp $
+ * @version $Id: repository_class.php,v 1.2 2007/05/29 19:21:11 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -29,7 +29,7 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-require_once('includes/gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/gedcomrecord.php');
 
 class Repository extends GedcomRecord {
 	var $disp = true;

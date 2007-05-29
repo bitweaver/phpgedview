@@ -29,8 +29,11 @@ if (strstr($_SERVER["SCRIPT_NAME"], "functions")) {
 	exit;
 }
 
-require_once ('includes/media_class.php');
-require_once('includes/index_cache.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_db.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_name.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_date.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/media_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/index_cache.php');
 
 /**
  * import record into database

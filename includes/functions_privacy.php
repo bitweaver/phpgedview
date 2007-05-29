@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_privacy.php,v 1.4 2007/05/27 17:46:58 lsces Exp $
+ * @version $Id: functions_privacy.php,v 1.5 2007/05/29 19:21:11 lsces Exp $
  * @package PhpGedView
  * @subpackage Privacy
  */
@@ -31,7 +31,7 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-if ($USE_RELATIONSHIP_PRIVACY) {
+if (isset($USE_RELATIONSHIP_PRIVACY)) {
 	/**
 	 * store relationship paths in a cache
 	 *
@@ -677,7 +677,8 @@ if (!function_exists("showFact")) {
 function showFact($fact, $pid) {
 	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE;
 	global $global_facts, $person_facts, $SHOW_SOURCES;
-
+// TODO fix privacy from bitweaver user table
+return true;
 	$username = getUserName();
 
 	//-- first check the global facts array
@@ -718,6 +719,8 @@ if (!function_exists("showFactDetails")) {
 function showFactDetails($fact, $pid) {
 	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE;
 	global $global_facts, $person_facts;
+// TODO fix privacy from bitweaver user table
+return true;
 
 	$username = getUserName();
 

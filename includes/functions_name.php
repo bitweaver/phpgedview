@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.5 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: functions_name.php,v 1.6 2007/05/29 19:21:11 lsces Exp $
  */
 
 /**
@@ -788,45 +788,7 @@ function check_NN($names) {
  * @todo look at function performance as it is much slower than strtolower
  */
 function str2lower($value) {
-	global $language_settings,$LANGUAGE, $ALPHABET_upper, $ALPHABET_lower;
-	global $all_ALPHABET_upper, $all_ALPHABET_lower;
-
-	//-- get all of the upper and lower alphabets as a string
-	if (!isset($all_ALPHABET_upper)) {
-		$all_ALPHABET_upper = "";
-		$all_ALPHABET_lower = "";
-		foreach ($ALPHABET_upper as $l => $up_alphabet){
-			$lo_alphabet = $ALPHABET_lower[$l];
-			$ll = strlen($lo_alphabet);
-			$ul = strlen($up_alphabet);
-			if ($ll < $ul) $lo_alphabet .= substr($up_alphabet, $ll);
-			if ($ul < $ll) $up_alphabet .= substr($lo_alphabet, $ul);
-			$all_ALPHABET_lower .= $lo_alphabet;
-			$all_ALPHABET_upper .= $up_alphabet;
-		}
-	}
-
-	$value_lower = "";
-	$len = strlen($value);
-
-	//-- loop through all of the letters in the value and find their position in the
-	//-- upper case alphabet.  Then use that position to get the correct letter from the
-	//-- lower case alphabet.
-	for($i=0; $i<$len; $i++) {
-		// Look for UTF8 multi-byte strings
-		$charLen = 1;
-		$letter = substr($value, $i, 1);
-		if ((ord($letter) & 0xE0) == 0xC0) $charLen = 2;		// 2-byte sequence
-		if ((ord($letter) & 0xF0) == 0xE0) $charLen = 3;		// 3-byte sequence
-		if ((ord($letter) & 0xF8) == 0xF0) $charLen = 4;		// 4-byte sequence
-		$letter = substr($value, $i, $charLen);
-		$i += ($charLen - 1);		// advance to end of UTF8 multi-byte string
-		
-		$pos = strpos($all_ALPHABET_upper, $letter);
-		if ($pos!==false) $letter = substr($all_ALPHABET_lower, $pos, $charLen);
-		$value_lower .= $letter;
-	}
-	return $value_lower;
+return strtolower($value);
 }
 // END function str2lower
 
@@ -841,48 +803,8 @@ function str2lower($value) {
  * @todo look at function performance as it is much slower than strtoupper
  */
 function str2upper($value) {
-	global $language_settings,$LANGUAGE, $ALPHABET_upper, $ALPHABET_lower;
-	global $all_ALPHABET_upper, $all_ALPHABET_lower;
-
-	//-- get all of the upper and lower alphabets as a string
-	if (!isset($all_ALPHABET_upper)) {
-		$all_ALPHABET_upper = "";
-		$all_ALPHABET_lower = "";
-		foreach ($ALPHABET_upper as $l => $up_alphabet){
-			$lo_alphabet = $ALPHABET_lower[$l];
-			$ll = strlen($lo_alphabet);
-			$ul = strlen($up_alphabet);
-			if ($ll < $ul) $lo_alphabet .= substr($up_alphabet, $ll);
-			if ($ul < $ll) $up_alphabet .= substr($lo_alphabet, $ul);
-			$all_ALPHABET_lower .= $lo_alphabet;
-			$all_ALPHABET_upper .= $up_alphabet;
-		}
-	}
-
-	$value_upper = "";
-	$len = strlen($value);
-
-	//-- loop through all of the letters in the value and find their position in the
-	//-- lower case alphabet.  Then use that position to get the correct letter from the
-	//-- upper case alphabet.
-	for($i=0; $i<$len; $i++) {
-		// Look for UTF8 multi-byte strings
-		$charLen = 1;
-		$letter = substr($value, $i, 1);
-		if ((ord($letter) & 0xE0) == 0xC0) $charLen = 2;		// 2-byte sequence
-		if ((ord($letter) & 0xF0) == 0xE0) $charLen = 3;		// 3-byte sequence
-		if ((ord($letter) & 0xF8) == 0xF0) $charLen = 4;		// 4-byte sequence
-		$letter = substr($value, $i, $charLen);
-		$i += ($charLen - 1);		// advance to end of UTF8 multi-byte string
-		
-		$pos = strpos($all_ALPHABET_lower, $letter);
-		if ($pos!==false) $letter = substr($all_ALPHABET_upper, $pos, $charLen);
-		$value_upper .= $letter;
-	}
-	return $value_upper;
+return strtoupper($value);
 }
-// END function str2upper
-
 
 /**
  * Convert a string to UTF8
@@ -1003,7 +925,7 @@ function DMSoundex($name, $option = "") {
 	
 	// If the code tables are not loaded, reload! Keep them global!
 	if (!isset($dmcoding)) {
-		$fname = $PGV_BASEDIRECTORY."includes/dmarray.full.utf-8.php";
+		$fname = PHPGEDVIEW_PKG_PATH."includes/dmarray.full.utf-8.php";
 		require($fname);
 	}
 	

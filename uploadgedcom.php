@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.11 2007/05/28 18:54:17 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.12 2007/05/29 19:21:11 lsces Exp $
  */
 // TODO: Progress bars don't show until </table> or </div>
 // TODO: Upload ZIP support alternative path and name
@@ -189,90 +189,29 @@ if ($check == "cancel_upload") {
 if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]) {
 	require_once ("includes/functions_tools.php");
 
-	$filechanged = false;
-	if (file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
-		$l_BOMcleanup = false;
-		$l_headcleanup = false;
-		$l_macfilecleanup = false;
-		$l_lineendingscleanup = false;
-		$l_placecleanup = false;
-		$l_datecleanup = false;
-		$l_isansi = false;
-		$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "rb");
-		$fw = fopen($INDEX_DIRECTORY."/".$GEDFILENAME.".bak", "wb");
-		//-- read the gedcom and test it in 8KB chunks
-		while (!feof($fp)) {
-			$fcontents = fread($fp, 1024 * 8);
-			$lineend = "\n";
-			if (need_macfile_cleanup()) {
-				$l_macfilecleanup = true;
-				$lineend = "\r";
-			}
+	$_POST["path"] = $GEDCOMS[$GEDFILENAME]["path"];
+	if (!isset($_POST["ged"])) $_POST["ged"] = $GEDFILENAME;
+	$_POST['cleanup_needed'] = $cleanup_needed;
+// Using 
+// $_POST["cleanup_places"]
+// $_POST["datetype"]
+// $_POST["xreftype"]
+// $_POST["utf8convert"]
 
-			//-- read ahead until the next line break
-			$byte = "";
-			while ((!feof($fp)) && ($byte != $lineend)) {
-				$byte = fread($fp, 1);
-				$fcontents .= $byte;
-			}
+	gedcom_clean_scan( $_POST );
+// Returns
+// $$_POST["filechanged"];
 
-			if (!$l_BOMcleanup && need_BOM_cleanup()) {
-				BOM_cleanup();
-				$l_BOMcleanup = true;
-			}
-
-			if (!$l_headcleanup && need_head_cleanup()) {
-				head_cleanup();
-				$l_headcleanup = true;
-			}
-
-			if ($l_macfilecleanup) {
-				macfile_cleanup();
-			}
-
-			if (isset ($_POST["cleanup_places"]) && $_POST["cleanup_places"] == "YES") {
-				if (($sample = need_place_cleanup()) !== false) {
-					$l_placecleanup = true;
-					place_cleanup();
-				}
-			}
-
-			if (line_endings_cleanup()) {
-				$filechanged = true;
-			}
-
-			if (isset ($_POST["datetype"])) {
-				$filechanged = true;
-				//month first
-				date_cleanup($_POST["datetype"]);
-			}
-			/**
-			 if($_POST["xreftype"]!="NA") {
-				$filechanged=true;
-				xref_change($_POST["xreftype"]);
-				}
-				**/
-			if (isset ($_POST["utf8convert"]) == "YES") {
-				$filechanged = true;
-				convert_ansi_utf8();
-			}
-			fwrite($fw, $fcontents);
-		}
-		fclose($fp);
-		fclose($fw);
-		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak", $GEDCOMS[$GEDFILENAME]["path"]);
-		$cleanup_needed = false;
-		$import = "true";
-	} else {
-		$error = str_replace("#GEDCOM#", $GEDFILENAME, $pgv_lang["error_header_write"]);
-	}
+//	} else {
+//		$error = str_replace("#GEDCOM#", $GEDFILENAME, $pgv_lang["error_header_write"]);
+//	}
 }
 
 // NOTE: Change header depending on action
-if ($action == "upload_form") print_header($pgv_lang["upload_gedcom"]);
-else if ($action == "add_form") print_header($pgv_lang["add_gedcom"]);
-else if ($action == "add_new_form") print_header($pgv_lang["add_new_gedcom"]);
-else print_header($pgv_lang["ged_import"]);
+if ($action == "upload_form") print_header("Upload GEDCOM");
+else if ($action == "add_form") print_header("Add GEDCOM");
+else if ($action == "add_new_form") print_header("Create a new GEDCOM");
+else print_header("Import");
 
 // NOTE: Print form header
 print "<form enctype=\"multipart/form-data\" method=\"post\" name=\"configform\" action=\"uploadgedcom.php\">";
@@ -285,9 +224,9 @@ if ($action == "add_form") {
 	print "<tr><td class=\"topbottombar $TEXT_DIRECTION\" colspan=\"2\">";
 	print "<a href=\"javascript: ";
 	if ($import_existing)
-	print $pgv_lang["ged_import"];
+	print "Import";
 	else
-	print $pgv_lang["add_gedcom"];
+	print "Add GEDCOM";
 	print "\" onclick=\"expand_layer('add-form');return false\"><img id=\"add-form_img\" src=\"".$PGV_IMAGE_DIR."/";
 	if ($startimport != "true")
 	print $PGV_IMAGES["minus"]["other"];
@@ -297,14 +236,14 @@ if ($action == "add_form") {
 	print_help_link("add_gedcom_help", "qm", "add_gedcom");
 	print "&nbsp;<a href=\"javascript: ";
 	if ($import_existing)
-	print $pgv_lang["ged_import"];
+	print "Import";
 	else
-	print $pgv_lang["add_gedcom"];
+	print "Add GEDCOM";
 	print "\" onclick=\"expand_layer('add-form');return false\">";
 	if ($import_existing)
-	print $pgv_lang["ged_import"];
+	print "Import";
 	else
-	print $pgv_lang["add_gedcom"];
+	print "Add GEDCOM";
 	print "</a>";
 	print "</td></tr>";
 	print "<tr><td class=\"optionbox\">";
@@ -545,43 +484,12 @@ if ($verify == "validate_form") {
 
 	if ($import != true && $skip_cleanup != $pgv_lang["skip_cleanup"]) {
 		require_once ("includes/functions_tools.php");
-		if ($override == "yes") {
-			copy($bakfile, $GEDCOMS[$GEDFILENAME]["path"]);
-			if (file_exists($bakfile))
-			unlink($bakfile);
-			$bakfile = false;
-		}
-		$l_BOMcleanup = false;
-		$l_headcleanup = false;
-		$l_macfilecleanup = false;
-		$l_lineendingscleanup = false;
-		$l_placecleanup = false;
-		$l_datecleanup = false;
-		$l_isansi = false;
-		$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "r");
-		//-- read the gedcom and test it in 8KB chunks
-		while (!feof($fp)) {
-			$fcontents = fread($fp, 1024 * 8);
-			if (!$l_BOMcleanup && need_BOM_cleanup())
-			$l_BOMcleanup = true;
-			if (!$l_headcleanup && need_head_cleanup())
-			$l_headcleanup = true;
-			if (!$l_macfilecleanup && need_macfile_cleanup())
-			$l_macfilecleanup = true;
-			if (!$l_lineendingscleanup && need_line_endings_cleanup())
-			$l_lineendingscleanup = true;
-			if (!$l_placecleanup && ($placesample = need_place_cleanup()) !== false)
-			$l_placecleanup = true;
-			if (!$l_datecleanup && ($datesample = need_date_cleanup()) !== false)
-			$l_datecleanup = true;
-			if (!$l_isansi && is_ansi())
-			$l_isansi = true;
-		}
-		fclose($fp);
+
+		$cleanup = gedcom_verify_scan( $override );
 
 		if (!isset ($cleanup_needed))
 		$cleanup_needed = false;
-		if (!$l_datecleanup && !$l_isansi && !$l_BOMcleanup && !$l_headcleanup && !$l_macfilecleanup && !$l_placecleanup && !$l_lineendingscleanup) {
+		if (!$cleanup['date'] && !$cleanup['isansi'] && !$cleanup['BOM'] && !$cleanup['head'] && !$cleanup['macfile'] && !$cleanup['place'] && !$cleanup['lineendings']) {
 			print $pgv_lang["valid_gedcom"];
 			print "</td></tr>";
 			$import = true;
@@ -593,35 +501,35 @@ if ($verify == "validate_form") {
 				print "</td></tr>";
 			}
 			// NOTE: Check for BOM cleanup
-			if ($l_BOMcleanup) {
+			if ($cleanup['BOM']) {
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
 				print_help_link("BOM_detected_help", "qm", "BOM_detected");
 				print "<span class=\"error\">".$pgv_lang["BOM_detected"]."</span>\n";
 				print "</td></tr>";
 			}
 			// NOTE: Check for head cleanup
-			if ($l_headcleanup) {
+			if ($cleanup['head']) {
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
 				print_help_link("invalid_header_help", "qm", "invalid_header");
 				print "<span class=\"error\">".$pgv_lang["invalid_header"]."</span>\n";
 				print "</td></tr>";
 			}
 			// NOTE: Check for mac file cleanup
-			if ($l_macfilecleanup) {
+			if ($cleanup['macfile']) {
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
 				print_help_link("macfile_detected_help", "qm", "macfile_detected");
 				print "<span class=\"error\">".$pgv_lang["macfile_detected"]."</span>\n";
 				print "</td></tr>";
 			}
 			// NOTE: Check for line endings cleanup
-			if ($l_lineendingscleanup) {
+			if ($cleanup['lineendings']) {
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
 				print_help_link("empty_lines_detected_help", "qm", "empty_lines_detected");
 				print "<span class=\"error\">".$pgv_lang["empty_lines_detected"]."</span>\n";
 				print "</td></tr>";
 			}
 			// NOTE: Check for place cleanup
-			if ($l_placecleanup) {
+			if ($cleanup['place']) {
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
 				print "\n<table class=\"facts_table\">";
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
@@ -638,7 +546,7 @@ if ($verify == "validate_form") {
 				print "</td></tr>";
 			}
 			// NOTE: Check for date cleanup
-			if ($l_datecleanup) {
+			if ($cleanup['date']) {
 				print "<tr><td class=\"optionbox wrap\" colspan=\"2\">";
 				print "<span class=\"error\">".$pgv_lang["invalid_dates"]."</span>\n";
 				print "\n<table class=\"facts_table\">";
@@ -658,7 +566,7 @@ if ($verify == "validate_form") {
 				print "</td></tr>";
 			}
 			// NOTE: Check for ansi encoding
-			if ($l_isansi) {
+			if ($cleanup['isansi']) {
 				print "<tr><td class=\"optionbox\" colspan=\"2\">";
 				print "<span class=\"error\">".$pgv_lang["ansi_encoding_detected"]."</span>\n";
 				print "\n<table class=\"facts_table\">";

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: family_class.php,v 1.3 2007/05/27 14:45:35 lsces Exp $
+ * @version $Id: family_class.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -29,9 +29,9 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-require_once 'includes/gedcomrecord.php';
-require_once 'includes/person_class.php';
-require_once 'includes/serviceclient_class.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/person_class.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/serviceclient_class.php');
 
 class Family extends GedcomRecord {
 	var $husb = null;

@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.8 2007/05/28 14:48:36 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.9 2007/05/29 19:21:11 lsces Exp $
  */
 
 /**
@@ -56,7 +56,7 @@ if (!isset ($privatize_export))
 //print $action."- action ".$zip."- zip";
 if ($action == "download" && $zip == "yes") {
 	require "includes/pclzip.lib.php";
-	require "includes/adodb-time.inc.php";
+	if (!defined('ADODB_DATE_VERSION')) require "includes/adodb-time.inc.php";
 
 	$temppath = $INDEX_DIRECTORY . "tmp/";
 	$fileName = $ged;

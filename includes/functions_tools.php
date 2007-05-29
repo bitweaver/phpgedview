@@ -2,7 +2,7 @@
 /**
  * Functions used Tools to cleanup and manipulate Gedcoms before they are imported
  *
- * $Id: functions_tools.php,v 1.3 2007/05/27 14:45:34 lsces Exp $
+ * $Id: functions_tools.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003  John Finlay and Others
@@ -394,4 +394,138 @@ function convert_ansi_utf8() {
 	$fcontents = preg_replace("/1 CHAR (ANSI|ANSEL)/", "1 CHAR UTF-8", $fcontents);
 }
 
+/**
+ * Scan the raw gedcom file for content problems
+ *
+ * Produces an array of fault flags which can be used to display problem list
+ */
+function gedcom_verify_scan( $override = false ) {
+	global $fcontents, $GEDCOMS, $GEDFILENAME;
+
+	if ($override == "yes") {
+		$bakfile = $GEDCOMS[$GEDFILENAME]["path"].'.bak';
+		if (file_exists($bakfile)) {
+			copy($bakfile, $GEDCOMS[$GEDFILENAME]["path"]);
+			unlink($bakfile);
+			$bakfile = false;
+		}
+	}
+	
+	$l_cleanup['BOM'] = false;
+	$l_cleanup['head']= false;
+	$l_cleanup['macfile']= false;
+	$l_cleanup['lineendings']= false;
+	$l_cleanup['place']= false;
+	$l_cleanup['date']= false;
+	$l_cleanup['isansi'] = false;
+	$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "r");
+	//-- read the gedcom and test it in 8KB chunks
+	while (!feof($fp)) {
+		$fcontents = fread($fp, 1024 * 8);
+		if (!$l_cleanup['BOM']&& need_BOM_cleanup())
+			$l_cleanup['BOM']= true;
+		if (!$l_cleanup['head']&& need_head_cleanup())
+			$l_cleanup['head']= true;
+		if (!$l_cleanup['macfile']&& need_macfile_cleanup())
+			$l_cleanup['macfile']= true;
+		if (!$l_cleanup['lineendings']&& need_line_endings_cleanup())
+			$l_cleanup['lineendings']= true;
+		if (!$l_cleanup['place']&& ($placesample = need_place_cleanup()) !== false)
+			$l_cleanup['place']= true;
+		if (!$l_cleanup['date']&& ($datesample = need_date_cleanup()) !== false)
+			$l_cleanup['date']= true;
+		if (!$l_cleanup['isansi'] && is_ansi())
+			$l_cleanup['isansi'] = true;
+	}
+	fclose($fp);
+	return $l_cleanup;
+}
+
+/**
+ * Scan the raw gedcom file and fix content problems
+ *
+ * Takes the array of fault flags previously generated
+ */
+function gedcom_clean_scan( &$pScanHash ) {
+
+	$filechanged = false;
+	if ( $pScanHash['cleanup_needed'] == "cleanup_needed"
+		 && file_is_writeable($pScanHash['path'])
+		 && (file_exists($pScanHash['path']))) {
+		$pScanHash['BOM'] = false;
+		$pScanHash['head']= false;
+		$pScanHash['macfile']= false;
+		$pScanHash['lineendings']= false;
+		$pScanHash['place']= false;
+		$pScanHash['date']= false;
+		$pScanHash['isansi'] = false;
+		$fp = fopen($pScanHash['path'], "rb");
+		$fw = fopen($INDEX_DIRECTORY."/".$pScanHash['ged'].".bak", "wb");
+		//-- read the gedcom and test it in 8KB chunks
+		while (!feof($fp)) {
+			$fcontents = fread($fp, 1024 * 8);
+			$lineend = "\n";
+			if (need_macfile_cleanup()) {
+				$pScanHash['macfile']= true;
+				$lineend = "\r";
+			}
+
+			//-- read ahead until the next line break
+			$byte = "";
+			while ((!feof($fp)) && ($byte != $lineend)) {
+				$byte = fread($fp, 1);
+				$fcontents .= $byte;
+			}
+
+			if (!$pScanHash['BOM']&& need_BOM_cleanup()) {
+				BOM_cleanup();
+				$pScanHash['BOM']= true;
+			}
+
+			if (!$pScanHash['head']&& need_head_cleanup()) {
+				head_cleanup();
+				$pScanHash['head']= true;
+			}
+
+			if ($pScanHash['macfile']) {
+				macfile_cleanup();
+			}
+
+			if (isset ($pScanHash["cleanup_places"]) && $pScanHash["cleanup_places"] == "YES") {
+				if (($sample = need_place_cleanup()) !== false) {
+					$pScanHash['place']= true;
+					place_cleanup();
+				}
+			}
+
+			if (line_endings_cleanup()) {
+				$filechanged = true;
+			}
+
+			if (isset ($pScanHash["datetype"])) {
+				$filechanged = true;
+				//month first
+				date_cleanup($pScanHash["datetype"]);
+			}
+			/**
+			 if($_POST["xreftype"]!="NA") {
+				$filechanged=true;
+				xref_change($_POST["xreftype"]);
+				}
+				**/
+			if (isset ($pScanHash["utf8convert"]) == "YES") {
+				$filechanged = true;
+				convert_ansi_utf8();
+			}
+			fwrite($fw, $fcontents);
+		}
+		fclose($fp);
+		fclose($fw);
+		copy($INDEX_DIRECTORY."/".$pScanHash['ged'].".bak", $pScanHash['path']);
+		$pScanHash['cleanup_needed'] = false;
+	}
+	$pScanHash['filechanged'] = $filechanged;
+	
+	return $pScanHash;
+}
 ?>

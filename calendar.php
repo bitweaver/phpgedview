@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
+ * $Id: calendar.php,v 1.6 2007/05/29 19:21:11 lsces Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -44,7 +44,7 @@ $gGedcom = new BitGEDCOM();
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
 require_once("includes/functions_print_lists.php");
-require("includes/adodb-time.inc.php");
+if (!defined('ADODB_DATE_VERSION')) require("includes/adodb-time.inc.php");
 
 if (!isset($year)) $year = adodb_date("Y");
 if (empty($day)) $day = adodb_date("j");
