@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/admin_gedcoms.tpl,v 1.2 2007/05/29 08:42:29 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/admin_gedcoms.tpl,v 1.3 2007/05/29 19:19:39 lsces Exp $ *}
 {strip}
 
 <div class="floaticon">{bithelp}</div>
@@ -74,12 +74,12 @@
 					</td>
 
 					<td align="right">
-						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}admin/admin_gedcoms.php?fUpload=1&amp;content_id={$listgedcoms[gedcom].content_id}">{biticon ipackage="icons" iname="network-receive" iforce=icon_text iexplain="Upload Gedcom"}</a>
+						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}admin/admin_gedcoms.php?fUpload=1&amp;g_id={$listgedcoms[gedcom].g_id}">{biticon ipackage="icons" iname="network-receive" iforce=icon_text iexplain="Upload Gedcom"}</a>
 						<br />
-						{smartlink ititle='delete' ibiticon="icons/user-trash" ifile='editgedcoms.php' action=delete ged=`$listgedcoms[gedcom].name`}
-						{smartlink ititle='permissions' ibiticon="icons/emblem-shared" ipackage='kernel' ifile='object_permissions.php' objectName="Topic `$topics[user].name`" object_type=topic permType=topics object_id=`$listgedcoms[gedcom].content_id`}
+						{smartlink ititle='delete' ibiticon="icons/user-trash" ifile='admin/admin_gedcoms.php' fRemoveGedcom='1' g_id=`$listgedcoms[gedcom].g_id`}
+						{smartlink ititle='permissions' ibiticon="icons/emblem-shared" ipackage='liberty' ifile='content_permissions.php' content_id=`$listgedcoms[gedcom].content_id`}
 						<br />
-						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}admin/admin_gedcoms.php?fDownload=1&amp;content_id={$listgedcoms[gedcom].content_id}">{biticon ipackage="icons" iname="network-transmit" iforce=icon_text iexplain="Download Gedcom"}</a>
+						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}downloadgedcom.php?ged={$listgedcoms[gedcom].name}">{biticon ipackage="icons" iname="network-transmit" iforce=icon_text iexplain="Download Gedcom"}</a>
 					</td>
 				</tr>
 			{sectionelse}

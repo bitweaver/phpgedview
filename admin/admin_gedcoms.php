@@ -1,29 +1,34 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.2 2007/05/29 08:42:29 lsces Exp $
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.3 2007/05/29 19:19:39 lsces Exp $
 require_once( '../../bit_setup_inc.php' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
-$gContent = new BitGEDCOM();
+if ( isset($_REQUEST['g_id']) ) {
+	$gContent = new BitGEDCOM( $_REQUEST['g_id'] );
+	$gContent->load();
+}
+else 
+	$gContent = new BitGEDCOM();
 //include_once( PHPGEDVIEW_PKG_PATH.'lookup_article_topic_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
 $gBitSystem->verifyPermission( 'p_phpgedview_admin' );
 
-if( isset( $_REQUEST["fSubmitAddGedcom"] ) ) {
-	vd($_REQUEST);
+if( isset( $_REQUEST['fSubmitAddGedcom'] ) ) {
 	$gContent->storeGedcom( $_REQUEST );
 	if ( !empty( $gContent->mErrors ) ) {
 		$gBitSmarty->assign_by_ref('errors', $gContent->mErrors );
 	}
 } elseif( !empty( $_REQUEST['fActivateTopic'] )&& $gContent ) {
-	$gContent->activateTopic();
+//	$gContent->activateTopic();
 } elseif( !empty( $_REQUEST['fDeactivateTopic'] )&& $gContent ) {
-	$gContent->deactivateTopic();
-} elseif( !empty( $_REQUEST['fRemoveTopic'] )&& $gContent ) {
-	$gContent->removeTopic();
-} elseif( !empty( $_REQUEST['fRemoveTopicAll'] )&& $gContent ) {
-	$gContent->removeTopic( TRUE );
+//	$gContent->deactivateTopic();
+} elseif( !empty( $_REQUEST['fRemoveGedcom'] )&& $gContent ) {
+	$gContent->expunge();
+} elseif( !empty( $_REQUEST['fUpload'] )&& $gContent ) {
+	$this->expungeGedcom($_REQUEST['g_id']);
+	$this->importGedcom();
 }
 
 $gBitSmarty->assign_by_ref( "gContent", $gContent );
