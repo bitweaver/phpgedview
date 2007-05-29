@@ -22,12 +22,12 @@
  * @link       http://pear.php.net/package/SOAP
  */
 
-require_once 'SOAP/Value.php';
-require_once 'SOAP/Base.php';
-require_once 'SOAP/Transport.php';
-require_once 'SOAP/WSDL.php';
-require_once 'SOAP/Fault.php';
-require_once 'SOAP/Parser.php';
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Value.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Base.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Transport.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/WSDL.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Fault.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Parser.php');
 
 // Arnaud: the following code was taken from DataObject and adapted to suit
 

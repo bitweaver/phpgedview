@@ -22,7 +22,7 @@
  * @link       http://pear.php.net/package/SOAP
  */
 
-require_once 'SOAP/Base.php';
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Base.php');
 
 class SOAP_DISCO_Server extends SOAP_Base_Object {
 

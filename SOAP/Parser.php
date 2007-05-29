@@ -22,8 +22,8 @@
  * @link       http://pear.php.net/package/SOAP
  */
 
-require_once 'SOAP/Base.php';
-require_once 'SOAP/Value.php';
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Base.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Value.php');
 
 /**
  * SOAP Parser

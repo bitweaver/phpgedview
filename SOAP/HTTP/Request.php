@@ -44,8 +44,8 @@
 //
 
 require_once 'PEAR.php';
-require_once 'SOAP/Net/Socket.php';
-require_once 'SOAP/Net/URL.php';
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Net/Socket.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Net/URL.php');
 
 define('HTTP_REQUEST_METHOD_GET',     'GET',     true);
 define('HTTP_REQUEST_METHOD_HEAD',    'HEAD',    true);

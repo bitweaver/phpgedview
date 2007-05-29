@@ -22,9 +22,9 @@
  * @link       http://pear.php.net/package/SOAP
  */
 
-require_once 'SOAP/Base.php';
-require_once 'SOAP/Fault.php';
-require_once 'SOAP/HTTP/Request.php';
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Base.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Fault.php');
+require_once(PHPGEDVIEW_PKG_PATH.'SOAP/HTTP/Request.php');
 
 define('WSDL_CACHE_MAX_AGE', 43200);
 define('WSDL_CACHE_USE',     0); // set to zero to turn off caching
