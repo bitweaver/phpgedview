@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.7 2007/05/28 11:23:50 lsces Exp $
+ * @version $Id: editconfig_gedcom.php,v 1.8 2007/05/29 08:42:29 lsces Exp $
  */
 
 /**
@@ -38,7 +38,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require "config.php";
+require "includes/bitsession.php";
 if (empty($action)) $action="";
 if (empty($source)) $source="";		// Set when loaded from uploadgedcom.php
 if (!userGedcomAdmin(getUserName())) {

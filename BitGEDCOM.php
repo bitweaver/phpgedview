@@ -13,25 +13,25 @@
 /**
  * required setup
  */
-require_once( LIBERTY_PKG_PATH.'LibertyAttachable.php' );
+require_once( LIBERTY_PKG_PATH.'LibertyContent.php' );
 
-class BitGEDCOM extends LibertyAttachable {
+class BitGEDCOM extends LibertyContent {
 	var $mGEDCOMId;
 	var $mGedcomName;
 	var $mDbx;
 
 	function BitGEDCOM( $pGEDCOMId=NULL, $pContentId=NULL ) {
-		LibertyAttachable::LibertyAttachable();
+		LibertyContent::LibertyContent();
 		$this->registerContentType( 'BitGEDCOM', array(
-				'content_type_guid' => 'BitGEDCOM',
+				'content_type_guid' => 'bitGEDCOM',
 				'content_description' => 'Gedcom Archive',
 				'handler_class' => 'BitGEDCOM',
-				'handler_package' => 'gedcom',
+				'handler_package' => 'phpgedview',
 				'handler_file' => 'BitGEDCOM.php',
-				'maintainer_url' => 'http://www.bitweaver.org'
+				'maintainer_url' => 'http://home.lsces.co.uk/lsces'
 			) );
 		$this->mContentId = $pContentId;
-		$this->mContentTypeGuid = 'BitGEDCOM';
+		$this->mContentTypeGuid = 'bitGEDCOM';
 		global $gBitSystem;
 		$mDbx = ( !empty( $this->mDb ) ? $this->mDb : $gBitSystem->getDb() );
 	}
@@ -41,7 +41,7 @@ class BitGEDCOM extends LibertyAttachable {
 	 * @param find Filter to be applied to the list
 	 */
 	function isValid() {
-		return true;
+		return( $this->verifyId( $this->mGEDCOMId ) );
 	}
 
 	/**
@@ -56,8 +56,8 @@ class BitGEDCOM extends LibertyAttachable {
 		else
 		{	$query_cant = "SELECT COUNT(*)
 			FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
-			INNER JOIN `".BIT_DB_PREFIX."tiki_content` tc ON (tc.`content_id` = ged.`g_content_id`)
-			WHERE tc.`content_type_guid`='BitGEDCOM'";
+			INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`g_content_id`)
+			WHERE tc.`content_type_guid`='bitGEDCOM'";
 			$cant = $this->mDb->getOne( $query_cant );
 		}
 		return $cant;		
@@ -89,29 +89,23 @@ class BitGEDCOM extends LibertyAttachable {
 	 * Load a GEDCOM archives
 	 */
 	function load() {
-		if( $this->isValid() ) {
-			global $gBitSystem, $gBitUser;
-			$gateSql = NULL;
-			$mid = NULL;
-			if ( @$this->verifyId( $this->mGEDCOMId ) ) {
-				$mid = " WHERE ged.`g_id` = ?";
-				$bindVars = array($this->mImageId);
-			} elseif ( @$this->verifyId( $this->mContentId ) ) {
-				$mid = " WHERE ged.`content_id` = ?";
-				$bindVars = array($this->mContentId);
-			}
-			if( $gBitSystem->isPackageActive( 'gatekeeper' ) ) {
-				$gateSql = ' ,ts.`security_id`, ts.`security_description`, ts.`is_private`, ts.`is_hidden`, ts.`access_question`, ts.`access_answer` ';
-				$mid = " LEFT OUTER JOIN `".BIT_DB_PREFIX."gatekeeper_security_map` cg ON ( tc.`content_id`=cg.`content_id` )  LEFT OUTER JOIN `".BIT_DB_PREFIX."gatekeeper_security` ts ON ( cg.`security_id`=ts.`security_id` )
- 						".$mid;
-			}
-			$sql = "SELECT ged.*, tc.* $gateSql
-						, uue.`login` AS `modifier_user`, uue.`real_name` AS `modifier_real_name`
-						, uuc.`login` AS `creator_user`, uuc.`real_name` AS `creator_real_name`
-					FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged, `".BIT_DB_PREFIX."tiki_content` tc
-						LEFT JOIN `".BIT_DB_PREFIX."users_users` uue ON (uue.`user_id` = tc.`modifier_user_id`)
-						LEFT JOIN `".BIT_DB_PREFIX."users_users` uuc ON (uuc.`user_id` = tc.`user_id`)
-					$mid AND tc.`content_id` = fi.`content_id`";
+		if( $this->verifyId( $this->mGEDCOMId ) || $this->verifyId( $this->mContentId ) ) {
+			global $gBitSystem;
+			$lookupColumn = @BitBase::verifyId( $this->mGEDCOMId ) ? 'g_id' : 'content_id';
+
+			$bindVars = array(); $selectSql = ''; $joinSql = ''; $whereSql = '';
+			array_push( $bindVars, $lookupId = @BitBase::verifyId( $this->mGEDCOMId )? $this->mGEDCOMId : $this->mContentId );
+			$this->getServicesSql( 'content_load_sql_function', $selectSql, $joinSql, $whereSql, $bindVars );
+
+
+			$sql = "SELECT ged.*, 1c.*
+						, uue.`login` AS modifier_user, uue.`real_name` AS modifier_real_name
+						, uuc.`login` AS creator_user, uuc.`real_name` AS creator_real_name $selectSql
+					FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
+						INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`content_id`) $joinSql 
+						LEFT JOIN `".BIT_DB_PREFIX."users_users` uue ON (uue.`user_id` = lc.`modifier_user_id`)
+						LEFT JOIN `".BIT_DB_PREFIX."users_users` uuc ON (uuc.`user_id` = lc.`user_id`)
+					WHERE wp.`$lookupColumn`=? $whereSql";
 			if( $rs = $this->mDb->query($sql, array($bindVars)) ) {
 				$this->mInfo = $rs->fields;
 
@@ -121,21 +115,7 @@ class BitGEDCOM extends LibertyAttachable {
 				$this->mInfo['creator'] = (isset( $rs->fields['creator_real_name'] ) ? $rs->fields['creator_real_name'] : $rs->fields['creator_user'] );
 				$this->mInfo['editor'] = (isset( $rs->fields['modifier_real_name'] ) ? $rs->fields['modifier_real_name'] : $rs->fields['modifier_user'] );
 
-/*				if( $gBitSystem->isPackageActive( 'gatekeeper' ) && !@$this->verifyId( $this->mInfo['security_id'] ) ) {
-					// check to see if this image is in a protected gallery
-					// this burns an extra select but avoids an big and gnarly LEFT JOIN sequence that may be hard to optimize on all DB's
-					$query = "SELECT ts.* FROM `".BIT_DB_PREFIX."fisheye_gallery_image_map` fgim
-								INNER JOIN `".BIT_DB_PREFIX."gatekeeper_security_map` tsm ON(fgim.`gallery_content_id`=tsm.`content_id` )
-								INNER JOIN `".BIT_DB_PREFIX."gatekeeper_security` ts ON(tsm.`security_id`=ts.`security_id` )
-							  WHERE fgim.`item_content_id`=?";
-					$grs = $this->mDb->query($query, array( $this->mContentId ) );
-					if( $grs && $grs->RecordCount() ) {
-						$this->mInfo = array_merge( $this->mInfo, $grs->fields );
-					}
-				}
-*/
-
-				LibertyAttachable::load();
+				LibertyContent::load();
 
 				if (!empty($this->mStorage) && count($this->mStorage) > 0) {
 					reset($this->mStorage);
@@ -146,6 +126,7 @@ class BitGEDCOM extends LibertyAttachable {
 			}
 		} else {
 			// We don't have an gedcom_id or a content_id so there is no way to know what to load
+			$this->mGEDCOMId = NULL;
 			return NULL;
 		}
 
@@ -153,77 +134,241 @@ class BitGEDCOM extends LibertyAttachable {
 	}
 
 	/**
+	* This is the ONLY method that should be called in order to store (create or update) a wiki page!
+	* It is very smart and will figure out what to do for you. It should be considered a black box.
+	*
+	* @param array pParams hash of values that will be used to store the page
+	*
+	* @return bool TRUE on success, FALSE if store could not occur. If FALSE, $this->mErrors will have reason why
+	*
+	* @access public
+	**/
+	function store( &$pParamHash ) {
+		$this->mDb->StartTrans();
+
+		if( $this->verify( $pParamHash ) && LibertyContent::store( $pParamHash ) ) {
+
+			$table = BIT_DB_PREFIX."wiki_pages";
+			if( $this->verifyId( $this->mGEDCOMId ) ) {
+				$result = $this->mDb->associateUpdate( $table, $pParamHash['gedcom_store'], array( "g_id" => $this->mGEDCOMId ) );
+
+			} else {
+				$pParamHash['gedcom_store']['content_id'] = $pParamHash['content_id'];
+				if( @$this->verifyId( $pParamHash['g_id'] ) ) {
+					// if pParamHash['g_id'] is set, someone is requesting a particular g_id. Use with caution!
+					$pParamHash['gedcom_store']['g_id'] = $pParamHash['g_id'];
+				} else {
+					$pParamHash['gedcom_store']['g_id'] = $this->mDb->GenID( 'gedview_id_seq');
+				}
+				$this->mGEDCOMId = $pParamHash['gedcom_store']['g_id'];
+
+				$result = $this->mDb->associateInsert( $table, $pParamHash['gedcom_store'] );
+			}
+			// Access new data for notifications
+			$this->load();
+
+		}
+		$this->mDb->CompleteTrans();
+		return( count( $this->mErrors ) == 0 );
+	}
+	
+	/**
+	* This function is responsible for data integrity and validation before any operations are performed with the $pParamHash
+	* NOTE: This is a PRIVATE METHOD!!!! do not call outside this class, under penalty of death!
+	*
+	* @param array pParams reference to hash of values that will be used to store the page, they will be modified where necessary
+	*
+	* @return bool TRUE on success, FALSE if verify failed. If FALSE, $this->mErrors will have reason why
+	*
+	* @access private
+	**/
+	function verify( &$pParamHash ) {
+		global $gBitUser, $gBitSystem;
+
+		// make sure we're all loaded up of we have a mPageId
+		if( $this->verifyId( $this->mGEDCOMId ) && empty( $this->mInfo ) ) {
+			$this->load();
+		}
+
+		if( isset( $this->mInfo['content_id'] ) && $this->verifyId( $this->mInfo['content_id'] ) ) {
+			$pParamHash['content_id'] = $this->mInfo['content_id'];
+		}
+
+		if( @$this->verifyId( $pParamHash['content_id'] ) ) {
+			$pParamHash['gedcom_store']['content_id'] = $pParamHash['content_id'];
+		}
+
+		// check for name issues, first truncate length if too long
+		if( empty( $pParamHash['title'] ) ) {
+			$this->mErrors['title'] = 'You must specify a gedcom name';
+		} elseif( !empty( $pParamHash['title']) || !empty($this->mGedcomName))  {
+			if( !$this->verifyId( $this->mGEDCOMId ) ) {
+				if( empty( $pParamHash['title'] ) ) {
+					$this->mErrors['title'] = 'You must enter a name for this gedcom.';
+				} else {
+					$pParamHash['content_store']['title'] = substr( $pParamHash['title'], 0, 160 );
+				}
+			} else {
+				$pParamHash['content_store']['title'] = ( isset( $pParamHash['title'] ) ) ? substr( $pParamHash['title'], 0, 160 ) : $this->mGedcomName;
+			}
+		}
+		
+		if( empty( $pParamHash['name'] ) )
+			$pParamHash['gedcom_store']['g_name'] = $pParamHash['content_store']['title'].".GED";
+		else
+			$pParamHash['gedcom_store']['g_name'] = $pParamHash['name'];
+		if( empty( $pParamHash['source'] ) )
+			$pParamHash['gedcom_store']['g_path'] = $pParamHash['content_store']['title'].".GED";
+		else
+			$pParamHash['gedcom_store']['g_path'] = $pParamHash['source'];
+		if( empty( $pParamHash['config'] ) )
+			$pParamHash['gedcom_store']['g_config'] = $pParamHash['content_store']['title'].".GED_conf.GED";
+		else
+			$pParamHash['gedcom_store']['g_config'] = $pParamHash['config'];
+		if( empty( $pParamHash['privacy'] ) )
+			$pParamHash['gedcom_store']['g_privacy'] = $pParamHash['content_store']['title'].".GED_priv.GED";
+		else
+			$pParamHash['gedcom_store']['g_privacy'] = $pParamHash['privacy'];
+		
+		if( !empty( $pParamHash['minor'] ) && $this->isValid() ) {
+			// we can only minor save over our own versions
+			if( !$gBitUser->isRegistered() || ($this->mInfo['modifier_user_id'] != $gBitUser->mUserId && !$gBitUser->isAdmin()) ) {
+				unset( $pParamHash['minor'] );
+			}
+		}
+
+		//override default index words because wiki pages have data in non-liberty tables (description in this case)
+		$this->mInfo['index_data'] = ( !empty( $pParamHash['content_store']['title'] ) ? $pParamHash['content_store']['title'] : '').' '.$pParamHash['edit'].' '.( !empty( $pParamHash['page_store']['description'] ) ? $pParamHash['page_store']['description'] : '' );
+
+		return( count( $this->mErrors ) == 0 );
+	}
+
+	/**
+	 * Remove gedcom record from database
+	 */
+	function expunge() {
+		$ret = FALSE;
+		if( $this->isValid() ) {
+			$this->mDb->StartTrans();
+			$dbged = $this->mGEDCOMId;
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."dates WHERE d_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."nextid WHERE ni_gedfile=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."placelinks WHERE pl_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=?";
+			$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
+
+			if( LibertyContent::expunge() ) {
+				$ret = TRUE;
+				$this->mDb->CompleteTrans();
+			} else {
+				$this->mDb->RollbackTrans();
+			}
+		}
+		return $ret;
+	}
+	
+	/**
 	 * Generate list of GEDCOM archives
+	 * $pListHash valuse used
 	 * @param offset Number of the first record to list
 	 * @param maxRecords Number of records to list
 	 * @param sort_mode Order in which the records will be sorted
 	 * @param find Filter to be applied to the list
 	 */
-	function getList($offset = 0, $maxRecords = -1, $sort_mode = 'title_desc', $find = '' ) {
+	function getList( &$pListHash ) {
 		global $gBitSystem;
+		LibertyContent::prepGetList( $pListHash );
 
-		$mid = '';
+		$whereSql = $joinSql = $selectSql = '';
 		$bindVars = array();
 		array_push( $bindVars, $this->mContentTypeGuid );
-		if (is_array($find)) { // you can use an array of pages
-			$mid = " AND tc.`title` IN (".implode(',',array_fill(0,count($find),'?')).")";
-			$bindVars = array_merge($bindVars,$find);
-		} elseif ( is_string($find) and $find != '' ) { // or a string
-			$mid = " AND UPPER(tc.`title`) LIKE ? ";
-			$bindVars = array_merge($bindVars,array('%' . strtoupper( $find ) . '%'));
-		}
+		$this->getServicesSql( 'content_list_sql_function', $selectSql, $joinSql, $whereSql, $bindVars );
 
 		$query = "SELECT
-			uue.`login` AS modifier_user,
-			uue.`real_name` AS modifier_real_name,
-			uuc.`login` AS creator_user,
-			uuc.`real_name` AS creator_real_name,
-			lc.`title`, 
-			lc.`format_guid`,
-			ged.`g_name` AS `name`,
-			ged.`g_path` AS `path`,
-			ged.`g_config` AS `config`,
-			ged.`g_privacy` AS `privacy`,
-			lc.`last_modified`,
-			lc.`created`,
-			lc.`ip`,
-			lc.`content_id`
+					uue.`login` AS modifier_user,
+					uue.`real_name` AS modifier_real_name,
+					uuc.`login` AS creator_user,
+					uuc.`real_name` AS creator_real_name,
+					lc.`title`, 
+					lc.`format_guid`,
+					ged.g_id,
+					ged.`g_name` AS `name`,
+					ged.`g_path` AS `path`,
+					ged.`g_config` AS `config`,
+					ged.`g_privacy` AS `privacy`,
+					ged.`g_commonsurnames` AS `commonsurnames`,
+					lc.`last_modified`,
+					lc.`created`,
+					lc.`ip`,
+					lc.`content_id`
 				FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
-				INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`g_content_id`),
-				`".BIT_DB_PREFIX."users_users` uue,
-				`".BIT_DB_PREFIX."users_users` uuc
-				  WHERE lc.`content_type_guid`=?
-				  AND lc.`modifier_user_id`=uue.`user_id`
-				  AND lc.`user_id`=uuc.`user_id` $mid
-				  ORDER BY ".$this->mDb->convertSortmode( $sort_mode );
+				INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`g_content_id`)
+				INNER JOIN `".BIT_DB_PREFIX."users_users` uuc ON ( uuc.`user_id` = lc.`user_id` )
+				INNER JOIN `".BIT_DB_PREFIX."users_users` uue ON ( uue.`user_id` = lc.`user_id` )
+				$joinSql
+				WHERE lc.`content_type_guid`=? $whereSql
+				ORDER BY ".$this->mDb->convertSortmode( $pListHash['sort_mode'] );
 		$query_cant = "SELECT COUNT(*)
 			FROM `".PHPGEDVIEW_DB_PREFIX."gedcom` ged
 			INNER JOIN `".BIT_DB_PREFIX."liberty_content` lc ON (lc.`content_id` = ged.`g_content_id`)
-			WHERE lc.`content_type_guid`=? $mid";
+			$joinSql
+			WHERE lc.`content_type_guid`=? $whereSql";
 
 		// If sort mode is versions then offset is 0, maxRecords is -1 (again) and sort_mode is nil
 		// If sort mode is links then offset is 0, maxRecords is -1 (again) and sort_mode is nil
 		// If sort mode is backlinks then offset is 0, maxRecords is -1 (again) and sort_mode is nil
 
+		$ret = array();
 		$this->mDb->StartTrans();
-		$result = $this->mDb->query( $query, $bindVars, $maxRecords, $offset );
+		$result = $this->mDb->query( $query, $bindVars, $pListHash['max_records'], $pListHash['offset'] );
 		$cant = $this->mDb->getOne( $query_cant, $bindVars );
 		$this->mDb->CompleteTrans();
-		$ret = array();
 		while( $res = $result->fetchRow() ) {
 			$aux = array();
 			$aux = $res;
 			$aux['creator'] = (isset( $res['creator_real_name'] ) ? $res['creator_real_name'] : $res['creator_user'] );
 			$aux['editor'] = (isset( $res['modifier_real_name'] ) ? $res['modifier_real_name'] : $res['modifier_user'] );
-			$aux['display_link'] = $this->getListLink( $aux );
-			$aux['display_url'] = $this->getDisplayUrl( $aux['title'], $aux );
+//			$aux['display_link'] = $this->getListLink( $aux );
+//			$aux['display_url'] = $this->getDisplayUrl( $aux['title'], $aux );
+			$aux['individuals'] = $this->mDb->getOne( "SELECT COUNT(*) FROM `".PHPGEDVIEW_DB_PREFIX."INDIVIDUALS` WHERE `i_file`=?", array( $res["g_id"] ));
+			$aux['families'] 	= $this->mDb->getOne( "SELECT COUNT(*) FROM `".PHPGEDVIEW_DB_PREFIX."FAMILIES` WHERE `f_file`=?", array( $aux["g_id"] ));
 			$ret[] = $aux;
 		}
 
-		$retval = array();
-		$retval["data"] = $ret;
-		$retval["cant"] = $cant;
-		return $retval;
+		$pListHash['cant'] = $cant;
+		LibertyContent::postGetList( $pListHash );
+		return $ret;
 	}
 	
 /**
