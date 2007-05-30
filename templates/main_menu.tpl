@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/main_menu.tpl,v 1.1 2007/05/30 07:24:17 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/main_menu.tpl,v 1.2 2007/05/30 07:37:24 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin gedcom">
@@ -10,8 +10,17 @@
 
 	<div class="body">
 	{strip}
-		<h1>Charts</h1>
-		<br />
+		<table class="data">
+			<caption><h1>{tr}Gedcom documents navigation menu{/tr}</h1></caption>
+			<tr>
+				<th>{tr}Charts{/tr}</th>
+				<th>{tr}Lists{/tr}</th>
+				<th>{tr}Anniversary Calendar{/tr}</th>
+				<th>{tr}Reports{/tr}</th>
+			</tr>
+
+		<tr class="{cycle values="even,odd"}">
+		<td style="text-align:center;">
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}pedigree.php">Pedigree Chart</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}descendancy.php">Descendancy Chart</a>
@@ -29,9 +38,9 @@
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}timeline.php">Timeline Chart</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}relationship.php">Relationship Chart</a>
-		<br />
-		<h1>Lists</h1>
-		<br />
+		</td>
+
+		<td style="text-align:center;">
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}indlist.php">Individual List</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}famlist.php">Family List</a>
@@ -47,19 +56,31 @@
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}patriarchlist.php">Patriarch List</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}aliveinyear.php">Alive in Year</a>
-		<br />
-		<h1>Calendar</h1>
-		<br />
+		</td>
+
+		<td style="text-align:center;">
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}calendar.php">View Day</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}calendar.php?action=calendar">View Month</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}calendar.php?action=year">View Year</a>
-		<br />
-		<h1>Reports</h1>
-		<br />
+		</td>
+
+		<td style="text-align:center;">
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/addresslabels.xml">Address Labels</a>
+		</td>
+		</tr>
+		<tr class="{cycle values="even,odd"}">
+		<td style="text-align:center;">
 		<br />
+		</td>
+		</tr>
+		<tr class="{cycle values="even,odd" columns="4"}">
+		<td style="text-align:center;">
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}clippings.php">Family Tree Clippings Cart</a>
+		</td>
+		</tr>
+		</table>
 	{/strip}
 	</div><!-- end .body -->
 
