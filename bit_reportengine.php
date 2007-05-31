@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: bit_reportengine.php,v 1.1 2007/05/31 13:56:58 lsces Exp $
+ * @version $Id: bit_reportengine.php,v 1.2 2007/05/31 16:53:13 lsces Exp $
  */
 
 /**
@@ -37,9 +37,14 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gContent = new BitGEDCOM();
+// TODO - Bodge to get started
+if(!isset($GEDCOM)) {
+	$GEDCOM = "CAINEFull.GED";
+	$GEDCOMS[$GEDCOM]["id"] = 2;
+}
 
 require_once("includes/functions_charts.php");
-//require($factsfile["english"]);
+require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");
 //if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
 //-- try to increase the time limit because reports can take a long time
@@ -64,9 +69,12 @@ else $action = $_REQUEST['action'];
 if (!isset($_REQUEST['report'])) $report = "";
 else $report = $_REQUEST['report'];
 if (!isset($output)) $output = "PDF";
-if (!isset($vars)) $vars = array();
-if (!isset($varnames)) $varnames = array();
-if (!isset($type)) $type = array();
+if (!isset($_REQUEST['vars'])) $vars = array();
+else $vars = $_REQUEST['vars'];
+if (!isset($_REQUEST['varnames'])) $varnames = array();
+else $varnames = $_REQUEST['varnames'];
+if (!isset($_REQUEST['$type'])) $type = array();
+else $type = $_REQUEST['type'];
 
 //-- setup the arrays
 $newvars = array();
@@ -97,7 +105,7 @@ foreach($varnames as $indexval => $name) {
 	}
 }
 
-if ($report == "") {
+if ($report == "" && $action!="run" ) {
 	$reports = get_report_list();
 }
 if (!empty($report)) {
@@ -138,8 +146,29 @@ if ($action=="setup") {
 		}
 		xml_parser_free($xml_parser);
 
+		foreach($report_array["inputs"] as $indexval => $input) {
+			if (!isset($input["type"])) $report_array["inputs"][$indexval]["type"] = "text";
+			if (!isset($input["default"])) $report_array["inputs"][$indexval]["default"] = "";
+			if ($input["type"]=="select") {
+				$report_array["inputs"][$indexval]['select'] = preg_split("/[, ]+/", $input["options"]);
+			}
+			if (isset($input["lookup"])) {
+				if ($input["lookup"]=="INDI") {
+					if (!empty($pid)) $input["default"] = clean_input($pid);
+					else $input["default"] = check_rootid($input["default"]);
+				}
+				if ($input["lookup"]=="FAM") {
+					if (!empty($famid)) $input["default"] = clean_input($famid);
+				}
+				if ($input["lookup"]=="SOUR") {
+					if (!empty($sid)) $input["default"] = clean_input($sid);
+				}
+			}
+		}
+
+		$report_array['name'] = strtoupper(basename($report));
 		$gBitSmarty->assign( "pagetitle", tra( 'Report options selection' ) );
-		$gBitSmarty->assign_by_ref( "report", $report );
+		$gBitSmarty->assign( "report", $report );
 		$gBitSmarty->assign_by_ref( "report_array", $report_array );
 		$gBitSystem->display( 'bitpackage:phpgedview/report_setup.tpl', tra( 'Report options selection' ) );
 	}
@@ -160,7 +189,7 @@ else if ($action=="run") {
 	xml_set_character_data_handler($xml_parser, "characterData");
 
 	//-- open the file
-	if (!($fp = fopen($report, "r"))) {
+	if (!($fp = fopen(PHPGEDVIEW_PKG_PATH.$report, "r"))) {
 	   die("could not open XML input");
 	}
 	//-- read the file and parse it 4kb at a time
@@ -173,11 +202,11 @@ else if ($action=="run") {
 
 }
 
-if ($action=="choose") {
+if ($action=="choose" ) {
 	$reports = get_report_list(true);
 
 	$gBitSmarty->assign( "pagetitle", tra( 'Report selection' ) );
-	$gBitSmarty->assign_by_ref( "reports", strtoupper(basename($report)) );
+	$gBitSmarty->assign_by_ref( "reports", $reports );
 	$gBitSystem->display( 'bitpackage:phpgedview/report_menu.tpl', tra( 'Report selection' ) );
 }
 ?>
