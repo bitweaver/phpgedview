@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.6 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: functions_name.php,v 1.7 2007/05/31 16:49:33 lsces Exp $
  */
 
 /**
@@ -735,7 +735,7 @@ function check_NN($names) {
 	$fullname = "";
 
 	if (!is_array($names)){
-		$lang = whatLanguage($names);
+		$lang = 'english'; // whatLanguage($names);
 		$NN = $unknownNN[$lang];
 		$names = stripslashes($names);
 		$names = preg_replace(array("~ /~","~/,~","~/~"), array(" ", ",", " "), $names);
