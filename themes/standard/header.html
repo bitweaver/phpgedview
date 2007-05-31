@@ -2,7 +2,10 @@
 <div id="header" class="<?php print $TEXT_DIRECTION; ?>">
 <table width="99%">
 	<tr>
-		<td><img src="<?php print $THEME_DIR;?>header.jpg" width="281" height="50" alt="" /></td>
+		<td>
+			Porting phpgedview<br/>
+			to bitweaver framework
+		</td>
 		<td>
 			<table width="100%">
 			<tr>
@@ -10,18 +13,12 @@
 					<b>
 					<?php print_user_links(); ?>
 					<br />
-					<a href="<?php print $HOME_SITE_URL; ?>"><?php print $HOME_SITE_TEXT; ?></a>
+					<a href="../index.php">bitweaver local home while porting</a>
 					</b>
 				</td>
-                   <td align="<?php print $TEXT_DIRECTION=="rtl"?"left":"right" ?>" valign="middle" >
-				<?php if(empty($SEARCH_SPIDER)) { ?>
-					<form action="search.php" method="get">
-						<input type="hidden" name="action" value="general" />
-						<input type="hidden" name="topsearch" value="yes" />
-						<input type="text" name="query" accesskey="<?php print $pgv_lang["accesskey_search"]?>" size="12" value="<?php print $pgv_lang['search']?>" onfocus="if (this.value == '<?php print $pgv_lang['search']?>') this.value=''; focusHandler();" onblur="if (this.value == '') this.value='<?php print $pgv_lang['search']?>';" />
-						<input type="submit" name="search" value="&gt;" />
-					</form>
-				<?php } ?>
+                <td align="<?php print $TEXT_DIRECTION=="rtl"?"left":"right" ?>" valign="middle" >
+					Search will be implemented<br/>
+					via bitweaver tools
 				</td>
 			</tr>
 			</table>
