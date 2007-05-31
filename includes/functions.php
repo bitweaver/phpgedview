@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.12 2007/05/28 11:28:32 lsces Exp $
+ * @version $Id: functions.php,v 1.13 2007/05/31 13:54:02 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -2553,21 +2553,21 @@ function getAlphabet(){
  * @return array 	The array of the found reports with indexes [title] [file]
  */
 function get_report_list($force=false) {
-	global $INDEX_DIRECTORY, $report_array, $vars, $xml_parser, $elementHandler, $LANGUAGE;
+	global $report_array, $vars, $xml_parser, $elementHandler, $LANGUAGE, $gContent, $gBitUser;
 
 	$files = array();
 	if (!$force) {
 		//-- check if the report files have been cached
-		if (file_exists($INDEX_DIRECTORY."/reports.dat")) {
+		if (file_exists(PHPGEDVIEW_PKG_PATH."index/reports.dat")) {
 			$reportdat = "";
-			$fp = fopen($INDEX_DIRECTORY."/reports.dat", "r");
+			$fp = fopen(PHPGEDVIEW_PKG_PATH."index/reports.dat", "r");
 			while ($data = fread($fp, 4096)) {
 				$reportdat .= $data;
 			}
 			fclose($fp);
 			$files = unserialize($reportdat);
 			foreach($files as $indexval => $file) {
-				if (isset($file["title"][$LANGUAGE]) && (strlen($file["title"][$LANGUAGE])>1)) return $files;
+				if (isset($file["title"]) && (strlen($file["title"])>1)) return $files;
 			}
 		}
 	}
@@ -2584,6 +2584,7 @@ function get_report_list($force=false) {
 	require_once("includes/reportheader.php");
 	$report_array = array();
 	if (!function_exists("xml_parser_create")) return $report_array;
+
 	foreach($files as $file=>$r) {
 		$report_array = array();
 		//-- start the sax parser
@@ -2595,9 +2596,9 @@ function get_report_list($force=false) {
 		//-- set the character data handler
 		xml_set_character_data_handler($xml_parser, "characterData");
 
-		if (file_exists($r["file"])) {
-			//-- open the file
-			if (!($fp = fopen($r["file"], "r"))) {
+		if (file_exists(PHPGEDVIEW_PKG_PATH.$r["file"])) {
+		//-- open the file
+			if (!($fp = fopen(PHPGEDVIEW_PKG_PATH.$r["file"], "r"))) {
 			   die("could not open XML input");
 			}
 			//-- read the file and parse it 4kb at a time
@@ -2608,20 +2609,21 @@ function get_report_list($force=false) {
 			}
 			fclose($fp);
 			xml_parser_free($xml_parser);
+
 			if (isset($report_array["title"]) && isset($report_array["access"]) && isset($report_array["icon"])) {
-				$files[$file]["title"][$LANGUAGE] = $report_array["title"];
+				$files[$file]["title"] = $report_array["title"];
 				$files[$file]["access"] = $report_array["access"];
 				$files[$file]["icon"] = $report_array["icon"];
 			}
+			else $files[$file]["title"] = $report_array["description"];
 		}
 	}
 
-	$fp = @fopen($INDEX_DIRECTORY."/reports.dat", "w");
+	$fp = @fopen(PHPGEDVIEW_PKG_PATH."index/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
-	$logline = AddToLog("reports.dat updated by >".getUserName()."<");
+	$logline = $gContent->addToLog("reports.dat updated by >".$gBitUser->mUsername."<");
  	if (!empty($COMMIT_COMMAND)) check_in($logline, "reports.dat", $INDEX_DIRECTORY);
-
 	return $files;
 }
 
