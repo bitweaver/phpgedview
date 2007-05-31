@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: bit_reportengine.php,v 1.2 2007/05/31 16:53:13 lsces Exp $
+ * @version $Id: bit_reportengine.php,v 1.3 2007/05/31 18:26:36 lsces Exp $
  */
 
 /**
@@ -154,14 +154,14 @@ if ($action=="setup") {
 			}
 			if (isset($input["lookup"])) {
 				if ($input["lookup"]=="INDI") {
-					if (!empty($pid)) $input["default"] = clean_input($pid);
-					else $input["default"] = check_rootid($input["default"]);
+					if (isset($_REQUEST['pid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['pid']);
+					else $report_array["inputs"][$indexval]["default"] = check_rootid($input["default"]);
 				}
 				if ($input["lookup"]=="FAM") {
-					if (!empty($famid)) $input["default"] = clean_input($famid);
+					if (isset($_REQUEST['famid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['famid']);
 				}
 				if ($input["lookup"]=="SOUR") {
-					if (!empty($sid)) $input["default"] = clean_input($sid);
+					if (isset($_REQUEST['sid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['sid']);
 				}
 			}
 		}
