@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportpdf.php,v 1.3 2007/05/28 14:41:03 lsces Exp $
+ * @version $Id: reportpdf.php,v 1.4 2007/05/31 16:50:09 lsces Exp $
  */
 
 //-- do not allow direct access to this file
@@ -54,13 +54,15 @@ $pageSizes["legal"]["height"] = "14";	// 356 mm
 
 $ascii_langs = array("english", "danish", "dutch", "french", "german", "norwegian", "spanish", "spanish-ar");
 
-//-- setup special characters array to force embedded fonts
-$SpecialOrds = $RTLOrd;
+//-- setup special characters array to force embedded fonts 
+$SpecialOrds = array(215,216,217,218,219);
+
 for($i=195; $i<215; $i++) $SpecialOrds[] = $i;
 
 if (!isset($embed_fonts)) {
-	if (in_array($LANGUAGE, $ascii_langs)) $embed_fonts = false;
-	else $embed_fonts = true;
+//	if (in_array($LANGUAGE, $ascii_langs)) $embed_fonts = false;
+//	else 
+		$embed_fonts = true;
 }
 //print "embed = $embed_fonts";
 /**
@@ -182,7 +184,7 @@ class PGVReport {
 		header("Pragma:");
 		header("Cache-control:");
 //		if (!isset($download)) $this->pdf->Output();
-		if ($download=="") $this->pdf->Output();
+		if ($_REQUEST["download"]=="") $this->pdf->Output();
 		else $this->pdf->Output("pgv_report_".basename($_REQUEST["report"], ".xml").".pdf", "D");
 	}
 
@@ -398,8 +400,9 @@ class PGVRElement {
 		$t = preg_replace("/<br \/>/", "\n", $t);
 		$t = strip_tags($t);
 		$t = unhtmlentities($t);
-		if ($embed_fonts) $t = bidi_text($t);
-		else $t = smart_utf8_decode($t);
+//		if ($embed_fonts) $t = bidi_text($t);
+//		else 
+			$t = smart_utf8_decode($t);
 		$this->text .= $t;
 	}
 
