@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: functions_charts.php,v 1.3 2007/05/27 14:45:32 lsces Exp $
+ * @version $Id: functions_charts.php,v 1.4 2007/05/31 17:56:56 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -692,7 +692,7 @@ function print_sosa_family($famid, $childid, $sosa, $label="", $parid="", $gpari
 function check_rootid($rootid) {
 	global $user, $GEDCOM, $GEDCOM_ID_PREFIX, $PEDIGREE_ROOT_ID, $USE_RIN;
 	// -- if the $rootid is not already there then find the first person in the file and make him the root
-	if (empty($rootid)) {
+/*	if (empty($rootid)) {
 		$user = getUser(getUserName());
 		if ((!empty($user["rootid"][$GEDCOM])) && (find_person_record($user["rootid"][$GEDCOM]))) $rootid = $user["rootid"][$GEDCOM];
 		else if ((!empty($user["gedcomid"][$GEDCOM])) && (find_person_record($user["gedcomid"][$GEDCOM]))) $rootid = $user["gedcomid"][$GEDCOM];
@@ -703,7 +703,8 @@ function check_rootid($rootid) {
 			else $rootid = find_first_person();
 		}
 	}
-
+*/
+$rootid = find_first_person();
 	if ($USE_RIN) {
 		$indirec = find_person_record($rootid);
 		if ($indirec == false) $rootid = find_rin_id($rootid);
