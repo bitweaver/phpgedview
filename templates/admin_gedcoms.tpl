@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/admin_gedcoms.tpl,v 1.3 2007/05/29 19:19:39 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/admin_gedcoms.tpl,v 1.4 2007/05/31 08:48:41 lsces Exp $ *}
 {strip}
 
 <div class="floaticon">{bithelp}</div>
@@ -60,7 +60,7 @@
 							&nbsp; <small>[ {$listgedcoms[gedcom].name} ]</small>
 						</h2>
 						<br />
-						Containg - {$listgedcoms[gedcom].individuals} Individuals and {$listgedcoms[gedcom].families} Families
+						Containing - {$listgedcoms[gedcom].individuals} Individuals and {$listgedcoms[gedcom].families} Families
 					</td>
 
 					<td>
