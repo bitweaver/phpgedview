@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.8 2007/05/28 14:43:11 lsces Exp $
+ * @version $Id: menu.php,v 1.9 2007/05/31 18:24:55 lsces Exp $
  */
 
 class Menu
@@ -760,20 +760,20 @@ class MenuBar
 			$menu->addClass("menuitem$ff", "menuitem_hover$ff", "submenu$ff");
 		}
 		//-- reports submenus
-		$reports = get_report_list();
-		//print_r($reports);
+		$reports = get_report_list(true);
+
 		$username = getUserName();
 		foreach($reports as $file=>$report) {
 			if (!isset($report["access"])) $report["access"] = $PRIV_PUBLIC;
 			if ($report["access"]>=getUserAccessLevel($username)) {
-				if (!empty($report["title"][$LANGUAGE])) $label = $report["title"][$LANGUAGE];
+				if (!empty($report["title"])) $label = $report["title"];
 				else $label = implode("", $report["title"]);
 				// indi report
-				if ($pid) $submenu = new Menu($label, "reportengine.php?action=setup&amp;report=".$report["file"]."&amp;pid=".$pid);
+				if ($pid) $submenu = new Menu($label, "bit_reportengine.php?action=setup&amp;report=".$report["file"]."&amp;pid=".$pid);
 				// family report
-				else if ($famid) $submenu = new Menu($label, "reportengine.php?action=setup&amp;report=".$report["file"]."&amp;famid=".$famid);
+				else if ($famid) $submenu = new Menu($label, "bit_reportengine.php?action=setup&amp;report=".$report["file"]."&amp;famid=".$famid);
 				// default
-				else $submenu = new Menu($label, "reportengine.php?action=setup&amp;report=".$report["file"]);
+				else $submenu = new Menu($label, "bit_reportengine.php?action=setup&amp;report=".$report["file"]);
 				if (isset($PGV_IMAGES["reports"]["small"]) and isset($PGV_IMAGES[$report["icon"]]["small"])) $iconfile=$PGV_IMAGE_DIR."/".$PGV_IMAGES[$report["icon"]]["small"];
 				if (isset($iconfile) && file_exists($iconfile)) $submenu->addIcon($iconfile);
 				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
