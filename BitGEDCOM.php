@@ -34,6 +34,7 @@ class BitGEDCOM extends LibertyContent {
 		$this->mGEDCOMId = $pGEDCOMId;
 		$this->mContentId = $pContentId;
 		$this->mContentTypeGuid = 'bitGEDCOM';
+
 		if( ! @$this->verifyId( $this->mGEDCOMId ) ) {
 			$this->mGEDCOMId = NULL;
 		}
@@ -116,7 +117,8 @@ class BitGEDCOM extends LibertyContent {
 
 				$this->mGEDCOMId = $this->mInfo['g_id'];
 				$this->mContentId = $this->mInfo['content_id'];
-
+				$this->mGedcomName = $this->mInfo['g_name'];
+				
 				$this->mInfo['creator'] = (isset( $rs->fields['creator_real_name'] ) ? $rs->fields['creator_real_name'] : $rs->fields['creator_user'] );
 				$this->mInfo['editor'] = (isset( $rs->fields['modifier_real_name'] ) ? $rs->fields['modifier_real_name'] : $rs->fields['modifier_user'] );
 
