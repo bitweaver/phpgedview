@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.10 2007/05/30 07:24:17 lsces Exp $
+ * @version $Id: index.php,v 1.11 2007/05/31 08:52:41 lsces Exp $
  */
 
 // Initialization
@@ -33,26 +33,30 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gGedcom = new BitGEDCOM();
-
 if (!isset($CONFIGURED)) {
 //	print "Unable to include the config.php file.  Make sure that . is in your PHP include path in the php.ini file.";
 //	exit;
 }
 
-if (!isset($action)) $action="";
+if (isset($_REQUEST['content_id'])) {
+	$gContent = new BitGEDCOM( NULL , $_REQUEST['content_id'] );
+	$gContent->load();
+} 
+else
+	$gContent = new BitGEDCOM();
 
-$uname = $gBitUser->mUsername;
-if ( !$gBitUser->isValid() ) {
-	if (!empty($command)) {
-		if ($command=="user") {
-			header("Location: login.php?help_message=mygedview_login_help&url=".urlencode("index.php?command=user"));
-			exit;
-		}
-	}
-	$command="gedcom";
+if ( isset($gContent->mGedcomName) ) {
+	header("Location: individual.php?pid=I1&ged=".$gContent->mGedcomName."#content");
+	exit;
 }
 
-	// Display the template
-	$gBitSystem->display( 'bitpackage:phpgedview/main_menu.tpl', tra( 'GEDCOM Main Menu' ) );
+$gBitSmarty->assign( 'pagetitle', 'Default GEDCOM' );
+
+$listHash = $_REQUEST;
+$listgedcoms = $gContent->getList( $listHash );
+$gBitSmarty->assign_by_ref( 'listgedcoms', $listgedcoms );
+$gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
+
+// Display the template
+$gBitSystem->display( 'bitpackage:phpgedview/main_menu.tpl', tra( 'GEDCOM Main Menu' ) );
 ?>
