@@ -526,7 +526,7 @@ function addToLog($LogString, $savelangerror=false) {
 		if ($LOGFILE_CREATE=="weekly") $logfile = STORAGE_PKG_PATH.PHPGEDVIEW_PKG_NAME."/pgv-" . date("Ym") . "-week" . date("W") . ".log";
 		if ($LOGFILE_CREATE=="monthly") $logfile = STORAGE_PKG_PATH.PHPGEDVIEW_PKG_NAME."/pgv-" . date("Ym") . ".log";
 		if ($LOGFILE_CREATE=="yearly") $logfile = STORAGE_PKG_PATH.PHPGEDVIEW_PKG_NAME."/pgv-" . date("Y") . ".log";
-		if (is_writable($INDEX_DIRECTORY)) {
+		if (is_writable(PHPGEDVIEW_PKG_PATH."index")) {
 			$logline = date("d.m.Y H:i:s") . " - " . $REMOTE_ADDR . " - " . $LogString . "\r\n";
 			$fp = fopen($logfile, "a");
 			flock($fp, 2);
