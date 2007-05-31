@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/main_menu.tpl,v 1.3 2007/05/31 08:52:41 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/main_menu.tpl,v 1.4 2007/05/31 10:02:23 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin gedcom">
@@ -41,7 +41,7 @@
 		</td>
 
 		<td style="text-align:center;">
-		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}indlist.php">Individual List</a>
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}indilist.php">Individual List</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}famlist.php">Family List</a>
 		<br />
@@ -68,6 +68,32 @@
 
 		<td style="text-align:center;">
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/addresslabels.xml">Address Labels</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/addresslist.xml">Address List</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/ahnentafel.xml">Ahnentafel Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/bdmlist.xml">Births, Deaths, Marriages</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/birthlist.xml">Birth Date and Place Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/deathlist.xml">Death Date and Place Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/descendancy.xml">Descendancy Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/familygroup.xml">Family Group Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/individual.xml">Individual Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/marrlist.xml">Marriage Date and Place Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/pedigree.xml">Pedigree Chart (Portrait)</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/pedigree_l.xml">Pedigree Chart (Landscape)</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/relativelist.xml">Relatives Report</a>
+		<br />
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=setup&amp;report=reports/relativelist_ext.xml">Expanded Relatives Report</a>
 		</td>
 		</tr>
 		<tr class="{cycle values="even,odd"}">
