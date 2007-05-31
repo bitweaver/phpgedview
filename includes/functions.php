@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.13 2007/05/31 13:54:02 lsces Exp $
+ * @version $Id: functions.php,v 1.14 2007/05/31 18:29:21 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -2614,15 +2614,18 @@ function get_report_list($force=false) {
 				$files[$file]["title"] = $report_array["title"];
 				$files[$file]["access"] = $report_array["access"];
 				$files[$file]["icon"] = $report_array["icon"];
+			} else {
+				$files[$file]["title"] = $report_array["description"];
+				$files[$file]["access"] = $report_array["access"];
+				$files[$file]["icon"] = $report_array["icon"];
 			}
-			else $files[$file]["title"] = $report_array["description"];
 		}
 	}
 
 	$fp = @fopen(PHPGEDVIEW_PKG_PATH."index/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
-	$logline = $gContent->addToLog("reports.dat updated by >".$gBitUser->mUsername."<");
+	if (isset($gContent)) $logline = $gContent->addToLog("reports.dat updated by >".$gBitUser->mUsername."<");
  	if (!empty($COMMIT_COMMAND)) check_in($logline, "reports.dat", $INDEX_DIRECTORY);
 	return $files;
 }
