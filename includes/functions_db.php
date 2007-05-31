@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.18 2007/05/28 18:54:17 lsces Exp $
+ * @version $Id: functions_db.php,v 1.19 2007/05/31 08:57:40 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -1855,7 +1855,7 @@ function get_media_list() {
  */
 function get_indi_alpha() {
 	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $SHOW_MARRIED_NAMES, $GEDCOMS;
-	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
+	global $MULTI_LETTER_ALPHABET, $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $gBitSystem;
 	$indialpha = array();
 
@@ -1864,6 +1864,7 @@ function get_indi_alpha() {
 
 	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
+		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($inArray===false) {
 			if ((ord(substr($letter, 0, 1)) & 0x80)==0x00) $letter = substr($letter, 0, 1);
 		}
@@ -1882,7 +1883,6 @@ function get_indi_alpha() {
 		}
 		$indialpha[$letter] = $letter;
 	}
-	$res->free();
 
 	$sql = "SELECT DISTINCT n_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=? ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= " AND n_type!='C'";
@@ -1917,7 +1917,7 @@ function get_indi_alpha() {
 //-- get the first character in the list
 function get_fam_alpha() {
 	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $famalpha, $gBitSystem, $GEDCOMS;
-	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
+	global $MULTI_LETTER_ALPHABET, $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 
 	$famalpha = array();
 
@@ -1926,6 +1926,7 @@ function get_fam_alpha() {
 
 	while($row =& $res->FetchRow()){
 		$letter = str2upper($row["alpha"]);
+		$inArray = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 		if ($inArray===false) {
 			if ((ord(substr($letter, 0, 1)) & 0x80)==0x00) $letter = substr($letter, 0, 1);
 		}

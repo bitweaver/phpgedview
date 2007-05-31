@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.16 2007/05/28 14:41:03 lsces Exp $
+ * @version $Id: session.php,v 1.17 2007/05/31 08:57:40 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -589,6 +589,7 @@ $pgv_lang_name 			= array();
 $langcode				= array();
 $ALPHABET_upper			= array();
 $ALPHABET_lower			= array();
+$MULTI_LETTER_ALPHABET	= array();
 $DICTIONARY_SORT		= array();
 $DATE_FORMAT_array		= array();
 $TIME_FORMAT_array		= array();
@@ -610,6 +611,7 @@ foreach ($language_settings as $key => $value) {
 	$ALPHABET_upper[$key]		= $value["ALPHABET_upper"];
 	$ALPHABET_lower[$key]		= $value["ALPHABET_lower"];
 	$DICTIONARY_SORT[$key]		= $value["ALPHABET_lower"];
+	$MULTI_LETTER_ALPHABET[$key] = $value["ALPHABET_upper"];
 	$DATE_FORMAT_array[$key]	= $value["DATE_FORMAT"];
 	$TIME_FORMAT_array[$key]	= $value["TIME_FORMAT"];;
 	$WEEK_START_array[$key]		= $value["WEEK_START"];
