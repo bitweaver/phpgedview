@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_menu.tpl,v 1.1 2007/05/31 13:56:58 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_menu.tpl,v 1.2 2007/06/01 10:14:38 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin gedcom">
@@ -9,28 +9,25 @@
 	{formfeedback error=$errors}
 
 	<div class="body">
-		<form name="choosereport" method="get" action="bit_reportengine.php">
+		{form legend="Select Report"}
 		<input type="hidden" name="action" value="setup" />
 		<input type="hidden" name="output" value="$output" />
-		<table class="facts_table center">
-			<tr>
-				<td class="descriptionbox wrap width20 vmiddle">{tr}Select Report{/tr}
-				</td>
-				<td class="optionbox">
-					<select name="report">
-
-					{foreach from = $reports key=myId item=report}
-						<option value="{$report.file}">{$report.title}</option>
-					{/foreach}
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="topbottombar" colspan="2" style="text-align:center;"><input type="submit" value="{tr}Run Report{/tr}" />
-				</td>
-			</tr>
-		</table>
-		</form>
+		<div class="row">
+			{formlabel label="Select Report" for="report"}
+			{forminput}
+				<select name="report">
+				{foreach from = $reports key=myId item=report}
+					<option value="{$report.file}">{$report.title}</option>
+				{/foreach}
+				</select>
+				{formhelp note="Select report to produce."}
+			{/forminput}
+		</div>
+		
+		<div class="row submit">
+			<input type="submit" name="report_select" value="{tr}Process report parameters{/tr}" />
+		</div>
+		{/form}
 	</div><!-- end .body -->
 
 </div><!-- end .gedcom -->

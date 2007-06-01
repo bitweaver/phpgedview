@@ -1,75 +1,82 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_setup.tpl,v 1.2 2007/05/31 16:54:38 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_setup.tpl,v 1.3 2007/06/01 10:14:38 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin gedcom">
 	<div class="header">
-		<h1>{$pagetitle}</h1>
+		<h1>{$report_array.name}</h1>
 	</div>
 
 	{formfeedback error=$errors}
 
 	<div class="body">
-		<form name="setupreport" method="get" action="bit_reportengine.php">
+		<div class="row">
+			{$report_array.description}
+		</div>
+
+		{form legend="Report Filter Settings"}
 		<input type="hidden" name="action" value="run" />
 		<input type="hidden" name="report" value="{$report}" />
 		<input type="hidden" name="download" value="" />
 		<input type="hidden" name="output" value="PDF" />
-		<table class="facts_table" width="100%">
-			<tr>
-				<td class="top""><h2>{$report_array.name}</h2>
-				</td>
-				<td class="optionbox">{$report_array.description}</td>
-			</tr>
-			{foreach from=$report_array.inputs key=inputId item=input}
-				<tr>
-					<td class="top" colspan="1" >
-						<input type="hidden" name="varnames[]" value="{$input.name}" />
-						{$input.value}
-					</td>
-					<td class="top" colspan="2" >
-						{if $input.type	eq 'text'}
+
+		{foreach from=$report_array.inputs key=inputId item=input}
+			<div class="row">
+				<input type="hidden" name="varnames[]" value="{$input.name}" />
+				{formlabel label="`$input.value`" for="`$input.name`"}
+				{forminput}
+					{if $input.type	eq 'text'}
+						{if $input.lookup eq 'DATE'}
+							<input type="hidden" id="{$input.name}" name="vars[{$input.name}]" value="{$input.default|cal_date_format:"%B %e, %Y %H:%M %Z"}" />
+							<span class="highlight" style="cursor:pointer;" title="{tr}Date Selector{/tr}" id="datrigger_{$input.name}">{$input.default|bit_long_date}</span>
+								&nbsp;&nbsp;&nbsp;<small>&laquo;&nbsp;{tr}click to change{/tr}</small>
+								<script type="text/javascript">/* <![CDATA[ */
+								function gotocal_{$input.name}() {ldelim}
+									document.getElementById('f').submit();
+								{rdelim}
+							/* ]]> */</script>
+							{jscalendar inputField=$input.name time=$input.default onUpdate=gotocal_`$input.name` displayArea=datrigger_`$input.name` daFormat=$gBitSystem->getConfig('site_long_date_format')}	
+						{elseif $input.lookup eq 'PLAC'}
 							<input type="text" name="vars[{$input.name}]" id="{$input.name}" value="{$input.default}" style="direction: ltr;" />
-							{if $input.lookup eq 'DATE'}
-								[Date selection]	
-							{elseif $input.lookup eq 'PLAC'}
-								[Place lookup]	
-							{elseif $input.lookup eq 'INDI'}
-								[Individual lookup]	
-							{elseif $input.lookup eq 'FAM'}
-								[Family lookup]	
-							{/if}
-						{elseif $input.type	eq 'checkbox'}
-							<input type="checkbox" name="vars[{$input.name}]" id="{$input.name}" value="1" {if $input.default eq '1'} checked="checked" {/if} />
-						{elseif $input.type	eq 'select'}
-							<select name="vars[{$input.name}]" id="{$input.name}_var">;
-								{foreach from=$input.select key=selectId item=select}
-									<option value="{$select}">{$select}</option>
-								{/foreach}
-							</select>
+							[Place lookup]	
+						{elseif $input.lookup eq 'INDI'}
+							<input type="text" name="vars[{$input.name}]" id="{$input.name}" value="{$input.default}" style="direction: ltr;" />
+							[Individual lookup]	
+						{elseif $input.lookup eq 'FAM'}
+							<input type="text" name="vars[{$input.name}]" id="{$input.name}" value="{$input.default}" style="direction: ltr;" />
+							[Family lookup]
 						{else}
-							{$input.name} - {$input.type} - {$input.lookup} - {$input.options}
+							<input type="text" name="vars[{$input.name}]" id="{$input.name}" value="{$input.default}" style="direction: ltr;" />	
 						{/if}
-					</td>
-				</tr>
-			{/foreach}
-			<tr>
-				<td class="top">
-					Select output format
-				</td>
-				<td class="top">
-					<select name="output">
-						<option value="PDF">PDF</option>
-						<option value="HTML">HTML</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="topbottombar" colspan="3" style="text-align:center;">
-					<input type="submit" value="Download Report" onclick="document.setupreport.elements['download'].value='1';"/>
-				</td>
-			</tr>
-		</table>
-		</form>
+					{elseif $input.type	eq 'checkbox'}
+						<input type="checkbox" name="vars[{$input.name}]" id="{$input.name}" value="1" {if $input.default eq '1'} checked="checked" {/if} />
+					{elseif $input.type	eq 'select'}
+						<select name="vars[{$input.name}]" id="{$input.name}_var">;
+							{foreach from=$input.select key=selectId item=select}
+								<option value="{$select}">{$select}</option>
+							{/foreach}
+						</select>
+					{else}
+						{$input.name} - {$input.type} - {$input.lookup} - {$input.options}
+					{/if}
+				{/forminput}
+			</div>
+		{/foreach}
+
+		<div class="row">
+			{formlabel label="Select output format" for="output"}
+			{forminput}
+				<select name="output">
+					<option value="PDF">PDF</option>
+					<option value="HTML">HTML</option>
+				</select>
+				{formhelp note="Select report output format."}
+			{/forminput}
+		</div>
+
+		<div class="row submit">
+			<input type="submit" name="report_submit" value="Download Report" onclick="document.setupreport.elements['download'].value='1';" />
+		</div>
+		{/form}
 	</div><!-- end .body -->
 
 </div><!-- end .gedcom -->

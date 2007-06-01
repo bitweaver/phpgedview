@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: bit_reportengine.php,v 1.3 2007/05/31 18:26:36 lsces Exp $
+ * @version $Id: bit_reportengine.php,v 1.4 2007/06/01 10:14:38 lsces Exp $
  */
 
 /**
@@ -148,7 +148,6 @@ if ($action=="setup") {
 
 		foreach($report_array["inputs"] as $indexval => $input) {
 			if (!isset($input["type"])) $report_array["inputs"][$indexval]["type"] = "text";
-			if (!isset($input["default"])) $report_array["inputs"][$indexval]["default"] = "";
 			if ($input["type"]=="select") {
 				$report_array["inputs"][$indexval]['select'] = preg_split("/[, ]+/", $input["options"]);
 			}
@@ -163,6 +162,12 @@ if ($action=="setup") {
 				if ($input["lookup"]=="SOUR") {
 					if (isset($_REQUEST['sid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['sid']);
 				}
+				if ($input["lookup"]=="DATE") {
+					$report_array["calendar"] = true;
+					if (!isset($input["default"]) || $input["default"] == "" ) $report_array["inputs"][$indexval]["default"] = "2007-06-01";
+				}
+				else 
+				  if (!isset($input["default"])) $report_array["inputs"][$indexval]["default"] = "";
 			}
 		}
 
