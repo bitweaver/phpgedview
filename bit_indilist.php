@@ -34,7 +34,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: bit_indilist.php,v 1.1 2007/06/02 12:31:53 lsces Exp $
+ * $Id: bit_indilist.php,v 1.2 2007/06/02 12:43:14 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -408,6 +408,7 @@ else {
 			$person = Person::getInstance($value["gid"]);
 
 			$names["$key"]['sex'] = $person->sex;
+			$names["$key"]['url'] = "individual.php?ged=".$GEDCOM."&amp;pid=".$value["gid"]."#content";
 			$names["$key"]['birthdate'] = $person->getSortableBirthDate();
 			$names["$key"]['birthplace'] = $person->getBirthPlace();
 			$names["$key"]['deathdate'] = $person->getSortableDeathDate();
