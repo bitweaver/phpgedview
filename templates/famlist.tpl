@@ -1,10 +1,11 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/famlist.tpl,v 1.1 2007/06/02 13:11:24 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/famlist.tpl,v 1.2 2007/06/02 13:24:07 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="gedcom_list">
 	<div class="header">
 		<h1>{$pagetitle}</h1>
 		{* <img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["indis"]["small"]."\" border="0" title="Individuals" alt="Individuals" />&nbsp;&nbsp; *}
+		{include file="bitpackage:phpgedview/top_bar.tpl"}
 	</div>
 
 	{formfeedback error=$errors}
