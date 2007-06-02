@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: bit_reportengine.php,v 1.4 2007/06/01 10:14:38 lsces Exp $
+ * @version $Id: bit_reportengine.php,v 1.5 2007/06/02 14:14:18 lsces Exp $
  */
 
 /**
@@ -37,11 +37,6 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gContent = new BitGEDCOM();
-// TODO - Bodge to get started
-if(!isset($GEDCOM)) {
-	$GEDCOM = "CAINEFull.GED";
-	$GEDCOMS[$GEDCOM]["id"] = 2;
-}
 
 require_once("includes/functions_charts.php");
 require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");
