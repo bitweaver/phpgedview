@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: sourcelist.php,v 1.4 2007/05/27 14:45:29 lsces Exp $
+ * @version $Id: sourcelist.php,v 1.5 2007/06/02 14:15:44 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -34,29 +34,27 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
-// leave manual config until we can move it to bitweaver table 
-require("config.php");
-require_once("includes/functions_print_lists.php");
-
-print_header($pgv_lang["source_list"]);
-
 $addsourcelist = get_source_add_title_list();  //-- array of additional source titlesadd
 $sourcelist = get_source_list();               //-- array of regular source titles
+	$n = 0;
+	foreach($sourcelist as $key => $value) {
+		if (!isset($value["name"])) break;
+		$source = Source::getInstance($key); // from placelist
+		
+		$url = "source.php?ged=".$GEDCOM."&amp;sid=".urlencode($key);
+		$sourcelist["$key"]['n'] = ++$n;
+		$sourcelist["$key"]['url'] = $url;
+		$sourcelist["$key"]['place'] = $source->getAuth();
+	}
 
-uasort($sourcelist, "itemsort");
-uasort($addsourcelist, "itemsort");
+//uasort($sourcelist, "itemsort");
+//uasort($addsourcelist, "itemsort");
+asort($sourcelist);
+asort($addsourcelist);
 
-$ca = count($addsourcelist);
-$cs = count($sourcelist);
-$ctot = $ca + $cs;
+$gBitSmarty->assign_by_ref( "sourcelist", array_merge($sourcelist, $addsourcelist) );
 
-print "<div class=\"center\">";
-print "<h2>".$pgv_lang["source_list"]."</h2>\n\t";
-
-print_sour_table(array_merge($sourcelist, $addsourcelist));
-
-print "</div>";
-print "<br /><br />";
-load_behaviour();
-print_footer();
+$gBitSmarty->assign( "total", $n );
+$gBitSmarty->assign( "pagetitle", tra("Source reference list") );
+$gBitSystem->display( 'bitpackage:phpgedview/sourcelist.tpl', tra( 'Source reference list' ) );
 ?>
