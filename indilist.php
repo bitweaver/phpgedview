@@ -34,7 +34,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.5 2007/06/02 13:10:30 lsces Exp $
+ * $Id: indilist.php,v 1.6 2007/06/02 14:17:21 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -48,15 +48,9 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
-// TODO - Bodge to get started
-if(!isset($GEDCOM)) {
-	$GEDCOM = "CAINEFull.GED";
-	$GEDCOMS[$GEDCOM]["id"] = 2;
-}
 
-// leave manual config until we can move it to bitweaver table 
 global $SEARCH_SPIDER;
-require_once("includes/functions_print_lists.php");
+// Leave until translation stuff moved over to bitweaver
 require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");
 
 if(!(empty($SEARCH_SPIDER))) {

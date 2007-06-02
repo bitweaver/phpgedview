@@ -36,7 +36,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.5 2007/06/02 13:11:24 lsces Exp $
+ * @version $Id: famlist.php,v 1.6 2007/06/02 14:17:21 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -52,14 +52,6 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
-// TODO - Bodge to get started
-if(!isset($GEDCOM)) {
-	$GEDCOM = "CAINEFull.GED";
-	$GEDCOMS[$GEDCOM]["id"] = 2;
-}
-
-// leave manual config until we can move it to bitweaver table 
-require_once("includes/functions_print_lists.php");
 
 $sublistTrigger = 200;		// Number of names required before list starts sub-listing by first name
 
@@ -321,7 +313,7 @@ if (isset($falpha) and $falpha!="@") $legend .= " ".$falpha.".";
 
 if (!empty($surname) or $surname_sublist=="no") {
 //	print_fam_table($tfamlist, $legend);
-	$gBitSmarty->assign( "names", $tfamlist );
+	$gBitSmarty->assign_by_ref( "names", $tfamlist );
 }
 if (isset($alpha)) {
 	$gBitSmarty->assign( "alpha", $alpha );

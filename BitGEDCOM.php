@@ -41,6 +41,12 @@ class BitGEDCOM extends LibertyContent {
 		if( ! @$this->verifyId( $this->mContentId ) ) {
 			$this->mContentId = NULL;
 		}
+// TODO - Bodge to get started - to be replaced with default BitGEDCOM
+global $GEDCOM, $GEDCOMS;
+if(!isset($GEDCOM)) {
+	$GEDCOM = "CAINEFull.GED";
+	$GEDCOMS[$GEDCOM]["id"] = 2;
+}
 	}
 
 	/**
