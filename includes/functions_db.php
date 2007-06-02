@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.19 2007/05/31 08:57:40 lsces Exp $
+ * @version $Id: functions_db.php,v 1.20 2007/06/02 13:13:22 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -2246,7 +2246,7 @@ function get_alpha_fams($letter) {
 			}
 			if (!empty($hname)) {
 				$wname = get_sortable_name($WIFE);
-				if (hasRTLText($hname)) {
+/*				if (hasRTLText($hname)) {
 					$indirec = find_person_record($WIFE);
 					if (isset($indilist[$WIFE])) {
 						foreach($indilist[$WIFE]["names"] as $n=>$namearray) {
@@ -2257,6 +2257,7 @@ function get_alpha_fams($letter) {
 						}
 					}
 				}
+*/
 				$name = $hname ." + ". $wname;
 				$famlist[$famid]["name"] = $name;
 				if (!isset($famlist[$famid]["surnames"])||count($famlist[$famid]["surnames"])==0) $famlist[$famid]["surnames"] = $surnames;
@@ -2332,7 +2333,7 @@ function get_surname_fams($surname) {
 			}
 			if (!empty($hname)) {
 				$wname = get_sortable_name($WIFE);
-				if (hasRTLText($hname)) {
+/*				if (hasRTLText($hname)) {
 					$indirec = find_person_record($WIFE);
 					if (isset($indilist[$WIFE])) {
 						foreach($indilist[$WIFE]["names"] as $n=>$namearray) {
@@ -2343,6 +2344,7 @@ function get_surname_fams($surname) {
 						}
 					}
 				}
+*/
 				$name = $hname ." + ". $wname;
 				$famlist[$famid]["name"] = $name;
 				$tfamlist[$famid] = $famlist[$famid];
