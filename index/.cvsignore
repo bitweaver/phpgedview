@@ -8,3 +8,4 @@ pgv-*.log
 *.GED_*.php
 sql_log.txt
 *.dat
+*.log
