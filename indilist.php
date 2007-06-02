@@ -34,7 +34,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.4 2007/05/27 14:45:30 lsces Exp $
+ * $Id: indilist.php,v 1.5 2007/06/02 13:10:30 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -48,15 +48,16 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
+// TODO - Bodge to get started
+if(!isset($GEDCOM)) {
+	$GEDCOM = "CAINEFull.GED";
+	$GEDCOMS[$GEDCOM]["id"] = 2;
+}
 
 // leave manual config until we can move it to bitweaver table 
 global $SEARCH_SPIDER;
-require("config.php");
 require_once("includes/functions_print_lists.php");
-print_header($pgv_lang["individual_list"]);
-print "<div class =\"center\">";
-print "\n\t<h2>".$pgv_lang["individual_list"]."</h2>";
-
+require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");
 
 if(!(empty($SEARCH_SPIDER))) {
 	$surname_sublist = "no";
@@ -65,34 +66,31 @@ else {
 	if (empty($surname_sublist)) $surname_sublist = "yes";
 	}
 
-if (empty($show_all)) $show_all = "no";
 if (empty($show_all_firstnames)) $show_all_firstnames = "no";
 
-$sublistTrigger = 200;		// Number of names required before list starts sub-listing by first name
+$sublistTrigger = 50;		// Number of names required before list starts sub-listing by first name
 
 // Remove slashes
 $lrm = chr(0xE2).chr(0x80).chr(0x8E);
 $rlm = chr(0xE2).chr(0x80).chr(0x8F);
+if (isset($_REQUEST['alpha']) ) { $alpha = $_REQUEST['alpha']; }
+if (isset($_REQUEST['surname']) ) { $surname = $_REQUEST['surname']; }
+if (isset($_REQUEST['surname_sublist']) ) { $surname_sublist = $_REQUEST['surname_sublist']; }
+else $surname_sublist = 'yes';
+if (isset($_REQUEST['show_all']) ) { $show_all = $_REQUEST['show_all']; }
+if (empty($show_all)) $show_all = "no";
+
 if (isset($alpha)) {
 	$alpha = stripslashes($alpha);
 	$alpha = str_replace(array($lrm, $rlm), "", $alpha);
-	$doctitle = $pgv_lang["individual_list"]." : ".$alpha;
+	$doctitle = "Individual List : ".$alpha;
 }
 if (isset($surname)) {
 	$surname = stripslashes($surname);
 	$surname = str_replace(array($lrm, $rlm), "", $surname);
-	$doctitle = $pgv_lang["individual_list"]." : ";
+	$doctitle = "Individual List : ";
 	if (empty($surname) or trim("@".$surname,"_")=="@" or $surname=="@N.N.") $doctitle .= $pgv_lang["NN"];
 	else $doctitle .= $surname;
-}
-if (isset($doctitle)) {
-	?>
-	<script language="JavaScript" type="text/javascript">
-	<!--
-		document.title = '<?php print $doctitle; ?>';
-	//-->
-	</script>
-	<?php
 }
 
 /**
@@ -119,13 +117,17 @@ $tindilist = array();
  * @global array $indialpha
  */
 
+if (empty($SEARCH_SPIDER))
+	$gBitSmarty->assign( "SEARCH_SPIDER", $SEARCH_SPIDER );
+$gBitSmarty->assign( "show_all", $show_all );
+
 $indialpha = get_indi_alpha();
-uasort($indialpha, "stringsort");
+//uasort($indialpha, "stringsort");
+asort($indialpha);
 
 if (isset($alpha) && !isset($indialpha["$alpha"])) unset($alpha);
 
 if (count($indialpha) > 0) {
-	print_help_link("alpha_help", "qm", "alpha_index");
 	foreach($indialpha as $letter=>$list) {
 		if (empty($alpha)) {
 			if (!empty($surname)) {
@@ -137,71 +139,19 @@ if (count($indialpha) > 0) {
 				$startalpha = $letter;
 				$alpha = $letter;
 			}
-			if(!empty($SEARCH_SPIDER)) { // we want only 26+ letters and full list for spiders.
-				print "<a href=\"?alpha=".urlencode($letter)."&amp;surname_sublist=no&amp;ged=".$GEDCOM."\">";
-			}
-			else {
-				print "<a href=\"?alpha=".urlencode($letter)."&amp;surname_sublist=".$surname_sublist."\">";
-			}
-			if (($alpha==$letter)&&($show_all=="no")) print "<span class=\"warning\">".$letter."</span>";
-			else print $letter;
-			print "</a> | \n";
 		}
 		if ($letter === "@") $pass = true;
-	}
-	if ($pass == true) {
-		if(!empty($SEARCH_SPIDER)) { // we want only 26+ letters and full list for spiders.
-
-			if (isset($alpha) && $alpha == "@") print "<a href=\"?alpha=@&amp;ged=".$GEDCOM."&amp;surname_sublist=no&amp;surname=@N.N.\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
-			else print "<a href=\"?alpha=@&amp;ged=".$GEDCOM."&amp;surname_sublist=no&amp;surname=@N.N.\">".PrintReady($pgv_lang["NN"])."</a>";
-			print " | \n";
-			$pass = false;
-		}
-		else {
-			if (isset($alpha) && $alpha == "@") print "<a href=\"?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
-			else print "<a href=\"?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.\">".PrintReady($pgv_lang["NN"])."</a>";
-			print " | \n";
-			$pass = false;
-
-		}
-	}
-	if(!empty($SEARCH_SPIDER)) { // we want only 26+ letters and full list for spiders.
-		if ($show_all=="yes") print "<a href=\"?show_all=yes&amp;ged=".$GEDCOM."&amp;surname_sublist=no\"><span class=\"warning\">".$pgv_lang["all"]."</span></a>\n";
-		else print "<a href=\"?show_all=yes&amp;ged=".$GEDCOM."&amp;surname_sublist=no\">".$pgv_lang["all"]."</a>\n";
-	}
-	else {
-		if ($show_all=="yes") print "<a href=\"?show_all=yes&amp;surname_sublist=".$surname_sublist."\"><span class=\"warning\">".$pgv_lang["all"]."</span></a>\n";
-		else print "<a href=\"?show_all=yes&amp;surname_sublist=".$surname_sublist."\">".$pgv_lang["all"]."</a>\n";
+		$indialpha[$letter]['url'] = urlencode($letter);
 	}
 	if (isset($startalpha)) $alpha = $startalpha;
+	$gBitSmarty->assign_by_ref( "indialpha", $indialpha );
 }
-//print_help_link("alpha_help", "qm");
 
+$gBitSmarty->assign( "surname_sublist", $surname_sublist );
 //-- escaped letter for regular expressions
 $expalpha = $alpha;
-if ($expalpha=="(" || $expalpha=="[" || $expalpha=="?" || $expalpha=="/" || $expalpha=="*" || $expalpha=="+" || $expalpha==')') $expalpha = "\\".$expalpha;
-
-print "<br /><br />";
-
-if(empty($SEARCH_SPIDER)) {
-	if ($alpha != "@") {
-		if ($surname_sublist=="yes") {
-			print_help_link("skip_sublist_help", "qm", "skip_surnames");
-			print "<a href=\"?alpha=$alpha&amp;surname_sublist=no&amp;show_all=$show_all\">".$pgv_lang["skip_surnames"]."</a>";
-		} else {
-			print_help_link("skip_sublist_help", "qm", "show_surnames");
-			print "<a href=\"?alpha=$alpha&amp;surname_sublist=yes&amp;show_all=$show_all\">".$pgv_lang["show_surnames"]."</a>";
-		}
-	}
-}
-
-print "<br /><br />";
-print_help_link("name_list_help", "qm");
-print "<br /><br />";
-
-//print "<table class=\"list_table $TEXT_DIRECTION\"><tr>";
-
-$TableTitle = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["indis"]["small"]."\" border=\"0\" title=\"".$pgv_lang["individuals"]."\" alt=\"".$pgv_lang["individuals"]."\" />&nbsp;&nbsp;";
+if ($expalpha=="(" || $expalpha=="[" || $expalpha=="?" || $expalpha=="/" || $expalpha=="*" 
+	|| $expalpha=="+" || $expalpha==')') $expalpha = "\\".$expalpha;
 
 if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&($show_all=="yes")) {
 	get_indi_list();
@@ -220,8 +170,22 @@ if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&($show_all=="yes")) {
 		}
 	}
 	$i = 0;
-	uasort($surnames, "itemsort");
-	print_surn_table($surnames);
+//	uasort($surnames, "itemsort");
+asort($surnames);
+	$n = 0;
+	$total = 0;
+	foreach($surnames as $key => $value) {
+		if (!isset($value["name"])) break;
+		$surn = $value["name"];
+		$url = "indilist.php?ged=".$GEDCOM."&amp;surname=".urlencode($surn);
+		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
+		$surnames["$key"]['n'] = ++$n;
+		$surnames["$key"]['surn'] = $surn;
+		$surnames["$key"]['url'] = $url;
+		$total += $value["match"];
+	}
+	$gBitSmarty->assign( "surname_total", $total );
+	$gBitSmarty->assign_by_ref( "surnames", $surnames );
 }
 else if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	if (!isset($alpha)) $alpha="";
@@ -268,8 +232,22 @@ else if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&(empty($surname))&&
 	}
 
 	$i = 0;
-	uasort($surnames, "itemsort");
-	print_surn_table($surnames);
+//	uasort($surnames, "itemsort");
+asort($surnames);
+	$n = 0;
+	$total = 0;
+	foreach($surnames as $key => $value) {
+		if (!isset($value["name"])) break;
+		$surn = $value["name"];
+		$url = "indilist.php?ged=".$GEDCOM."&amp;surname=".urlencode($surn);
+		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
+		$surnames["$key"]['n'] = ++$n;
+		$surnames["$key"]['surn'] = $surn;
+		$surnames["$key"]['url'] = $url;
+		$total += $value["match"];
+	}
+	$gBitSmarty->assign( "surname_total", $total );
+	$gBitSmarty->assign_by_ref( "surnames", $surnames );
 }
 else {
 	$firstname_alpha = false;
@@ -321,7 +299,7 @@ else {
 				$_SESSION[$surname."_firstalpha"] = $firstalpha;
 			}
 			else $firstalpha = $_SESSION[$surname."_firstalpha"];
-			print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
+/*			print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
 			print PrintReady(str_replace("#surname#", check_NN($surname), $pgv_lang["indis_with_surname"]));
 			print "</td></tr><tr>\n";
 			print "<td style=\"text-align:center;\" colspan=\"2\">";
@@ -359,6 +337,7 @@ else {
 				$tindilist = $findilist;
 			}
 			print "</td></tr><tr>\n";
+*/
 		}
 		$names = array();
 		foreach ($tindilist as $gid => $indi) {
@@ -419,10 +398,25 @@ else {
 				}
 			}
 		}
-		uasort($names, "itemsort");
+		// uasort($names, "itemsort");
+		asort($names);
+		foreach($names as $key => $value) {
+			if (!isset($value["name"])) break;
+			$person = Person::getInstance($value["gid"]);
+
+			$names["$key"]['sex'] = $person->sex;
+			$names["$key"]['url'] = "individual.php?ged=".$GEDCOM."&amp;pid=".$value["gid"]."#content";
+			$names["$key"]['birthdate'] = $person->getSortableBirthDate();
+			$names["$key"]['birthplace'] = $person->getBirthPlace();
+			$names["$key"]['deathdate'] = $person->getSortableDeathDate();
+			$names["$key"]['dateurl'] = $person->getDateUrl($person->getBirthDate());
+			$names["$key"]['placeurl'] = $person->getPlaceUrl($names["$key"]['birthplace']);
+			$names["$key"]['noc'] = $person->getNumberOfChildren();
+		}
+
+		$gBitSmarty->assign_by_ref( "names", $names );
 	}
 }
-//print "</tr></table>";
 
 if ($show_all=="yes") unset($alpha);
 if (!empty($surname) && $surname_sublist=="yes") $legend = str_replace("#surname#", check_NN($surname), $pgv_lang["indis_with_surname"]);
@@ -430,15 +424,12 @@ else if (isset($alpha)) $legend = str_replace("#surname#", $alpha.".", $pgv_lang
 else $legend = $pgv_lang["individuals"];
 if ($show_all_firstnames=="yes") $falpha = "@";
 if (isset($falpha) and $falpha!="@") $legend .= " ".$falpha.".";
-$legend = PrintReady($legend);
-if (isset($names)) print_indi_table($names, $legend);
+$gBitSmarty->assign( "legend", $legend );
 
-print "</div>\n";
-if(empty($SEARCH_SPIDER)) {
-	print_footer();
+if (isset($alpha)) {
+	$gBitSmarty->assign( "alpha", $alpha );
+    if (!isset($doctitle)) $doctitle = "Individual List : ".$alpha;
 }
-else {
-	print "</div>\n</body>\n</html>\n";
-}
-
+$gBitSmarty->assign( "pagetitle", $doctitle );
+$gBitSystem->display( 'bitpackage:phpgedview/indilist.tpl', tra( 'Individual selection list' ) );
 ?>
