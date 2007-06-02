@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/top_bar.tpl,v 1.1 2007/06/02 13:24:07 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/top_bar.tpl,v 1.2 2007/06/02 14:14:53 lsces Exp $ *}
 	<div class="data">
 		<table class="data">
 			<caption><h1>{tr}Gedcom documents navigation menu{/tr}</h1></caption>
@@ -6,7 +6,7 @@
 				<th>{tr}Charts{/tr}</th>
 				<th>{tr}Lists{/tr}</th>
 				<th>{tr}Anniversary Calendar{/tr}</th>
-				<th>{tr}Reports{/tr}</th>
+				<th><a href="{$smarty.const.PHPGEDVIEW_PKG_URL}reportengine.php?action=choose">{tr}Reports{/tr}</a></th>
 			</tr>
 
 		<tr class="{cycle values="even,odd"}">
