@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.14 2007/05/31 18:29:21 lsces Exp $
+ * @version $Id: functions.php,v 1.15 2007/06/02 12:34:50 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -2526,6 +2526,7 @@ function getAlphabet(){
 	global $ALPHABET_upper, $ALPHABET_lower, $LANGUAGE;
 	global $alphabet, $alphabet_lower, $alphabet_upper, $alphabet_lang;
 
+	return $alphabet;
 	//-- setup the language alphabet string
 	if (!isset($alphabet_lang) || $alphabet_lang!=$LANGUAGE) {
 		$alphabet = "0123456789".$ALPHABET_upper[$LANGUAGE].$ALPHABET_lower[$LANGUAGE];
