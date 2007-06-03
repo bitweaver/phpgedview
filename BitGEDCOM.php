@@ -20,6 +20,9 @@ require_once('includes/functions_import.php');
 class BitGEDCOM extends LibertyContent {
 	var $mGEDCOMId;
 	var $mGedcomName;
+	var $mRoodId;
+	var $mRootPerson;
+	var $PedigreeGenerations;
 
 	function BitGEDCOM( $pGEDCOMId=NULL, $pContentId=NULL ) {
 		LibertyContent::LibertyContent();
@@ -37,6 +40,8 @@ class BitGEDCOM extends LibertyContent {
 
 		if( ! @$this->verifyId( $this->mGEDCOMId ) ) {
 			$this->mGEDCOMId = NULL;
+		} else {
+			$this->mGEDCOMId = 2;
 		}
 		if( ! @$this->verifyId( $this->mContentId ) ) {
 			$this->mContentId = NULL;
@@ -46,6 +51,8 @@ global $GEDCOM, $GEDCOMS;
 if(!isset($GEDCOM)) {
 	$GEDCOM = "CAINEFull.GED";
 	$GEDCOMS[$GEDCOM]["id"] = 2;
+	$GEDCOMS[$GEDCOM]["path"] = "s:/familytree/CAINEFull.GED";
+	$this->mGEDCOMId = 2;
 }
 	}
 
@@ -55,6 +62,45 @@ if(!isset($GEDCOM)) {
 	 */
 	function isValid() {
 		return( $this->verifyId( $this->mGEDCOMId ) );
+	}
+
+	/**
+	 * Set the root Id for this GEDCOM
+	 * @param Id to be found - if not set, then the first person will be found
+	 * Which first person is found will depend on the security level set for the user
+	 * @return Person object with details of the person.
+	 */
+	function rootId( $id = "" ) {
+		$this->mRootId = preg_replace("/[%?_]/", "", trim($id));
+/*
+	if ($USE_RIN) {
+		$indirec = find_person_record($rootid);
+		if ($indirec == false) $rootid = find_rin_id($rootid);
+	} else {
+		if (preg_match("/[A-Za-z]+/", $rootid) == 0) {
+			$GEDCOM_ID_PREFIX = trim($GEDCOM_ID_PREFIX);
+			$rootid = $GEDCOM_ID_PREFIX . $rootid;
+		}
+	}
+*/
+		if (!$this->mRootId) $this->mRootId = $this->findFirstPerson();
+			
+		$rootPerson = Person::getInstance($this->mRootId);
+		if (is_null($rootPerson)) $rootPerson = new Person('');
+		$this->mRootPerson = $rootPerson;
+
+		return( $this->mRootId );
+	}
+
+	/**
+	 * find and return the id of the first person in the gedcom
+	 * @return string the gedcom xref id of the first person in the gedcom
+	 */
+	function findFirstPerson() {
+		$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY i_id";
+		$row = $this->mDb->getRow($sql, array( $this->mGEDCOMId ) );
+		if ($row) return $row['i_id'];
+		else return "I1";
 	}
 
 	/**
@@ -544,6 +590,75 @@ function addToLog($LogString, $savelangerror=false) {
 	}
 	if ($wroteLogString) return $logline;
 	else return "";
+}
+
+/**
+ * creates an array with all of the individual ids to be displayed on an ascendancy chart
+ *
+ * the id in position 1 is the root person.  The other positions are filled according to the following algorithm
+ * if an individual is at position $i then individual $i's father will occupy position ($i*2) and $i's mother
+ * will occupy ($i*2)+1
+ *
+ * @param string $rootid
+ * @return array $treeid
+ */
+function ancestryArray( $id = 0, $maxgen = 0 ) {
+ 	global $gBitSystem;
+	// -- maximum size of the id array
+	if( $id == 0 ) $tid = $this->mRootId;
+	else $tid = $id;
+
+	if($maxgen==0) $maxgen = $gBitSystem->getConfig('pgv_default_pedigree_generations', 4);
+	$treesize = pow(2, ($maxgen+1));
+
+	$treeid = array();
+	$treeid[0] = "";
+	$treeid[1] = $tid;
+	// -- fill in the id array
+	for($i = 1; $i < ($treesize / 2); $i++) {
+		$treeid[($i * 2)] = false; // -- father
+		$treeid[($i * 2) + 1] = false; // -- mother
+		if (!empty($treeid[$i])) {
+			$person = Person::getInstance($treeid[$i]);
+			$families = $person->getChildFamilies();
+			foreach($families as $famid=>$family) {
+				/*@var $family Family */
+				if (empty($treeid[($i * 2)])) $treeid[($i * 2)] = $family->getHusbId(); // -- set father id
+				if (empty($treeid[($i * 2) + 1])) $treeid[($i * 2) + 1] = $family->getWifeId(); // -- set mother id
+			}
+		}
+	}
+	return $treeid;
+}
+
+/**
+ * creates an array with all of the individual ids to be displayed on the pedigree chart
+ *
+ * the id in position 0 is the root person.  The other positions are filled according to the following algorithm
+ * if an individual is at position $i then individual $i's father will occupy position ($i*2)+1 and $i's mother
+ * will occupy ($i*2)+2
+ *
+ * @deprecated	This function has been deprecated by the ancestry_array function, it is still
+ *				provided for backwards compatibility but it should no longer be used in new code
+ * @param string $rootid
+ * @return array $treeid
+ */
+function pedigreeArray( $id = 0 ) {
+	global $gBitSystem;
+
+	$treeid = $this->ancestryArray( $id );
+	$treesize = count($treeid)-1;
+	//-- ancestry_array puts everyone at $i+1
+	for($i=0; $i<$treesize-1; $i++) $treeid[$i] = $treeid[$i+1]; 
+
+	// -- detect the highest generation that actually has a person in it and use it for the pedigree generations
+	if ( $gBitSystem->getConfig('pgv_show_empty_boxes', 'y') == 'n' ) {
+		for($i = ($treesize-1); empty($treeid[$i]); $i--);
+	}
+	$this->PedigreeGenerations = ceil(log($i + 2) / log(2));
+	if ($this->PedigreeGenerations < 2) $this->PedigreeGenerations = 2;
+
+	return $treeid;
 }
 
 }
