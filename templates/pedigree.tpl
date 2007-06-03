@@ -1,14 +1,16 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/pedigree.tpl,v 1.1 2007/06/03 20:38:19 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/pedigree.tpl,v 1.2 2007/06/03 21:32:11 lsces Exp $ *}
+{strip}
 <div class="floaticon">{bithelp}</div>
 
-<div style="position: relative; z-index: 1;">
-	<h1>{$pagetitle}</h1>
-	<h1>{$name}</h1>
+	<div class="header">
+		<h1>{$pagetitle}</h1>
+		<h1>{$name}</h1>
+	</div>
 
 	{formfeedback error=$errors}
 
 	<div class="body">
-		<div id="pedigree_chart">
+		<div id="pedigree_chart" style="position: relative; z-index: 1;">
 			{foreach from=$pos key=i item=tree }
 				{if isset($boxes.$i.left) }
 					<div id="line{$i}" style="position:absolute; left:{$boxes.$i.left}px; top:{$boxes.$i.top}px; z-index: 0;">
@@ -64,3 +66,4 @@
 	</div><!-- end .body -->
 
 </div><!-- end .gedcom -->
+{/strip}
