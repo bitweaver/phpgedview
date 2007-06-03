@@ -1,9 +1,10 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_menu.tpl,v 1.2 2007/06/01 10:14:38 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_menu.tpl,v 1.3 2007/06/03 20:37:24 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin gedcom">
 	<div class="header">
 		<h1>{$pagetitle}</h1>
+		{include file="bitpackage:phpgedview/top_bar.tpl"}
 	</div>
 
 	{formfeedback error=$errors}
