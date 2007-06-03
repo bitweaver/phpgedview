@@ -65,8 +65,7 @@ class PedigreeControllerRoot extends BaseController {
 	 * Initialization function
 	 */
 	function init( $gContent ) {
-		global $PEDIGREE_FULL_DETAILS, $PEDIGREE_LAYOUT;
-		global $TEXT_DIRECTION, $gBitSystem;
+		global $gBitSystem;
 		
 		$bwidth = 225;		// -- width of boxes on pedigree chart
 		$bheight = 80;		// -- height of boxes on pedigree chart
@@ -80,15 +79,15 @@ class PedigreeControllerRoot extends BaseController {
 			$this->show_famlink = false;
 		}
 		
-		if (!isset($_REQUEST['show_full'])) $this->show_full=$PEDIGREE_FULL_DETAILS;
+		if (!isset($_REQUEST['show_full'])) $this->show_full = $gBitSystem->getConfig('pgv_pedigree_full_details', 1);
 		else $this->show_full = $_REQUEST['show_full'];
 		if ($this->show_full=="") $this->show_full = 0;
 		
-		if (!isset($_REQUEST['talloffset'])) $this->talloffset = (int)$PEDIGREE_LAYOUT;
+		if (!isset($_REQUEST['talloffset'])) $this->talloffset = (int)$gBitSystem->getConfig('pgv_pedigree_layout', 0);
 		else $this->talloffset = $_REQUEST['talloffset'];
 		if ($this->talloffset=="") $this->talloffset = 0;
 		
-		if (empty($_REQUEST['PEDIGREE_GENERATIONS'])) $this->PEDIGREE_GENERATIONS=$gBitSystem->getConfig('pgv_default_pedigree_generations', 4);
+		if (empty($_REQUEST['PEDIGREE_GENERATIONS'])) $this->PEDIGREE_GENERATIONS = 4; //$gBitSystem->getConfig('pgv_default_pedigree_generations', 4);
 		else $this->PEDIGREE_GENERATIONS=$_REQUEST['PEDIGREE_GENERATIONS'];
 		
 		if ($this->PEDIGREE_GENERATIONS > $gBitSystem->getConfig('pgv_max_pedigree_generations', 10) ) {

@@ -24,7 +24,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 22 August 2005
  *
- * $Id: pedigree.php,v 1.3 2007/06/03 20:38:20 lsces Exp $
+ * $Id: pedigree.php,v 1.4 2007/06/03 21:12:19 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -52,14 +52,6 @@ $controller->getPersonName();
 $gBitSmarty->assign( "name", $controller->getPersonName() );
 
 //-- print the boxes
-//-- This section defines variables for the pedigree chart
-$bwidth = 225;		// -- width of boxes on pedigree chart
-$bheight = 80;		// -- height of boxes on pedigree chart
-$baseyoffset = 10;	// -- position the entire pedigree tree relative to the top of the page
-$basexoffset = 10;	// -- position the entire pedigree tree relative to the left of the page
-$bxspacing = 0;		// -- horizontal spacing between boxes on the pedigree chart
-$byspacing = 2;		// -- vertical spacing between boxes on the pedigree chart
-
 $curgen = 1;
 $yoffset=0;			// -- used to offset the position of each box as it is generated
 $xoffset=0;
@@ -76,7 +68,7 @@ for($i=($controller->treesize-1); $i>=0; $i--) {
 	$xoffset = $controller->offsetarray[$i]["x"];
 	$yoffset = $controller->offsetarray[$i]["y"];
 	// -- if we are in the middle generations then we need to draw the connecting lines
-	if ( ($curgen > ($controller->talloffset) ) && ( $curgen < $controller->PEDIGREE_GENERATIONS ) ) {
+	if ( ($curgen > (1+$controller->talloffset) ) && ( $curgen < $controller->PEDIGREE_GENERATIONS ) ) {
 		if ($i%2==1) {
 			if ( $gBitSystem->getConfig('pgv_show_empty_boxes', 'y') == 'y' || ($controller->treeid[$i]) || ($controller->treeid[$i+1])) {
 				$vlength = ($prevyoffset-$yoffset);
@@ -84,9 +76,9 @@ for($i=($controller->treesize-1); $i>=0; $i--) {
 					$parent = ceil(($i-1)/2);
 					$vlength = $controller->offsetarray[$parent]["y"]-$yoffset;
 				}
-				$boxes[$i]['top'] = $yoffset-3+$controller->pbheight/2;
+				$boxes[$i]['top'] = $yoffset+1+$controller->pbheight/2;
 				$boxes[$i]['left'] = $xoffset-1;
-				$boxes[$i]['height'] = $vlength+1;
+				$boxes[$i]['height'] = $vlength-1;
 			}
 		}
 	}
@@ -96,14 +88,14 @@ for($i=($controller->treesize-1); $i>=0; $i--) {
 		$widthadd = 0;
 		$pos[$i]['left'] = $xoffset;
 		$pos[$i]['top'] = $yoffset;
-		$pos[$i]['height'] = $bheight;
-		$pos[$i]['width'] = $bwidth;
+		$pos[$i]['height'] = $controller->pbheight;
+		$pos[$i]['width'] = $controller->pbwidth;
 		
 		if (($curgen==1)&&(!empty($controller->treeid[$i]))&&(count(find_family_ids($controller->treeid[$i]))>0)) $widthadd = 20;
 		if (($curgen >2) && ($curgen < $controller->PEDIGREE_GENERATIONS)) $widthadd = 10;
 		$mfstyle = "";
 		
-		if (($curgen > $controller->talloffset) && ($curgen < $controller->PEDIGREE_GENERATIONS)) {
+		if (($curgen > (1+$controller->talloffset)) && ($curgen < $controller->PEDIGREE_GENERATIONS)) {
 			$pos[$i]['tall'] = 1;
 		}
 
