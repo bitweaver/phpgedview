@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: person_class.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: person_class.php,v 1.5 2007/06/03 20:47:18 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -90,7 +90,6 @@ class Person extends GedcomRecord {
 			&& $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
 			if (isset($indilist[$pid]['object'])) return $indilist[$pid]['object'];
 		}
-
 		$indirec = find_person_record($pid);
 
 		if (empty($indirec)) {
@@ -104,7 +103,7 @@ class Person extends GedcomRecord {
 			}
 		}
 		if (empty($indirec)) {
-			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if ( /*userCanEdit(getUserName()) && */ isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -481,11 +480,10 @@ class Person extends GedcomRecord {
 	 * @return string 	<img ... />
 	 */
 	function getSexImage() {
-		global $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES;
-		if ($this->getSex()=="M") $s = "sex";
-		else if ($this->getSex()=="F") $s = "sexf";
-		else $s = "sexn";
-		return "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$s]["small"]."\" alt=\"\" class=\"sex_image\" />";
+		if ($this->getSex()=="M") $s = "male";
+		else if ($this->getSex()=="F") $s = "female";
+		else $s = "fe_male";
+		return "<img src=\"".PHPGEDVIEW_PKG_URL."images/small/".$s.".gif\" alt=\"\" class=\"sex_image\" />";
 	}
 
 	/**
