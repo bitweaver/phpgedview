@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.9 2007/05/28 19:22:18 lsces Exp $
+ * @version $Id: functions_print.php,v 1.10 2007/06/03 20:45:14 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -55,8 +55,8 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 
 	 flush();
 	 if (!isset($OLD_PGENS)) $OLD_PGENS = $DEFAULT_PEDIGREE_GENERATIONS;
-	 if (!isset($talloffset)) $talloffset = $PEDIGREE_LAYOUT;
-	 if (!isset($show_full)) $show_full=$PEDIGREE_FULL_DETAILS;
+	 if (!isset($talloffset)) $talloffset = $gBitSystem->getConfig('pgv_pedigree_layout', 1);
+	 if (!isset($show_full)) $show_full = $gBitSystem->getConfig('pgv_pedigree_full_details', 1);
 	 // NOTE: Start div out-rand()
 	 if ($pid==false) {
 		  print "\n\t\t\t<div id=\"out-".rand()."\" class=\"person_boxNN\" style=\"width: ".$bwidth."px; height: ".$bheight."px; padding: 2px; overflow: hidden;\">";
