@@ -36,7 +36,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.6 2007/06/02 14:17:21 lsces Exp $
+ * @version $Id: famlist.php,v 1.7 2007/06/04 09:39:07 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -60,7 +60,7 @@ $lrm = chr(0xE2).chr(0x80).chr(0x8E);
 $rlm = chr(0xE2).chr(0x80).chr(0x8F);
 if (isset($_REQUEST['alpha']) ) { $alpha = $_REQUEST['alpha']; }
 if (isset($_REQUEST['surname']) ) { $surname = $_REQUEST['surname']; }
-if (isset($_REQUEST['surname_sublist']) ) { $surname_sublist = $_REQUEST['surname_sublist']; }
+if (isset($_REQUEST['surname_sublist']) && $_REQUEST['surname_sublist'] != '' ) { $surname_sublist = $_REQUEST['surname_sublist']; }
 else $surname_sublist = 'yes';
 if (isset($_REQUEST['show_all']) ) { $show_all = $_REQUEST['show_all']; }
 if (empty($show_all)) $show_all = "no";
@@ -103,6 +103,9 @@ $tfamlist = array();
  * The famalpha array will contain all first letters that are extracted from families last names
  * @global array $famalpha
  */
+
+$gBitSmarty->assign( "surname_sublist", $surname_sublist );
+$gBitSmarty->assign( "family", 'yes' );
 
 $famalpha = get_fam_alpha();
 
@@ -162,19 +165,22 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 asort($surnames);
 	$n = 0;
 	$total = 0;
+	$gBitSmarty->assign( 'url', "famlist.php?ged=".$GEDCOM."&amp;surname=" );
+	$surname_list = array();
 	foreach($surnames as $key => $value) {
 		if (!isset($value["name"])) break;
 		$surn = $value["name"];
-		$url = "famlist.php?ged=".$GEDCOM."&amp;surname=".urlencode($surn);
 		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
-		$surnames["$key"]['n'] = ++$n;
-		$surnames["$key"]['surn'] = $surn;
-		$surnames["$key"]['url'] = $url;
+		$surname_list[$n]['upper'] = $surn;
+		$surname_list[$n]['count'] = $value["match"];
 		$total += $value["match"];
+		$n++;
 	}
-	$gBitSmarty->assign( "surname_total", $total );
-	$gBitSmarty->assign_by_ref( "surnames", $surnames );
-//	print_surn_table($surnames, "FAM");
+	$listHash = $_REQUEST;
+	$listHash['sub_total'] = $total;
+	$listHash['total_records'] = $n;
+	$gBitSmarty->assign_by_ref( "surnames", $surname_list );
+	$gBitSmarty->assign_by_ref( 'listInfo', $listHash );
 }
 else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	if (!isset($alpha)) $alpha="";
@@ -197,19 +203,22 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	asort($surnames);
 	$n = 0;
 	$total = 0;
+	$gBitSmarty->assign( 'url', "famlist.php?ged=".$GEDCOM."&amp;surname=" );
+	$surname_list = array();
 	foreach($surnames as $key => $value) {
 		if (!isset($value["name"])) break;
 		$surn = $value["name"];
-		$url = "famlist.php?ged=".$GEDCOM."&amp;surname=".urlencode($surn);
 		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
-		$surnames["$key"]['n'] = ++$n;
-		$surnames["$key"]['surn'] = $surn;
-		$surnames["$key"]['url'] = $url;
+		$surname_list[$n]['upper'] = $surn;
+		$surname_list[$n]['count'] = $value["match"];
 		$total += $value["match"];
+		$n++;
 	}
-	$gBitSmarty->assign( "surname_total", $total );
-	$gBitSmarty->assign_by_ref( "surnames", $surnames );
-//	print_surn_table($surnames, "FAM");
+	$listHash = $_REQUEST;
+	$listHash['sub_total'] = $total;
+	$listHash['total_records'] = $n;
+	$gBitSmarty->assign_by_ref( "surnames", $surname_list );
+	$gBitSmarty->assign_by_ref( 'listInfo', $listHash );
 }
 else {
 	$firstname_alpha = false;
@@ -304,8 +313,8 @@ else {
 }
 
 if ($show_all=="yes") unset($alpha);
-if (!empty($surname) && $surname_sublist=="yes") $legend = str_replace("#surname#", check_NN($surname), $pgv_lang["fams_with_surname"]);
-else if (isset($alpha) and $show_all=="no") $legend = str_replace("#surname#", $alpha.".", $pgv_lang["fams_with_surname"]);
+if (!empty($surname) && $surname_sublist=="yes") $legend = "Families with surname ".check_NN($surname);
+else if (isset($alpha) and $show_all=="no") $legend = "Families with surname starting ".$alpha;
 else $legend = $pgv_lang["families"];
 if ($show_all_firstnames=="yes") $falpha = "@";
 if (isset($falpha) and $falpha!="@") $legend .= " ".$falpha.".";
