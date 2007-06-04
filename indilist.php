@@ -34,7 +34,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.6 2007/06/02 14:17:21 lsces Exp $
+ * $Id: indilist.php,v 1.7 2007/06/04 09:37:50 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -47,7 +47,7 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gGedcom = new BitGEDCOM();
+$gContent = new BitGEDCOM();
 
 global $SEARCH_SPIDER;
 // Leave until translation stuff moved over to bitweaver
@@ -147,101 +147,14 @@ $expalpha = $alpha;
 if ($expalpha=="(" || $expalpha=="[" || $expalpha=="?" || $expalpha=="/" || $expalpha=="*" 
 	|| $expalpha=="+" || $expalpha==')') $expalpha = "\\".$expalpha;
 
-if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&($show_all=="yes")) {
-	get_indi_list();
-	if (!isset($alpha)) $alpha="";
-	$surnames = array();
-	$indi_hide=array();
-	foreach($indilist as $gid=>$indi) {
-		//-- make sure that favorites from other gedcoms are not shown
-		if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
-			if (displayDetailsById($gid)||showLivingNameById($gid)) {
-				foreach($indi["names"] as $indexval => $name) {
-					surname_count($name[2]);
-				}
-			}
-			else $indi_hide[$gid."[".$indi["gedfile"]."]"] = 1;
-		}
-	}
-	$i = 0;
-//	uasort($surnames, "itemsort");
-asort($surnames);
-	$n = 0;
-	$total = 0;
-	foreach($surnames as $key => $value) {
-		if (!isset($value["name"])) break;
-		$surn = $value["name"];
-		$url = "indilist.php?ged=".$GEDCOM."&amp;surname=".urlencode($surn);
-		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
-		$surnames["$key"]['n'] = ++$n;
-		$surnames["$key"]['surn'] = $surn;
-		$surnames["$key"]['url'] = $url;
-		$total += $value["match"];
-	}
-	$gBitSmarty->assign( "surname_total", $total );
-	$gBitSmarty->assign_by_ref( "surnames", $surnames );
-}
-else if ((empty($SEARCH_SPIDER))&&($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
-	if (!isset($alpha)) $alpha="";
-	// get all of the individuals whose last names start with this letter
-	$tindilist = get_alpha_indis($alpha);
-	$surnames = array();
-	$indi_show = array();
-	$indi_hide = array();
-	foreach($tindilist as $gid=>$indi) {
-		if ((displayDetailsByID($gid))||(showLivingNameById($gid))) {
-			foreach($indi["names"] as $name) {
-                // Make sure we only display true "hits"
-				$trueHit = false;
-				$firstLetter = get_first_letter(strip_prefix($name[2]));
-				if ($alpha==$firstLetter) $trueHit = true;
+if ( empty($SEARCH_SPIDER) && (empty($surname)) ) {
+	$gBitSmarty->assign( 'url', "indilist.php?ged=".$GEDCOM."&amp;surname=");
+	$listHash = $_REQUEST;
+	if ( $show_all == 'no') $listHash['letter'] = $alpha;
+	$surname_list = $gContent->listSurnames($listHash);
 
-				if (!$trueHit && $DICTIONARY_SORT[$LANGUAGE]) {
-					if (strlen($firstLetter)==2) {
-						//-- strip diacritics before checking equality
-						if (strlen($firstLetter)==2) {
-							$aPos = strpos($UCDiacritWhole, $firstLetter);
-							if ($aPos!==false) {
-								$aPos = $aPos >> 1;
-								$firstLetter = substr($UCDiacritStrip, $aPos, 1);
-							} else {
-								$aPos = strpos($LCDiacritWhole, $firstLetter);
-								if ($aPos!==false) {
-									$aPos = $aPos >> 1;
-									$firstLetter = substr($LCDiacritStrip, $aPos, 1);
-								}
-							}
-						}
-						if ($alpha==$firstLetter) $trueHit = true;
-					}
-				}
-				if ($trueHit) {
-					surname_count($name[2]);
-					$indi_show[$gid."[".$indi["gedfile"]."]"] = 1;
-				}
-			}
-		} else {
-			$indi_hide[$gid."[".$indi["gedfile"]."]"] = 1;
-		}
-	}
-
-	$i = 0;
-//	uasort($surnames, "itemsort");
-asort($surnames);
-	$n = 0;
-	$total = 0;
-	foreach($surnames as $key => $value) {
-		if (!isset($value["name"])) break;
-		$surn = $value["name"];
-		$url = "indilist.php?ged=".$GEDCOM."&amp;surname=".urlencode($surn);
-		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
-		$surnames["$key"]['n'] = ++$n;
-		$surnames["$key"]['surn'] = $surn;
-		$surnames["$key"]['url'] = $url;
-		$total += $value["match"];
-	}
-	$gBitSmarty->assign( "surname_total", $total );
-	$gBitSmarty->assign_by_ref( "surnames", $surnames );
+	$gBitSmarty->assign_by_ref( "surnames", $surname_list );
+	$gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
 }
 else {
 	$firstname_alpha = false;
@@ -424,6 +337,7 @@ if (isset($alpha)) {
 	$gBitSmarty->assign( "alpha", $alpha );
     if (!isset($doctitle)) $doctitle = "Individual List : ".$alpha;
 }
+else if (!isset($doctitle)) $doctitle = "Full Individual List";
 $gBitSmarty->assign( "pagetitle", $doctitle );
 $gBitSystem->display( 'bitpackage:phpgedview/indilist.tpl', tra( 'Individual selection list' ) );
 ?>
