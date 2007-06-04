@@ -661,5 +661,53 @@ function pedigreeArray( $id = 0 ) {
 	return $treeid;
 }
 
+	/**
+	 * Generate list of GEDCOM archives
+	 * $pListHash values used
+	 * @param offset Number of the first record to list
+	 * @param maxRecords Number of records to list
+	 * @param letter Filter surname list by letter selected
+	 */
+	function listSurnames( &$pListHash ) {
+		LibertyContent::prepGetList( $pListHash );
+
+		$bindVars = array( $this->mGEDCOMId );
+		$selectSql = '';
+			
+		if ( isset($pListHash['letter']) && $pListHash['letter'] != '' ) {
+			$selectSql .= 'AND `i_surname` STARTING ? ';
+			array_push( $bindVars, $pListHash['letter'] );
+		}
+
+		$query = "SELECT UPPER(`i_surname`), COUNT(UPPER(`i_surname`))
+					FROM ".PHPGEDVIEW_DB_PREFIX."individuals` WHERE `i_file` = ? AND `i_surname` NOT STARTING '@' $selectSql
+					GROUP BY UPPER(`i_surname`)
+					ORDER BY 1";
+		$query_cant = "SELECT DISTINCT UPPER(`i_surname`)
+					FROM ".PHPGEDVIEW_DB_PREFIX."individuals` WHERE `i_file` = ? AND `i_surname` NOT STARTING '@' $selectSql";
+
+		// If sort mode is versions then offset is 0, maxRecords is -1 (again) and sort_mode is nil
+		// If sort mode is links then offset is 0, maxRecords is -1 (again) and sort_mode is nil
+		// If sort mode is backlinks then offset is 0, maxRecords is -1 (again) and sort_mode is nil
+
+		$ret = array();
+		$this->mDb->StartTrans();
+		$result = $this->mDb->query( $query, $bindVars, $pListHash['max_records'], $pListHash['offset'] );
+		$cant = $this->mDb->query( $query_cant, $bindVars );
+		$this->mDb->CompleteTrans();
+		$ind_total = 0;
+		while( $res = $result->fetchRow() ) {
+			$aux = array();
+			$aux = $res;
+			$ind_total += $res['count'];
+			$ret[] = $aux;
+		}
+
+		$pListHash['cant'] = $cant->NumRows();
+		$pListHash['sub_total'] = $ind_total;
+		LibertyContent::postGetList( $pListHash );
+		return $ret;
+	}
+
 }
 ?>
