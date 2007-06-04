@@ -685,6 +685,8 @@ function pedigreeArray( $id = 0 ) {
 					ORDER BY 1";
 		$query_cant = "SELECT DISTINCT UPPER(`i_surname`)
 					FROM ".PHPGEDVIEW_DB_PREFIX."individuals` WHERE `i_file` = ? AND `i_surname` NOT STARTING '@' $selectSql";
+		$query_tot = "SELECT COUNT(`i_surname`)
+					FROM ".PHPGEDVIEW_DB_PREFIX."individuals` WHERE `i_file` = ? AND `i_surname` NOT STARTING '@' $selectSql";
 
 		// If sort mode is versions then offset is 0, maxRecords is -1 (again) and sort_mode is nil
 		// If sort mode is links then offset is 0, maxRecords is -1 (again) and sort_mode is nil
@@ -693,7 +695,10 @@ function pedigreeArray( $id = 0 ) {
 		$ret = array();
 		$this->mDb->StartTrans();
 		$result = $this->mDb->query( $query, $bindVars, $pListHash['max_records'], $pListHash['offset'] );
+		// total number of surnames
 		$cant = $this->mDb->query( $query_cant, $bindVars );
+		// total number of individuals acorss selected surnames
+		$tot = $this->mDb->getOne( $query_tot, $bindVars );
 		$this->mDb->CompleteTrans();
 		$ind_total = 0;
 		while( $res = $result->fetchRow() ) {
@@ -704,7 +709,7 @@ function pedigreeArray( $id = 0 ) {
 		}
 
 		$pListHash['cant'] = $cant->NumRows();
-		$pListHash['sub_total'] = $ind_total;
+		$pListHash['listInfo']['sub_total'] = $tot;
 		LibertyContent::postGetList( $pListHash );
 		return $ret;
 	}
