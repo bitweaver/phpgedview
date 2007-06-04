@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_surnames.tpl,v 1.2 2007/06/04 09:37:50 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_surnames.tpl,v 1.3 2007/06/04 10:03:21 lsces Exp $ *}
 	<table id="{$table_id}" class="sortable list_table center">
 	<tr>
 	<th class="list_label"> </th>
@@ -14,7 +14,7 @@
 	{foreach from=$surnames key=valId item=value }
 		{if isset($value.upper) }
 			<tr>
-				<td class="list_value_wrap rela list_item">{$valId+1}</td>
+				<td class="list_value_wrap rela list_item">{$valId+1+$listInfo.offset}</td>
 				<td class="list_value_wrap" align="left">
 					<a href="{$url}{$value.upper}" class="list_item name1">{$value.upper}</a>
 				&nbsp;</td>
