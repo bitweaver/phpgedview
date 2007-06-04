@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.5 2006/02/06 22:56:48 squareing Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.6 2007/06/04 09:35:50 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin wiki">
@@ -113,7 +113,6 @@
 					</td></tr>
 				{/section}
 			</table>
-		{/strip}
 
 			{if $checkboxes_on eq 'y'}
 				<div style="text-align:right;">
@@ -142,6 +141,7 @@
 				</div>
 			{/if}
 		{/form}
+		{/strip}
 
 		{pagination}
 	</div><!-- end .body -->
