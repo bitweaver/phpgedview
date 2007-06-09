@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editlang_edit_settings.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: editlang_edit_settings.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
 
 require "config.php";
@@ -50,17 +50,6 @@ if (empty($uname)) {
 
 // Create array with configured languages in gedcoms and users
 $configuredlanguages = array();
-
-// Read GEDCOMS configuration and collect language data
-foreach ($GEDCOMS as $key => $value) {
-  require($value["config"]);
-  $configuredlanguages["gedcom"][$LANGUAGE][$key] = true;
-}
-// Read user configuration and collect language data
-$users = getUsers("username","asc");
-foreach($users as $username=>$user) {
-  $configuredlanguages["users"][$user["language"]][$username] = true;
-}
 
 // Determine whether this language's Active status should be protected
 $protectActive = false;

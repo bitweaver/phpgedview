@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: statisticsplot.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: statisticsplot.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -327,7 +327,7 @@ function myplot($mytitle,$n,$xdata,$xtitle,$ydata,$ytitle,$legend) {
 }
 
 function get_plot_data() {
-	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
+	global $GEDCOM, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 	global $x_as, $y_as, $z_as, $nrfam, $famgeg, $nrpers, $persgeg, $key2ind, $n1;
 	global $legend, $xdata, $ydata, $xmax, $xgrenzen, $zmax, $zgrenzen, $xgiven, $zgiven, $percentage, $man_vrouw;
 	global $pgv_lang;

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_quickupdate.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: edit_quickupdate.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -123,7 +123,7 @@ if ((!$disp)||(!$ALLOW_EDIT_GEDCOM)) {
 
 	print $pgv_lang["access_denied"];
 	//-- display messages as to why the editing access was denied
-	if (!userCanEdit(getUserName())) print "<br />".$pgv_lang["user_cannot_edit"];
+	if (!$gGedcom->isEditable()) print "<br />".$pgv_lang["user_cannot_edit"];
 	if (!$ALLOW_EDIT_GEDCOM) print "<br />".$pgv_lang["gedcom_editing_disabled"];
 	if (!$disp) {
 		print "<br />".$pgv_lang["privacy_prevented_editing"];

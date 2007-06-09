@@ -12,7 +12,7 @@ PHPGEDVIEW_DB_PREFIX.'gedcom' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'individuals' => "
-	i_id C(250) PRIMARY,
+	i_id C(32) PRIMARY,
 	i_file I4 PRIMARY,
 	i_rin C(250),
 	i_name C(250),
@@ -24,7 +24,7 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'families' => "
-	f_id C(250) PRIMARY,
+	f_id C(32) PRIMARY,
 	f_file I4 PRIMARY,
 	f_husb C(250),
 	f_wife C(250),
@@ -35,21 +35,21 @@ PHPGEDVIEW_DB_PREFIX.'families' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'sources' => "
-	s_id C(250) PRIMARY,
+	s_id C(32) PRIMARY,
 	s_file I4 PRIMARY,
 	s_name C(250),
 	s_GEDCOM X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'other' => "
-	o_id C(250) PRIMARY,
+	o_id C(32) PRIMARY,
 	o_file I4 PRIMARY,
 	o_type C(20),
 	o_GEDCOM X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'names' => "
-	n_gid C(250) PRIMARY,
+	n_gid C(32) PRIMARY,
 	n_file I4 PRIMARY,
 	n_name C(250),
 	n_letter C(5),

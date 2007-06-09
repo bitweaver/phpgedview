@@ -34,7 +34,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.7 2007/06/04 09:37:50 lsces Exp $
+ * $Id: indilist.php,v 1.8 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -47,7 +47,7 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gContent = new BitGEDCOM();
+$gGedcom = new BitGEDCOM();
 
 global $SEARCH_SPIDER;
 // Leave until translation stuff moved over to bitweaver
@@ -151,7 +151,7 @@ if ( empty($SEARCH_SPIDER) && (empty($surname)) ) {
 	$gBitSmarty->assign( 'url', "indilist.php?ged=".$GEDCOM."&amp;surname=");
 	$listHash = $_REQUEST;
 	if ( $show_all == 'no') $listHash['letter'] = $alpha;
-	$surname_list = $gContent->listSurnames($listHash);
+	$surname_list = $gGedcom->listSurnames($listHash);
 
 	$gBitSmarty->assign_by_ref( "surnames", $surname_list );
 	$gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
@@ -176,7 +176,7 @@ else {
 		$names = array();
 		foreach($tindilist as $gid => $indi) {
 			//-- make sure that favorites from other gedcoms are not shown
-			if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
+			if ($indi["gedfile"]==$gGedcom->mGEDCOMId) {
 	            foreach($indi["names"] as $indexval => $namearray) {
 		            if ($SHOW_MARRIED_NAMES || $namearray[3]!='C') {
 			            $names[] = array($namearray[0], $namearray[1], $namearray[2], $namearray[3], $gid);

@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: search.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: search.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
  */
 // Include the search controller from now on refered to as $controller
 require_once ("includes/controllers/search_ctrl.php");
@@ -433,7 +433,8 @@ if ($controller->action == "multisite") {
 // If the search is a general or soundex search then possibly display checkboxes for the gedcoms
 if ($controller->action == "general" || $controller->action == "soundex") {
 	// If more than one GEDCOM, switching is allowed AND DB mode is set, let the user select
-	if ((count($GEDCOMS) > 1) && ($ALLOW_CHANGE_GEDCOM)) {
+	$gedcoms = $gGedcom->getList();
+	if ((count($gedcoms) > 1) && ($ALLOW_CHANGE_GEDCOM)) {
 ?>
 	<tr>
 		<td class="list_label" style="padding: 5px;">
@@ -443,7 +444,8 @@ if ($controller->action == "general" || $controller->action == "soundex") {
 			<?php
 
 		$i = 0;
-		foreach ($GEDCOMS as $key => $gedarray) {
+		$gedcoms = $gGedcom->getList();
+		foreach ($gedcoms as $key => $gedarray) {
 			$str = preg_replace(array ("/\./", "/-/", "/ /"), array ("_", "_", "_"), $key);
 			$controller->inputFieldNames[] = "$str";
 			print "<input type=\"checkbox\" ";

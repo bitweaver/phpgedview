@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.7 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: media.php,v 1.8 2007/06/09 21:11:02 lsces Exp $
  */
 
  /* TODO:
@@ -382,7 +382,7 @@ if (check_media_structure()) {
 		$res = $gBitSystem->mDb->query( $sql, array( "%".$myFile ) );
 		$onegedcom = true;
 		while($row=$res->FetchRow()) {
-			if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
+			if ($row['m_gedfile']!=$gGedcom->mGEDCOMId) $onegedcom = false;
 		}
 		if (!$onegedcom) {
 			print "<span class=\"error\">".$pgv_lang["multiple_gedcoms"]."<br /><br /><b>".$pgv_lang["media_file_not_moved"]."</b></span><br />";
@@ -773,7 +773,7 @@ if (check_media_structure()) {
 			$res = $gBitSystem->mDb->query( $sql, array( "%".$myFile ) );
 
 			while($row=$res->fetchRow()) {
-				if ($row["m_gedfile"]!=$GEDCOMS[$GEDCOM]["id"]) $onegedcom = false;
+				if ($row["m_gedfile"]!=$gGedcom->mGEDCOMId) $onegedcom = false;
 				else $xrefs[] = $row["m_media"];
 			}
 			$xrefs = array_unique($xrefs);

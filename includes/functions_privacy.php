@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_privacy.php,v 1.5 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: functions_privacy.php,v 1.6 2007/06/09 21:11:04 lsces Exp $
  * @package PhpGedView
  * @subpackage Privacy
  */
@@ -310,7 +310,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE, $USE_RELATIONSHIP_PRIVACY, $CHECK_MARRIAGE_RELATIONS, $MAX_RELATION_PATH_LENGTH;
 	global $global_facts, $person_privacy, $user_privacy, $HIDE_LIVE_PEOPLE, $GEDCOM, $SHOW_DEAD_PEOPLE, $MAX_ALIVE_AGE, $PRIVACY_BY_YEAR;
 	global $PRIVACY_CHECKS, $PRIVACY_BY_RESN, $SHOW_SOURCES, $SHOW_LIVING_NAMES;
-	global $indilist, $GEDCOMS;
+	global $indilist;
 
 	if (!$HIDE_LIVE_PEOPLE) return true;
 	if (empty($pid)) return true;
@@ -318,7 +318,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 	//-- check if the privacy has been cached and use it
 	if ($type=="INDI" && isset($indilist[$pid]['privacy'])
 			&& isset($indilist[$pid]['gedfile'])
-			&& ($indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id'])) {
+			&& ($indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId)) {
 		return $indilist[$pid]['privacy'];
 	}
 
@@ -328,7 +328,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 
 	//print "checking privacy for $pid<br />";
 	if ($type=="INDI" && isset($indilist[$pid]['gedfile']) 
-		&& $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) $cache_privacy = true;
+		&& $indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId) $cache_privacy = true;
 	else $cache_privacy = false;
 
 	$username = getUserName();
@@ -437,14 +437,14 @@ function displayDetailsByID($pid, $type = "INDI") {
 	if (isset($person_privacy[$pid])) {
 		if ($person_privacy[$pid]>=getUserAccessLevel($username)) {
 			if ($cache_privacy) {
-				$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				$indilist[$pid]['privacy'] = true;
 			}
 			return true;
 		}
 		else {
 			if ($cache_privacy) {
-				$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				$indilist[$pid]['privacy'] = false;
 			}
 			return false;
@@ -478,7 +478,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 				if (($cyear-$dyear) <= $MAX_ALIVE_AGE-25) {
 					if ($cache_privacy) {
 						$indilist[$pid]['privacy'] = false;
-					$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 					}
 					return false;
 				}
@@ -496,7 +496,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 					if (($cyear-$myear) <= $MAX_ALIVE_AGE-15) {
 						if ($cache_privacy) {
 							$indilist[$pid]['privacy'] = false;
-						$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+						$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 						}
 						return false;
 					}
@@ -511,7 +511,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 				if (($cyear-$byear) <= $MAX_ALIVE_AGE) {
 					if ($cache_privacy) {
 						$indilist[$pid]['privacy'] = false;
-					$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 					}
 					return false;
 				}
@@ -523,14 +523,14 @@ function displayDetailsByID($pid, $type = "INDI") {
 			if ($SHOW_DEAD_PEOPLE>=getUserAccessLevel($username)) {
 				if ($cache_privacy) {
 					$indilist[$pid]['privacy'] = true;
-				$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return true;
 			}
 			else {
 				if ($cache_privacy) {
 					$indilist[$pid]['privacy'] = false;
-				$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return false;
 			}
@@ -538,7 +538,7 @@ function displayDetailsByID($pid, $type = "INDI") {
 		else {
 			if (empty($username)) {
 				if ($cache_privacy) {
-					$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 					$indilist[$pid]['privacy'] = false;
 				}
 				return false;
@@ -546,14 +546,14 @@ function displayDetailsByID($pid, $type = "INDI") {
 			if ($SHOW_LIVING_NAMES>getUserAccessLevel($username)) {
 				if ($cache_privacy) {
 					$indilist[$pid]['privacy'] = true;
-				$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return true;
 			}
 			else {
 				if ($cache_privacy) {
 					$indilist[$pid]['privacy'] = false;
-				$indilist[$pid]['gedfile'] = $GEDCOMS[$GEDCOM]['id'];
+				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return false;
 			}

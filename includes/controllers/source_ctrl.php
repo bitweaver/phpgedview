@@ -39,7 +39,6 @@ require_once("config.php");
 require_once('includes/functions_print_facts.php');
 require_once('includes/controllers/basecontrol.php');
 require_once('includes/source_class.php');
-require_once('includes/menu.php');
 require_once($factsfile["english"]);
 if (file_exists($factsfile[$LANGUAGE])) require_once($factsfile[$LANGUAGE]);
 

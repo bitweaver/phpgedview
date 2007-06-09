@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Edit
  * @see functions_places.php
- * @version $Id: functions_edit.php,v 1.4 2007/05/27 14:45:35 lsces Exp $
+ * @version $Id: functions_edit.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -57,13 +57,11 @@ $typefacts = array();	//-- special facts that go on 2 TYPE lines
  */
 function read_gedcom_file() {
 	global $fcontents;
-	global $GEDCOM, $GEDCOMS;
-	global $pgv_lang;
 	$fcontents = "";
-	if (isset($GEDCOMS[$GEDCOM])) {
+	if (isset($gGedcom)) {
 		file_locked_wait();
-		$fp = fopen($GEDCOMS[$GEDCOM]["path"], "r");
-		$fcontents = fread($fp, filesize($GEDCOMS[$GEDCOM]["path"]));
+		$fp = fopen($gGedcom->getPath(), "r");
+		$fcontents = fread($fp, filesize($gGedcom->getPath()));
 		fclose($fp);
 	}
 }
@@ -364,7 +362,7 @@ function check_gedcom($gedrec, $chan=true) {
  * @return boolean	true if undo successful
  */
 function undo_change($cid, $index) {
-	global $fcontents, $pgv_changes, $GEDCOMS, $GEDCOM, $manual_save, $gBitUser;
+	global $fcontents, $pgv_changes, $GEDCOM, $manual_save, $gBitUser;
 
 	if (isset($pgv_changes[$cid])) {
 		$changes = $pgv_changes[$cid];
@@ -433,17 +431,17 @@ function undo_change($cid, $index) {
 //-- this function writes the $fcontents back to the
 //-- gedcom file
 function write_file() {
-	global $fcontents, $GEDCOMS, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY, $gBitUser;
+	global $fcontents, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY, $gBitUser;
 
 	if (preg_match("/0 TRLR/", $fcontents)==0) $fcontents.="0 TRLR\n";
 	//-- write the gedcom file
-	if (!is_writable($GEDCOMS[$GEDCOM]["path"])) {
+	if (!is_writable($gGedcom->getPath())) {
 		print "ERROR 5: GEDCOM file is not writable.  Unable to complete request.\n";
 		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . $gBitUser->mUsername ."<-");
 		return false;
 	}
 	lock_file();
-	$fp = fopen($GEDCOMS[$GEDCOM]["path"], "wb");
+	$fp = fopen($gGedcom->getPath(), "wb");
 	if ($fp===false) {
 		print "ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request.\n";
 		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . $gBitUser->mUsername ."<-");
@@ -467,8 +465,8 @@ function write_file() {
 //	$fl = flock($fp, LOCK_UN);
 	fclose($fp);
 	unlock_file();
-	$logline = AddToLog($GEDCOMS[$GEDCOM]["path"]." updated by >".$gBitUser->mUsername."<");
- 	if (!empty($COMMIT_COMMAND)) check_in($logline, basename($GEDCOMS[$GEDCOM]["path"]), dirname($GEDCOMS[$GEDCOM]["path"]));
+	$logline = AddToLog($gGedcom->getPath()." updated by >".$gBitUser->mUsername."<");
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, basename($gGedcom->getPath()), dirname($gGedcom->getPath()));
 
 	return write_changes();
 }
@@ -477,7 +475,7 @@ function write_file() {
  * obtain a lock on the current GEDCOM file
  */
 function lock_file() {
-	global $GEDCOMS, $GEDCOM, $INDEX_DIRECTORY;
+	global $GEDCOM, $INDEX_DIRECTORY;
 
 	file_locked_wait();
 	$fp = fopen($INDEX_DIRECTORY.$GEDCOM.".lock", "wb");
@@ -488,7 +486,7 @@ function lock_file() {
  * block until the file lock is released
  */
 function file_locked_wait() {
-	global $GEDCOMS, $GEDCOM, $INDEX_DIRECTORY;
+	global $GEDCOM, $INDEX_DIRECTORY;
 
 	$sleep_count = 0;
 	while(file_exists($INDEX_DIRECTORY.$GEDCOM.".lock") && $sleep_count<100) {
@@ -507,7 +505,7 @@ function file_locked_wait() {
  * unlock the GEDCOM file
  */
 function unlock_file() {
-	global $GEDCOMS, $GEDCOM, $INDEX_DIRECTORY;
+	global $GEDCOM, $INDEX_DIRECTORY;
 
 	@unlink($INDEX_DIRECTORY.$GEDCOM.".lock");
 }

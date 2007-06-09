@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: changelanguage.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: changelanguage.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
  
 require "config.php";
@@ -67,20 +67,6 @@ print "</script>\n";
 
 // Create array with configured languages in gedcoms and users
 $configuredlanguages = array();
-
-// Read GEDCOMS configuration and collect language data
-foreach ($GEDCOMS as $key => $value) {
-	require($value["config"]);
-	if (!isset($configuredlanguages["gedcom"][$LANGUAGE][$key])) $configuredlanguages["gedcom"][$LANGUAGE][$key] = TRUE;
-}
-// Restore the current settings
-require($GEDCOMS[$GEDCOM]["config"]);
-
-// Read user configuration and collect language data
-$users = getUsers("username","asc");
-foreach($users as $username=>$user) {
-	if (!isset($configuredlanguages["users"][$user["language"]][$username])) $configuredlanguages["users"][$user["language"]][$username] = TRUE;
-}
 
 // Sort the Language table into localized language name order
 foreach ($pgv_language as $key => $value){

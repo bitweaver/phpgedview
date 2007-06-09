@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.9 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.10 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -99,7 +99,7 @@ if ($action == "download" && $zip == "yes") {
 if ($action == "download") {
 	header("Content-Type: text/plain; charset=$CHARACTER_SET");
 	if ($filetype == "gedcom") {
-		header("Content-Disposition: attachment; filename=$ged; size=" . filesize($GEDCOMS[$GEDCOM]["path"]));
+		header("Content-Disposition: attachment; filename=$ged; size=" . filesize($gGedcom->getPath()));
 		print_gedcom($privatize_export, $privatize_export_level, $convert, $remove, $zip);
 	} else
 		if ($filetype == "gramps") {

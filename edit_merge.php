@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_merge.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: edit_merge.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -257,11 +257,6 @@ if ($action=="choose") {
 	print "&nbsp;</td><td>";
 	print "<input type=\"text\" name=\"gid1\" value=\"$gid1\" size=\"10\" /> ";
 	print "<select name=\"ged\">\n";
-	foreach($GEDCOMS as $gedc=>$gedarray) {
-		print "<option value=\"$gedc\"";
-		if ($GEDCOM==$gedc) print " selected=\"selected\"";
-		print ">".$gedarray["title"]."</option>\n";
-	}
 	print "</select>\n";
 	print "<a href=\"javascript:iopen_find(document.merge.gid1, document.merge.ged);\"> ".$pgv_lang["find_individual"]."</a> |";
 	print " <a href=\"javascript:fopen_find(document.merge.gid1, document.merge.ged);\"> ".$pgv_lang["find_familyid"]."</a> |";
@@ -272,11 +267,6 @@ if ($action=="choose") {
 	print "&nbsp;</td><td>";
 	print "<input type=\"text\" name=\"gid2\" value=\"$gid2\" size=\"10\" /> ";
 	print "<select name=\"ged2\">\n";
-	foreach($GEDCOMS as $gedc=>$gedarray) {
-		print "<option value=\"$gedc\"";
-		if ($GEDCOM==$gedc) print " selected=\"selected\"";
-		print ">".$gedarray["title"]."</option>\n";
-	}
 	print "</select>\n";
 	print "<a href=\"javascript:iopen_find(document.merge.gid2, document.merge.ged2);\"> ".$pgv_lang["find_individual"]."</a> |";
 	print "<a href=\"javascript:fopen_find(document.merge.gid2, document.merge.ged2);\"> ".$pgv_lang["find_familyid"]."</a> |";

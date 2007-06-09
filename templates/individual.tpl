@@ -1,53 +1,4 @@
-<?php
-/**
- * Individual Page
- *
- * Display all of the information about an individual
- *
- * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * @package PhpGedView
- * @subpackage Charts
- * @version $Id$
- */
-
-// Initialization
-require_once( '../bit_setup_inc.php' );
-
-// Is package installed and enabled
-$gBitSystem->verifyPackage( 'phpgedview' );
-
-include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
-
-$gGedcom = new BitGEDCOM();
-
-// leave manual config until we can move it to bitweaver table 
-require_once("includes/controllers/individual_ctrl.php");
-//require_once("includes/serviceclient_class.php");
-
-if (file_exists("modules/googlemap/".$pgv_language["english"])) require("modules/googlemap/".$pgv_language["english"]);
-if (file_exists("modules/googlemap/".$pgv_language[$LANGUAGE])) require("modules/googlemap/".$pgv_language[$LANGUAGE]);
-
-global $USE_THUMBS_MAIN;
-global $linkToID;
-global $SEARCH_SPIDER;
-
-print_header($controller->getPageTitle());
+// print_header($controller->getPageTitle());
 
 if (!$controller->indi->canDisplayName()) {
    print_privacy_error($CONTACT_EMAIL);
@@ -98,7 +49,7 @@ $linkToID = $controller->pid;	// -- Tell addmedia.php what to link to
 				}
 			}
 			//-- - put the birth info in this section
-			$birthrec = $controller->indi->getBirthRecord();
+			$birthrec = $controller->indi->getBirthRecord(false);
 			$deathrec = $controller->indi->getDeathRecord(false);
 			if ((!empty($birthrec)) || (!empty($deathrec)) || $SHOW_LDS_AT_GLANCE) {
 				$colspan = 0;
@@ -660,6 +611,10 @@ foreach($families as $famid=>$family) {
 				<td class="facts_label"><?php echo $pgv_lang["add_child_to_family"]; ?></td>
 				<td class="facts_value"><?php print_help_link("add_sibling_help", "qm"); ?>
 					<a href="javascript:;" onclick="return addnewchild('<?php print $family->getXref(); ?>');"><?php print $pgv_lang["add_sibling"]; ?></a>
+					<span style='white-space:nowrap;'>
+						<a href="javascript:;" onclick="return addnewchild('<?php print $family->getXref(); ?>','M');"><?php print "[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sex"]["small"] . "\" title=\"" . $pgv_lang["brother"] . "\" alt=\"" . $pgv_lang["brother"] . "\" class=\"sex_image\" />]"?></a>
+						<a href="javascript:;" onclick="return addnewchild('<?php print $family->getXref(); ?>','F');"><?php print "[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sexf"]["small"] . "\" title=\"" . $pgv_lang["sister"] . "\" alt=\"" . $pgv_lang["sister"] . "\" class=\"sex_image\" />]"?></a>
+					</span>
 				</td>
 			</tr>
 			<?php
@@ -916,6 +871,10 @@ foreach($families as $famid=>$family) {
 				<td class="facts_label"><?php echo $pgv_lang["add_child_to_family"]; ?></td>
 				<td class="facts_value"><?php print_help_link("add_son_daughter_help", "qm"); ?>
 					<a href="javascript:;" onclick="return addnewchild('<?php print $family->getXref(); ?>');"><?php print $pgv_lang["add_son_daughter"]; ?></a>
+					<span style='white-space:nowrap;'>
+						<a href="javascript:;" onclick="return addnewchild('<?php print $family->getXref(); ?>','M');"><?php print "[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sex"]["small"] . "\" title=\"" . $pgv_lang["son"] . "\" alt=\"" . $pgv_lang["son"] . "\" class=\"sex_image\" />]"?></a>
+						<a href="javascript:;" onclick="return addnewchild('<?php print $family->getXref(); ?>','F');"><?php print "[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sexf"]["small"] . "\" title=\"" . $pgv_lang["daughter"] . "\" alt=\"" . $pgv_lang["daughter"] . "\" class=\"sex_image\" />]"?></a>
+					</span>
 				</td>
 			</tr>
 			<?php
@@ -1076,4 +1035,3 @@ else {
 	print $pgv_lang["label_search_engine_detected"].": ".$SEARCH_SPIDER;
 	print "\n</div>\n\t</body>\n</html>";
 }
-?>

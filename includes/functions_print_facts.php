@@ -99,7 +99,7 @@ function print_fact($factrec, $pid, $linenum, $indirec=false) {
 			   print $factarray[$fact];
 			   if ($fact=="_BIRT_CHIL" and isset($n_chil)) print "<br />".$pgv_lang["number_sign"].$n_chil++;
 			   if ($fact=="_BIRT_GCHI" and isset($n_gchi)) print "<br />".$pgv_lang["number_sign"].$n_gchi++;
-			   if ((userCanEdit(getUserName()))&&($styleadd!="change_old")&&($linenum>0)&&($view!="preview")&&(!FactEditRestricted($pid, $factrec))) {
+			   if (($gGedcom->isEditable())&&($styleadd!="change_old")&&($linenum>0)&&($view!="preview")&&(!FactEditRestricted($pid, $factrec))) {
 					$menu = array();
 					$menu["label"] = $pgv_lang["edit"];
 					$menu["labelpos"] = "right";
@@ -171,7 +171,7 @@ function print_fact($factrec, $pid, $linenum, $indirec=false) {
 			   print "<td class=\"descriptionbox $styleadd center width20\">";
 			   if ($SHOW_FACT_ICONS && file_exists($PGV_IMAGE_DIR."/facts/".$factref.".gif")) print "<img src=\"".$PGV_IMAGE_DIR."/facts/".$factref.".gif\" alt=\"".$label."\" title=\"".$label."\" align=\"middle\" /> ";
 			   print $label;
-			   if ((userCanEdit(getUserName()))&&($styleadd!="change_old")&&($linenum>0)&&($view!="preview")&&(!FactEditRestricted($pid, $factrec))) {
+			   if (($gGedcom->isEditable())&&($styleadd!="change_old")&&($linenum>0)&&($view!="preview")&&(!FactEditRestricted($pid, $factrec))) {
 				   $menu = array();
 					$menu["label"] = $pgv_lang["edit"];
 					$menu["labelpos"] = "right";
@@ -545,7 +545,7 @@ function print_fact_sources($factrec, $level) {
 
 //-- Print the links to multi-media objects
 function print_media_links($factrec, $level,$pid='') {
-	 global $MULTI_MEDIA, $TEXT_DIRECTION, $GEDCOMS, $MEDIATYPE;
+	 global $MULTI_MEDIA, $TEXT_DIRECTION, $MEDIATYPE;
 	 global $pgv_lang, $factarray, $SEARCH_SPIDER, $view;
 	 global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $MEDIA_EXTERNAL, $THUMBNAIL_WIDTH;
 	 global $PGV_IMAGE_DIR, $PGV_IMAGES;
@@ -559,7 +559,7 @@ function print_media_links($factrec, $level,$pid='') {
 	 while ($objectNum < count($omatch)) {
 		$media_id = preg_replace("/@/", "", trim($omatch[$objectNum][1]));
 		if (displayDetailsById($media_id, "OBJE")) {
-			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$media_id."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
+			$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$media_id."' AND m_gedfile = '".$gGedcom->mGEDCOMId."'";
 			$tempsql = $gBitSystem->mDb->query($sql);
 			$res =& $tempsql;
 			$row =& $res->FetchRow();
@@ -794,7 +794,7 @@ function print_main_sources($factrec, $level, $pid, $linenum) {
 		  //print "\n\t\t\t<tr><td class=\"facts_label$styleadd\">";
 		  print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["source"]["small"]."\" alt=\"\" /><br />";
 		  print $factarray["SOUR"];
-		  if (userCanEdit(getUserName())&&(!FactEditRestricted($pid, $factrec))&&($styleadd!="red")&&($view!="preview")) {
+		  if ($gGedcom->isEditable()&&(!FactEditRestricted($pid, $factrec))&&($styleadd!="red")&&($view!="preview")) {
 			  $menu = array();
 				$menu["label"] = $pgv_lang["edit"];
 				$menu["labelpos"] = "right";
@@ -942,7 +942,7 @@ function print_main_notes($factrec, $level, $pid, $linenum) {
 		  $nrec = substr($factrec, $spos1, $spos2-$spos1);
 		  if (!showFact("NOTE", $pid)||FactViewRestricted($pid, $factrec)) return false;
 		  print "\n\t\t<tr><td valign=\"top\" class=\"descriptionbox $styleadd center width20\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["notes"]["small"]."\" alt=\"\" /><br />".$factarray["NOTE"];
-		  if (userCanEdit(getUserName())&&(!FactEditRestricted($pid, $factrec))&&($styleadd!="red")&&($view!="preview")) {
+		  if ($gGedcom->isEditable()&&(!FactEditRestricted($pid, $factrec))&&($styleadd!="red")&&($view!="preview")) {
 			$menu = array();
 			$menu["label"] = $pgv_lang["edit"];
 			$menu["labelpos"] = "right";
@@ -1030,7 +1030,7 @@ function print_main_notes($factrec, $level, $pid, $linenum) {
 function print_main_media($pid, $level=1, $related=false) {
 	global $MULTI_MEDIA, $SHOW_ID_NUMBERS, $SHOW_FAM_ID_NUMBERS, $MEDIA_EXTERNAL;
 	global $pgv_lang, $pgv_changes, $factarray, $view;
-	global $GEDCOMS, $GEDCOM, $MEDIATYPE, $pgv_changes, $gBitSystem, $DBTYPE;
+	global $GEDCOM, $MEDIATYPE, $pgv_changes, $gBitSystem, $DBTYPE;
 	global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION;
 
 	if (!showFact("OBJE", $pid)) return false;
@@ -1066,7 +1066,7 @@ function print_main_media($pid, $level=1, $related=false) {
 		$args[] = $id;
 		$i++;
 	}
-	$sqlmm .= ") AND mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' AND mm_media=m_media AND mm_gedfile=m_gedfile ";
+	$sqlmm .= ") AND mm_gedfile = '".$gGedcom->mGEDCOMId."' AND mm_media=m_media AND mm_gedfile=m_gedfile ";
 	//-- for family and source page only show level 1 obje references
 	if ($level>0) $sqlmm .= "AND mm_gedrec LIKE '$level OBJE%'";
 
@@ -1196,7 +1196,7 @@ function print_main_media_row($rtype, $rowm, $pid) {
 
 	$linenum = 0;
 	print "\n\t\t<tr><td class=\"descriptionbox $styleadd center width20\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["media"]["small"]."\" alt=\"\" /><br />".$factarray["OBJE"];
-	if ($rowm['mm_gid']==$pid && userCanEdit(getUserName()) && (!FactEditRestricted($rowm['m_media'], $rowm['m_gedrec'])) && ($styleadd!="change_old") && ($view!="preview")) {
+	if ($rowm['mm_gid']==$pid && $gGedcom->isEditable() && (!FactEditRestricted($rowm['m_media'], $rowm['m_gedrec'])) && ($styleadd!="change_old") && ($view!="preview")) {
 		$encodedFileName = rawurlencode($rowm["m_file"]);
 		$menu = array();
 		$menu["label"] = $pgv_lang["edit"];

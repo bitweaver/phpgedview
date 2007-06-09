@@ -42,7 +42,6 @@ require_once 'includes/functions_print_facts.php';
 require_once 'includes/controllers/basecontrol.php';
 require_once 'includes/functions_charts.php';
 require_once 'includes/family_class.php';
-require_once 'includes/menu.php';
 require_once $factsfile['english'];
 if (file_exists($factsfile[$LANGUAGE]))
 {
@@ -478,7 +477,7 @@ class FamilyRoot extends BaseController
 		if ($SHOW_GEDCOM_RECORD)
 		{
 			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['gedcom']['small']}");
-			if ($_REQUEST['show_changes'] == 'yes'  && userCanEdit(getUserName()))
+			if ($_REQUEST['show_changes'] == 'yes'  && $gGedcom->isEditable())
 			{
 				$menu->addLink("javascript:show_gedcom_record('new');");
 			}
@@ -497,7 +496,7 @@ class FamilyRoot extends BaseController
 		{
 				// other / view_gedcom
 				$submenu = new Menu($pgv_lang['view_gedcom']);
-				if ($_REQUEST['show_changes'] == 'yes'  && userCanEdit(getUserName()))
+				if ($_REQUEST['show_changes'] == 'yes'  && $gGedcom->isEditable())
 				{
 					$submenu->addLink("javascript:show_gedcom_record('new');");
 				}

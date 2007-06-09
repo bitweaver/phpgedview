@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: gedcomrecord.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: gedcomrecord.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -81,25 +81,25 @@ class GedcomRecord {
 	 * @param string $pid	the ID of the object to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $indilist, $famlist, $sourcelist, $repolist, $otherlist, $GEDCOM, $GEDCOMS, $pgv_changes;
+		global $indilist, $famlist, $sourcelist, $repolist, $otherlist, $GEDCOM, $pgv_changes;
 
 		//-- first check for the object in the cache
-		if (isset($indilist[$pid]) && $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($indilist[$pid]) && $indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($indilist[$pid]['object'])) return $indilist[$pid]['object'];
 		}
-		if (isset($famlist[$pid]) && $famlist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($famlist[$pid]) && $famlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($famlist[$pid]['object'])) return $famlist[$pid]['object'];
 		}
-		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($sourcelist[$pid]['object'])) return $sourcelist[$pid]['object'];
 		}
-		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($repolist[$pid]['object'])) return $repolist[$pid]['object'];
 		}
-		if (isset($objectlist[$pid]) && $objectlist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($objectlist[$pid]) && $objectlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($objectlist[$pid]['object'])) return $objectlist[$pid]['object'];
 		}
-		if (isset($otherlist[$pid]) && $otherlist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($otherlist[$pid]) && $otherlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($otherlist[$pid]['object'])) return $otherlist[$pid]['object'];
 		}
 
@@ -119,7 +119,7 @@ class GedcomRecord {
 		}
 		//-- check if it is a new object not yet in the database
 		if (empty($indirec)) {
-			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -263,9 +263,9 @@ class GedcomRecord {
 	 * @return string
 	 */
 	function getLinkTitle() {
-		global $GEDCOM, $GEDCOMS;
+		global $gGedcom;
 
-		$title = $GEDCOMS[$GEDCOM]['title'];
+		$title = $gGedcom->mInfo['title'];
 		if ($this->isRemote()) {
 			$parts = preg_split("/:/", $this->rfn);
 			if (count($parts)==2) {
@@ -312,7 +312,7 @@ class GedcomRecord {
 	function isMarkedDeleted() {
 		global $pgv_changes, $GEDCOM;
 
-		if (!userCanEdit(getUserName())) return false;
+		if (!$gGedcom->isEditable()) return false;
 		if (isset($pgv_changes[$this->xref."_".$GEDCOM])) {
 			$change = end($pgv_changes[$this->xref."_".$GEDCOM]);
 			if ($change['type']=='delete') return true;

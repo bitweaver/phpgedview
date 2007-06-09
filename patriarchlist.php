@@ -32,7 +32,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: patriarchlist.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: patriarchlist.php,v 1.6 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -270,7 +270,7 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	$indi_hide=array();
 	foreach($tpatrilist as $gid=>$fam) {
 	//-- make sure that favorites from other gedcoms are not shown
-    	if ($fam["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
+    	if ($fam["gedfile"]==$gGedcom->mGEDCOMId) {
 			// Added space to regexp after z to also remove prefixes
 
 			if (displayDetailsById($gid)||showLivingNameById($gid)) {          //-- MA @@@@
@@ -327,7 +327,7 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	$indi_hide=array();
 	foreach($tpatrilist as $gid=>$fam) {
 	//-- make sure that favorites from other gedcoms are not shown
-        if ($fam["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
+        if ($fam["gedfile"]==$gGedcom->mGEDCOMId) {
 			if (displayDetailsById($gid)||showLivingNameById($gid)) {          //-- MA @@@@
 				extract_surname($fam["name"]);                                 //-- MA @@@@
 			}
@@ -393,7 +393,7 @@ else {
 	$surnames = array();
 	foreach($tpatrilist as $gid=>$fam) {
 		//-- make sure that favorites from other gedcoms are not shown
-		if ($fam["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
+		if ($fam["gedfile"]==$gGedcom->mGEDCOMId) {
 			if (!empty($names[1])) $firstname = trim($names[1]);
 			else $firstname = "";
 			$names = preg_split("/[,+]/", $fam["name"]);

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: slklist.php,v 1.1 2005/12/29 18:25:56 lsces Exp $
+ * @version $Id: slklist.php,v 1.2 2007/06/09 21:11:02 lsces Exp $
  */
 
 /*=================================================
@@ -456,7 +456,7 @@ function filltabs()
 //--	filltabs will read the list of patriarch-s and the EXCEL tabs they should be listed on.
 
 global $numtabs,$patriarch,$exceltab;
-	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
+	global $GEDCOM, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
 	$numtabs= 0;
 define ("fullist",0);
@@ -588,16 +588,16 @@ global $tabname, $begintab;
 
 //--	======================= following routines for saving 'roots' ============================
 function check_dbkaasnotused() {
-	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
+	global $GEDCOM, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
 	$indexfile = $INDEX_DIRECTORY.$GEDCOM."_index.php";
 
 	//-- check for index files and update them if necessary
 	if (!isset($BUILDING_INDEX)) {
 		$updateindex=false;
-		if ((file_exists($indexfile))&&(file_exists($GEDCOMS[$GEDCOM]["path"]))) {
+		if ((file_exists($indexfile))&&(file_exists($gGedcom->getPath()))) {
 			$indextime = filemtime($indexfile);
-			$gedtime = filemtime($GEDCOMS[$GEDCOM]["path"]);
+			$gedtime = filemtime($gGedcom->getPath());
 			if ($indextime < $gedtime) $updateindex=true;
 		}
 		else {
@@ -1158,7 +1158,7 @@ global $match1,$match2,$usedinitials;
 global $pgv_lang;
 global $posnr,$ALLslk;
 global $tabname, $begintab;
-	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
+	global $GEDCOM, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
 	$first= 1;
 	$oldtabblad= "1";

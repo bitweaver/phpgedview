@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: statistics.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: statistics.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -325,7 +325,7 @@ global $match1,$match2;
 
 function put_plot_data()
 {
-	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY;
+	global $GEDCOM, $INDEX_DIRECTORY;
 global $nrfam, $famgeg, $nrpers, $persgeg,$key2ind,$nrman,$nrvrouw;
 global $pgv_lang;
 

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: addremotelink.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: addremotelink.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
 
 require_once("config.php");
@@ -116,7 +116,7 @@ if ($action=="addlink") {
 
 		$gedcom_string = "0 @new@ SOUR\r\n";
 		$title = $server_name;
-		if (isset($GEDCOMS[$gedcom_id])) $title = $GEDCOMS[$gedcom_id]["title"];
+		if (isset($$gGedcom)) $title = $gGedcom->getTitle();
 		$gedcom_string.= "1 TITL ".$title."\r\n";
 		$gedcom_string.= "1 URL ".$SERVER_URL."\r\n";
 		$gedcom_string.= "1 _DBID ".$gedcom_id."\r\n";
@@ -288,7 +288,6 @@ function swapComponents(btnPressed){
     }else{
         tdblah.innerHTML = '<?php print preg_replace(array("/'/", "/[\r\n]+/"), array("\\'", " "), print_help_link("link_gedcom_id_help", "qm", "", false, true));?> <?php echo $pgv_lang['label_gedcom_id'];?>';
         tdId.innerHTML = '<?php print preg_replace(array("/'/", "/[\r\n]+/"), array("\\'", " "), print_help_link("link_person_id_help", "qm", "", false, true));?> <?php echo $pgv_lang['label_local_id'];?>';
-        tdblah2.innerHTML = '<select id="cbGedcomId" name="cbGedcomId" style="width: 200px;"><?php foreach($GEDCOMS as $ged){?><option><?php print $ged["gedcom"];?></option><?php }?></select><br />';
 
     }
 }

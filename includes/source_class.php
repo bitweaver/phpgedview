@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: source_class.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: source_class.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -55,9 +55,9 @@ class Source extends GedcomRecord {
 	 * @param string $pid	the ID of the source to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $sourcelist, $GEDCOM, $GEDCOMS, $pgv_changes;
+		global $sourcelist, $GEDCOM, $pgv_changes;
 
-		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($sourcelist[$pid]['object'])) return $sourcelist[$pid]['object'];
 		}
 
@@ -73,7 +73,7 @@ class Source extends GedcomRecord {
 			}
 		}
 		if (empty($sourcerec)) {
-			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$sourcerec = find_updated_record($pid);
 				$fromfile = true;
 			}

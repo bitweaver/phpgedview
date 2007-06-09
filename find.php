@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: find.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: find.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -437,7 +437,7 @@ if ($action=="filter") {
 		else {
 			$myindilist = search_indis_names($filter);
 			foreach($myindilist as $key1 => $myindi) {
-				$famquery[] = array($key1, $GEDCOMS[$GEDCOM]['id']);
+				$famquery[] = array($key1, $gGedcom->mGEDCOMId);
 			}
 			$cti=count($famquery);
 			$printname = array();

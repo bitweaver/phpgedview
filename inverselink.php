@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: inverselink.php,v 1.4 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: inverselink.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
@@ -55,7 +55,7 @@ else if (empty($linktoid)) $paramok = false;
 print_simple_header($pgv_lang["link_media"]." ".$toitems);
 
 //-- check for admin
-$paramok =  userCanEdit(getUserName());
+$paramok =  $gGedcom->isEditable();
 if (!empty($linktoid)) $paramok = displayDetails(find_gedcom_record($linktoid));
 
 if ($action == "choose" && $paramok) {
@@ -99,7 +99,7 @@ if ($action == "choose" && $paramok) {
 	print "<tr><td class=\"descriptionbox width20 wrap\">".$pgv_lang["media_id"]."</td>";
 	if (!empty($mediaid)) {
 		//-- Get the title of this existing Media item
-		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$mediaid."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
+		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$mediaid."' AND m_gedfile = '".$gGedcom->mGEDCOMId."'";
 		$tempsql = $gGedcom->mDb->query($sql);
 		$res =& $tempsql;
 		$row =& $res->fetchRow();

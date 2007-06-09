@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.20 2007/06/02 13:13:22 lsces Exp $
+ * @version $Id: functions_db.php,v 1.21 2007/06/09 21:11:04 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -50,21 +50,8 @@ $SQL_LOG = false;
  * @return bool return true if the gedcom has been imported otherwise returns false
  */
 function check_for_import($ged) {
-	global $BUILDING_INDEX, $GEDCOMS, $gBitSystem;
-	if (!isset($GEDCOMS[$ged]["imported"])) {
-		$GEDCOMS[$ged]["imported"] = false;
-		$sql = "SELECT count(i_id) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$ged]["id"] ));
-
-		if ($res) {
-			$row = $res->fetchRow();
-			if ($row['count'] > 0) {
-				$GEDCOMS[$ged]["imported"] = true;
-			}
-		}
-		store_gedcoms();
-	}
-	return $GEDCOMS[$ged]["imported"];
+	global $gGedcom;
+	return $gGedcom->isImported();
 }
 
 /**
@@ -79,15 +66,15 @@ function check_for_import($ged) {
  * @return string the raw gedcom record is returned
  */
 function find_family_record($famid, $gedfile="") {
-	global $GEDCOMS, $GEDCOM, $famlist, $gBitSystem;
+	global $gGedcom, $famlist, $gBitSystem;
 
 	if (empty($famid)) return false;
-	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (empty($gedfile)) $gedfile = $gGedcom->mGedcomName;
 
-	if (isset($famlist[$famid]["gedcom"])&&($famlist[$famid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $famlist[$famid]["gedcom"];
+	if (isset($famlist[$famid]["gedcom"])&&($famlist[$famid]["gedfile"]==$gGedcom->mGEDCOMId)) return $famlist[$famid]["gedcom"];
 
 	$sql = "SELECT f_gedcom, f_file, f_husb, f_wife FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_id LIKE ? AND f_file=?";
-	$res = $gBitSystem->mDb->query($sql, array($famid,$GEDCOMS[$gedfile]["id"]));
+	$res = $gBitSystem->mDb->query($sql, array($famid,$gGedcom->mGEDCOMId));
 
 	$row = $res->fetchRow();
 
@@ -109,17 +96,17 @@ function find_family_record($famid, $gedfile="") {
 function load_families($ids, $gedfile='') {
 	global $pgv_lang;
 	global $TBLPREFIX;
-	global $GEDCOM, $GEDCOMS;
+	global $gGedcom;
 	global $BUILDING_INDEX, $famlist;
 	
-	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (empty($gedfile)) $gedfile = $gGedcom->mGedcomName;
 	if (!is_int($gedfile)) $gedfile = get_gedcom_from_id($gedfile);
 	
 	$sql = "SELECT f_gedcom, f_file, f_husb, f_wife, f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_id IN (";
 	//-- don't load up families who are already loaded
 	$idsadded = false;
 	foreach($ids as $k=>$id) {
-		if ((!isset($famlist[$id]["gedcom"])) || ($famlist[$id]["gedfile"]!=$GEDCOMS[$gedfile]["id"])) {
+		if ((!isset($famlist[$id]["gedcom"])) || ($famlist[$id]["gedfile"]!=$gGedcom->mGEDCOMId)) {
 			$sql .= "'".($id)."',";
 			$idsadded = true;
 		}
@@ -128,7 +115,7 @@ function load_families($ids, $gedfile='') {
 	$sql = rtrim($sql,',');
 	$sql .= ") AND f_file = ? ";
 	
-	$res = $gBitSystem->mDb->query($sql, array($GEDCOMS[$gedfile]["id"]));
+	$res = $gBitSystem->mDb->query($sql, array($gGedcom->mGEDCOMId));
 
 	if (!$res) {
 		if ($res->numRows()==0) {
@@ -157,7 +144,7 @@ function load_families($ids, $gedfile='') {
  */
 function find_person_record($pid, $gedfile="") {
 	global $pgv_lang;
-	global $GEDCOM, $GEDCOMS;
+	global $GEDCOM, $gGedcom;
 	global $BUILDING_INDEX, $indilist, $gBitSystem;
 
 	if (empty($pid)) return false;
@@ -166,10 +153,10 @@ function find_person_record($pid, $gedfile="") {
 	if ($gedfile>=1) $gedfile = get_gedcom_from_id($gedfile);
 	//-- first check the indilist cache
 	// cache is unreliable for use with different gedcoms in user favorites (sjouke)
-	if ((isset($indilist[$pid]["gedcom"]))&&($indilist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $indilist[$pid]["gedcom"];
+	if ((isset($indilist[$pid]["gedcom"]))&&($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $indilist[$pid]["gedcom"];
 
 	$sql = "SELECT i_gedcom, i_name, i_isdead, i_file, i_letter, i_surname FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_id LIKE ? AND i_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $pid ,$GEDCOMS[$gedfile]["id"] ));
+	$res = $gBitSystem->mDb->query($sql, array( $pid ,$gGedcom->mGEDCOMId ));
 
 	if ($res) {
 		if ($res->numRows()==0) {
@@ -198,7 +185,7 @@ function find_person_record($pid, $gedfile="") {
 function load_people($ids, $gedfile='') {
 	global $pgv_lang;
 	global $TBLPREFIX;
-	global $GEDCOM, $GEDCOMS;
+	global $GEDCOM;
 	global $BUILDING_INDEX, $indilist;
 	
 	if (count($ids)==0) return false;
@@ -210,7 +197,7 @@ function load_people($ids, $gedfile='') {
 	//-- don't load up people who are already loaded
 	$idsadded = false;
 	foreach($ids as $k=>$id) {
-		if ((!isset($indilist[$id]["gedcom"])) || ($indilist[$id]["gedfile"]!=$GEDCOMS[$gedfile]["id"])) {
+		if ((!isset($indilist[$id]["gedcom"])) || ($indilist[$id]["gedfile"]!=$gGedcom->mGEDCOMId)) {
 			$sql .= "'".$id."',";
 			$idsadded = true;
 		}
@@ -219,7 +206,7 @@ function load_people($ids, $gedfile='') {
 	$sql = rtrim($sql,',');
 	$sql .= ") AND i_file= ?";
 	
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$gedfile]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	if (!DB::isError($res)) {
 		if ($res->numRows()==0) {
@@ -248,18 +235,18 @@ function load_people($ids, $gedfile='') {
  */
 function find_gedcom_record($pid, $gedfile = "") {
 	global $pgv_lang;
-	global $GEDCOMS, $MEDIA_ID_PREFIX;
-	global $GEDCOM, $indilist, $famlist, $sourcelist, $objectlist, $otherlist, $gBitSystem;
+	global $MEDIA_ID_PREFIX;
+	global $gGedcom, $indilist, $famlist, $sourcelist, $objectlist, $otherlist, $gBitSystem;
 
 	if (empty($pid)) return false;
-	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (empty($gedfile)) $gedfile = $gGedcom->mGedcomName;
 
-	if ((isset($indilist[$pid]["gedcom"]))&&($indilist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $indilist[$pid]["gedcom"];
-	if ((isset($famlist[$pid]["gedcom"]))&&($famlist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $famlist[$pid]["gedcom"];
-	if ((isset($objectlist[$pid]["gedcom"]))&&($objectlist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $objectlist[$pid]["gedcom"];
-	if ((isset($sourcelist[$pid]["gedcom"]))&&($sourcelist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $sourcelist[$pid]["gedcom"];
-	if ((isset($repolist[$pid]["gedcom"])) && ($repolist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $repolist[$pid]["gedcom"];
-	if ((isset($otherlist[$pid]["gedcom"]))&&($otherlist[$pid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $otherlist[$pid]["gedcom"];
+	if ((isset($indilist[$pid]["gedcom"]))&&($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $indilist[$pid]["gedcom"];
+	if ((isset($famlist[$pid]["gedcom"]))&&($famlist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $famlist[$pid]["gedcom"];
+	if ((isset($objectlist[$pid]["gedcom"]))&&($objectlist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $objectlist[$pid]["gedcom"];
+	if ((isset($sourcelist[$pid]["gedcom"]))&&($sourcelist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $sourcelist[$pid]["gedcom"];
+	if ((isset($repolist[$pid]["gedcom"])) && ($repolist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $repolist[$pid]["gedcom"];
+	if ((isset($otherlist[$pid]["gedcom"]))&&($otherlist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) return $otherlist[$pid]["gedcom"];
 
 	//-- try to look ahead and guess the best type of record to look for
 	//-- NOTE: not foolproof so leave the other section in place
@@ -285,7 +272,7 @@ function find_gedcom_record($pid, $gedfile = "") {
 	//-- unable to guess the type so look in all the tables
 	if (empty($gedrec)) {
 		$sql = "SELECT o_gedcom, o_file FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_id LIKE ? AND o_file=?";
-		$res =& $gBitSystem->mDb->query($sql, array( $pid, $GEDCOMS[$gedfile]["id"] ) );
+		$res =& $gBitSystem->mDb->query($sql, array( $pid, $gGedcom->mGEDCOMId ) );
 		if ($res->numRows()!=0) {
 			$row =& $res->fetchRow();
 			$res->free();
@@ -313,17 +300,16 @@ function find_gedcom_record($pid, $gedfile = "") {
  */
 function find_source_record($sid, $gedfile="") {
 	global $fcontents;
-	global $pgv_lang;
-	global $GEDCOMS;
-	global $GEDCOM, $sourcelist, $gBitSystem;
+	global $pgv_lang, $gGedcom;
+	global $sourcelist, $gBitSystem;
 
 	if ($sid=="") return false;
-	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (empty($gedfile)) $gedfile = $gGedcom->mGedcomName;
 
-	if (isset($sourcelist[$sid]["gedcom"]) && ($sourcelist[$sid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $sourcelist[$sid]["gedcom"];
+	if (isset($sourcelist[$sid]["gedcom"]) && ($sourcelist[$sid]["gedfile"]==$gGedcom->mGEDCOMId)) return $sourcelist[$sid]["gedcom"];
 
 	$sql = "SELECT s_gedcom, s_name, s_file FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_id LIKE ? AND s_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $sid, $GEDCOMS[$gedfile]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $sid, $gGedcom->mGEDCOMId ) );
 
 	if ($res->numRows()!=0) {
 		$row =& $res->fetchRow();
@@ -346,16 +332,15 @@ function find_source_record($sid, $gedfile="") {
  * @param string $gedfile	the gedcom file id
  */
 function find_repo_record($rid, $gedfile="") {
-	global $GEDCOMS;
-	global $GEDCOM, $repolist, $gBitSystem;
+	global $repolist, $gBitSystem, $gGedcom;
 
 	if ($rid=="") return false;
-	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (empty($gedfile)) $gedfile = $gGedcom->mGedcomName;
 
-	if (isset($repolist[$rid]["gedcom"]) && ($repolist[$rid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $repolist[$rid]["gedcom"];
+	if (isset($repolist[$rid]["gedcom"]) && ($repolist[$rid]["gedfile"]==$gGedcom->mGEDCOMId)) return $repolist[$rid]["gedcom"];
 
 	$sql = "SELECT o_id, o_gedcom, o_file FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='REPO' AND o_id LIKE ? AND o_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $rid, $GEDCOMS[$gedfile]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $rid, $gGedcom->mGEDCOMId ) );
 
 	if ($res->numRows()!=0) {
 		$row =& $res->fetchRow();
@@ -377,20 +362,19 @@ function find_repo_record($rid, $gedfile="") {
  * @param string $rid	the record id
  */
 function find_media_record($rid, $gedfile='') {
-	global $GEDCOMS;
-	global $GEDCOM, $objectlist, $gBitSystem, $MULTI_MEDIA;
+	global $objectlist, $gBitSystem, $MULTI_MEDIA, $gGedcom;
 
 	//-- don't look for a media record if not using media
 	if (!$MULTI_MEDIA) return false;
 	if ($rid=="") return false;
-	if (empty($gedfile)) $gedfile = $GEDCOM;
+	if (empty($gedfile)) $gedfile = $gGedcom->mGedcomName;
 
 	//-- first check for the record in the cache
 	if (empty($objectlist)) $objectlist = array();
-	if (isset($objectlist[$rid]["gedcom"]) && ($objectlist[$rid]["gedfile"]==$GEDCOMS[$gedfile]["id"])) return $objectlist[$rid]["gedcom"];
+	if (isset($objectlist[$rid]["gedcom"]) && ($objectlist[$rid]["gedfile"]==$gGedcom->mGEDCOMId)) return $objectlist[$rid]["gedcom"];
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media LIKE ? AND m_gedfile=?";
-	$res = $gBitSystem->mDb->query($sql, array( $rid, $GEDCOMS[$gedfile]["id"] ));
+	$res = $gBitSystem->mDb->query($sql, array( $rid, $gGedcom->mGEDCOMId ));
 	if (!$res) return false;
 	if ($res->numRows()!=0) {
 		$row = $res->fetchRow();
@@ -414,9 +398,9 @@ function find_media_record($rid, $gedfile='') {
  * @return string the gedcom xref id of the first person in the gedcom
  */
 function find_first_person() {
-	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $gGedcom, $gBitSystem;
 	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY i_id";
-	$row = $gBitSystem->mDb->getRow($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$row = $gBitSystem->mDb->getRow($sql, array( $gGedcom->mGEDCOMId ) );
 	if (!$row) return $row['i_id'];
 	else return "I1";
 }
@@ -451,10 +435,10 @@ function update_isdead($gid, $indi) {
  * items will be recalculated.
  */
 function reset_isdead() {
-	global $GEDCOMS, $GEDCOM, $gBitSystem;
+	global $GEDCOM, $gBitSystem;
 
 	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."individuals SET i_isdead=-1 WHERE i_file=?";
-	$gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 }
 
 /**
@@ -465,13 +449,13 @@ function reset_isdead() {
  * @return array the array of source-titles
  */
 function get_source_add_title_list() {
-	global $sourcelist, $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $sourcelist, $GEDCOM, $gBitSystem;
 
 	$sourcelist = array();
 
  	$sql = "SELECT s_id, s_file, s_file as s_name, s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=? AND ((s_gedcom LIKE '% _HEB %') OR (s_gedcom LIKE '% ROMN %'));";
 
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()) {
@@ -495,12 +479,12 @@ function get_source_add_title_list() {
  * @return array the array of sources
  */
 function get_source_list() {
-	global $sourcelist, $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $sourcelist, $GEDCOM, $gBitSystem;
 
 	$sourcelist = array();
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=? ORDER BY s_name";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -517,12 +501,12 @@ function get_source_list() {
 
 //-- get the repositorylist from the datastore
 function get_repo_list() {
-	global $repolist, $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $repolist, $GEDCOM, $gBitSystem;
 
 	$repolist = array();
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=? AND o_type='REPO'";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -542,12 +526,12 @@ function get_repo_list() {
 
 //-- get the repositorylist from the datastore
 function get_repo_id_list() {
-	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $GEDCOM, $gBitSystem;
 
 	$repo_id_list = array();
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=? AND o_type='REPO' ORDER BY o_id";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -571,13 +555,13 @@ function get_repo_id_list() {
  * @return array the array of repository-titles
  */
 function get_repo_add_title_list() {
-	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $GEDCOM, $gBitSystem;
 
 	$repolist = array();
 
  	$sql = "SELECT o_id, o_file, o_file as o_name, o_type, o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='REPO' AND o_file=? AND ((o_gedcom LIKE '% _HEB %') OR (o_gedcom LIKE '% ROMN %'));";
 
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -597,13 +581,13 @@ function get_repo_add_title_list() {
 
 //-- get the indilist from the datastore
 function get_indi_list() {
-	global $indilist, $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $indilist, $GEDCOM, $gBitSystem;
 	global $INDILIST_RETRIEVED;
 
 	if ($INDILIST_RETRIEVED) return $indilist;
 	$indilist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY i_surname";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -616,11 +600,11 @@ function get_indi_list() {
 	}
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=? ORDER BY n_surname";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
-		if (isset($indilist[$row["n_gid"]]) && ($indilist[$row["n_gid"]]["gedfile"]==$GEDCOMS[$GEDCOM]["id"])) {
+		if (isset($indilist[$row["n_gid"]]) && ($indilist[$row["n_gid"]]["gedfile"]==$gGedcom->mGEDCOMId)) {
 			$indilist[$row["n_gid"]]["names"][] = array($row["n_name"], $row["n_letter"], $row["n_surname"], $row["n_type"]);
 		}
 	}
@@ -631,7 +615,7 @@ function get_indi_list() {
 
 //-- get the assolist from the datastore
 function get_asso_list($type = "all") {
-	global $assolist, $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $assolist, $GEDCOM, $gBitSystem;
 	global $ASSOLIST_RETRIEVED;
 
 	if ($ASSOLIST_RETRIEVED) return $assolist;
@@ -699,13 +683,13 @@ function get_asso_list($type = "all") {
 
 //-- get the famlist from the datastore
 function get_fam_list() {
-	global $famlist, $GEDCOM, $indilist, $gBitSystem, $GEDCOMS;
+	global $famlist, $gGedcom, $indilist, $gBitSystem;
 	global $FAMLIST_RETRIEVED;
 
 	if ($FAMLIST_RETRIEVED) return $famlist;
 	$famlist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -733,12 +717,12 @@ function get_fam_list() {
 
 //-- get the otherlist from the datastore
 function get_other_list() {
-	global $otherlist, $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $otherlist, $GEDCOM, $gBitSystem;
 
 	$otherlist = array();
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->FetchRow()){
@@ -753,13 +737,13 @@ function get_other_list() {
 /*
 //-- get the otherlist from the datastore
 function get_media_list() {
-	global $medialist, $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $medialist, $GEDCOM, $gBitSystem;
 	global PHPGEDVIEW_DB_PREFIX;
 
 	$medialist = array();
 
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=?";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	$ct = $res->numRows();
 	while($row =& $res->fetchRow()){
@@ -788,7 +772,7 @@ function get_media_list() {
  * @return	array $myindilist array with all individuals that matched the query
  */
 function search_indis($query, $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	$myindilist = array();
 	$args = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
@@ -829,19 +813,9 @@ function search_indis($query, $allgeds=false, $ANDOR="AND") {
 	}
 	if (!$allgeds) { 
 		$sql .= " AND i_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
+		$args[] = $gGedcom->mGEDCOMId;
 	}
 	
-	if ((is_array($allgeds)) && (count($allgeds) != 0)) {
-		$sql .= " AND (";
-		for ($i=0; $i<count($allgeds); $i++) {
-			$sql .= "i_file=?";
-			$args[] = $GEDCOMS[$allgeds[$i]]["id"];
-			if ($i < count($allgeds)-1) $sql .= " OR ";
-		}
-		$sql .= ")";
-	}
-//	print $sql;
 	$res = $gBitSystem->mDb->query($sql, $args );
 
 	if ($res) {
@@ -893,7 +867,7 @@ function search_indis_fam($add2myindilist) {
  * @return array
  */
 function search_indis_year_range($startyear, $endyear, $allgeds=false) {
-	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
@@ -913,7 +887,7 @@ function search_indis_year_range($startyear, $endyear, $allgeds=false) {
 	$sql .= ")";
 	*/
 	if (!$allgeds) $sql .= " AND i_file = ? ";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	while($row =& $res->FetchRow()){
 		$myindilist[$row['i_id']]["names"] = get_indi_names($row['i_gedcom']);
@@ -928,7 +902,7 @@ function search_indis_year_range($startyear, $endyear, $allgeds=false) {
 
 //-- search through the gedcom records for individuals
 function search_indis_names($query, $allgeds=false) {
-	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
@@ -967,7 +941,7 @@ function search_indis_names($query, $allgeds=false) {
 	}
 	if (!$allgeds) {
 		$sql .= " AND i_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
+		$args[] = $gGedcom->mGEDCOMId;
 	}
 	$res = $gBitSystem->mDb->query($sql, $args );
 	while($row = $res->FetchRow()){
@@ -1003,7 +977,7 @@ function search_indis_names($query, $allgeds=false) {
 		$sql .= ")";
 	}
 	if (!$allgeds) { $sql .= " AND i_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
+		$args[] = $gGedcom->mGEDCOMId;
 	}
 	$res = $gBitSystem->mDb->query( $sql, $args );
 
@@ -1032,7 +1006,7 @@ function search_indis_names($query, $allgeds=false) {
  * @param	int $year the year to search for, leave empty to include all
  */
 function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
-	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $GEDCOMS;
+	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB;
 
 	$changes = array();
 	while(strlen($year)<4) $year ='0'.$year;
@@ -1043,7 +1017,7 @@ function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."dates WHERE d_fact='CHAN' AND d_datestamp>=".$datestamp;
 	if (!$allgeds) {
 		$sql .= " AND d_file=? ";
-		$args = $GEDCOMS[$GEDCOM]["id"];
+		$args = $gGedcom->mGEDCOMId;
 	}
 	$sql .= " ORDER BY d_datestamp DESC";
 	//print $sql;
@@ -1072,7 +1046,7 @@ function get_recent_changes($day="", $mon="", $year="", $allgeds=false) {
  * @return	array $myindilist array with all individuals that matched the query
  */
 function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $indilist, $REGEXP_DB, $gBitDbType, $GEDCOMS, $gBitSystem;
+	global $GEDCOM, $indilist, $REGEXP_DB, $gBitDbType, $gBitSystem;
 	$myindilist = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
@@ -1100,7 +1074,7 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 		}
 		$sql .= ") ";
 	}
-	if (!$allgeds) $sql .= "AND d_file='".$GEDCOMS[$GEDCOM]["id"]."' ";
+	if (!$allgeds) $sql .= "AND d_file='".$gGedcom->mGEDCOMId."' ";
 	$sql .= "ORDER BY d_year DESC, d_mon DESC, d_day DESC";
 //	print $sql;
 	$res = $gBitSystem->mDb->query($sql);
@@ -1112,14 +1086,14 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["gedfile"] = $row['i_file'];
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["gedcom"] = $row['i_gedcom'];
 				$myindilist[$row['i_id']."[".$row['i_file']."]"]["isdead"] = $row['i_isdead'];
-				if ($myindilist[$row['i_id']."[".$row['i_file']."]"]["gedfile"] == $GEDCOMS[$GEDCOM]['id']) $indilist[$row['i_id']] = $myindilist[$row['i_id']."[".$row['i_id']."]"];
+				if ($myindilist[$row['i_id']."[".$row['i_file']."]"]["gedfile"] == $gGedcom->mGEDCOMId) $indilist[$row['i_id']] = $myindilist[$row['i_id']."[".$row['i_id']."]"];
 			}
 			else {
 				$myindilist[$row['i_id']]["names"] = get_indi_names($row['i_gedcom']);
 				$myindilist[$row['i_id']]["gedfile"] = $row['i_file'];
 				$myindilist[$row['i_id']]["gedcom"] = $row['i_gedcom'];
 				$myindilist[$row['i_id']]["isdead"] = $row['i_isdead'];
-				if ($myindilist[$row['i_id']]["gedfile"] == $GEDCOMS[$GEDCOM]['id']) $indilist[$row['i_id']] = $myindilist[$row['i_id']];
+				if ($myindilist[$row['i_id']]["gedfile"] == $gGedcom->mGEDCOMId) $indilist[$row['i_id']] = $myindilist[$row['i_id']];
 			}
 		}
 	}
@@ -1128,7 +1102,7 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 
 //-- search through the gedcom records for families
 function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
@@ -1152,18 +1126,8 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 
 	if (!$allgeds) {
 		$sql .= " AND f_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
+		$args[] = $gGedcom->mGEDCOMId;
 	}
-	if ((is_array($allgeds)) && (count($allgeds) != 0)) {
-		$sql .= " AND (";
-		for ($i=0, $max=count($allgeds); $i<$max; $i++) {
-			$sql .= "f_file = ?";
-			$args[] = $GEDCOMS[$allgeds[$i]]["id"];
-			if ($i < $max-1) $sql .= " OR ";
-		}
-		$sql .= ")";
-	}
-
 	$res = $gBitSystem->mDb->query( $sql, $args );
 
 	$gedold = $GEDCOM;
@@ -1208,7 +1172,7 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 
 //-- search through the gedcom records for families
 function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB;
 	//if ($REGEXP_DB) $term = "REGEXP";
 	//else $term = "LIKE";
 	$myfamlist = array();
@@ -1280,7 +1244,7 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
  * @return	array $myfamlist array with all families that matched the query
  */
 function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB;
 	$myfamlist = array();
 	$args = array();
 	if (!is_array($query)) {
@@ -1301,17 +1265,7 @@ function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=fal
 
 	if (!$allgeds) {
 		$sql .= " AND f_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
-	}
-
-	if ((is_array($allgeds)) && (count($allgeds) != 0)) {
-		$sql .= " AND (";
-		for ($i=0, $max=count($allgeds); $i<$max; $i++) {
-			$sql .= "f_file=?";
-			$args[] = $GEDCOMS[$allgeds[$i]]["id"];
-			if ($i < $max-1) $sql .= " OR ";
-		}
-		$sql .= ")";
+		$args[] = $gGedcom->mGEDCOMId;
 	}
 	$res = $gBitSystem->mDb->query($sql);
 
@@ -1357,7 +1311,7 @@ function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=fal
 
 //-- search through the gedcom records for families with daterange
 function search_fams_year_range($startyear, $endyear, $allgeds=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
@@ -1378,7 +1332,7 @@ function search_fams_year_range($startyear, $endyear, $allgeds=false) {
 	*/
 	if (!$allgeds) {
 		$sql .= " AND f_file=?";
-		$res = $gBitSystem->mDb->query( $sql, array ( $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query( $sql, array ( $gGedcom->mGEDCOMId ) );
 	}
 	else
 		$res = $gBitSystem->mDb->query( $sql );
@@ -1410,7 +1364,7 @@ function search_fams_year_range($startyear, $endyear, $allgeds=false) {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOM, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOM;
 	$myfamlist = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
@@ -1441,7 +1395,7 @@ function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=fals
 	if (!$allgeds) $sql .= "AND d_file=? ";
 	$sql .= "ORDER BY d_year, d_month, d_day DESC";
 
-	$res = $gBitSystem->mDb->query($sql, array($GEDCOMS[$GEDCOM]["id"]));
+	$res = $gBitSystem->mDb->query($sql, array($gGedcom->mGEDCOMId));
 
 	$gedold = $GEDCOM;
 	while($row =& $res->FetchRow()){
@@ -1470,7 +1424,7 @@ function search_fams_dates($day="", $month="", $year="", $fact="", $allgeds=fals
 
 //-- search through the gedcom records for sources
 function search_sources($query, $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	$mysourcelist = array();
 	$args = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
@@ -1507,18 +1461,8 @@ function search_sources($query, $allgeds=false, $ANDOR="AND") {
 	}
 	if (!$allgeds) {
 		$sql .= " AND s_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
+		$args[] = $gGedcom->mGEDCOMId;
 	}
-	if ((is_array($allgeds)) && (count($allgeds) != 0)) {
-		$sql .= " AND (";
-		for ($i=0; $i<count($allgeds); $i++) {
-			$sql .= "s_file = ?";
-			$args[] = $GEDCOMS[$allgeds[$i]]["id"];
-			if ($i < count($allgeds)-1) $sql .= " OR ";
-		}
-		$sql .= ")";
-	}
-
 	$res = $gBitSystem->mDb->query( $sql, $args );
 
 	while($row =& $res->FetchRow()){
@@ -1545,7 +1489,7 @@ function search_sources($query, $allgeds=false, $ANDOR="AND") {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	$mysourcelist = array();
 	$args = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
@@ -1557,7 +1501,7 @@ function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=f
 	if (!empty($month)) { $sql .= "AND d_month=?"; $args[] = $month; }
 	if (!empty($year)) { $sql .= "AND d_year=?"; $args[] = $year; }
 	if (!empty($fact)) { $sql .= "AND d_fact=?"; $args[] = $fact; }
-	if (!$allgeds) { $sql .= "AND d_file=?"; $args[] = $GEDCOMS[$GEDCOM]["id"]; }
+	if (!$allgeds) { $sql .= "AND d_file=?"; $args[] = $gGedcom->mGEDCOMId; }
 	$sql .= "GROUP BY s_id ORDER BY d_year, d_month, d_day DESC";
 
 	$res = $gBitSystem->mDb->query( $sql, $args );
@@ -1581,7 +1525,7 @@ function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=f
 
 //-- search through the gedcom records for sources
 function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
-	global $GEDCOM, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	$mysourcelist = array();
 	$args = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
@@ -1617,16 +1561,7 @@ function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
 	}
 	if (!$allgeds)
 		$sql .= " AND o_file=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
-	}
-	if ((is_array($allgeds)) && (count($allgeds) != 0)) {
-		$sql .= " AND (";
-		for ($i=0; $i<count($allgeds); $i++) {
-			$sql .= "o_file = ?";
-			$args[] = $GEDCOMS[$allgeds[$i]]["id"];
-			if ($i < count($allgeds)-1) $sql .= " OR ";
-		}
-		$sql .= ")";
+		$args[] = $gGedcom->mGEDCOMId;
 	}
 
 	$res = $gBitSystem->mDb->query( $sql, $args );
@@ -1654,7 +1589,7 @@ function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
  * @return	array $myfamlist array with all individuals that matched the query
  */
 function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType, $GEDCOMS;
+	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	$myrepolist = array();
 	$args = array();
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
@@ -1666,7 +1601,7 @@ function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 	if (!empty($month)) { $sql .= "AND d_month=?"; $args[] = $month; }
 	if (!empty($year)) { $sql .= "AND d_year=?"; $args[] = $year; }
 	if (!empty($fact)) { $sql .= "AND d_fact=?"; $args[] = $fact; }
-	if (!$allgeds) { $sql .= "AND d_file=?"; $args[] = $GEDCOMS[$GEDCOM]["id"]; }
+	if (!$allgeds) { $sql .= "AND d_file=?"; $args[] = $gGedcom->mGEDCOMId; }
 	$sql .= "GROUP BY o_id ORDER BY d_year, d_month, d_day DESC";
 
 	$res = $gBitSystem->mDb->query($sql);
@@ -1699,13 +1634,13 @@ function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=fal
  * @return int
  */
 function get_place_parent_id($parent, $level) {
-	global $gBitSystem, $GEDCOM, $GEDCOMS;
+	global $gBitSystem, $GEDCOM;
 
 	$parent_id=0;
 	for($i=0; $i<$level; $i++) {
 		$escparent=preg_replace("/\?/","\\\\\\?", $parent[$i]);
 		$psql = "SELECT p_id FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=".$i." AND p_parent_id=$parent_id AND p_place LIKE '".$escparent."' AND p_file=? ORDER BY p_place";
-		$res = $gBitSystem->mDb->query($psql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($psql, array( $gGedcom->mGEDCOMId ) );
 		$row =& $res->FetchRow();
 		if (empty($row['p_id'])) break;
 		$parent_id = $row['p_id'];
@@ -1721,7 +1656,7 @@ function get_place_parent_id($parent, $level) {
  */
 function get_place_list() {
 	global $numfound, $j, $level, $parent, $found;
-	global $GEDCOM, $placelist, $positions, $gBitSystem, $GEDCOMS;
+	global $GEDCOM, $placelist, $positions, $gBitSystem;
 
 	// --- find all of the place in the file
 	if ($level==0) $sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=0 AND p_file=? ORDER BY p_place";
@@ -1729,7 +1664,7 @@ function get_place_list() {
 		$parent_id = get_place_parent_id($parent, $level);
 		$sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=$level AND p_parent_id=$parent_id AND p_file=? ORDER BY p_place";
 	}
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	while ($row =& $res->FetchRow()) {
 		$placelist[] = $row['p_place'];
@@ -1744,21 +1679,21 @@ function get_place_list() {
  * @return array
  */
 function get_place_positions($parent, $level='') {
-	global $positions, $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $positions, $GEDCOM, $gBitSystem;
 
 	if ($level!='') $p_id = get_place_parent_id($parent, $level);
 	else {
 		//-- we don't know the level so get the any matching place
 		$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks, ".PHPGEDVIEW_DB_PREFIX."places WHERE p_place LIKE ? AND p_file=pl_file AND p_id=pl_p_id AND p_file=?";
 		//print $sql;
-		$res = $gBitSystem->mDb->query($sql, array( $parent, $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($sql, array( $parent, $gGedcom->mGEDCOMId ) );
 		while ($row =& $res->FetchRow() ) { 
 			$positions[] = $row['pl_gid'];
 		}
 		return $positions;
 	}
 	$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks WHERE pl_p_id=$p_id AND pl_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	while ($row =& $res->FetchRow()) {
 		$positions[] = $row['pl_gid'];
@@ -1768,10 +1703,10 @@ function get_place_positions($parent, $level='') {
 
 //-- find all of the places
 function find_place_list($place) {
-	global $GEDCOM, $placelist, $indilist, $famlist, $sourcelist, $otherlist, $gBitSystem, $GEDCOMS;
+	global $GEDCOM, $placelist, $indilist, $famlist, $sourcelist, $otherlist, $gBitSystem;
 
 	$sql = "SELECT p_id, p_place, p_parent_id  FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_file=? ORDER BY p_parent_id, p_id";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 	while($row =& $res->FetchRow()) {
 		if ($row['p_parent_id']==0) $placelist[$row['p_id']] = $row['p_place'];
@@ -1795,14 +1730,14 @@ function find_place_list($place) {
 
 //-- find all of the media
 function get_media_list() {
-	global $GEDCOM, $medialist, $ct, $gBitSystem, $GEDCOMS, $MEDIA_DIRECTORY;
+	global $GEDCOM, $medialist, $ct, $gBitSystem, $MEDIA_DIRECTORY;
 	global $GEDCOM_ID_PREFIX, $FAM_ID_PREFIX, $SOURCE_ID_PREFIX;
 	$ct = 0;
 	if (!isset($medialinks)) $medialinks = array();
-	$sqlmm = "SELECT mm_gid, mm_media FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY mm_id ASC";
+	$sqlmm = "SELECT mm_gid, mm_media FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile = '".$gGedcom->mGEDCOMId."' ORDER BY mm_id ASC";
 	$resmm =@ $gBitSystem->mDb->query($sqlmm);
 	while($rowmm =& $resmm->FetchRow()){
-		$sqlm = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media = '".$rowmm["mm_media"]."' AND m_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."'";
+		$sqlm = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media = '".$rowmm["mm_media"]."' AND m_gedfile = '".$gGedcom->mGEDCOMId."'";
 		$resm =@ $gBitSystem->mDb->query($sqlm);
 		while($rowm =& $resm->FetchRow()){
 			$filename = check_media_depth($rowm["m_file"], "NOTRUNC");
@@ -1854,13 +1789,13 @@ function get_media_list() {
  * @return array	an array of all letters
  */
 function get_indi_alpha() {
-	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $SHOW_MARRIED_NAMES, $GEDCOMS;
+	global $CHARACTER_SET, $gGedcom, $LANGUAGE, $SHOW_MARRIED_NAMES;
 	global $MULTI_LETTER_ALPHABET, $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $gBitSystem;
 	$indialpha = array();
 
 	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? ORDER BY 1";
-	$res = $gBitSystem->mDb->query($sql,array($GEDCOMS[$GEDCOM]["id"]));
+	$res = $gBitSystem->mDb->query($sql,array($gGedcom->mGEDCOMId));
 
 	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
@@ -1887,7 +1822,7 @@ function get_indi_alpha() {
 	$sql = "SELECT DISTINCT n_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=? ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= " AND n_type!='C'";
 	$sql .= " ORDER BY 1";
-	$res = $gBitSystem->mDb->query($sql, array($GEDCOMS[$GEDCOM]["id"]));
+	$res = $gBitSystem->mDb->query($sql, array($gGedcom->mGEDCOMId));
 
 	while( $row = $res->fetchRow() ){
 		$letter = str2upper($row["alpha"]);
@@ -1916,13 +1851,13 @@ function get_indi_alpha() {
 
 //-- get the first character in the list
 function get_fam_alpha() {
-	global $CHARACTER_SET, $GEDCOM, $LANGUAGE, $famalpha, $gBitSystem, $GEDCOMS;
+	global $CHARACTER_SET, $gGedcom, $LANGUAGE, $famalpha, $gBitSystem;
 	global $MULTI_LETTER_ALPHABET, $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 
 	$famalpha = array();
 
 	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file = ? AND i_gedcom LIKE '%1 FAMS%' ORDER BY 1";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 	while($row =& $res->FetchRow()){
 		$letter = str2upper($row["alpha"]);
@@ -1948,7 +1883,7 @@ function get_fam_alpha() {
 	$res->free();
 
 	$sql = "SELECT DISTINCT n_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."names, ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=n_file AND i_id=n_gid AND n_file=? AND i_gedcom LIKE '%1 FAMS%' ORDER BY 1";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 	while($row =& $res->FetchRow()){
 		$letter = str2upper($row["alpha"]);
@@ -1973,7 +1908,7 @@ function get_fam_alpha() {
 	$res->free();
 
 	$sql = "SELECT f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=? AND (f_husb='' OR f_wife='')";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 	if ($res->numRows()>0) {
 		$famalpha["@"] = "@";
@@ -1992,7 +1927,7 @@ function get_fam_alpha() {
  * @see http://www.phpgedview.net/devdocs/arrays.php#indilist
  */
 function get_alpha_indis($letter) {
-	global $GEDCOM, $LANGUAGE, $indilist, $surname, $SHOW_MARRIED_NAMES, $GEDCOMS;
+	global $gGedcom, $LANGUAGE, $indilist, $surname, $SHOW_MARRIED_NAMES;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $gBitSystem;
 	
@@ -2042,7 +1977,7 @@ function get_alpha_indis($letter) {
 
 	//-- add some optimization if the surname is set to speed up the lists
 	if (!empty($surname)) $sql .= "AND i_surname LIKE '%".$surname."%' ";
-	$sql .= "AND i_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY i_name";
+	$sql .= "AND i_file='".$gGedcom->mGEDCOMId."' ORDER BY i_name";
 	$res = $gBitSystem->mDb->query($sql);
 
 	while( $row = $res->FetchRow() ){
@@ -2103,7 +2038,7 @@ function get_alpha_indis($letter) {
 	//-- add some optimization if the surname is set to speed up the lists
 	if (!empty($surname)) $sql .= "AND n_surname LIKE '%".$surname."%' ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= "AND n_type!='C' ";
-	$sql .= "AND i_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY i_name";
+	$sql .= "AND i_file='".$gGedcom->mGEDCOMId."' ORDER BY i_name";
 	$res = $gBitSystem->mDb->query($sql);
 
 	while( $row = $res->fetchRow() ){
@@ -2138,11 +2073,11 @@ function get_alpha_indis($letter) {
  * @see http://www.phpgedview.net/devdocs/arrays.php#indilist
  */
 function get_surname_indis($surname) {
-	global $GEDCOM, $LANGUAGE, $indilist, $SHOW_MARRIED_NAMES, $GEDCOMS, $gBitSystem;
+	global $gGedcom, $LANGUAGE, $indilist, $SHOW_MARRIED_NAMES, $gBitSystem;
 
 	$tindilist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_surname LIKE ? AND i_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $surname, $GEDCOMS[$GEDCOM]["id"] ));
+	$res = $gBitSystem->mDb->query($sql, array( $surname, $gGedcom->mGEDCOMId ));
 
 	while( $row =& $res->fetchRow() ){
 		$indi = array();
@@ -2157,7 +2092,7 @@ function get_surname_indis($surname) {
 	$sql = "SELECT i_id, i_name, i_file, i_isdead, i_gedcom, i_letter, i_surname, n_letter, n_name, n_surname, n_letter, n_type FROM ".PHPGEDVIEW_DB_PREFIX."individuals, ".PHPGEDVIEW_DB_PREFIX."names WHERE i_id=n_gid AND i_file=n_file AND n_surname LIKE ? ";
 	if (!$SHOW_MARRIED_NAMES) $sql .= "AND n_type!='C' ";
 	$sql .= "AND i_file=? ORDER BY n_surname";
-	$res = $gBitSystem->mDb->query($sql, array( $surname, $GEDCOMS[$GEDCOM]["id"] ));
+	$res = $gBitSystem->mDb->query($sql, array( $surname, $gGedcom->mGEDCOMId ));
 
 	while( $row = $res->FetchRow() ){
 		if (isset($indilist[$row["i_id"]])) {
@@ -2187,7 +2122,7 @@ function get_surname_indis($surname) {
  * @see http://www.phpgedview.net/devdocs/arrays.php#famlist
  */
 function get_alpha_fams($letter) {
-	global $GEDCOM, $famlist, $indilist, $pgv_lang, $LANGUAGE, $SHOW_MARRIED_NAMES, $gBitSystem, $GEDCOMS;
+	global $gGedcom, $famlist, $indilist, $pgv_lang, $LANGUAGE, $SHOW_MARRIED_NAMES, $gBitSystem;
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 
 	$danishex = array("OE", "AE", "AA");
@@ -2271,7 +2206,7 @@ function get_alpha_fams($letter) {
 	//-- SHOULD WE SHOW THE UNDEFINED? MA
 	if ($letter=="@") {
 		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE (f_husb='' OR f_wife='') AND f_file=?";
-		$res = $gBitSystem->mDb->query( $sql, array ( $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query( $sql, array ( $gGedcom->mGEDCOMId ) );
 
 		if ($res->numRows()>0) {
 			while($row =& $res->fetchRow()){
@@ -2308,7 +2243,7 @@ function get_alpha_fams($letter) {
  * @see http://www.phpgedview.net/devdocs/arrays.php#indilist
  */
 function get_surname_fams($surname) {
-	global $GEDCOM, $famlist, $indilist, $pgv_lang, $gBitSystem, $SHOW_MARRIED_NAMES, $GEDCOMS;
+	global $gGedcom, $famlist, $indilist, $pgv_lang, $gBitSystem, $SHOW_MARRIED_NAMES;
 	$tfamlist = array();
 	$temp = $SHOW_MARRIED_NAMES;
 	$SHOW_MARRIED_NAMES = false;
@@ -2356,7 +2291,7 @@ function get_surname_fams($surname) {
 	//-- SHOULD WE SHOW THE UNDEFINED? MA
 	if ($surname=="@N.N.") {
 		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE (f_husb='' OR f_wife='') AND f_file=?";
-		$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 		if ($res->numRows()>0) {
 			while($row =& $res->fetchRow()){
@@ -2385,10 +2320,10 @@ function get_surname_fams($surname) {
 
 //-- function to find the gedcom id for the given rin
 function find_rin_id($rin) {
-	global $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $GEDCOM, $gBitSystem;
 
 	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_rin='$rin' AND i_file=?";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 	while($row =& $res->FetchRow()){
 		return $row["i_id"];
@@ -2402,10 +2337,9 @@ function find_rin_id($rin) {
  * @param string $ged 	the filename of the gedcom to delete
  */
 function delete_gedcom($ged) {
-	global $INDEX_DIRECTORY, $pgv_changes, $gBitSystem, $GEDCOMS;
+	global $INDEX_DIRECTORY, $pgv_changes, $gBitSystem;
 
-	if (!isset($GEDCOMS[$ged])) return;
-	$dbged = $GEDCOMS[$ged]["id"];
+	$dbged = $gGedcom->mGEDCOMId;
 
 	$sql = "DELETE FROM ".PHPGEDVIEW_DB_PREFIX."dates WHERE d_file=?";
 	$res = $gBitSystem->mDb->query( $sql, array( $dbged ) );
@@ -2455,30 +2389,30 @@ function delete_gedcom($ged) {
 //-- return the current size of the given list
 //- list options are indilist famlist sourcelist and otherlist
 function get_list_size($list) {
-	global $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $GEDCOM, $gBitSystem;
 
 	switch($list) {
 		case "indilist":
 			$sql = "SELECT count(i_id) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=?";
-			$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+			$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 			while($row =& $res->FetchRow()) return $row['count'];
 		break;
 		case "famlist":
 			$sql = "SELECT count(f_id) FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=?";
-			$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+			$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 			while($row =& $res->FetchRow()) return $row['count'];
 		break;
 		case "sourcelist":
 			$sql = "SELECT count(s_id) FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=?";
-			$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+			$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 			while($row =& $res->FetchRow()) return $row['count'];
 		break;
 		case "otherlist":
 			$sql = "SELECT count(o_id) FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=?";
-			$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+			$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 			while($row =& $res->FetchRow()) return $row['count'];
 		break;
@@ -2492,11 +2426,11 @@ function get_list_size($list) {
  * @return array
  */
 function get_top_surnames($num) {
-	global $GEDCOM, $gBitSystem, $GEDCOMS;
+	global $GEDCOM, $gBitSystem;
 
 	$surnames = array();
 	$sql = "SELECT COUNT(i_surname), i_surname FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=? GROUP BY i_surname ORDER BY 1 DESC";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 	if ($res) {
 		while($row =& $res->FetchRow()) {
@@ -2509,7 +2443,7 @@ function get_top_surnames($num) {
 		$res->free();
 	}
 	$sql = "SELECT COUNT(n_surname), n_surname FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=? AND n_type!='C' GROUP BY n_surname ORDER BY 1 DESC";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId ) );
 
 	if ($res) {
 		while($row =& $res->FetchRow()) {
@@ -2558,14 +2492,14 @@ function get_next_id($table, $field) {
  * get a list of remote servers
  */
 function get_server_list(){
- 	global $GEDCOM, $GEDCOMS;
+ 	global $GEDCOM;
 	global $gBitSystem, $sitelist, $sourcelist;
 
 	//if (isset($sitelist)) return $sitelist;
 	$sitelist = array();
-	if (isset($GEDCOMS[$GEDCOM]) && check_for_import($GEDCOM)) {
+	if (isset($gGedcom) && check_for_import($GEDCOM)) {
 		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=? AND s_gedcom LIKE '%1 _DBID%' ORDER BY s_name";
-		$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId ) );
 
 		$ct = $res->numRows();
 		while($row = $res->fetchRow()) {
@@ -2625,9 +2559,9 @@ function delete_fact($linenum, $pid, $gedrec) {
  * @return gid Stub ID that contains the RFN number. Returns false if it didn't find anything
  */
 function get_remote_id($rfn) {
-global $gBitSystem, $GEDCOMS, $GEDCOM;
+global $gBitSystem, $GEDCOM;
 	$sql = "SELECT r_gid FROM ".PHPGEDVIEW_DB_PREFIX."remotelinks WHERE r_linkid=? AND r_file=?";
-	$res = $gBitSystem->mDb->query( $sql, array( $rfn, $GEDCOMS[$GEDCOM]['id'] ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $rfn, $gGedcom->mGEDCOMId ) );
 
 	if ($res->numRows()>0) {
 		$row = $res->FetchRow();

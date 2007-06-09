@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportengine.php,v 1.4 2007/06/02 14:14:18 lsces Exp $
+ * @version $Id: reportengine.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -36,7 +36,7 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gContent = new BitGEDCOM();
+$gGedcom = new BitGEDCOM();
 
 require_once("includes/functions_charts.php");
 require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");

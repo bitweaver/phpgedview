@@ -33,15 +33,12 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gGedcom = new BitGEDCOM();
-
 // leave manual config until we can move it to bitweaver table 
-require_once("config.php");
+//require_once("config.php");
 require_once 'includes/functions_print_facts.php';
 require_once 'includes/controllers/basecontrol.php';
-require_once($factsfile["english"]);
-if (file_exists($factsfile[$LANGUAGE])) require_once($factsfile[$LANGUAGE]);
-require_once 'includes/menu.php';
+//require_once($factsfile["english"]);
+//if (file_exists($factsfile[$LANGUAGE])) require_once($factsfile[$LANGUAGE]);
 require_once 'includes/person_class.php';
 
 $indifacts = array();			 // -- array to store the fact records in for sorting and displaying
@@ -130,12 +127,12 @@ class IndividualControllerRoot extends BaseController {
 			}
 		}
 		//-- check for the user
-		$this->uname = getUserName();
+/*		$this->uname = getUserName();
 		if (!empty($this->uname)) {
 			$this->user = getUser($this->uname);
 			if ($this->user["default_tab"] != $this->default_tab) $this->default_tab = $this->user["default_tab"];
 		}
-		
+*/		
 		//-- check for a cookie telling what the last tab was when they were last
 		//-- visiting this individual
 		if (isset($_COOKIE['lasttabs'])) {
@@ -174,7 +171,7 @@ class IndividualControllerRoot extends BaseController {
 		}
 
 		//-- if the user can edit and there are changes then get the new changes
-		if ($this->show_changes=="yes" && userCanEdit($this->uname)) {
+		if ($this->show_changes=="yes" ) { // }&& userCanEdit($this->uname)) {
 			if (isset($pgv_changes[$this->pid."_".$GEDCOM])) {
 				 //-- get the changed record from the file
 				$newrec = find_record_in_file($this->pid);
@@ -220,7 +217,7 @@ class IndividualControllerRoot extends BaseController {
 		$this->indi->add_family_facts();
 		//-- only allow editors or users who are editing their own individual or their immediate relatives
 		if ($this->indi->canDisplayDetails()) {
-			$this->canedit = userCanEdit($this->uname);
+			$this->canedit = true; // userCanEdit($this->uname);
 			if (!$this->canedit) {
 				if (!empty($this->user["gedcomid"][$GEDCOM])) {
 					if ($this->pid==$this->user["gedcomid"][$GEDCOM]) $this->canedit=true;

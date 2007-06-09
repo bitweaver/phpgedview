@@ -24,7 +24,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 22 August 2005
  *
- * $Id: pedigree.php,v 1.4 2007/06/03 21:12:19 lsces Exp $
+ * $Id: pedigree.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -38,12 +38,12 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gContent = new BitGEDCOM();
-if (isset($_REQUEST['rootid'])) $gContent->rootId($_REQUEST['rootid']);
-else $gContent->rootId();
+$gGedcom = new BitGEDCOM();
+if (isset($_REQUEST['rootid'])) $gGedcom->rootId($_REQUEST['rootid']);
+else $gGedcom->rootId();
 
 require_once("includes/controllers/pedigree_ctrl.php");
-$controller->init($gContent);
+$controller->init($gGedcom);
 require_once("includes/functions_mediadb.php");
 
 // -- print html header information
@@ -165,7 +165,7 @@ if ($controller->rootPerson->canDisplayDetails()) {
 			if ($family!=null) {
 				$husb = $family->getHusbId();
 				$wife = $family->getWifeId();
-				if( $gContent->mRootId != $husb ) $spid=$family->getHusband();
+				if( $gGedcom->mRootId != $husb ) $spid=$family->getHusband();
 				else $spid=$family->getWife();
 				if (!empty($spid)) {
 //					print "\n\t\t\t\t<a href=\"pedigree.php?PEDIGREE_GENERATIONS=$controller->OLD_PGENS&amp;rootid=".$spid->getXref()."&amp;show_full=$controller->show_full&amp;talloffset=$controller->talloffset\"><span ";

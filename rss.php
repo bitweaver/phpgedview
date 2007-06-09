@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: rss.php,v 1.5 2007/05/27 14:45:29 lsces Exp $
+ * $Id: rss.php,v 1.6 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  * @TODO add Basic HTTP authentication to allow RSS agrigators to "log on"
@@ -53,7 +53,7 @@ $user=getUser($CONTACT_EMAIL);
 $author =$user["firstname"]." ".$user["lastname"];
 
 $rss = new UniversalFeedCreator();
-$rss->title = $GEDCOMS[$GEDCOM]["title"];
+$rss->title = $gGedcom->mInfo['title'];
 
 
 //optional
@@ -67,7 +67,7 @@ $syndURL = $SERVER_URL."rss.php?".$_SERVER['QUERY_STRING'];
 $syndURL = preg_replace("/&/", "&amp;", $syndURL);
 $rss->syndicationURL = $syndURL;
 
-$rssDesc = str_replace("#GEDCOM_TITLE#", $GEDCOMS[$GEDCOM]["title"], $pgv_lang["rss_descr"]);
+$rssDesc = str_replace("#GEDCOM_TITLE#", $gGedcom->mInfo['title'], $pgv_lang["rss_descr"]);
 $rss->description = $rssDesc;
 
 $image = new FeedImage();
@@ -206,7 +206,7 @@ if($ENABLE_RSS) {
 	}
 
 	if($printGedcomStats){
-		$gedcomStats = getGedcomStats();
+		$gedcomStats = $gGedcom->getGedcomStats();
 		if (! empty($gedcomStats[2])) {
 			$item = new FeedItem();
 			$item->title = $gedcomStats[0];

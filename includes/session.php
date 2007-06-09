@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: session.php,v 1.17 2007/05/31 08:57:40 lsces Exp $
+ * @version $Id: session.php,v 1.18 2007/06/09 21:11:04 lsces Exp $
  */
 if (strstr($_SERVER["SCRIPT_NAME"],"session")) {
 	print "Now, why would you want to do that.  You're not hacking are you?";
@@ -444,7 +444,6 @@ if (empty($PGV_MEMORY_LIMIT)) $PGV_MEMORY_LIMIT = "32M";
 
 //--load common functions
 require_once("includes/functions.php");
-require_once("includes/menu.php");
 //-- set the error handler
 $OLD_HANDLER = set_error_handler("pgv_error_handler");
 //-- load db specific functions
@@ -503,44 +502,9 @@ if (phpversion() >= '4.2.2') {
 		}
 	}
 }
-//-- import the gedcoms array
-if (file_exists($INDEX_DIRECTORY."gedcoms.php")) {
-	require_once($INDEX_DIRECTORY."gedcoms.php");
-	if (!is_array($GEDCOMS)) $GEDCOMS = array();
-	$i=0;
-	foreach ($GEDCOMS as $key => $gedcom) {
-		$i++;
-		$GEDCOMS[$key]["commonsurnames"] = stripslashes($gedcom["commonsurnames"]);
-		if (empty($GEDCOMS[$key]["id"])) $GEDCOMS[$key]["id"] = $i;
-	}
-}
-else $GEDCOMS=array();
-
-if (isset($_REQUEST["GEDCOM"])){
-   $_REQUEST["GEDCOM"] = trim($_REQUEST["GEDCOM"]);
-}
-if (!isset($DEFAULT_GEDCOM)) $DEFAULT_GEDCOM = "";
-if (empty($_REQUEST["GEDCOM"])) {
-   if (isset($_SESSION["GEDCOM"])) $GEDCOM = $_SESSION["GEDCOM"];
-   else {
-      if ((empty($GEDCOM))||(empty($GEDCOMS[$GEDCOM]))) $GEDCOM=$DEFAULT_GEDCOM;
-      else if ((empty($GEDCOM))&&(count($GEDCOMS)>0)) {
-	      check_db();
-         foreach($GEDCOMS as $ged_file=>$ged_array) {
-	         $GEDCOM = $ged_file;
-	         if (check_for_import($ged_file)) break;
-         }
-      }
-   }
-}
-else {
-	$GEDCOM = $_REQUEST["GEDCOM"];
-}
 if (isset($_REQUEST["ged"])) {
 	$GEDCOM = trim($_REQUEST["ged"]);
 }
-if ($GEDCOM>=1) $GEDCOM = get_gedcom_from_id($GEDCOM);
-$_SESSION["GEDCOM"] = $GEDCOM;
 $INDILIST_RETRIEVED = false;
 $FAMLIST_RETRIEVED = false;
 

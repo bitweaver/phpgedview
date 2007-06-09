@@ -120,7 +120,7 @@ class SearchControllerRoot extends BaseController {
 	 * Initialization function
 	 */
 	function init() {
-		global $pgv_lang, $ALLOW_CHANGE_GEDCOM, $GEDCOM, $GEDCOMS;
+		global $pgv_lang, $ALLOW_CHANGE_GEDCOM, $GEDCOM;
 
 		if (!empty ($_REQUEST["topsearch"])) {
 			$this->topsearch = true;
@@ -166,8 +166,9 @@ class SearchControllerRoot extends BaseController {
 		}
 
 		// Retrieve the gedcoms to search in
-		if (($ALLOW_CHANGE_GEDCOM) && (count($GEDCOMS) > 1)) {
-			foreach ($GEDCOMS as $key => $gedarray) {
+		$gedcoms = $gGedcom->getList();
+		if (($ALLOW_CHANGE_GEDCOM) && (count($gedcoms) > 1)) {
+			foreach ($gedcoms as $key => $gedarray) {
 				$str = preg_replace(array ("/\./", "/-/", "/ /"), array ("_", "_", "_"), $key);
 				if (isset ($_REQUEST["$str"]) || isset ($this->topsearch)) {
 					$this->sgeds[] = $key;
@@ -383,7 +384,7 @@ class SearchControllerRoot extends BaseController {
 	 * 	Gathers results for a general search
 	 */
 	function GeneralSearch() {
-		global $REGEXP_DB, $GEDCOM, $GEDCOMS;
+		global $REGEXP_DB, $GEDCOM;
 		$oldged = $GEDCOM;
 		//-- perform the search
 		if (isset ($this->query)) {
@@ -1680,7 +1681,7 @@ class SearchControllerRoot extends BaseController {
 										print "</a></li></ul></td>";
 
 										/*******************************  Remote Links Per Result *************************************************/
-										if (userCanEdit(getUserName())) {
+										if ($gGedcom->isEditable()) {
 											print "<td class=\"list_value $TEXT_DIRECTION\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" >"."<ul style=\"list-style: NONE\"><li><a href=\"javascript:;\" "."onclick=\"return open_link('".$key."', '".$person->PID."', '".$indiName."');\">"."<b>".$pgv_lang["title_search_link"]."</b></a></ul></li></td></tr>\n";
 										}
 									}

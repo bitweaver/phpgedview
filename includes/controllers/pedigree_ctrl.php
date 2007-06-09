@@ -64,7 +64,7 @@ class PedigreeControllerRoot extends BaseController {
 	/**
 	 * Initialization function
 	 */
-	function init( $gContent ) {
+	function init( $gGedcom ) {
 		global $gBitSystem;
 		
 		$bwidth = 225;		// -- width of boxes on pedigree chart
@@ -101,7 +101,7 @@ class PedigreeControllerRoot extends BaseController {
 		}
 		$this->OLD_PGENS = $this->PEDIGREE_GENERATIONS;
 		
-		$this->rootPerson = $gContent->mRootPerson;
+		$this->rootPerson = $gGedcom->mRootPerson;
 
 		//-- adjustments for hide details
 //		if ($this->show_full==false) {
@@ -122,9 +122,9 @@ class PedigreeControllerRoot extends BaseController {
 
 		$this->pbwidth = $bwidth+6;
 		$this->pbheight = $bheight+5;
-		$this->treeid = $gContent->pedigreeArray();
+		$this->treeid = $gGedcom->pedigreeArray();
 
-		$this->PEDIGREE_GENERATIONS = $gContent->PedigreeGenerations;
+		$this->PEDIGREE_GENERATIONS = $gGedcom->PedigreeGenerations;
 		$this->treesize = pow(2, (int)($this->PEDIGREE_GENERATIONS))-1;
 
 		if (($this->PEDIGREE_GENERATIONS < 5)&&($this->show_full==false)) {

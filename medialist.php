@@ -21,13 +21,13 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: medialist.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: medialist.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
  */
 require("config.php");
 require_once 'includes/functions_print_facts.php';
 
 global $MEDIA_EXTERNAL, $THUMBNAIL_WIDTH;
-global $GEDCOM, $GEDCOMS, $gBitUser;
+global $GEDCOM, $gBitUser;
 global $currentPage, $lastPage;
 
 $lrm = chr(0xE2).chr(0x80).chr(0x8E);
@@ -46,7 +46,7 @@ if (!isset($_SESSION["medialist"])) $search = "yes";
 print_header($pgv_lang["multi_title"]);
 print "\n\t<div class=\"center\"><h2>".$pgv_lang["multi_title"]."</h2></div>\n\t";
 
-$isEditUser = userCanEdit(getUserName());		//-- Determines whether to show file names
+$isEditUser = $gGedcom->isEditable();		//-- Determines whether to show file names
 
 //-- automatically generate an image
 if ( $gBitUser->isAdmin() && $action=="generate" && !empty($file) && !empty($thumb)) {
@@ -62,7 +62,7 @@ if ($search == "yes") {
 	    print " ";
 
 	    // Display when user has Edit rights or when object belongs to current GEDCOM
-	    $disp = $isEditUser || $media["GEDFILE"]==$GEDCOMS[$GEDCOM]["id"];
+	    $disp = $isEditUser || $media["GEDFILE"]==$gGedcom->mGEDCOMId;
 	    // Display when Media objects aren't restricted by global privacy
 	    $disp &= displayDetailsById($media["XREF"], "OBJE");
 	    // Display when this Media object isn't restricted

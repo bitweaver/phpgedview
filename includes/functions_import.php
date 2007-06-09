@@ -45,7 +45,7 @@ require_once(PHPGEDVIEW_PKG_PATH.'includes/index_cache.php');
 function import_record($indirec, $update = false) {
 	global $gGedcom, $gBitSystem, $gid, $type, $indilist, $famlist, $sourcelist, $otherlist, $TOTAL_QUERIES, $prepared_statement;
 	global $GEDCOM_FILE, $FILE, $pgv_lang, $USE_RIN, $CREATE_GENDEX, $gdfp, $placecache;
-	global $ALPHABET_upper, $ALPHABET_lower, $place_id, $WORD_WRAPPED_NOTES, $GEDCOMS;
+	global $ALPHABET_upper, $ALPHABET_lower, $place_id, $WORD_WRAPPED_NOTES;
 	global $MAX_IDS, $fpnewged, $GEDCOM, $USE_RTL_FUNCTIONS, $GENERATE_UIDS;
 
 	$FILE = $GEDCOM;
@@ -127,7 +127,7 @@ function import_record($indirec, $update = false) {
 	if ($ct) {
 		$rfn = trim($rmatch[1]);
 		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "remotelinks VALUES ( ?, ?, ? )";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $rfn, $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($sql, array( $gid, $rfn, $gGedcom->mGEDCOMId ) );
 	}
 
 	if ($type == "INDI") {
@@ -149,7 +149,7 @@ function import_record($indirec, $update = false) {
 		foreach ($names as $indexval => $name) {
 			if ($j > 0) {
 				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "names VALUES( ?, ?, ?, ?, ?, ? )";
-				$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$FILE]["id"], $name[0], $name[1], $name[2], $name[3] ) );
+				$res = $gBitSystem->mDb->query($sql, array( $gid[$FILE]["id"], $name[0], $name[1], $name[2], $name[3] ) );
 
 			}
 			$j++;
@@ -157,7 +157,7 @@ function import_record($indirec, $update = false) {
 		$indi["names"] = $names;
 		$indi["isdead"] = $isdead;
 		$indi["gedcom"] = $indirec;
-		$indi["gedfile"] = $GEDCOMS[$FILE]["id"];
+		$indi["gedfile"] = $gGedcom->mGEDCOMId;
 		if ($USE_RIN) {
 			$ct = preg_match("/1 RIN (.*)/", $indirec, $match);
 			if ($ct > 0)
@@ -203,7 +203,7 @@ function import_record($indirec, $update = false) {
 			$fam["WIFE"] = $parents["WIFE"];
 			$fam["CHIL"] = $chil;
 			$fam["gedcom"] = $indirec;
-			$fam["gedfile"] = $GEDCOMS[$FILE]["id"];
+			$fam["gedfile"] = $gGedcom->mGEDCOMId;
 			//$famlist[$gid] = $fam;
 			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "families (f_id, f_file, f_husb, f_wife, f_chil, f_gedcom, f_numchil) VALUES ( ?, ?, ?, ?, ?, ?, ? )";
 			$res = $gBitSystem->mDb->query($sql, array ( $gid, $fam["gedfile"], $fam["HUSB"], $fam["WIFE"], $fam["CHIL"], $fam["gedcom"], $ct ));
@@ -233,7 +233,7 @@ function import_record($indirec, $update = false) {
 					}
 				}
 				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "sources VALUES ( ?, ?, ?, ? )";
-				$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$FILE]["id"], $name, $indirec ));
+				$res = $gBitSystem->mDb->query($sql, array( $gid[$FILE]["id"], $name, $indirec ));
 
 			} else
 				if ($type == "OBJE") {
@@ -250,7 +250,7 @@ function import_record($indirec, $update = false) {
 						}
 						if ($gid=="") $gid = $type;
 						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "other VALUES ( ?, ?, ?, ? )";
-						$res = $gBitSystem->mDb->query( $sql, array( $gid, $GEDCOMS[$FILE]["id"], $type, $indirec ) );
+						$res = $gBitSystem->mDb->query( $sql, array( $gid[$FILE]["id"], $type, $indirec ) );
 
 					}
 
@@ -270,13 +270,13 @@ function import_record($indirec, $update = false) {
  * @param string $letter	the letter for this name
  */
 function add_new_name($gid, $newname, $letter, $surname, $indirec) {
-	global $USE_RIN, $indilist, $FILE, $gGedcom, $gBitSystem, $GEDCOMS;
+	global $USE_RIN, $indilist, $FILE, $gGedcom, $gBitSystem;
 
 	$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "names VALUES( ?, ?, ?, ?, ?,'C' )";
-	$res = $gBitSystem->mDb->query($sql, array ( $gid, $GEDCOMS[$FILE]["id"], $newname, $letter, $surname ) );
+	$res = $gBitSystem->mDb->query($sql, array ( $gid[$FILE]["id"], $newname, $letter, $surname ) );
 
 	$sql = "UPDATE " . PHPGEDVIEW_DB_PREFIX . "individuals SET i_gedcom=? WHERE i_id=? AND i_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $indirec, $gid, $GEDCOMS[$FILE]["id"] ));
+	$res = $gBitSystem->mDb->query($sql, array( $indirec, $gid[$FILE]["id"] ));
 
 	$indilist[$gid]["names"][] = array (
 		$newname,
@@ -293,7 +293,7 @@ function add_new_name($gid, $newname, $letter, $surname, $indirec) {
  * @param string $indirec
  */
 function update_places($gid, $indirec, $update = false) {
-	global $FILE, $placecache, $gGedcom, $gBitSystem, $GEDCOMS;
+	global $FILE, $placecache, $gGedcom, $gBitSystem;
 
 	if (!isset($placecache)) $placecache = array();
 	$personplace = array();
@@ -322,7 +322,7 @@ function update_places($gid, $indirec, $update = false) {
 				if (!isset($personplace[$key])) {
 					$personplace[$key]=1;
 					$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'placelinks VALUES( ?, ?, ? )';
-					$res2 = $gBitSystem->mDb->query($sql, array( $parent_id, $gid, $GEDCOMS[$FILE]["id"] ));
+					$res2 = $gBitSystem->mDb->query($sql, array( $parent_id, $gid[$FILE]["id"] ));
 				}
 				$level++;
 				continue;
@@ -332,7 +332,7 @@ function update_places($gid, $indirec, $update = false) {
 			if ($search) {
 				//-- check if this place and level has already been added
 				$sql = 'SELECT p_id FROM '.PHPGEDVIEW_DB_PREFIX.'places WHERE p_level=? AND p_file=? AND p_parent_id=? AND p_place LIKE ?';
-				$res = $gBitSystem->mDb->query($sql, array( $level, $GEDCOMS[$FILE]['id'], $parent_id, $place ) );
+				$res = $gBitSystem->mDb->query($sql, array( $level[$FILE]['id'], $parent_id, $place ) );
 				if ($res->numRows()>0) {
 					$row = $res->fetchRow();
 					$p_id = $row['p_id'];
@@ -347,11 +347,11 @@ function update_places($gid, $indirec, $update = false) {
 				$dm_soundex = DMSoundex($place);
 				$p_id = get_next_id("places", "p_id");
 				$sql = 'INSERT INTO '.PHPGEDVIEW_DB_PREFIX.'places (p_id, p_place, p_level, p_parent_id, p_file) VALUES( ?, ?, ?, ?, ? )';
-				$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $place, $level, $parent_id, $GEDCOMS[$FILE]["id"] ) );
+				$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $place, $level, $parent_id[$FILE]["id"] ) );
 					}
 
 			$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'placelinks VALUES( ?, ?, ? )';
-			$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $gid, $GEDCOMS[$FILE]["id"] ) );
+			$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $gid[$FILE]["id"] ) );
 			//-- increment the level and assign the parent id for the next place level
 			$parent_id = $p_id;
 			$placecache[$key] = $p_id;
@@ -368,7 +368,7 @@ function update_places($gid, $indirec, $update = false) {
  * @param string $indirec
  */
 function update_dates($gid, $indirec) {
-	global $FILE, $gGedcom, $gBitSystem, $GEDCOMS;
+	global $FILE, $gGedcom, $gBitSystem;
 
 	$count = 0;
 	$pt = preg_match("/\d DATE (.*)/", $indirec, $match);
@@ -417,7 +417,7 @@ function update_dates($gid, $indirec) {
 						$sql .= "NULL)";
 				} else
 					$sql .= "NULL)";
-				$res = $gBitSystem->mDb->query($sql, array ( $date["day"], str2upper($date["month"] ), $date["mon"], $date["year"], $datestamp, $fact, $gid, $GEDCOMS[$FILE]["id"] ) );
+				$res = $gBitSystem->mDb->query($sql, array ( $date["day"], str2upper($date["month"] ), $date["mon"], $date["year"], $datestamp, $fact, $gid[$FILE]["id"] ) );
 
 				$count++;
 			}
@@ -436,7 +436,7 @@ function update_dates($gid, $indirec) {
  * @param int $count		The count of OBJE records in the parent record
  */
 function insert_media($objrec, $objlevel, $update, $gid, $count) {
-	global $TBLPREFIX, $media_count, $GEDCOMS, $gBitSystem, $FILE, $found_ids, $fpnewged;
+	global $TBLPREFIX, $media_count, $gBitSystem, $FILE, $found_ids, $fpnewged;
 
 	//-- check for linked OBJE records
 	//-- linked records don't need to insert to media table
@@ -487,7 +487,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
 			$m_id = get_next_id("media", "m_id");
 			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 			$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-			$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $media->ext, $media->title, $media->file, $GEDCOMS[$FILE]['id'], $objref ));
+			$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $media->ext, $media->title, $media->file[$FILE]['id'], $objref ));
 			$media_count++;
 			//-- if this is not an update then write it to the new gedcom file
 			if (!$update && !empty ($fpnewged))
@@ -503,7 +503,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
 	//-- add the entry to the media_mapping table
 	$mm_id = get_next_id("media_mapping", "mm_id");
 	$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec) VALUES ( ?, ?, ?, ?, ?, ? )";
-	$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $gid, $count,  $GEDCOMS[$FILE]['id'], $objref ) );
+	$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $gid, $count,  $gGedcom->mGEDCOMId, $objref ) );
 	return $objref;
 	}
 	else {
@@ -517,7 +517,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
  * @return string	an updated record
  */
 function update_media($gid, $indirec, $update = false, $keepmedia = false) {
-	global $GEDCOMS, $FILE, $gGedcom, $gBitSystem, $MEDIA_ID_PREFIX, $media_count, $found_ids;
+	global $FILE, $gGedcom, $gBitSystem, $MEDIA_ID_PREFIX, $media_count, $found_ids;
 	global $zero_level_media, $fpnewged, $objelist, $MAX_IDS;
 
 	if (!isset ($media_count))
@@ -529,7 +529,7 @@ function update_media($gid, $indirec, $update = false, $keepmedia = false) {
 	if (!$update && !isset ($MAX_IDS["OBJE"])) {
 		if (!$keepmedia) $MAX_IDS["OBJE"] = 1;
 		else {
-			$sql = "SELECT ni_id FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_type='OBJE' AND ni_gedfile='".$GEDCOMS[$FILE]['id']."'";
+			$sql = "SELECT ni_id FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_type='OBJE' AND ni_gedfile='".$gGedcom->mGEDCOMId."'";
 			$res = $gBitSystem->mDb->query($sql);
 			$row = $res->fetchRow();
 			$MAX_IDS["OBJE"] = $row[0];
@@ -570,7 +570,7 @@ function update_media($gid, $indirec, $update = false, $keepmedia = false) {
 			$objelist[$new_m_media] = $media;
 			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 			$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-			$res = $gBitSystem->mDb->query($sql, array ( $m_id, $new_m_media, $media->ext, $media->title, $media->file, $GEDCOMS[$FILE]["id"], $indirec ) );
+			$res = $gBitSystem->mDb->query($sql, array ( $m_id, $new_m_media, $media->ext, $media->title, $media->file[$FILE]["id"], $indirec ) );
 			$media_count++;
 		} else {
 			$new_m_media = $new_media;
@@ -584,7 +584,7 @@ function update_media($gid, $indirec, $update = false, $keepmedia = false) {
 	}
 
 	if ($keepmedia) {
-		$sql = "SELECT mm_media, mm_gedrec FROM ".$TBLPREFIX."media_mapping WHERE mm_gid='".$gid."' AND mm_gedfile='".$GEDCOMS[$FILE]['id']."'";
+		$sql = "SELECT mm_media, mm_gedrec FROM ".$TBLPREFIX."media_mapping WHERE mm_gid='".$gid."' AND mm_gedfile='".$gGedcom->mGEDCOMId."'";
 		$res = dbquery($sql);
 		$old_linked_media = array();
 		while($row =& $res->fetchRow()) {
@@ -687,9 +687,9 @@ function setup_database() {
  * @param boolean $keepmedia	Whether or not to keep media and media links in the tables
  */
 function empty_database($FILE, $keepmedia=false) {
-	global $gGedcom, $GEDCOMS, $gBitSystem;
+	global $gGedcom, $gBitSystem;
 
-	$FILE = $GEDCOMS[$FILE]["id"];
+	$FILE = $gGedcom->mGEDCOMId;
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "individuals WHERE i_file='$FILE'";
 	$res = $gBitSystem->mDb->query($sql);
 
@@ -753,15 +753,13 @@ function empty_database($FILE, $keepmedia=false) {
  */
 function read_gedcom_file() {
 	global $fcontents;
-	global $GEDCOM, $GEDCOMS;
-	global $pgv_lang;
 	$fcontents = "";
-	if (isset($GEDCOMS[$GEDCOM])) {
+	if (isset($gGedcom)) {
 		//-- only allow one thread to write the file at a time
 		$mutex = new Mutex($GEDCOM);
 		$mutex->Wait();
-		$fp = fopen($GEDCOMS[$GEDCOM]["path"], "r");
-		$fcontents = fread($fp, filesize($GEDCOMS[$GEDCOM]["path"]));
+		$fp = fopen($gGedcom->getPath(), "r");
+		$fcontents = fread($fp, filesize($gGedcom->getPath()));
 		fclose($fp);
 		$mutex->Release();
 	}
@@ -771,12 +769,12 @@ function read_gedcom_file() {
 //-- this function writes the $fcontents back to the
 //-- gedcom file
 function write_file() {
-	global $fcontents, $GEDCOMS, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY;
+	global $fcontents, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY;
 
 	if (empty($fcontents)) return;
 	if (preg_match("/0 TRLR/", $fcontents)==0) $fcontents.="0 TRLR\n";
 	//-- write the gedcom file
-	if (!is_writable($GEDCOMS[$GEDCOM]["path"])) {
+	if (!is_writable($gGedcom->getPath())) {
 		print "ERROR 5: GEDCOM file is not writable.  Unable to complete request.\n";
 		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . getUserName() ."<-");
 		return false;
@@ -786,7 +784,7 @@ function write_file() {
 	$mutex->Wait();
 	//-- what to do if file changed while waiting
 	
-	$fp = fopen($GEDCOMS[$GEDCOM]["path"], "wb");
+	$fp = fopen($gGedcom->getPath(), "wb");
 	if ($fp===false) {
 		print "ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request.\n";
 		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . getUserName() ."<-");
@@ -811,8 +809,8 @@ function write_file() {
 	fclose($fp);
 	//-- always release the mutex
 	$mutex->Release();
-	$logline = AddToLog($GEDCOMS[$GEDCOM]["path"]." updated by >".getUserName()."<");
- 	if (!empty($COMMIT_COMMAND)) check_in($logline, basename($GEDCOMS[$GEDCOM]["path"]), dirname($GEDCOMS[$GEDCOM]["path"]));
+	$logline = AddToLog($gGedcom->getPath()." updated by >".getUserName()."<");
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, basename($gGedcom->getPath()), dirname($gGedcom->getPath()));
 
 	return true;;
 }
@@ -824,7 +822,7 @@ function write_file() {
  * @param string $cid The change id of the record to accept
  */
 function accept_changes($cid) {
-	global $pgv_changes, $GEDCOM, $FILE, $gGedcom, $GEDCOMS, $MEDIA_ID_PREFIX;
+	global $pgv_changes, $GEDCOM, $FILE, $gGedcom, $MEDIA_ID_PREFIX;
 	global $COMMIT_COMMAND, $INDEX_DIRECTORY;
 
 	if (isset ($pgv_changes[$cid])) {
@@ -920,7 +918,7 @@ function accept_changes($cid) {
 			unset ($_SESSION["recent_changes"]["gedcom"][$GEDCOM]);
 		$logline = AddToLog("Accepted change $cid " . $change["type"] . " into database ->" . getUserName() . "<-");
 		if (!empty ($COMMIT_COMMAND))
-			check_in($logline, $GEDCOM, dirname($GEDCOMS[$GEDCOMS]['path']));
+			check_in($logline, $GEDCOM, dirname($gGedcom->getPath()));
 		if (isset ($change["linkpid"]))
 			accept_changes($change["linkpid"] . "_" . $GEDCOM);
 		return true;
@@ -933,7 +931,7 @@ function accept_changes($cid) {
  * @param string $indirec
  */
 function update_record($indirec, $delete = false) {
-	global $GEDCOM, $gGedcom, $gBitSystem, $GEDCOMS, $FILE;
+	global $GEDCOM, $gGedcom, $gBitSystem, $FILE;
 
 	if (empty ($FILE))
 		$FILE = $GEDCOM;
@@ -948,62 +946,62 @@ function update_record($indirec, $delete = false) {
 	}
 
 	$sql = "SELECT pl_p_id FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_gid=? AND pl_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	$placeids = array ();
 	while ($row = & $res->fetchRow()) {
 		$placeids[] = $row['pl_p_id'];
 	}
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_gid=? AND pl_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "dates WHERE d_gid=? AND d_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	//-- delete any unlinked places
 	foreach ($placeids as $indexval => $p_id) {
 		$sql = "SELECT count(pl_p_id) FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_p_id=? AND pl_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $p_id, $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($sql, array( $p_id, $gGedcom->mGEDCOMId ) );
 
 		$row = & $res->fetchRow();
 		if ($row['count'] == 0) {
 			$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "places WHERE p_id=? AND p_file=?";
-			$res = $gBitSystem->mDb->query($sql, array( $p_id, $GEDCOMS[$GEDCOM]["id"] ) );
+			$res = $gBitSystem->mDb->query($sql, array( $p_id, $gGedcom->mGEDCOMId ) );
 
 		}
 	}
 
 	//-- delete any media mapping references
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media_mapping WHERE mm_gid LIKE ? AND mm_gedfile=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "remotelinks WHERE r_gid=? AND r_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	if ($type == "INDI") {
 		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "individuals WHERE i_id LIKE ? AND i_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "names WHERE n_gid LIKE ? AND n_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+		$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	} else
 		if ($type == "FAM") {
 			$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "families WHERE f_id LIKE ? AND f_file=?";
-			$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+			$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 		} else
 			if ($type == "SOUR") {
 				$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "sources WHERE s_id LIKE ? AND s_file=?";
-				$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+				$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 			} else
 				if ($type == "OBJE") {
 					$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media WHERE m_media LIKE ? AND m_gedfile=?";
-					$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+					$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 				} else {
 					$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "other WHERE o_id LIKE ? AND o_file=?";
-					$res = $gBitSystem->mDb->query($sql, array( $gid, $GEDCOMS[$GEDCOM]["id"] ) );
+					$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 				}
 	if (!$delete) {

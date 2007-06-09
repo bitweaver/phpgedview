@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: findmedia.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: findmedia.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
@@ -65,7 +65,7 @@ if ($embed) {
 }
 
 //-- only allow users with edit privileges to access script.
-if ((!userCanEdit(getUserName())) || (!$ALLOW_EDIT_GEDCOM)) {
+if ((!$gGedcom->isEditable()) || (!$ALLOW_EDIT_GEDCOM)) {
 	print $pgv_lang["access_denied"];
 	print_simple_footer();
 	exit;

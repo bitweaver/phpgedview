@@ -2,7 +2,7 @@
 /**
  * Functions used Tools to cleanup and manipulate Gedcoms before they are imported
  *
- * $Id: functions_tools.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
+ * $Id: functions_tools.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003  John Finlay and Others
@@ -400,12 +400,12 @@ function convert_ansi_utf8() {
  * Produces an array of fault flags which can be used to display problem list
  */
 function gedcom_verify_scan( $override = false ) {
-	global $fcontents, $GEDCOMS, $GEDFILENAME;
+	global $fcontents, $GEDFILENAME;
 
 	if ($override == "yes") {
-		$bakfile = $GEDCOMS[$GEDFILENAME]["path"].'.bak';
+		$bakfile = $GEDFILENAME.'.bak';
 		if (file_exists($bakfile)) {
-			copy($bakfile, $GEDCOMS[$GEDFILENAME]["path"]);
+			copy($bakfile[$GEDFILENAME]["path"]);
 			unlink($bakfile);
 			$bakfile = false;
 		}
@@ -418,7 +418,7 @@ function gedcom_verify_scan( $override = false ) {
 	$l_cleanup['place']= false;
 	$l_cleanup['date']= false;
 	$l_cleanup['isansi'] = false;
-	$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "r");
+	$fp = fopen($GEDFILENAME, "r");
 	//-- read the gedcom and test it in 8KB chunks
 	while (!feof($fp)) {
 		$fcontents = fread($fp, 1024 * 8);

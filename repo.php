@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repo.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: repo.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
  */
 
 require("config.php");
@@ -86,7 +86,7 @@ print "\n\t<span class=\"name_head\">".PrintReady($name);
 
 if ($SHOW_ID_NUMBERS) print " &lrm;($rid)&lrm;";
 print "</span><br />";
-if (userCanEdit(getUserName())) {
+if ($gGedcom->isEditable()) {
 	if ($view!="preview") {
 		if (isset($pgv_changes[$rid."_".$GEDCOM])) {
 			if (!isset($show_changes)) {
@@ -214,7 +214,7 @@ foreach($repofacts as $indexval => $fact) {
 	}
 }
 //-- new fact link
-if (($view!="preview") &&(userCanEdit(getUserName()))) {
+if (($view!="preview") &&($gGedcom->isEditable())) {
 	print_add_new_fact($rid, $repofacts, "REPO");
 }
 print "</table>\n\n";

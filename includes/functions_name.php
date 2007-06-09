@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.8 2007/05/31 17:57:56 lsces Exp $
+ * @version $Id: functions_name.php,v 1.9 2007/06/09 21:11:04 lsces Exp $
  */
 
 /**
@@ -39,12 +39,11 @@ if (strstr($_SERVER["SCRIPT_NAME"],"functions_name.php")) {
  * @param int $min the number of times a surname must occur before it is added to the array
  */
 function get_common_surnames_index($ged) {
-	global $GEDCOMS;
-
+// generate direct from database
 	if (empty($GEDCOMS[$ged]["commonsurnames"])) store_gedcoms();
 	$surnames = array();
 	if (empty($GEDCOMS[$ged]["commonsurnames"]) || ($GEDCOMS[$ged]["commonsurnames"]==",")) return $surnames;
-	$names = preg_split("/[,;]/", $GEDCOMS[$ged]["commonsurnames"]);
+//	$names = preg_split("/[,;]/"[$ged]["commonsurnames"]);
 	foreach($names as $indexval => $name) {
 		$name = trim($name);
 		if (!empty($name)) $surnames[$name]["name"] = stripslashes($name);
@@ -60,10 +59,10 @@ function get_common_surnames_index($ged) {
  * @param int $min the number of times a surname must occur before it is added to the array
  */
 function get_common_surnames($min) {
-	global $GEDCOM, $indilist, $CONFIGURED, $GEDCOMS, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
+	global $GEDCOM, $indilist, $CONFIGURED, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
 
 	$surnames = array();
-	if (!$CONFIGURED || (count($GEDCOMS)==0) || (!check_for_import($GEDCOM))) return $surnames;
+	if (!$CONFIGURED || (!check_for_import($GEDCOM))) return $surnames;
 	//-- this line causes a bug where the common surnames list is not properly updated
 	// if ((!isset($indilist))||(!is_array($indilist))) return $surnames;
 	$surnames = get_top_surnames(100);
@@ -189,7 +188,7 @@ function get_name_in_record($indirec) {
  */
 function get_sortable_name($pid, $alpha="", $surname="", $allnames=false) {
 	global $SHOW_LIVING_NAMES, $PRIV_PUBLIC;
-	global $GEDCOM, $GEDCOMS, $indilist, $pgv_lang;
+	global $gGedcom, $indilist, $pgv_lang;
 
 	$mynames = array();
 
@@ -202,7 +201,7 @@ function get_sortable_name($pid, $alpha="", $surname="", $allnames=false) {
 	}
 
 	//-- first check if the person is in the cache
-	if ((isset($indilist[$pid]["names"]))&&($indilist[$pid]["gedfile"]==$GEDCOMS[$GEDCOM]['id'])) {
+	if ((isset($indilist[$pid]["names"]))&&($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) {
 		$names = $indilist[$pid]["names"];
 	}
 	else {
@@ -276,7 +275,7 @@ function get_person_name($pid, $checkUnknown=true) {
 	global $NAME_REVERSE;
 	global $NAME_FROM_GEDCOM;
 	global $indilist;
-	global $GEDCOM, $GEDCOMS;
+	global $gGedcom;
 
 	$name = "";
 
@@ -288,7 +287,7 @@ function get_person_name($pid, $checkUnknown=true) {
 	}
 	else {
 		//-- first check if the person is in the cache
-		if ((isset($indilist[$pid]["names"][0][0]))&&($indilist[$pid]["gedfile"]==$GEDCOMS[$GEDCOM]["id"])) {
+		if ((isset($indilist[$pid]["names"][0][0]))&&($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) {
 			$name = $indilist[$pid]["names"][0][0];
 		}
 		else {

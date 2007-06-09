@@ -29,7 +29,7 @@
  * @version $Id$
  */
 global $SEARCH_SPIDER, $CHARACTER_SET;
-global $GEDCOMS, $ALLOW_CHANGE_GEDCOM, $DEFAULT_GEDCOM;
+global $ALLOW_CHANGE_GEDCOM, $DEFAULT_GEDCOM;
 
 require "config.php";
 require($factsfile["english"]);
@@ -72,8 +72,9 @@ $link = "indilist.php?ged=$GEDCOM";
 print "<a href=\"".$link."\"><b>".$pgv_lang["individuals"]."</b></a><br />";
 
 //-- gedcom list
-if ($ALLOW_CHANGE_GEDCOM && count($GEDCOMS)>1) {
-	foreach($GEDCOMS as $ged=>$gedarray) {
+$gedcoms = $gGedcom->getList();
+if ($ALLOW_CHANGE_GEDCOM && count($gedcoms)>1) {
+	foreach($gedcoms as $ged=>$gedarray) {
 		$name = $pgv_lang["individual_list"]." - ".PrintReady($gedarray["title"]);
 		print "<a href=\"indilist.php?ged=".$ged."\"><b>".$name."</b></a><br />";
 	}

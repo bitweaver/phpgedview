@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: functions_mediadb.php,v 1.9 2007/05/28 11:50:59 lsces Exp $
+ * @version $Id: functions_mediadb.php,v 1.10 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (strstr($_SERVER["SCRIPT_NAME"],"functions")) {
@@ -89,9 +89,9 @@ function unlink_db_item($media, $indi, $ged) {
  * @return boolean
  */
 function exists_db_link($media, $indi, $ged) {
-	global $GEDCOMS, $gBitSystem;
+	global $gBitSystem;
 
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$GEDCOMS[$ged]["id"]."' AND mm_gid='".addslashes($indi)."' AND mm_media='".addslashes($media)."'";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$gGedcom->mGEDCOMId."' AND mm_gid='".addslashes($indi)."' AND mm_media='".addslashes($media)."'";
 	$tempsql = $gBitSystem->mDb->query($sql);
 	$res =& $tempsql;
 	if ($res->numRows()) { return true;} else {return false;}
@@ -108,10 +108,10 @@ function exists_db_link($media, $indi, $ged) {
  * @param string $ged The gedcom file this action is to apply to.
  */
 function update_db_media($media, $gedrec, $ged) {
-	global $GEDCOMS, $gBitSystem;
+	global $gBitSystem;
 
 	// replace the gedrec for the media record
-	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."media SET m_gedrec = '".addslashes($gedrec)."' WHERE (m_id = '".addslashes($media)."' AND m_gedfile = '".$GEDCOMS[$ged]["id"]."')";
+	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."media SET m_gedrec = '".addslashes($gedrec)."' WHERE (m_id = '".addslashes($media)."' AND m_gedfile = '".$gGedcom->mGEDCOMId."')";
 	$tempsql = $gBitSystem->mDb->query($sql);
 	$res =& $tempsql;
 
@@ -130,13 +130,13 @@ function update_db_media($media, $gedrec, $ged) {
  *                       the order is not replaced.
  */
 function update_db_link($media, $indi, $gedrec, $ged, $order=-1) {
-	global $GEDCOMS, $gBitSystem;
+	global $gBitSystem;
 
 	if (exists_db_link($media, $indi, $ged)) {
 		// replace the gedrec for the media link record
 		$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."media_mapping SET mm_gedrec = '".addslashes($gedrec)."'";
 		if ($order >= 0) $sql .= ", mm_order = $order";
-		$sql .= " WHERE (mm_media = '".addslashes($media)."' AND mm_gedfile = '".$GEDCOMS[$ged]["id"]."' AND mm_gid = '".addslashes($indi)."')";
+		$sql .= " WHERE (mm_media = '".addslashes($media)."' AND mm_gedfile = '".$gGedcom->mGEDCOMId."' AND mm_gid = '".addslashes($indi)."')";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		if ($res =& $tempsql) {
 			AddToLog("Media record: ".$media." updated successfully");
@@ -166,12 +166,12 @@ function update_db_link($media, $indi, $gedrec, $ged, $order=-1) {
  *                       the order is not replaced.
  */
 function add_db_link($media, $indi, $gedrec, $ged, $order=-1) {
-	global $GEDCOMS, $gBitSystem;
+	global $gBitSystem;
 
 
 	// if no preference to order find the number of records and add to the end
 	if ($order=-1) {
-		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$GEDCOMS[$ged]["id"]."' AND mm_gid='".addslashes($indi)."'";
+		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$gGedcom->mGEDCOMId."' AND mm_gid='".addslashes($indi)."'";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		$res =& $tempsql;
 		$ct = $res->numRows();
@@ -180,7 +180,7 @@ function add_db_link($media, $indi, $gedrec, $ged, $order=-1) {
 
 	// add the new media link record
 	$mm_id = get_next_id("media_mapping", "mm_id");
-	$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."media_mapping VALUES('".$mm_id."','".addslashes($media)."','".addslashes($indi)."','".addslashes($order)."','".$GEDCOMS[$ged]["id"]."','".addslashes($gedrec)."')";
+	$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."media_mapping VALUES('".$mm_id."','".addslashes($media)."','".addslashes($indi)."','".addslashes($order)."','".$gGedcom->mGEDCOMId."','".addslashes($gedrec)."')";
 	$tempsql = $gBitSystem->mDb->query($sql);
 	if ($res =& $tempsql) {
 		AddToChangeLog("New media link added to the database: ".$media);
@@ -217,10 +217,10 @@ function add_db_link($media, $indi, $gedrec, $ged, $order=-1) {
  * @return mixed A media list array.
  */
 function get_db_media_list() {
-	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $GEDCOM, $gBitSystem;
 
 	$medialist = array();
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY m_id";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile='".$gGedcom->mGEDCOMId."' ORDER BY m_id";
 	$res = $gBitSystem->mDb->query($sql);
 
 	$ct = $res->numRows();
@@ -256,10 +256,10 @@ function get_db_media_list() {
  * @return mixed A media list array.
  */
 function get_db_mapping_list() {
-	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $GEDCOM, $gBitSystem;
 
 	$mappinglist = array();
-	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY mm_gid, mm_order";
+	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$gGedcom->mGEDCOMId."' ORDER BY mm_gid, mm_order";
 	$res = $gBitSystem->mDb->query($sql);
 
 	$ct = $res->numRows();
@@ -296,11 +296,11 @@ function get_db_mapping_list() {
  * @return mixed A media list array.
  */
 function get_db_indi_mapping_list($indi) {
-	global $GEDCOM, $GEDCOMS, $gBitSystem;
+	global $GEDCOM, $gBitSystem;
 
 	$mappinglist = array();
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile=? AND mm_gid=? ORDER BY mm_order";
-	$res = $gBitSystem->mDb->query( $sql, array( $GEDCOMS[$GEDCOM]["id"], $indi ) );
+	$res = $gBitSystem->mDb->query( $sql, array( $gGedcom->mGEDCOMId, $indi ) );
 	$ct = $res->numRows();
 	while($row =& $res->fetchRow()){
 		$mapping = array();
@@ -508,19 +508,20 @@ function check_media_structure() {
 
 function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 	global $MEDIA_DIRECTORY_LEVELS, $BADMEDIA, $thumbdir, $MEDIATYPE;
-	global $level, $dirs, $ALLOW_CHANGE_GEDCOM, $GEDCOM, $GEDCOMS, $MEDIA_DIRECTORY;
+	global $level, $dirs, $ALLOW_CHANGE_GEDCOM, $MEDIA_DIRECTORY;
 	global $MEDIA_EXTERNAL, $medialist, $pgv_changes;
-	global $gBitSystem;
+	global $gBitSystem, $gGedcom;
 	
 	// Retrieve the gedcoms to search in
 	$sgeds = array();
-	if (($ALLOW_CHANGE_GEDCOM) && (count($GEDCOMS) > 1)) {
-		foreach ($GEDCOMS as $key=>$ged) {
+	$gedcoms = $gGedcom->getList();
+	if (($ALLOW_CHANGE_GEDCOM) && (count($edcoms) > 1)) {
+		foreach ($gedcoms as $key=>$ged) {
 			$str = preg_replace(array("/\./","/-/","/ /"), array("_","_","_"), $key);
 			if (isset($$str)) $sgeds[] = $key;
 		}
 	}
-	else $sgeds[] = $GEDCOM;
+	else $sgeds[] = $gGedcom->getName();
 		
 	// Create the medialist array of media in the DB and on disk
 	// NOTE: Get the media in the DB
@@ -530,7 +531,7 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 	$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=?";
 	$sql .= " AND (m_file LIKE ? OR m_file LIKE '%://%') ORDER BY m_id desc";
 	//print "sql: ".$sql."<br />";
-	$res =& $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"], "%$myDir%" ) );
+	$res =& $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId, "%$myDir%" ) );
 	$ct = $res->NumRows();
 	//print $directory.$sql;
 	
@@ -607,7 +608,7 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 					$firstChar = "";
 					$restChar = $change["gid"];
 				}
-				$keyMediaList = $firstChar.substr("000000".$restChar, -6)."_".$GEDCOMS[$GEDCOM]["id"];
+				$keyMediaList = $firstChar.substr("000000".$restChar, -6)."_".$gGedcom->mGEDCOMId;
 				if (isset($medialist[$keyMediaList])) {
 					$medialist[$keyMediaList]["CHANGE"] = $change["type"];
 					break;
@@ -617,7 +618,7 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 				$media = array();
 				$media["ID"] = $change["gid"];
 				$media["XREF"] = $change["gid"];
-				$media["GEDFILE"] = $GEDCOMS[$GEDCOM]["id"];
+				$media["GEDFILE"] = $gGedcom->mGEDCOMId;
 				$media["FILE"] = "";
 				$media["THUMB"] = "";
 				$media["EXISTS"] = false;
@@ -676,7 +677,7 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 	// Search the database for the applicable cross-references
 	// and fill in the Links part of the medialist
 	if ($ct > 0) {
-		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' AND (";
+		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile='".$gGedcom->mGEDCOMId."' AND (";
 		$i = 0;
 		foreach($medialist as $key => $media) {
 			$i++;
@@ -733,7 +734,7 @@ function get_medialist($currentdir=false, $directory="", $linkonly=false) {
 						$firstChar = "";
 						$restChar = $mediaId;
 					}
-					$keyMediaList = $firstChar.substr("000000".$restChar, -6)."_".$GEDCOMS[$GEDCOM]["id"];
+					$keyMediaList = $firstChar.substr("000000".$restChar, -6)."_".$gGedcom->mGEDCOMId;
 					
 					// Add this GEDCOM ID to the link list of the media object
 					if (isset($medialist[$keyMediaList])) {
@@ -843,7 +844,7 @@ function filterMedia($media, $filter, $acceptExt) {
 	if (empty($filter) || strlen($filter)<2) $filter = "";
 	if (empty($acceptExt) || $acceptExt!="http") $acceptExt = "";
 	
-	$isEditor = userCanEdit(getUserName()); 
+	$isEditor = $gGedcom->isEditable(); 
 
 	while (true) {
 		$isValid = true;
@@ -900,7 +901,7 @@ function filterMedia($media, $filter, $acceptExt) {
  * @return	array $myindilist array with all individuals that matched the query
  */
 function search_media_pids($query, $allgeds=false, $ANDOR="AND") {
-	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB, $GEDCOMS;
+	global $GEDCOM, $indilist, $gBitSystem, $REGEXP_DB;
 	$myindilist = array();
 	$args = array();
 	if ($REGEXP_DB) $term = "REGEXP";
@@ -924,7 +925,7 @@ function search_media_pids($query, $allgeds=false, $ANDOR="AND") {
 	}
 	if (!$allgeds) {
 		$sql .= " AND m_gedfile=?";
-		$args[] = $GEDCOMS[$GEDCOM]["id"];
+		$args[] = $gGedcom->mGEDCOMId;
 	}
 	if ((is_array($allgeds)) && (count($allgeds) != 0)) {
 		$sql .= " AND (";
@@ -939,7 +940,7 @@ function search_media_pids($query, $allgeds=false, $ANDOR="AND") {
 	if ($res) {
 		while($row =& $res->fetchRow()){
 			$sqlmm = "SELECT mm_gid FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping where mm_media = ? and mm_gedfile = ?";
-			$resmm =& $gBitSystem->mDb->query( $sqlmm, array( $row['m_media'], $GEDCOMS[$GEDCOM]["id"] ) );
+			$resmm =& $gBitSystem->mDb->query( $sqlmm, array( $row['m_media'], $gGedcom->mGEDCOMId ) );
 			while ($rowmm =& $resmm->fetchRow()) {
 				$myindilist[$rowmm[0]] = id_type($rowmm[0]);
 			}
@@ -1237,7 +1238,7 @@ function get_media_folders() {
  * @param int    $line		The line number in the GEDCOM record where this media item belongs
  */
 function show_media_form($pid, $action="newentry", $filename="", $linktoid="", $level=1, $line=0) {
-	global $GEDCOM, $pgv_lang, $TEXT_DIRECTION, $MEDIA_ID_PREFIX, $GEDCOMS, $WORD_WRAPPED_NOTES;
+	global $GEDCOM, $pgv_lang, $TEXT_DIRECTION, $MEDIA_ID_PREFIX, $WORD_WRAPPED_NOTES;
 	global $pgv_changes, $MEDIA_DIRECTORY_LEVELS, $MEDIA_DIRECTORY;
 	global $AUTO_GENERATE_THUMBS;
 	
@@ -1503,10 +1504,10 @@ function show_media_form($pid, $action="newentry", $filename="", $linktoid="", $
 }
 
 function get_media_links($m_media) {
-	global $GEDCOMS, $GEDCOM, $gGedcom;
+	global $GEDCOM, $gGedcom;
 	
 	$sql = "SELECT mm_gid FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_media=? AND mm_gedfile=?";
-	$res = $gGedcom->mDb->query($sql, array($m_media,$GEDCOMS[$GEDCOM]['id']) );
+	$res = $gGedcom->mDb->query($sql, array($m_media,$gGedcom->mGEDCOMId) );
 	$links = array();
 	while( $row =& $res->fetchRow() ) {
 		$links[] = $row['mm_gid'];

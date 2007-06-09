@@ -29,7 +29,7 @@ class BitGEDCOM extends LibertyContent {
 		$this->registerContentType( 'BitGEDCOM', array(
 				'content_type_guid' => 'bitGEDCOM',
 				'content_description' => 'Gedcom Archive',
-				'handler_class' => 'BitGEDCOM',
+				'handler_class' => 'bitGEDCOM',
 				'handler_package' => 'phpgedview',
 				'handler_file' => 'BitGEDCOM.php',
 				'maintainer_url' => 'http://home.lsces.co.uk/lsces'
@@ -47,13 +47,12 @@ class BitGEDCOM extends LibertyContent {
 			$this->mContentId = NULL;
 		}
 // TODO - Bodge to get started - to be replaced with default BitGEDCOM
-global $GEDCOM, $GEDCOMS;
-if(!isset($GEDCOM)) {
+global $GEDCOM;
+//if(!isset($GEDCOM)) {
 	$GEDCOM = "CAINEFull.GED";
-	$GEDCOMS[$GEDCOM]["id"] = 2;
-	$GEDCOMS[$GEDCOM]["path"] = "s:/familytree/CAINEFull.GED";
+	$this->mGedcomName = "CAINEFull.GED";
 	$this->mGEDCOMId = 2;
-}
+//}
 	}
 
 	/**
@@ -65,12 +64,31 @@ if(!isset($GEDCOM)) {
 	}
 
 	/**
+	* Check permissions to establish if user has permission to edit the object
+	* phpgedview package will modify this based on further security levels. 
+	*/
+	function isEditable() {
+		global $gBitUser;
+		if ($gBitUser->isAdmin()) return true;
+		else if ( $gBitUser->hasPermission( 'pgv_gedcom_edit' ) ) return true;
+		return( false );
+	}
+
+	/**
+	 * Check that the date for the GEDCOM has been imported
+	 */
+	function isImported() {
+		return  true;
+	}
+
+	/**
 	 * Set the root Id for this GEDCOM
 	 * @param Id to be found - if not set, then the first person will be found
 	 * Which first person is found will depend on the security level set for the user
 	 * @return Person object with details of the person.
 	 */
 	function rootId( $id = "" ) {
+
 		$this->mRootId = preg_replace("/[%?_]/", "", trim($id));
 /*
 	if ($USE_RIN) {
@@ -131,6 +149,18 @@ if(!isset($GEDCOM)) {
 			return "c:\\Data\\".$mGedcomName;
 		else
 			return "c:\\Data\\".$GEDFILENAME;
+	}
+
+	/**
+	 * Get the path to the privacy file for the gedcom
+	 */
+	function getPrivacyFile( ) {
+		if (!$this->isValid()) {
+			$privfile = "privacy.php";
+		} else {
+			$privfile = $gGedcom->getPrivacyFile();
+		}
+		return $privfile;
 	}
 
 	/**
@@ -468,9 +498,9 @@ function importGedcom() {
 	$sourcelist = array ();
 	$otherlist = array ();
 
-global $GEDCOMS, $GEDCOM;
+global $GEDCOM;
 $GEDCOM = basename($this->mInfo['g_path']);
-$GEDCOMS[$GEDCOM]["id"] = $this->mInfo['g_id'];
+$gGedcom->mGEDCOMId = $this->mInfo['g_id'];
 
 	//-- as we are importing the file, a new file is being written to store any
 	//-- changes that might have occurred to the gedcom file (eg. conversion of

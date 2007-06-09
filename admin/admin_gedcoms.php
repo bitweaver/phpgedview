@@ -1,14 +1,14 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.3 2007/05/29 19:19:39 lsces Exp $
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.4 2007/06/09 21:11:05 lsces Exp $
 require_once( '../../bit_setup_inc.php' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 if ( isset($_REQUEST['g_id']) ) {
-	$gContent = new BitGEDCOM( $_REQUEST['g_id'] );
-	$gContent->load();
+	$gGedcom = new BitGEDCOM( $_REQUEST['g_id'] );
+	$gGedcom->load();
 }
 else 
-	$gContent = new BitGEDCOM();
+	$gGedcom = new BitGEDCOM();
 //include_once( PHPGEDVIEW_PKG_PATH.'lookup_article_topic_inc.php' );
 
 // Is package installed and enabled
@@ -16,25 +16,25 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 $gBitSystem->verifyPermission( 'p_phpgedview_admin' );
 
 if( isset( $_REQUEST['fSubmitAddGedcom'] ) ) {
-	$gContent->storeGedcom( $_REQUEST );
-	if ( !empty( $gContent->mErrors ) ) {
-		$gBitSmarty->assign_by_ref('errors', $gContent->mErrors );
+	$gGedcom->storeGedcom( $_REQUEST );
+	if ( !empty( $gGedcom->mErrors ) ) {
+		$gBitSmarty->assign_by_ref('errors', $gGedcom->mErrors );
 	}
-} elseif( !empty( $_REQUEST['fActivateTopic'] )&& $gContent ) {
-//	$gContent->activateTopic();
-} elseif( !empty( $_REQUEST['fDeactivateTopic'] )&& $gContent ) {
-//	$gContent->deactivateTopic();
-} elseif( !empty( $_REQUEST['fRemoveGedcom'] )&& $gContent ) {
-	$gContent->expunge();
-} elseif( !empty( $_REQUEST['fUpload'] )&& $gContent ) {
+} elseif( !empty( $_REQUEST['fActivateTopic'] )&& $gGedcom ) {
+//	$gGedcom->activateTopic();
+} elseif( !empty( $_REQUEST['fDeactivateTopic'] )&& $gGedcom ) {
+//	$gGedcom->deactivateTopic();
+} elseif( !empty( $_REQUEST['fRemoveGedcom'] )&& $gGedcom ) {
+	$gGedcom->expunge();
+} elseif( !empty( $_REQUEST['fUpload'] )&& $gGedcom ) {
 	$this->expungeGedcom($_REQUEST['g_id']);
 	$this->importGedcom();
 }
 
-$gBitSmarty->assign_by_ref( "gContent", $gContent );
+$gBitSmarty->assign_by_ref( "gContent", $gGedcom );
 
 $listHash = $_REQUEST;
-$listgedcoms = $gContent->getList( $listHash );
+$listgedcoms = $gGedcom->getList( $listHash );
 
 $gBitSmarty->assign_by_ref( 'listgedcoms', $listgedcoms );
 $gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );

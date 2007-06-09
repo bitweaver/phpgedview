@@ -45,7 +45,6 @@ if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 require $confighelpfile["english"];
 if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
 
-require_once 'includes/menu.php';
 require_once 'includes/person_class.php';
 
 $indifacts = array();			 // -- array to store the fact records in for sorting and displaying

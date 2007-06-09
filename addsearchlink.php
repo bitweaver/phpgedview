@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: addsearchlink.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: addsearchlink.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
  */
 
 require ("config.php");
@@ -30,7 +30,7 @@ require ("config.php");
 print_simple_header($pgv_lang["title_search_link"]);
 
 //-- only allow users with editing access to this page
-if (!userCanEdit(getUserName())) {
+if (!$gGedcom->isEditable()) {
 	print $pgv_lang["access_denied"];
 	print_simple_footer();
 	exit;

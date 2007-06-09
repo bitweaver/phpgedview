@@ -285,7 +285,7 @@ if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]
 		}
 		fclose($fp);
 		fclose($fw);
-		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak", $GEDCOMS[$GEDFILENAME]["path"]);
+		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak"[$GEDFILENAME]["path"]);
 		$cleanup_needed = false;
 		$import = "true";
 	} else {
@@ -565,7 +565,7 @@ if ($verify == "validate_form") {
 	if ($import != true && $skip_cleanup != $pgv_lang["skip_cleanup"]) {
 		require_once ("includes/functions_tools.php");
 		if ($override == "yes") {
-			copy($bakfile, $GEDCOMS[$GEDFILENAME]["path"]);
+			copy($bakfile[$GEDFILENAME]["path"]);
 			if (file_exists($bakfile))
 				unlink($bakfile);
 			$bakfile = false;
@@ -881,7 +881,7 @@ if ($startimport == "true") {
 	$temp = $THEME_DIR;
 	$GEDCOM_FILE = $GEDCOMS[$ged]["path"];
 	$FILE = $ged;
-	$TITLE = $GEDCOMS[$ged]["title"];
+	$TITLE = $gGedcom->getTitle();
 	require ($GEDCOMS[$ged]["config"]);
 	if ($LANGUAGE <> $_SESSION["CLANGUAGE"])
 		$LANGUAGE = $_SESSION["CLANGUAGE"];

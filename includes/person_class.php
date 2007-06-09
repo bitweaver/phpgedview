@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: person_class.php,v 1.5 2007/06/03 20:47:18 lsces Exp $
+ * @version $Id: person_class.php,v 1.6 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -83,11 +83,11 @@ class Person extends GedcomRecord {
 	 * @return Person	returns an instance of a person object
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $indilist, $GEDCOM, $GEDCOMS, $pgv_changes;
+		global $indilist, $gGedcom, $pgv_changes;
 
 		if (isset($indilist[$pid])
 			&& isset($indilist[$pid]['gedfile'])
-			&& $indilist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+			&& $indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($indilist[$pid]['object'])) return $indilist[$pid]['object'];
 		}
 		$indirec = find_person_record($pid);
@@ -103,7 +103,7 @@ class Person extends GedcomRecord {
 			}
 		}
 		if (empty($indirec)) {
-			if ( /*userCanEdit(getUserName()) && */ isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if ( /*$gGedcom->isEditable() && */ isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -113,11 +113,11 @@ class Person extends GedcomRecord {
 		if (!empty($fromfile)) $person->setChanged(true);
 		//-- update the cache
 		if ($person->isRemote()) {
-			global $indilist, $GEDCOM, $GEDCOMS;
+			global $indilist;
 			$indilist[$pid]['gedcom'] = $person->gedrec;
 			$indilist[$pid]['names'] = get_indi_names($person->gedrec);
 			$indilist[$pid]["isdead"] = is_dead($person->gedrec);
-			$indilist[$pid]["gedfile"] = $GEDCOMS[$GEDCOM]['id'];
+			$indilist[$pid]["gedfile"] = $gGedcom->mGEDCOMId;
 			if (isset($indilist[$pid]['privacy'])) unset($indilist[$pid]['privacy']);
 		}
 		$indilist[$pid]['object'] = &$person;
@@ -540,7 +540,7 @@ class Person extends GedcomRecord {
 	 * @return int 	the number of children
 	 */
 	function getNumberOfChildren() {
-		global $indilist, $GEDCOMS, $GEDCOM;
+		global $indilist, $gGedcom;
 		
 		//-- first check for the value in the gedcom record
 		$nchi = get_gedcom_value("NCHI", 1, $this->gedrec);
@@ -548,7 +548,7 @@ class Person extends GedcomRecord {
 		
 		//-- check if the value was stored in the cache 
 		if (isset($indilist[$this->xref])
-				&& $indilist[$this->xref]["gedfile"] == $GEDCOMS[$GEDCOM]['id'] 
+				&& $indilist[$this->xref]["gedfile"] == $gGedcom->mGEDCOMId 
 				&& isset($indilist[$this->xref]["numchil"])) return $indilist[$this->xref]["numchil"];
 		$nchi=0;
 		foreach ($this->getSpouseFamilies() as $famid=>$family) $nchi+=$family->getNumberOfChildren();
@@ -719,9 +719,9 @@ class Person extends GedcomRecord {
 	 * @return Person
 	 */
 	function &getUpdatedPerson() {
-		global $GEDCOM, $pgv_changes, $GEDCOMS;
+		global $GEDCOM, $pgv_changes;
 		if ($this->changed) return null;
-		if (userCanEdit(getUserName())&&($this->disp)) {
+		if ($gGedcom->isEditable()&&($this->disp)) {
 			if (isset($pgv_changes[$this->xref."_".$GEDCOM])) {
 				$newrec = find_updated_record($this->xref);
 				if (!empty($newrec)) {
@@ -1218,10 +1218,10 @@ class Person extends GedcomRecord {
 	 */
 	function add_asso_facts($pid) {
 		global $factarray, $pgv_lang;
-		global $assolist, $GEDCOM, $GEDCOMS;
+		global $assolist, $gGedcom;
 		if (!function_exists("get_asso_list")) return;
 		get_asso_list();
-		$apid = $pid."[".$GEDCOMS[$GEDCOM]["id"]."]";
+		$apid = $pid."[".$gGedcom->mGEDCOMId."]";
 		// associates exist ?
 		if (isset($assolist[$apid])) {
 			// if so, print all indi's where the indi is associated to

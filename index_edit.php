@@ -24,7 +24,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_edit.php,v 1.7 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: index_edit.php,v 1.8 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -96,9 +96,9 @@ $IconRDarrow = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rdarrow"]["other"].
 $IconLDarrow = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["ldarrow"]["other"]."\" width=\"20\" height=\"20\" alt=\"\" />";
 
 if ($command=="user") print_simple_header($pgv_lang["mygedview"]);
-else print_simple_header($GEDCOMS[$GEDCOM]["title"]);
+else print_simple_header($gGedcom->mInfo['title']);
 
-$GEDCOM_TITLE = PrintReady($GEDCOMS[$GEDCOM]["title"]);  // needed in $pgv_lang["rss_descr"]
+$GEDCOM_TITLE = PrintReady($gGedcom->mInfo['title']);  // needed in $pgv_lang["rss_descr"]
 
 ?>
 <script language="JavaScript" type="text/javascript">

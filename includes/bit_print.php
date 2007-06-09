@@ -495,7 +495,7 @@ function print_header($title, $head="",$use_alternate_styles=true) {
 	global $HOME_SITE_URL, $HOME_SITE_TEXT, $SERVER_URL;
 	global $BROWSERTYPE, $SEARCH_SPIDER;
 	global $view, $cart;
-	global $CHARACTER_SET, $VERSION, $PGV_IMAGE_DIR, $GEDCOMS, $GEDCOM, $CONTACT_EMAIL, $COMMON_NAMES_THRESHOLD, $INDEX_DIRECTORY;
+	global $CHARACTER_SET, $VERSION, $PGV_IMAGE_DIR, $GEDCOM, $CONTACT_EMAIL, $COMMON_NAMES_THRESHOLD, $INDEX_DIRECTORY;
 	global $SCRIPT_NAME, $QUERY_STRING, $action, $query, $changelanguage,$theme_name;
 	global $FAVICON, $stylesheet, $print_stylesheet, $rtl_stylesheet, $headerfile, $toplinks, $THEME_DIR, $print_headerfile;
 	global $PGV_IMAGES, $TEXT_DIRECTION, $ONLOADFUNCTION,$REQUIRE_AUTHENTICATION, $SHOW_SOURCES, $ENABLE_RSS, $RSS_FORMAT;
@@ -544,7 +544,7 @@ function print_header($title, $head="",$use_alternate_styles=true) {
 			$applicationType = "application/atom+xml";
 		}
 		$gedcomTitle = "";
-		if (!empty($GEDCOMS[$GEDCOM]["title"])) $gedcomTitle = $GEDCOMS[$GEDCOM]["title"];
+		if (!empty($gGedcom->mInfo['title'])) $gedcomTitle = $gGedcom->mInfo['title'];
 		if(empty($gedcomTitle)){
 			$gedcomTitle = "RSS";
 		}
@@ -595,8 +595,8 @@ function print_header($title, $head="",$use_alternate_styles=true) {
 		  	foreach($surnames as $surname=>$count) if (!empty($surname)) print ", $surname";
 	  	  }
 		  print "\" />\n";
-		  if ((empty($META_DESCRIPTION))&&(!empty($GEDCOMS[$GEDCOM]["title"]))) $META_DESCRIPTION = $GEDCOMS[$GEDCOM]["title"];
-		  if ((empty($META_PAGE_TOPIC))&&(!empty($GEDCOMS[$GEDCOM]["title"]))) $META_PAGE_TOPIC = $GEDCOMS[$GEDCOM]["title"];
+		  if ((empty($META_DESCRIPTION))&&(!empty($gGedcom->mInfo['title']))) $META_DESCRIPTION = $gGedcom->mInfo['title'];
+		  if ((empty($META_PAGE_TOPIC))&&(!empty($gGedcom->mInfo['title']))) $META_PAGE_TOPIC = $gGedcom->mInfo['title'];
 		  if (!empty($META_DESCRIPTION)) print "<meta name=\"description\" content=\"".preg_replace("/\"/", "", $META_DESCRIPTION)."\" />\n";
 		  if (!empty($META_PAGE_TOPIC)) print "<meta name=\"page-topic\" content=\"".preg_replace("/\"/", "", $META_PAGE_TOPIC)."\" />\n";
 	 	  if (!empty($META_AUDIENCE)) print "<meta name=\"audience\" content=\"$META_AUDIENCE\" />\n";
@@ -751,7 +751,7 @@ function print_simple_header($title) {
 	 global $CHARACTER_SET, $VERSION, $PGV_IMAGE_DIR;
 	 global $SCRIPT_NAME, $QUERY_STRING, $action, $query, $changelanguage;
 	 global $FAVICON, $stylesheet, $headerfile, $toplinks, $THEME_DIR, $print_headerfile, $SCRIPT_NAME;
-	 global $TEXT_DIRECTION, $GEDCOMS, $GEDCOM, $CONTACT_EMAIL, $COMMON_NAMES_THRESHOLD,$PGV_IMAGES;
+	 global $TEXT_DIRECTION, $GEDCOM, $CONTACT_EMAIL, $COMMON_NAMES_THRESHOLD,$PGV_IMAGES;
 	 global $META_AUTHOR, $META_PUBLISHER, $META_COPYRIGHT, $META_DESCRIPTION, $META_PAGE_TOPIC, $META_AUDIENCE, $META_PAGE_TYPE, $META_ROBOTS, $META_REVISIT, $META_KEYWORDS, $META_TITLE, $META_SURNAME_KEYWORDS;
 
 	// If not on allowed list, dump the spider onto the redirect page.
@@ -797,8 +797,8 @@ function print_simple_header($title) {
 			  foreach($surnames as $surname=>$count) print ", $surname";
 	  	  }
 		  print "\" />\n";
-		  if ((empty($META_DESCRIPTION))&&(!empty($GEDCOMS[$GEDCOM]["title"]))) $META_DESCRIPTION = $GEDCOMS[$GEDCOM]["title"];
-		  if ((empty($META_PAGE_TOPIC))&&(!empty($GEDCOMS[$GEDCOM]["title"]))) $META_PAGE_TOPIC = $GEDCOMS[$GEDCOM]["title"];
+		  if ((empty($META_DESCRIPTION))&&(!empty($gGedcom->mInfo['title']))) $META_DESCRIPTION = $gGedcom->mInfo['title'];
+		  if ((empty($META_PAGE_TOPIC))&&(!empty($gGedcom->mInfo['title']))) $META_PAGE_TOPIC = $gGedcom->mInfo['title'];
 		  if (!empty($META_DESCRIPTION)) print "<meta name=\"description\" content=\"".preg_replace("/\"/", "", $META_DESCRIPTION)."\" />\n";
 		  if (!empty($META_PAGE_TOPIC)) print "<meta name=\"page-topic\" content=\"".preg_replace("/\"/", "", $META_PAGE_TOPIC)."\" />\n";
 	 	  if (!empty($META_AUDIENCE)) print "<meta name=\"audience\" content=\"$META_AUDIENCE\" />\n";
@@ -874,7 +874,7 @@ function message(username, method, url, subject) {
 // -- print the html to close the page
 function print_footer() {
 	 global $without_close, $pgv_lang, $view, $buildindex, $pgv_changes, $DBTYPE;
-	 global $SHOW_STATS, $SCRIPT_NAME, $QUERY_STRING, $footerfile, $print_footerfile, $GEDCOMS, $ALLOW_CHANGE_GEDCOM, $printlink;
+	 global $SHOW_STATS, $SCRIPT_NAME, $QUERY_STRING, $footerfile, $print_footerfile, $ALLOW_CHANGE_GEDCOM, $printlink;
 	 global $PGV_IMAGE_DIR, $theme_name, $PGV_IMAGES, $TEXT_DIRECTION, $footer_count, $DEBUG;
 
 	 if (!isset($footer_count)) $footer_count = 1;
@@ -1579,18 +1579,6 @@ function print_fact_notes($factrec, $level) {
 	  	  }
 	 }
 }
-/**
- * print a gedcom title linked to the gedcom portal
- *
- * This function will print the HTML to link the current gedcom title back to the
- * gedcom portal welcome page
- * @author John Finlay
- */
-function print_gedcom_title_link($InHeader=FALSE) {
-	 global $GEDCOMS, $GEDCOM;
-	 if ((count($GEDCOMS)==0)||(empty($GEDCOM))) return;
-	 if (isset($GEDCOMS[$GEDCOM])) print "<a href=\"index.php?command=gedcom\" class=\"gedcomtitle\">".PrintReady($GEDCOMS[$GEDCOM]["title"], $InHeader)."</a>";
-}
 
 //-- function to print a privacy error with contact method
 function print_privacy_error($username) {
@@ -1686,7 +1674,7 @@ function print_help_link($help, $helpText, $show_desc="", $use_print_text=false,
  */
 function print_text($help, $level=0, $noprint=0){
 	 global $pgv_lang, $factarray, $COMMON_NAMES_THRESHOLD;
-	 global $INDEX_DIRECTORY, $GEDCOMS, $GEDCOM, $GEDCOM_TITLE, $LANGUAGE;
+	 global $INDEX_DIRECTORY, $GEDCOM, $GEDCOM_TITLE, $LANGUAGE;
 	 global $GUESS_URL, $UpArrow, $DAYS_TO_SHOW_LIMIT, $MEDIA_DIRECTORY;
 	 global $repeat, $thumbnail, $xref, $pid;
 	 if (!isset($_SESSION["DEBUG_LANG"])) $DEBUG_LANG = "no";
@@ -1808,56 +1796,6 @@ function print_help_index($help){
  * @param array $menu the menuitems array to print
  */
 function print_menu($menu, $parentmenu="") {
-	include_once 'includes/menu.php';
-	$conv = array(
-		'label'=>'label',
-		'labelpos'=>'labelpos',
-		'icon'=>'icon',
-		'hovericon'=>'hovericon',
-		'link'=>'link',
-		'accesskey'=>'accesskey',
-		'class'=>'class',
-		'hoverclass'=>'hoverclass',
-		'flyout'=>'flyout',
-		'submenuclass'=>'submenuclass',
-		'onclick'=>'onclick'
-	);
-	$obj = new Menu();
-	if ($menu == 'separator') {
-		$obj->isSeperator();
-		$obj->printMenu();
-		return;
-	}
-	$items = false;
-	foreach ($menu as $k=>$v) {
-		if ($k == 'items' && is_array($v) && count($v) > 0) $items = $v;
-		else {
-			if (isset($conv[$k])){
-				if ($v != '') {
-					$obj->$conv[$k] = $v;
-				}
-			}
-		}
-	}
-	if ($items !== false) {
-		foreach ($items as $sub) {
-			$sobj = new Menu();
-			if ($sub == 'separator') {
-				$sobj->isSeperator();
-				$obj->addSubmenu($sobj);
-				continue;
-			}
-			foreach ($sub as $k2=>$v2) {
-				if (isset($conv[$k2])) {
-					if ($v2 != '') {
-						$sobj->$conv[$k2] = $v2;
-					}
-				}
-			}
-			$obj->addSubmenu($sobj);
-		}
-	}
-	$obj->printMenu();
 }
 
 //-------------------------------------------------------------------------------------------------------------

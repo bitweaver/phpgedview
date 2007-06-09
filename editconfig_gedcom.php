@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.8 2007/05/29 08:42:29 lsces Exp $
+ * @version $Id: editconfig_gedcom.php,v 1.9 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -187,10 +187,10 @@ if (isset($ged)) {
 			}
 		}
 		$GEDFILENAME = $ged;
-		if (!isset($gedcom_title)) $gedcom_title = $GEDCOMS[$ged]["title"];
+		if (!isset($gedcom_title)) $gedcom_title = $gGedcom->getTitle();
 		$gedcom_config = $GEDCOMS[$ged]["config"];
 		$gedcom_privacy = $GEDCOMS[$ged]["privacy"];
-		$gedcom_id = $GEDCOMS[$ged]["id"];
+		$gedcom_id = $gGedcom->mGEDCOMId;
 		$FILE = $ged;
 		$oldged = $ged;
 	}
@@ -507,9 +507,9 @@ if (!empty($error)) print "<span class=\"error\">".$error."</span>";
     <td colspan="2" class="facts_label"><?php
     		print "<h2>".$pgv_lang["gedconf_head"]." - ";
 		if (isset($ged)) {
-//			if ($TEXT_DIRECTION=="rtl") print "&rlm;(".$GEDCOMS[$ged]["id"].")&nbsp;&rlm;";
-//			else print "&nbsp;&lrm;(".$GEDCOMS[$ged]["id"].")&lrm;";
-			print $GEDCOMS[$ged]["title"];
+//			if ($TEXT_DIRECTION=="rtl") print "&rlm;(".$gGedcom->mGEDCOMId.")&nbsp;&rlm;";
+//			else print "&nbsp;&lrm;(".$gGedcom->mGEDCOMId.")&lrm;";
+			print $gGedcom->getTitle();
 		}
 		else if ($source == "add_form") print $pgv_lang["add_gedcom"];
 		else if ($source == "upload_form") print $pgv_lang["upload_gedcom"];

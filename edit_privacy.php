@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Privacy
- * @version $Id: edit_privacy.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: edit_privacy.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -115,7 +115,7 @@ function write_yes_no($checkVar) {
  * @param string $outputVar	error message style
  */
 function search_ID_details($checkVar, $outputVar) {
-	global $GEDCOMS, $GEDCOM;
+	global $GEDCOM;
 	global $pgv_lang;
 
 	$indirec = find_gedcom_record($checkVar);
@@ -167,7 +167,7 @@ print_header($pgv_lang["privacy_header"]);
 <table class="facts_table <?php print $TEXT_DIRECTION ?>">
 	<tr>
 		<td colspan="2" class="facts_label"><?php
-			print "<h2>".$pgv_lang["edit_privacy_title"]." - ".$GEDCOMS[$ged]["title"]. "</h2>";
+			print "<h2>".$pgv_lang["edit_privacy_title"]." - ".$gGedcom->getTitle(). "</h2>";
 			print "(&lrm;".$PRIVACY_MODULE.")";
 			print "<br /><br /><a href=\"editgedcoms.php\"><b>";
 			print $pgv_lang["lang_back_manage_gedcoms"];

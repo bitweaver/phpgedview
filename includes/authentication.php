@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.17 2007/05/28 11:26:03 lsces Exp $
+ * $Id: authentication.php,v 1.18 2007/06/09 21:11:04 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2003	John Finlay and Others
@@ -219,35 +219,6 @@ function getUser($username) {
 	$user["anon"]=$gBitUser->isValid();
 	$user["email"] = $gBitUser->mInfo["email"];
 	$user["default_tab"] = 0;
-/*	$user["canedit"]=unserialize($user_row["u_canedit"]);
-	-- convert old <3.1 access levels to the new 3.2 access levels
-	foreach($user["canedit"] as $key=>$value) {
-		if ($value=="no") $user["canedit"][$key] = "access";
-		if ($value=="yes") $user["canedit"][$key] = "edit";
-	}
-	foreach($GEDCOMS as $ged=>$gedarray) {
-		if (!isset($user["canedit"][$ged])) $user["canedit"][$ged] = "access";
-	}
-	$user["verified"] = $user_row["u_verified"];
-	$user["verified_by_admin"] = $user_row["u_verified_by_admin"];
-	$user["language"] = $user_row["u_language"];
-	$user["pwrequested"] = $user_row["u_pwrequested"];
-	$user["reg_timestamp"] = $user_row["u_reg_timestamp"];
-	$user["reg_hashcode"] = $user_row["u_reg_hashcode"];
-	$user["theme"] = $user_row["u_theme"];
-	$user["loggedin"] = $user_row["u_loggedin"];
-	$user["sessiontime"] = $user_row["u_sessiontime"];
-	$user["contactmethod"] = $user_row["u_contactmethod"];
-	if ($user_row["u_visibleonline"]!='N') $user["visibleonline"]=true;
-		else $user["visibleonline"]=false;
-	if ($user_row["u_editaccount"]!='N' || $user["canadmin"]) $user["editaccount"]=true;
-		else $user["editaccount"]=false;
-	$user["comment"] = $user_row["u_comment"];
-	$user["comment_exp"] = $user_row["u_comment_exp"];
-	$user["sync_gedcom"] = $user_row["u_sync_gedcom"];
-	$user["relationship_privacy"] = $user_row["u_relationship_privacy"];
-	$user["max_relation_path"] = $user_row["u_max_relation_path"];
-*/
 	$user["auto_accept"]=false;
 
 	if (isset($user)) return $user;
@@ -313,7 +284,7 @@ function AddToLog($LogString, $savelangerror=false) {
 //----------------------------------- AddToSearchLog
 //-- requires a string to add into the searchlog-file
 function AddToSearchLog($LogString, $allgeds) {
-	global $INDEX_DIRECTORY, $SEARCHLOG_CREATE, $GEDCOM, $GEDCOMS, $username;
+	global $INDEX_DIRECTORY, $SEARCHLOG_CREATE, $GEDCOM, $username;
 
 	if (!isset($allgeds)) return;
 	if (count($allgeds) == 0) return;
@@ -334,7 +305,6 @@ function AddToSearchLog($LogString, $allgeds) {
 			if ($SEARCHLOG_CREATE=="yearly") $logfile = $INDEX_DIRECTORY."/srch-" . $GEDCOM . date("Y") . ".log";
 			if (is_writable($INDEX_DIRECTORY)) {
 				$logline = "Date / Time: ".date("d.m.Y H:i:s") . " - IP: " . $REMOTE_ADDR . " - User: " .  getUserName() . "<br />";
-				if (count($allgeds) == count($GEDCOMS)) $logline .= "Searchtype: Global<br />"; else $logline .= "Searchtype: Gedcom<br />";
 				$logline .= $LogString . "<br /><br />\r\n";
 				$fp = fopen($logfile, "a");
 				flock($fp, 2);
@@ -351,7 +321,7 @@ function AddToSearchLog($LogString, $allgeds) {
 //----------------------------------- AddToChangeLog
 //-- requires a string to add into the changelog-file
 function AddToChangeLog($LogString, $ged="") {
-	global $INDEX_DIRECTORY, $CHANGELOG_CREATE, $GEDCOM, $GEDCOMS, $username, $SEARCHLOG_CREATE;
+	global $INDEX_DIRECTORY, $CHANGELOG_CREATE, $GEDCOM, $username, $SEARCHLOG_CREATE;
 
 	//-- do not allow code to be written to the log file
 	$LogString = preg_replace("/<\?.*\?>/", "*** CODE DETECTED ***", $LogString);
@@ -429,7 +399,7 @@ function deleteFavorite($fv_id) {
  * @param string $username		the username to get the favorites for
  */
 function getUserFavorites($username) {
-	global $GEDCOMS, $gGedcom, $CONFIGURED;
+	global $gGedcom, $CONFIGURED;
 
 	$favorites = array();
 	//-- make sure we don't try to look up favorites for unconfigured sites

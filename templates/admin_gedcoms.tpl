@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/admin_gedcoms.tpl,v 1.4 2007/05/31 08:48:41 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/admin_gedcoms.tpl,v 1.5 2007/06/09 21:11:03 lsces Exp $ *}
 {strip}
 
 <div class="floaticon">{bithelp}</div>
@@ -9,7 +9,7 @@
 	</div>
 
 	<div class="body">
-		{formfeedback error=$gContent->mErrors}
+		{formfeedback error=$gGedcom->mErrors}
 
 		{form legend="Create a new Gedcom" enctype="multipart/form-data"}
 			<input type="hidden" name="MAX_FILE_SIZE" value="16000000" />

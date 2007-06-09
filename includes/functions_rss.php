@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_rss.php,v 1.6 2006/10/29 16:45:27 lsces Exp $
+ * @version $Id: functions_rss.php,v 1.7 2007/06/09 21:11:04 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  */
@@ -384,13 +384,13 @@ function getTodaysEvents() {
  * @TODO does not print the family with most children due to the embedded html in that function.
  */
 function getGedcomStats() {
-	global $pgv_lang, $day, $month, $year, $PGV_BLOCKS, $GEDCOM, $GEDCOMS, $ALLOW_CHANGE_GEDCOM, $command, $COMMON_NAMES_THRESHOLD, $SERVER_URL, $RTLOrd, $gBitSystem;
+	global $pgv_lang, $day, $month, $year, $PGV_BLOCKS, $GEDCOM, $ALLOW_CHANGE_GEDCOM, $command, $COMMON_NAMES_THRESHOLD, $SERVER_URL, $RTLOrd, $gBitSystem;
 
 	if (empty($config)) $config = $PGV_BLOCKS["print_gedcom_stats"]["config"];
 	if (!isset($config['stat_indi'])) $config = $PGV_BLOCKS["print_gedcom_stats"]["config"];
 
 	$data = "";
-	$dataArray[0] = $pgv_lang["gedcom_stats"] . " - " . $GEDCOMS[$GEDCOM]["title"];
+	$dataArray[0] = $pgv_lang["gedcom_stats"] . " - " . $gGedcom->mInfo['title'];
 
 	$head = find_gedcom_record("HEAD");
 	$ct=preg_match("/1 SOUR (.*)/", $head, $match);
@@ -436,7 +436,7 @@ function getGedcomStats() {
 
 	if (!isset($config["stat_first_birth"]) || $config["stat_first_birth"]=="yes") {
 		// NOTE: Get earliest birth year
-		$sql = "select min(d_year) as lowyear from ".PHPGEDVIEW_DB_PREFIX."dates where d_file = '".$GEDCOMS[$GEDCOM]["id"]."' and d_fact = 'BIRT' and d_year != '0' and d_type is null";
+		$sql = "select min(d_year) as lowyear from ".PHPGEDVIEW_DB_PREFIX."dates where d_file = '".$gGedcom->mGEDCOMId."' and d_fact = 'BIRT' and d_year != '0' and d_type is null";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		$res =& $tempsql;
 		$row =& $res->FetchRow();
@@ -444,7 +444,7 @@ function getGedcomStats() {
 	}
 	if (!isset($config["stat_last_birth"]) || $config["stat_last_birth"]=="yes") {
 		// NOTE: Get the latest birth year
-		$sql = "select max(d_year) as highyear from ".PHPGEDVIEW_DB_PREFIX."dates where d_file = '".$GEDCOMS[$GEDCOM]["id"]."' and d_fact = 'BIRT' and d_type is null";
+		$sql = "select max(d_year) as highyear from ".PHPGEDVIEW_DB_PREFIX."dates where d_file = '".$gGedcom->mGEDCOMId."' and d_fact = 'BIRT' and d_type is null";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		$res =& $tempsql;
 		$row =& $res->FetchRow();
@@ -453,7 +453,7 @@ function getGedcomStats() {
 
 	if (!isset($config["stat_long_life"]) || $config["stat_long_life"]=="yes") {
 		//-- get the person who lived the longest
-		$sql = "select death.d_year-birth.d_year as age, death.d_gid from ".PHPGEDVIEW_DB_PREFIX."dates as death, ".PHPGEDVIEW_DB_PREFIX."dates as birth where birth.d_gid=death.d_gid AND death.d_file='".$GEDCOMS[$GEDCOM]["id"]."' and birth.d_file=death.d_file AND birth.d_fact='BIRT' and death.d_fact='DEAT' AND birth.d_year>0 and death.d_year>0 and birth.d_type is null and death.d_type is null ORDER BY age DESC limit 1";
+		$sql = "select death.d_year-birth.d_year as age, death.d_gid from ".PHPGEDVIEW_DB_PREFIX."dates as death, ".PHPGEDVIEW_DB_PREFIX."dates as birth where birth.d_gid=death.d_gid AND death.d_file='".$gGedcom->mGEDCOMId."' and birth.d_file=death.d_file AND birth.d_fact='BIRT' and death.d_fact='DEAT' AND birth.d_year>0 and death.d_year>0 and birth.d_type is null and death.d_type is null ORDER BY age DESC limit 1";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		$res =& $tempsql;
 		$row =& $res->FetchRow();
@@ -462,7 +462,7 @@ function getGedcomStats() {
 	}
 	if (!isset($config["stat_avg_life"]) || $config["stat_avg_life"]=="yes") {
 		//-- avg age at death
-		$sql = "select avg(death.d_year-birth.d_year) as age from ".PHPGEDVIEW_DB_PREFIX."dates as death, ".PHPGEDVIEW_DB_PREFIX."dates as birth where birth.d_gid=death.d_gid AND death.d_file='".$GEDCOMS[$GEDCOM]["id"]."' and birth.d_file=death.d_file AND birth.d_fact='BIRT' and death.d_fact='DEAT' AND birth.d_year>0 and death.d_year>0 and birth.d_type is null and death.d_type is null";
+		$sql = "select avg(death.d_year-birth.d_year) as age from ".PHPGEDVIEW_DB_PREFIX."dates as death, ".PHPGEDVIEW_DB_PREFIX."dates as birth where birth.d_gid=death.d_gid AND death.d_file='".$gGedcom->mGEDCOMId."' and birth.d_file=death.d_file AND birth.d_fact='BIRT' and death.d_fact='DEAT' AND birth.d_year>0 and death.d_year>0 and birth.d_type is null and death.d_type is null";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		if ($tempsql) {
 			$res =& $tempsql;
@@ -474,7 +474,7 @@ function getGedcomStats() {
 	//TODO: print_list_family is not sutible for use here due to its output of HTML
 	/*if (!isset($config["stat_most_chil"]) || $config["stat_most_chil"]=="yes") {
 		//-- most children
-		$sql = "SELECT f_numchil, f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file='".$GEDCOMS[$GEDCOM]["id"]."' ORDER BY f_numchil DESC LIMIT 10";
+		$sql = "SELECT f_numchil, f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file='".$gGedcom->mGEDCOMId."' ORDER BY f_numchil DESC LIMIT 10";
 		//print $sql;
 		$tempsql = $gBitSystem->mDb->query($sql);
 		if ($tempsql) {
@@ -490,7 +490,7 @@ function getGedcomStats() {
 
 	if (!isset($config["stat_avg_chil"]) || $config["stat_avg_chil"]=="yes") {
 		//-- avg number of children
-		$sql = "SELECT avg(f_numchil) from ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file='".$GEDCOMS[$GEDCOM]["id"]."'";
+		$sql = "SELECT avg(f_numchil) from ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file='".$gGedcom->mGEDCOMId."'";
 		$tempsql = $gBitSystem->mDb->query($sql);
 		if ($tempsql) {
 			$res =& $tempsql;

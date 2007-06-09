@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: functions_charts.php,v 1.5 2007/06/03 20:35:37 lsces Exp $
+ * @version $Id: functions_charts.php,v 1.6 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -112,7 +112,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	print_family_header($famid);
 
 	// -- get the new record and parents if in editing show changes mode
-	if ((userCanEdit(getUserName())) && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
+	if (($gGedcom->isEditable()) && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
 		$newrec = find_updated_record($famid);
 		$newparents = find_parents_in_record($newrec);
 	}
@@ -275,7 +275,7 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 
 	$newchildren = array();
 	$oldchildren = array();
-	if (userCanEdit(getUserName())) {
+	if ($gGedcom->isEditable()) {
 		if ((isset($_REQUEST['show_changes'])&&$_REQUEST['show_changes']=='yes') && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
 			$newrec = find_updated_record($famid);
 			$ct = preg_match_all("/1 CHIL @(.*)@/", $newrec, $match, PREG_SET_ORDER);
@@ -417,7 +417,7 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
    }
    print "</table><br />";
 
-   if (($view != "preview") && ($sosa == 0) && (userCanEdit(getUserName()))) {
+   if (($view != "preview") && ($sosa == 0) && ($gGedcom->isEditable())) {
 	   print_help_link("add_child_help", "qm", "add_child_to_family");
 		print "<a href=\"javascript:;\" onclick=\"return addnewchild('$famid','');\">" . $pgv_lang["add_child_to_family"] . "</a>";
 		print "<span style='white-space:nowrap;'>";
@@ -484,7 +484,7 @@ function print_family_facts($famid, $sosa = 0) {
 				$linenum = $i;
 			} else $factrec .= "\n" . $line;
 		}
-		if (($sosa == 0) && userCanEdit(getUserName())) {
+		if (($sosa == 0) && $gGedcom->isEditable()) {
 			if ((isset($_REQUEST['show_changes'])&&($_REQUEST['show_changes']=='yes')) && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
 				if (empty($newrec)) $newrec = find_updated_record($famid);
 				$indilines = split("\n", $newrec); // -- find the number of lines in the individuals record
@@ -622,7 +622,7 @@ function print_family_facts($famid, $sosa = 0) {
 			}
 		}
 		// -- new fact link
-		if (($view != "preview") && ($sosa == 0) && (userCanEdit(getUserName()))) {
+		if (($view != "preview") && ($sosa == 0) && ($gGedcom->isEditable())) {
 			print_add_new_fact($famid, $indifacts, "FAM");
 			// -- new note
 			print "<tr><td class=\"descriptionbox\">";

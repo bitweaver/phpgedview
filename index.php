@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.11 2007/05/31 08:52:41 lsces Exp $
+ * @version $Id: index.php,v 1.12 2007/06/09 21:11:02 lsces Exp $
  */
 
 // Initialization
@@ -39,21 +39,21 @@ if (!isset($CONFIGURED)) {
 }
 
 if (isset($_REQUEST['content_id'])) {
-	$gContent = new BitGEDCOM( NULL , $_REQUEST['content_id'] );
-	$gContent->load();
+	$gGedcom = new BitGEDCOM( NULL , $_REQUEST['content_id'] );
+	$gGedcom->load();
 } 
 else
-	$gContent = new BitGEDCOM();
+	$gGedcom = new BitGEDCOM();
 
-if ( isset($gContent->mGedcomName) ) {
-	header("Location: individual.php?pid=I1&ged=".$gContent->mGedcomName."#content");
-	exit;
-}
+//if ( isset($gGedcom->mGedcomName) ) {
+//	header("Location: individual.php?pid=I1&ged=".$gGedcom->mGedcomName."#content");
+//	exit;
+//}
 
 $gBitSmarty->assign( 'pagetitle', 'Default GEDCOM' );
 
 $listHash = $_REQUEST;
-$listgedcoms = $gContent->getList( $listHash );
+$listgedcoms = $gGedcom->getList( $listHash );
 $gBitSmarty->assign_by_ref( 'listgedcoms', $listgedcoms );
 $gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
 

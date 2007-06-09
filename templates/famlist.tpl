@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/famlist.tpl,v 1.2 2007/06/02 13:24:07 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/famlist.tpl,v 1.3 2007/06/09 21:11:03 lsces Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="gedcom_list">
@@ -31,5 +31,10 @@
 			{include file="bitpackage:phpgedview/list_names.tpl"}
 		{/if}
 	</div><!-- end .body -->
+	{if isset($alpha) }
+		{pagination alpha="$alpha" }
+	{else}
+		{pagination show_all="yes" }
+	{/if}
 
 </div><!-- end .gedcom -->

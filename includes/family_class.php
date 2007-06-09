@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: family_class.php,v 1.4 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: family_class.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -81,9 +81,9 @@ class Family extends GedcomRecord {
 	 * @param string $pid	the ID of the family to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $famlist, $GEDCOM, $GEDCOMS, $pgv_changes;
+		global $famlist, $GEDCOM, $pgv_changes;
 
-		if (isset($famlist[$pid]) && $famlist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($famlist[$pid]) && $famlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($famlist[$pid]['object'])) return $famlist[$pid]['object'];
 		}
 
@@ -99,7 +99,7 @@ class Family extends GedcomRecord {
 			}
 		}
 		if (empty($indirec)) {
-			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -220,11 +220,11 @@ class Family extends GedcomRecord {
 	 * If there is an updated family record in the gedcom file
 	 * return a new family object for it
 	 */
-	function &getUpdatedFamily() {
-		global $GEDCOM, $pgv_changes;
+	function getUpdatedFamily() {
+		global $gGedcom, $pgv_changes;
 		if ($this->changed) return $this;
-		if (userCanEdit(getUserName())&&($this->disp)) {
-			if (isset($pgv_changes[$this->xref."_".$GEDCOM])) {
+		if ( $gGedcom->isEditable() && ($this->disp) ) {
+			if (isset($pgv_changes[$this->xref."_".$gGedcom->mGedcomName])) {
 				$newrec = find_updated_record($this->xref);
 				if (!empty($newrec)) {
 					$newfamily = new Family($newrec);

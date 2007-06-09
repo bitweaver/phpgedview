@@ -20,7 +20,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: localclient_class.php,v 1.3 2006/10/02 23:04:15 lsces Exp $
+ * @version $Id: localclient_class.php,v 1.4 2007/06/09 21:11:04 lsces Exp $
  */
 
 require_once 'includes/serviceclient_class.php';
@@ -57,7 +57,6 @@ class LocalClient extends ServiceClient {
 	 */
 	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
 		global $FILE, $GEDCOM, $indilist, $famlist, $sourcelist, $otherlist;
-		global $GEDCOMS;
 		
 		$localkey = $this->xref.":".$xref;
 		//-- check the memory cache
@@ -97,25 +96,25 @@ class LocalClient extends ServiceClient {
 			if (isset($indilist[$xref])) {
 				$indi = $indilist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $GEDCOMS[$GEDCOM]["id"];
+				$indi["gedfile"] = $gGedcom->mGEDCOMId;
 				$indilist[$localkey] = $indi;
 			}
 			if (isset($famlist[$xref])) {
 				$indi = $famlist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $GEDCOMS[$GEDCOM]["id"];
+				$indi["gedfile"] = $gGedcom->mGEDCOMId;
 				$famlist[$localkey] = $indi;
 			}
 			if (isset($otherlist[$xref])) {
 				$indi = $otherlist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $GEDCOMS[$GEDCOM]["id"];
+				$indi["gedfile"] = $gGedcom->mGEDCOMId;
 				$otherlist[$localkey] = $indi;
 			}
 			if (isset($sourcelist[$xref])) {
 				$indi = $sourcelist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $GEDCOMS[$GEDCOM]["id"];
+				$indi["gedfile"] = $gGedcom->mGEDCOMId;
 				$sourcelist[$localkey] = $indi;
 			}
 		}

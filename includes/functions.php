@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.15 2007/06/02 12:34:50 lsces Exp $
+ * @version $Id: functions.php,v 1.16 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -50,7 +50,7 @@ if (isset($DEBUG)) $ERROR_LEVEL = 2;
  */
 function check_db($ignore_previous=false) {
 	global $gBitSystem, $TOTAL_QUERIES, $PHP_SELF, $DBPERSIST, $CONFIGURED;
-	global $GEDCOM, $GEDCOMS, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
+	global $GEDCOM, $INDEX_DIRECTORY, $BUILDING_INDEX, $indilist, $famlist, $sourcelist, $otherlist;
 
 	if (!$ignore_previous) {
 		if ($gBitSystem->mDb) return true;
@@ -71,30 +71,6 @@ function check_db($ignore_previous=false) {
 		$DBPASS = "";
 	}
 	return true;
-}
-
-/**
- * get gedcom configuration file
- *
- * this function returns the path to the currently active GEDCOM configuration file
- * @return string path to gedcom.ged_conf.php configuration file
- */
-function get_config_file() {
-	global $GEDCOMS, $GEDCOM;
-	$config = "config_gedcom.php";
-	if (count($GEDCOMS)==0) {
-		return $config;
-	}
-	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) $config = $GEDCOMS[$GEDCOM]["config"];
-	else {
-		foreach($GEDCOMS as $GEDCOM=>$gedarray) {
-			$_SESSION["GEDCOM"] = $GEDCOM;
-			$config = $gedarray["config"];
-			break;
-		}
-	}
-	if (!file_exists($config)) $config = "config_gedcom.php";
-	return $config;
 }
 
 /**
@@ -126,22 +102,13 @@ function get_privacy_file_version($privfile) {
  * @return string path to the privacy file
  */
 function get_privacy_file() {
-	global $GEDCOMS, $GEDCOM, $REQUIRED_PRIVACY_VERSION;
+	global $gGedcom, $REQUIRED_PRIVACY_VERSION;
 
 	$privfile = "privacy.php";
-	if (count($GEDCOMS)==0) {
+	if (!$gGedcom->isValid()) {
 		$privfile = "privacy.php";
-	}
-	if ((!empty($GEDCOM))&&(isset($GEDCOMS[$GEDCOM]))) {
-		if ((isset($GEDCOMS[$GEDCOM]["privacy"]))&&(file_exists($GEDCOMS[$GEDCOM]["privacy"]))) $privfile = $GEDCOMS[$GEDCOM]["privacy"];
-		else $privfile = "privacy.php";
-	}
-	else {
-		foreach($GEDCOMS as $GEDCOM=>$gedarray) {
-			$_SESSION["GEDCOM"] = $GEDCOM;
-			if ((isset($gedarray["privacy"]))&&(file_exists($gedarray["privacy"]))) $privfile = $gedarray["privacy"];
-			else $privfile = "privacy.php";
-		}
+	} else {
+		$privfile = $gGedcom->getPrivacyFile();
 	}
 	$privversion = get_privacy_file_version($privfile);
 	if ($privversion<$REQUIRED_PRIVACY_VERSION) $privfile = "privacy.php";
@@ -163,90 +130,17 @@ function getmicrotime(){
 }
 
 /**
- * Store GEDCOMS array
- *
- * this function will store the <var>$GEDCOMS</var> array in the <var>$INDEX_DIRECTORY</var>/gedcoms.php
- * file.  The gedcoms.php file is included in session.php to create the <var>$GEDCOMS</var>
- * array with every page request.
- * @see session.php
- */
-function store_gedcoms() {
-	global $GEDCOMS, $pgv_lang, $INDEX_DIRECTORY, $DEFAULT_GEDCOM, $COMMON_NAMES_THRESHOLD, $GEDCOM, $CONFIGURED;
-	global $COMMIT_COMMAND;
-
-	if (!$CONFIGURED) return false;
-	uasort($GEDCOMS, "gedcomsort");
-	$gedcomtext = "<?php\n//--START GEDCOM CONFIGURATIONS\n";
-	$gedcomtext .= "\$GEDCOMS = array();\n";
-	$maxid = 0;
-	foreach ($GEDCOMS as $name => $details) {
-		if (isset($details["id"]) && $details["id"] > $maxid) $maxid = $details["id"];
-	}
-	if ($maxid !=0) $maxid++;
-	foreach($GEDCOMS as $indexval => $GED) {
-		$GED["config"] = str_replace($INDEX_DIRECTORY, "\${INDEX_DIRECTORY}", $GED["config"]);
-		if (isset($GED["privacy"])) $GED["privacy"] = str_replace($INDEX_DIRECTORY, "\${INDEX_DIRECTORY}", $GED["privacy"]);
-		else $GED["privacy"] = "privacy.php";
-		$GED["path"] = str_replace($INDEX_DIRECTORY, "\${INDEX_DIRECTORY}", $GED["path"]);
-		$GED["title"] = stripslashes($GED["title"]);
-		$GED["title"] = preg_replace("/\"/", "\\\"", $GED["title"]);
-		$gedcomtext .= "\$gedarray = array();\n";
-		$gedcomtext .= "\$gedarray[\"gedcom\"] = \"".$GED["gedcom"]."\";\n";
-		$gedcomtext .= "\$gedarray[\"config\"] = \"".$GED["config"]."\";\n";
-		$gedcomtext .= "\$gedarray[\"privacy\"] = \"".$GED["privacy"]."\";\n";
-		$gedcomtext .= "\$gedarray[\"title\"] = \"".$GED["title"]."\";\n";
-		$gedcomtext .= "\$gedarray[\"path\"] = \"".$GED["path"]."\";\n";
-		// TODO: Commonsurnames from an old gedcom are used
-		// TODO: Default GEDCOM is changed to last uploaded GEDCOM
-
-		// NOTE: Set the GEDCOM ID
-		if (!isset($GED["id"]) && $maxid == 0) $GED["id"] = 1;
-		else if (!isset($GED["id"]) && $maxid > 0) $GED["id"] = $maxid;
-		else if (empty($GED["id"])) $GED["id"] = $maxid;
-
-		$gedcomtext .= "\$gedarray[\"id\"] = \"".$GED["id"]."\";\n";
-		if (empty($GED["commonsurnames"])) {
-			if ($GED["gedcom"]==$GEDCOM) {
-				$GED["commonsurnames"] = "";
-				$surnames = get_common_surnames($COMMON_NAMES_THRESHOLD);
-//				$GED["commonsurnames"] = ",";
-				foreach($surnames as $indexval => $surname) {
-					$GED["commonsurnames"] .= $surname["name"].", ";
-				}
-			}
-			else $GED["commonsurnames"]="";
-		}
-		$GEDCOMS[$GED["gedcom"]]["commonsurnames"] = $GED["commonsurnames"];
-		$gedcomtext .= "\$gedarray[\"commonsurnames\"] = \"".addslashes($GED["commonsurnames"])."\";\n";
-		$gedcomtext .= "\$GEDCOMS[\"".$GED["gedcom"]."\"] = \$gedarray;\n";
-	}
-	$gedcomtext .= "\n\$DEFAULT_GEDCOM = \"$DEFAULT_GEDCOM\";\n";
-	$gedcomtext .= "\n?".">";
-	$fp = fopen($INDEX_DIRECTORY."gedcoms.php", "wb");
-	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
-	}
-	else {
-		fwrite($fp, $gedcomtext);
-		fclose($fp);
-		if (!empty($COMMIT_COMMAND)) check_in("store_gedcoms() ->" . getUserName() ."<-", "gedcoms.php", $INDEX_DIRECTORY, true);
-	}
-}
-
-/**
  * get a gedcom filename from its database id
  * @param int $ged_id	The gedcom database id to get the filename for
  * @return string
  */
 function get_gedcom_from_id($ged_id) {
-	global $GEDCOMS;
 
-	if (isset($GEDCOMS[$ged_id])) return $ged_id;
-	foreach($GEDCOMS as $ged=>$gedarray) {
-		if ($gedarray["id"]==$ged_id) return $ged;
-	}
-
-	return $ged;
+	$gGed = new BitGEDCOM($ged_id);
+	if ($gGed->isValid()) {
+		$gGed->load();
+		return $gGed->mGedcomName;
+	} else return $ged_id;
 }
 
 /**
@@ -258,19 +152,19 @@ function get_gedcom_from_id($ged_id) {
  * @return boolean			True if dead, false if alive
  */
 function is_dead_id($pid) {
-	global $indilist, $BUILDING_INDEX, $GEDCOM, $GEDCOMS;
+	global $indilist, $BUILDING_INDEX, $gGedcom;
 
 	if (empty($pid)) return true;
 
 	//-- if using indexes then first check the indi_isdead array
 	if ((!$BUILDING_INDEX)&&(isset($indilist))) {
 		//-- check if the person is already in the $indilist cache
-		if ((!isset($indilist[$pid]["isdead"]))||($indilist[$pid]["gedfile"]!=$GEDCOMS[$GEDCOM]['id'])) {
+		if ((!isset($indilist[$pid]["isdead"]))||($indilist[$pid]["gedfile"]!=$gGedcom->mGEDCOMId)) {
 			//-- load the individual into the cache by calling the find_person_record function
 			$gedrec = find_person_record($pid);
 			if (empty($gedrec)) return true;
 		}
-		if ($indilist[$pid]["gedfile"]==$GEDCOMS[$GEDCOM]['id']) {
+		if ($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId) {
 			if (!isset($indilist[$pid]["isdead"])) $indilist[$pid]["isdead"] = -1;
 			if ($indilist[$pid]["isdead"]==-1) $indilist[$pid]["isdead"] = update_isdead($pid, $indilist[$pid]);
 			return $indilist[$pid]["isdead"];
@@ -692,7 +586,7 @@ function find_parents($famid) {
 
 	$famrec = find_family_record($famid);
 	if (empty($famrec)) {
-		if (userCanEdit(getUserName())) {
+		if ($gGedcom->isEditable()) {
 			$famrec = find_record_in_file($famid);
 			if (empty($famrec)) return false;
 		}
@@ -738,7 +632,7 @@ function find_children($famid, $me='') {
 
 	$famrec = find_family_record($famid);
 	if (empty($famrec)) {
-		if (userCanEdit(getUserName())) {
+		if ($gGedcom->isEditable()) {
 			$famrec = find_record_in_file($famid);
 			if (empty($famrec)) return false;
 		}
@@ -830,8 +724,8 @@ function find_families_in_record($indirec, $tag) {
  * @param string $gid the gedcom xref id of the record to find
  */
 function find_record_in_file($gid) {
-	global $GEDCOMS, $GEDCOM, $indilist;
-	$fpged = fopen($GEDCOMS[$GEDCOM]["path"], "r");
+	global $GEDCOM, $indilist;
+	$fpged = fopen($gGedcom->getPath(), "r");
 	if (!$fpged) return false;
 	$BLOCK_SIZE = 1024*4;	//-- 4k bytes per read
 	$fcontents = "";
@@ -898,7 +792,7 @@ function find_updated_record($gid, $gedfile="") {
  */
 function find_highlighted_object($pid, $indirec) {
 	global $MEDIA_DIRECTORY, $MEDIA_DIRECTORY_LEVELS, $PGV_IMAGE_DIR, $PGV_IMAGES, $MEDIA_EXTERNAL;
-	global $GEDCOMS, $GEDCOM, $gBitSystem;
+	global $gGedcom, $gBitSystem;
 
 	if (!showFactDetails("OBJE", $pid)) return false;
 	$object = array();
@@ -928,7 +822,7 @@ function find_highlighted_object($pid, $indirec) {
 
 	//-- find all of the media items for a person
 	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".PHPGEDVIEW_DB_PREFIX."media, ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile=? AND mm_gid=? ORDER BY m_id";
-	$res = $gBitSystem->mDb->query($sql, array( $GEDCOMS[$GEDCOM]["id"], $pid ));
+	$res = $gBitSystem->mDb->query($sql, array( $gGedcom->mGEDCOMId, $pid ));
 	while( $row = $res->fetchRow() ) {
 		$media[] = $row;
 	}
@@ -1824,7 +1718,7 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
 
 	$pid1 = strtoupper($pid1);
 	$pid2 = strtoupper($pid2);
-	if (isset($pgv_changes[$pid2."_".$GEDCOM]) && userCanEdit(getUserName())) $indirec = find_record_in_file($pid2);
+	if (isset($pgv_changes[$pid2."_".$GEDCOM]) && $gGedcom->isEditable()) $indirec = find_record_in_file($pid2);
 	else $indirec = find_person_record($pid2);
 	//-- check the cache
 	if ($USE_RELATIONSHIP_PRIVACY && !$ignore_cache) {
@@ -1882,14 +1776,14 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
 		$numfams = preg_match_all("/1\s*FAMS\s*@(.*)@/", $indirec, $fmatch, PREG_SET_ORDER);
 		for($j=0; $j<$numfams; $j++) {
 			// Get the family record
-			if (isset($pgv_changes[$fmatch[$j][1]."_".$GEDCOM]) && userCanEdit(getUserName())) $famrec = find_record_in_file($fmatch[$j][1]);
+			if (isset($pgv_changes[$fmatch[$j][1]."_".$GEDCOM]) && $gGedcom->isEditable()) $famrec = find_record_in_file($fmatch[$j][1]);
 			else $famrec = find_family_record($fmatch[$j][1]);
 
 			// Get the set of children
 			$ct = preg_match_all("/1 CHIL @(.*)@/", $famrec, $cmatch, PREG_SET_ORDER);
 			for($i=0; $i<$ct; $i++) {
 				// Get each child's record
-				if (isset($pgv_changes[$cmatch[$i][1]."_".$GEDCOM]) && userCanEdit(getUserName())) $famrec = find_record_in_file($cmatch[$i][1]);
+				if (isset($pgv_changes[$cmatch[$i][1]."_".$GEDCOM]) && $gGedcom->isEditable()) $famrec = find_record_in_file($cmatch[$i][1]);
 				else $childrec = find_person_record($cmatch[$i][1]);
 				$birthrec = get_sub_record(1, "1 BIRT", $childrec);
 				if ($birthrec!==false) {
@@ -1971,7 +1865,7 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
 				$childh = 3;
 
 				//-- generate heuristic values based of the birthdates of the current node and p2
-				if (isset($pgv_changes[$node["pid"]."_".$GEDCOM]) && userCanEdit(getUserName())) $indirec = find_record_in_file($node["pid"]);
+				if (isset($pgv_changes[$node["pid"]."_".$GEDCOM]) && $gGedcom->isEditable()) $indirec = find_record_in_file($node["pid"]);
 				else $indirec = find_person_record($node["pid"]);
 				$byear1 = -1;
 				$birthrec = get_sub_record(1, "1 BIRT", $indirec);
@@ -2046,7 +1940,7 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
 				}
 				foreach($famids as $indexval => $fam) {
 					$visited[$fam] = true;
-					if (isset($pgv_changes[$fam."_".$GEDCOM]) && userCanEdit(getUserName())) $famrec = find_record_in_file($fam);
+					if (isset($pgv_changes[$fam."_".$GEDCOM]) && $gGedcom->isEditable()) $famrec = find_record_in_file($fam);
 					else $famrec = find_family_record($fam);
 					$parents = find_parents_in_record($famrec);
 					if ((!empty($parents["HUSB"]))&&(!isset($visited[$parents["HUSB"]]))) {
@@ -2120,7 +2014,7 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
 				}
 				foreach($famids as $indexval => $fam) {
 					$visited[$fam] = true;
-					if (isset($pgv_changes[$fam."_".$GEDCOM]) && userCanEdit(getUserName())) $famrec = find_record_in_file($fam);
+					if (isset($pgv_changes[$fam."_".$GEDCOM]) && $gGedcom->isEditable()) $famrec = find_record_in_file($fam);
 					else $famrec = find_family_record($fam);
 					if ($followspouse) {
 						$parents = find_parents_in_record($famrec);
@@ -2208,7 +2102,7 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
  * @return bool true if successful false if there was an error
  */
 function write_changes() {
-	global $GEDCOMS, $GEDCOM, $pgv_changes, $INDEX_DIRECTORY, $CONTACT_EMAIL, $LAST_CHANGE_EMAIL;
+	global $GEDCOM, $pgv_changes, $INDEX_DIRECTORY, $CONTACT_EMAIL, $LAST_CHANGE_EMAIL;
 
 	if (!isset($LAST_CHANGE_EMAIL)) $LAST_CHANGE_EMAIL = time();
 	//-- write the changes file
@@ -2554,7 +2448,7 @@ function getAlphabet(){
  * @return array 	The array of the found reports with indexes [title] [file]
  */
 function get_report_list($force=false) {
-	global $report_array, $vars, $xml_parser, $elementHandler, $LANGUAGE, $gContent, $gBitUser;
+	global $report_array, $vars, $xml_parser, $elementHandler, $LANGUAGE, $gGedcom, $gBitUser;
 
 	$files = array();
 	if (!$force) {
@@ -2626,7 +2520,7 @@ function get_report_list($force=false) {
 	$fp = @fopen(PHPGEDVIEW_PKG_PATH."index/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
-	if (isset($gContent)) $logline = $gContent->addToLog("reports.dat updated by >".$gBitUser->mUsername."<");
+	if (isset($gGedcom)) $logline = $gGedcom->addToLog("reports.dat updated by >".$gBitUser->mUsername."<");
  	if (!empty($COMMIT_COMMAND)) check_in($logline, "reports.dat", $INDEX_DIRECTORY);
 	return $files;
 }
@@ -2923,15 +2817,11 @@ function CheckPageViews() {
  * @return string
  */
 function get_new_xref($type='INDI') {
-	global $fcontents, $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $pgv_changes, $GEDCOM, $GEDCOMS;
+	global $fcontents, $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $pgv_changes, $GEDCOM;
 	global $MEDIA_ID_PREFIX, $FAM_ID_PREFIX, $GEDCOM_ID_PREFIX, $FILE, $gBitSystem, $MAX_IDS;
 
 	//-- during online updates $FILE comes through as an array for some odd reason
-	if (!empty($FILE) && !is_array($FILE)) {
-		//print_r($FILE);
-		$gedid = $GEDCOMS[$FILE]["id"];
-	}
-	else $gedid = $GEDCOMS[$GEDCOM]["id"];
+	$gedid = $gGedcom->mGEDCOMId;
 
 	$num = null;
 	//-- check if an id is stored in MAX_IDS used mainly during the import

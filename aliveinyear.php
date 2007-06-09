@@ -19,7 +19,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: aliveinyear.php,v 1.3 2006/10/28 21:46:21 lsces Exp $
+ * @version $Id: aliveinyear.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -226,7 +226,7 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	$indi_alive = 0;
 	foreach($indilist as $gid=>$indi) {
 		//-- make sure that favorites from other gedcoms are not shown
-		if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
+		if ($indi["gedfile"]==$gGedcom->mGEDCOMId) {
 			if (displayDetailsById($gid)||showLivingNameById($gid)) {
 				$ret = check_alive($indi["gedcom"], $year);
 				if ($ret==0) {
@@ -390,7 +390,7 @@ else {
 		$total_living = 0;
 		foreach($tindilist as $gid => $indi) {
 			//-- make sure that favorites from other gedcoms are not shown
-			if ($indi["gedfile"]==$GEDCOMS[$GEDCOM]["id"]) {
+			if ($indi["gedfile"]==$gGedcom->mGEDCOMId) {
 				$ret = check_alive($indi["gedcom"], $year);
 				if ($ret==0) {
 	            	foreach($indi["names"] as $indexval => $namearray) {

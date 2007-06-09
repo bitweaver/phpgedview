@@ -25,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.7 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: addmedia.php,v 1.8 2007/06/09 21:11:02 lsces Exp $
  */
 
 /**
@@ -68,12 +68,12 @@ if ($action=="update" || $action=="newentry") {
 	}
 }
 
-if ((!userCanEdit(getUserName()))||(!$disp)||(!$ALLOW_EDIT_GEDCOM)) {
+if ((!$gGedcom->isEditable())||(!$disp)||(!$ALLOW_EDIT_GEDCOM)) {
 	//print "pid: $pid<br />";
 	//print "gedrec: $gedrec<br />";
 	print $pgv_lang["access_denied"];
 	//-- display messages as to why the editing access was denied
-	if (!userCanEdit(getUserName())) print "<br />".$pgv_lang["user_cannot_edit"];
+	if (!$gGedcom->isEditable()) print "<br />".$pgv_lang["user_cannot_edit"];
 	if (!$ALLOW_EDIT_GEDCOM) print "<br />".$pgv_lang["gedcom_editing_disabled"];
 	if (!$disp) {
 		print "<br />".$pgv_lang["privacy_prevented_editing"];
@@ -264,7 +264,7 @@ if ($action=="newentry") {
 			$res = $gBitSystem->mDb->query( $sql, array( $myFile ) );
 			$onegedcom = true;
 			while($row=$res->fetchRow()) {
-				if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
+				if ($row['m_gedfile']!=$gGedcom->mGEDCOMId) $onegedcom = false;
 			}
 			
 			// Handle Admin request to rename or move media file
@@ -403,7 +403,7 @@ if ($action == "update") {
 	$res = $gBitSystem->mDb->query( $sql, array( "%".$myFile ) );
 	$onegedcom = true;
 	while($row=$res->fetchRow()) {
-		if ($row['m_gedfile']!=$GEDCOMS[$GEDCOM]['id']) $onegedcom = false;
+		if ($row['m_gedfile']!=$gGedcom->mGEDCOMId) $onegedcom = false;
 	}
 	
 	$isExternal = strstr($oldFilename, "://") || strstr($filename, "://");

@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.12 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: uploadgedcom.php,v 1.13 2007/06/09 21:11:02 lsces Exp $
  */
 // TODO: Progress bars don't show until </table> or </div>
 // TODO: Upload ZIP support alternative path and name
@@ -189,8 +189,8 @@ if ($check == "cancel_upload") {
 if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]) {
 	require_once ("includes/functions_tools.php");
 
-	$_POST["path"] = $GEDCOMS[$GEDFILENAME]["path"];
-	if (!isset($_POST["ged"])) $_POST["ged"] = $GEDFILENAME;
+	$_POST["path"] = $gGedcom->getPath();
+	if (!isset($_POST["ged"])) $_POST["ged"] = $gGedcom->mGedcomName;
 	$_POST['cleanup_needed'] = $cleanup_needed;
 // Using 
 // $_POST["cleanup_places"]
@@ -271,7 +271,7 @@ if ($action == "add_form") {
 	<td class="descriptionbox width20 wrap">
 	<?php print_help_link("gedcom_path_help", "qm","gedcom_path");?>
 	<?php print $pgv_lang["gedcom_file"]; ?></td>
-	<td class="optionbox"><input type="text" name="GEDFILENAME" value="<?php if (isset($GEDFILENAME) && strlen($GEDFILENAME) > 4) print $GEDCOMS[$GEDFILENAME]["path"]; ?>"
+	<td class="optionbox"><input type="text" name="GEDFILENAME" value="<?php if (isset($GEDFILENAME) && strlen($GEDFILENAME) > 4) print $gGedcom->getPath(); ?>"
 					size="60" dir ="ltr" tabindex="<?php $i++; print $i?>"	<?php if ((!$no_upload && isset($GEDFILENAME)) && (empty($error))) print "disabled "; ?> />
 	</td>
 	</tr>
@@ -496,7 +496,7 @@ if ($verify == "validate_form") {
 		} else {
 			$cleanup_needed = true;
 			print "<input type=\"hidden\" name=\"cleanup_needed\" value=\"cleanup_needed\">";
-			if (!file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
+			if (!file_is_writeable($gGedcom->getPath()) && (file_exists($gGedcom->getPath()))) {
 				print "<span class=\"error\">".str_replace("#GEDCOM#", $GEDCOM, $pgv_lang["error_header_write"])."</span>\n";
 				print "</td></tr>";
 			}
@@ -691,7 +691,7 @@ if ($startimport == "true") {
 	//-- set the building index flag to tell the rest of the program that we are importing and so shouldn't
 	//-- perform some of the same checks
 	$BUILDING_INDEX = true;
-	$GEDCOMS[$ged]["imported"] = false;
+	$gGedcom->isImported() = false;
 	store_gedcoms();
 
 	if (isset ($exectime)) {
@@ -774,14 +774,14 @@ if ($startimport == "true") {
 
 if (!isset ($stage))
 $stage = 0;
-if ((empty ($ged)) || (!isset ($GEDCOMS[$ged])))
-$ged = $GEDCOM;
+if (empty ($ged)) 
+$ged = $gGedcom->mGedcomName;
 
 $temp = $THEME_DIR;
-$GEDCOM_FILE = $GEDCOMS[$ged]["path"];
+$GEDCOM_FILE = $gGedcom->getPath();
 $FILE = $ged;
-$TITLE = $GEDCOMS[$ged]["title"];
-require ($GEDCOMS[$ged]["config"]);
+$TITLE = $gGedcom->getTitle();
+//require ($GEDCOMS[$ged]["config"]);
 if ($LANGUAGE <> $_SESSION["CLANGUAGE"])
 $LANGUAGE = $_SESSION["CLANGUAGE"];
 
@@ -1220,7 +1220,7 @@ if ($stage == 1) {
 	print "</td></tr></table>\n";
 	// NOTE: Finished Links
 //	cleanup_database();
-	$GEDCOMS[$ged]["imported"] = true;
+	$gGedcom->isImported() = true;
 	store_gedcoms();
 	print "</td></tr>";
 	

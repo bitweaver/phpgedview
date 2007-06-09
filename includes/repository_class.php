@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: repository_class.php,v 1.2 2007/05/29 19:21:11 lsces Exp $
+ * @version $Id: repository_class.php,v 1.3 2007/06/09 21:11:04 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -53,9 +53,9 @@ class Repository extends GedcomRecord {
 	 * @param string $pid	the ID of the repository to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $repolist, $GEDCOM, $GEDCOMS, $pgv_changes;
+		global $repolist, $GEDCOM, $pgv_changes;
 
-		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$GEDCOMS[$GEDCOM]['id']) {
+		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
 			if (isset($repolist[$pid]['object'])) return $repolist[$pid]['object'];
 		}
 
@@ -71,7 +71,7 @@ class Repository extends GedcomRecord {
 			}
 		}
 		if (empty($repositoryrec)) {
-			if (userCanEdit(getUserName()) && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$repositoryrec = find_updated_record($pid);
 				$fromfile = true;
 			}

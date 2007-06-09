@@ -19,13 +19,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: uploadmedia.php,v 1.3 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: uploadmedia.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
 require "config.php";
 
-if (!userCanEdit(getUserName())) {
+if (!$gGedcom->isEditable()) {
 	header("Location: login.php?url=uploadmedia.php");
 	exit;
 }
