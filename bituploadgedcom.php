@@ -285,7 +285,7 @@ if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]
 		}
 		fclose($fp);
 		fclose($fw);
-		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak"[$GEDFILENAME]["path"]);
+		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak",$GEDCOMS[$GEDFILENAME]["path"]);
 		$cleanup_needed = false;
 		$import = "true";
 	} else {
