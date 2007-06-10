@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.21 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: functions_db.php,v 1.22 2007/06/10 05:25:19 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -581,7 +581,7 @@ function get_repo_add_title_list() {
 
 //-- get the indilist from the datastore
 function get_indi_list() {
-	global $indilist, $GEDCOM, $gBitSystem;
+	global $indilist, $gGedcom, $gBitSystem;
 	global $INDILIST_RETRIEVED;
 
 	if ($INDILIST_RETRIEVED) return $indilist;
@@ -615,7 +615,7 @@ function get_indi_list() {
 
 //-- get the assolist from the datastore
 function get_asso_list($type = "all") {
-	global $assolist, $GEDCOM, $gBitSystem;
+	global $assolist, $GEDCOM, $gGedcom, $gBitSystem;
 	global $ASSOLIST_RETRIEVED;
 
 	if ($ASSOLIST_RETRIEVED) return $assolist;
@@ -717,7 +717,7 @@ function get_fam_list() {
 
 //-- get the otherlist from the datastore
 function get_other_list() {
-	global $otherlist, $GEDCOM, $gBitSystem;
+	global $otherlist, $gGedcom, $gBitSystem;
 
 	$otherlist = array();
 
@@ -1102,7 +1102,7 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 
 //-- search through the gedcom records for families
 function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType;
+	global $gGedcom, $famlist, $gBitSystem, $REGEXP_DB, $gBitDbType;
 	if (stristr($gBitDbType, "mysql")!==false) $term = "REGEXP";
 	else if (stristr($gBitDbType, "pgsql")!==false) $term = "~*";
 	else $term='LIKE';
@@ -1130,7 +1130,6 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 	}
 	$res = $gBitSystem->mDb->query( $sql, $args );
 
-	$gedold = $GEDCOM;
 	while($row =& $res->FetchRow()){
 		$GEDCOM = get_gedcom_from_id($row['f_file']);
 		if ($allnames == true) {
@@ -1166,13 +1165,12 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 			$famlist[$row['f_id']] = $myfamlist[$row['f_id']];
 		}
 	}
-	$GEDCOM = $gedold;
 	return $myfamlist;
 }
 
 //-- search through the gedcom records for families
 function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB;
+	global $gGedcom, $famlist, $gBitSystem, $REGEXP_DB;
 	//if ($REGEXP_DB) $term = "REGEXP";
 	//else $term = "LIKE";
 	$myfamlist = array();
@@ -1191,7 +1189,6 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
 
 	$res = $gBitSystem->mDb->query( $sql, $args );
 
-	$gedold = $GEDCOM;
 	while($row =& $res->FetchRow()){
 		$GEDCOM = get_gedcom_from_id($row['f_file']);
 		if ($allnames == true) {
@@ -1227,7 +1224,6 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
 			$famlist[$row['f_id']] = $myfamlist[$row['f_id']];
 		}
 	}
-	$GEDCOM = $gedold;
 	return $myfamlist;
 }
 
@@ -1244,7 +1240,7 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
  * @return	array $myfamlist array with all families that matched the query
  */
 function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
-	global $GEDCOM, $famlist, $gBitSystem, $REGEXP_DB;
+	global $gGedcom, $famlist, $gBitSystem, $REGEXP_DB;
 	$myfamlist = array();
 	$args = array();
 	if (!is_array($query)) {
