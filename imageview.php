@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: imageview.php,v 1.4 2007/06/10 09:35:55 lsces Exp $
+ * @version $Id: imageview.php,v 1.5 2007/06/10 09:43:47 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
@@ -38,10 +38,14 @@ $gGedcom = new BitGEDCOM();
 if (isset($_REQUEST['filename'])) $filename = $_REQUEST['filename'];
 if (!isset($filename)) $filename = "";
 $filename = stripslashes($filename);
-//$imgsize = findImageSize($filename);
-$imgwidth = 202; //$imgsize[0]+2;
-$imgheight = 237; //$imgsize[1]+2;
-
+$imgsize = @getimagesize($filename);
+if (!$imgsize) {
+	$imgwidth = 300;
+	$imgheight = 300;
+} else {
+	$imgwidth = $imgsize[0]+2;
+	$imgheight = $imgsize[1]+2;
+}
 $gBitSystem->mDisplayOnlyContent = true;
 $gBitSmarty->assign( "imgwidth", $imgwidth );
 $gBitSmarty->assign( "imgheight", $imgheight );
