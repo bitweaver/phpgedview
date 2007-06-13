@@ -26,7 +26,7 @@ class BitGEDCOM extends LibertyContent {
 
 	function BitGEDCOM( $pGEDCOMId=NULL, $pContentId=NULL ) {
 		LibertyContent::LibertyContent();
-		$this->registerContentType( 'BitGEDCOM', array(
+		$this->registerContentType( 'bitGEDCOM', array(
 				'content_type_guid' => 'bitGEDCOM',
 				'content_description' => 'Gedcom Archive',
 				'handler_class' => 'bitGEDCOM',
