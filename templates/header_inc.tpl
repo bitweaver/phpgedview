@@ -1,6 +1,6 @@
 {if $smarty.const.ACTIVE_PACKAGE == 'phpgedview'}
 	<link rel="stylesheet" title="{$style}" type="text/css" href="{$smarty.const.PHPGEDVIEW_PKG_URL}styles/phpgedview.css" media="all" />
-	<script language="JavaScript" type="text/javascript">
+	<script type="text/javascript">
 		plusminus = new Array();
 		plusminus[0] = new Image();
 		plusminus[0].src = "{$smarty.const.PHPGEDVIEW_PKG_URL}images/plus.gif";
@@ -43,5 +43,5 @@
 		{/literal}
 		//-->
 	</script>
-	<script src="{$smarty.const.PHPGEDVIEW_PKG_URL}/js/phpgedview.js" language="JavaScript" type="text/javascript"></script>
+	<script src="{$smarty.const.PHPGEDVIEW_PKG_URL}/js/phpgedview.js" type="text/javascript"></script>
 {/if}
