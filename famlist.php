@@ -36,7 +36,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.8 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: famlist.php,v 1.9 2008/06/25 22:21:15 spiderr Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -330,5 +330,5 @@ if (isset($alpha)) {
 }
 else if (!isset($doctitle)) $doctitle = "Full Family List";
 $gBitSmarty->assign( "pagetitle", $doctitle );
-$gBitSystem->display( 'bitpackage:phpgedview/famlist.tpl', tra( 'Family selection list' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/famlist.tpl', tra( 'Family selection list' ) , array( 'display_mode' => 'list' ));
 ?>

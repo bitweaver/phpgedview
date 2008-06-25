@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: sourcelist.php,v 1.5 2007/06/02 14:15:44 lsces Exp $
+ * @version $Id: sourcelist.php,v 1.6 2008/06/25 22:21:16 spiderr Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -56,5 +56,5 @@ $gBitSmarty->assign_by_ref( "sourcelist", array_merge($sourcelist, $addsourcelis
 
 $gBitSmarty->assign( "total", $n );
 $gBitSmarty->assign( "pagetitle", tra("Source reference list") );
-$gBitSystem->display( 'bitpackage:phpgedview/sourcelist.tpl', tra( 'Source reference list' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/sourcelist.tpl', tra( 'Source reference list' ) , array( 'display_mode' => 'list' ));
 ?>

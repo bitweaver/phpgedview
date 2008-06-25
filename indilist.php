@@ -34,7 +34,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.8 2007/06/09 21:11:02 lsces Exp $
+ * $Id: indilist.php,v 1.9 2008/06/25 22:21:15 spiderr Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -339,5 +339,5 @@ if (isset($alpha)) {
 }
 else if (!isset($doctitle)) $doctitle = "Full Individual List";
 $gBitSmarty->assign( "pagetitle", $doctitle );
-$gBitSystem->display( 'bitpackage:phpgedview/indilist.tpl', tra( 'Individual selection list' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/indilist.tpl', tra( 'Individual selection list' ) , array( 'display_mode' => 'list' ));
 ?>

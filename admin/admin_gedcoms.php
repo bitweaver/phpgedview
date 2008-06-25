@@ -1,5 +1,5 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.4 2007/06/09 21:11:05 lsces Exp $
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.5 2008/06/25 22:21:16 spiderr Exp $
 require_once( '../../bit_setup_inc.php' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
@@ -39,5 +39,5 @@ $listgedcoms = $gGedcom->getList( $listHash );
 $gBitSmarty->assign_by_ref( 'listgedcoms', $listgedcoms );
 $gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
 
-$gBitSystem->display( 'bitpackage:phpgedview/admin_gedcoms.tpl', tra( 'Manage Gedcoms' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/admin_gedcoms.tpl', tra( 'Manage Gedcoms' ) , array( 'display_mode' => 'admin' ));
 ?>

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportengine.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: reportengine.php,v 1.6 2008/06/25 22:21:16 spiderr Exp $
  */
 
 /**
@@ -170,7 +170,7 @@ if ($action=="setup") {
 		$gBitSmarty->assign( "pagetitle", tra( 'Report options selection' ) );
 		$gBitSmarty->assign( "report", $report );
 		$gBitSmarty->assign_by_ref( "report_array", $report_array );
-		$gBitSystem->display( 'bitpackage:phpgedview/report_setup.tpl', tra( 'Report options selection' ) );
+		$gBitSystem->display( 'bitpackage:phpgedview/report_setup.tpl', tra( 'Report options selection' ) , array( 'display_mode' => 'display' ));
 	}
 }
 //-- run the report
@@ -207,6 +207,6 @@ if ($action=="choose" ) {
 
 	$gBitSmarty->assign( "pagetitle", tra( 'Report selection' ) );
 	$gBitSmarty->assign_by_ref( "reports", $reports );
-	$gBitSystem->display( 'bitpackage:phpgedview/report_menu.tpl', tra( 'Report selection' ) );
+	$gBitSystem->display( 'bitpackage:phpgedview/report_menu.tpl', tra( 'Report selection' ) , array( 'display_mode' => 'display' ));
 }
 ?>

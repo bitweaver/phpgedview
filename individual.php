@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: individual.php,v 1.6 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: individual.php,v 1.7 2008/06/25 22:21:15 spiderr Exp $
  */
 
 // Initialization
@@ -50,5 +50,5 @@ global $linkToID;
 global $SEARCH_SPIDER;
 
 // Display the template
-$gBitSystem->display( 'bitpackage:phpgedview/main_menu.tpl', tra( 'GEDCOM Main Menu' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/main_menu.tpl', tra( 'GEDCOM Main Menu' ) , array( 'display_mode' => 'display' ));
 ?>

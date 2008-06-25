@@ -24,7 +24,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 22 August 2005
  *
- * $Id: pedigree.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
+ * $Id: pedigree.php,v 1.6 2008/06/25 22:21:15 spiderr Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -208,5 +208,5 @@ $maxyoffset+=120;
 $gBitSmarty->assign_by_ref( "boxes", $boxes );
 $gBitSmarty->assign_by_ref( "pos", $pos );
 $gBitSmarty->assign( "maxyoffset", $maxyoffset );
-$gBitSystem->display( 'bitpackage:phpgedview/pedigree.tpl', tra( 'Pedigree display chart' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/pedigree.tpl', tra( 'Pedigree display chart' ) , array( 'display_mode' => 'display' ));
 ?>

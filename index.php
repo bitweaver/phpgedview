@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.12 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: index.php,v 1.13 2008/06/25 22:21:15 spiderr Exp $
  */
 
 // Initialization
@@ -58,5 +58,5 @@ $gBitSmarty->assign_by_ref( 'listgedcoms', $listgedcoms );
 $gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
 
 // Display the template
-$gBitSystem->display( 'bitpackage:phpgedview/main_menu.tpl', tra( 'GEDCOM Main Menu' ) );
+$gBitSystem->display( 'bitpackage:phpgedview/main_menu.tpl', tra( 'GEDCOM Main Menu' ) , array( 'display_mode' => 'display' ));
 ?>
