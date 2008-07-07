@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_rtl.php,v 1.5 2008/07/07 17:30:15 lsces Exp $
+ * @version $Id: functions_rtl.php,v 1.6 2008/07/07 20:03:12 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -293,7 +293,7 @@ function ltr_string($name) {
  * @param string $string	the string to remove the entities from
  * @return string	the string with entities converted
  */
-function unhtmlentities ($string)  {
+function unhtmlentities1 ($string)  {
 	$trans_tbl = get_html_translation_table (HTML_ENTITIES);
 	$trans_tbl = array_flip ($trans_tbl);
 	$ret = strtr ($string, $trans_tbl);
