@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.10 2008/07/07 17:30:16 lsces Exp $
+ * @version $Id: functions_name.php,v 1.11 2008/07/07 20:03:57 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -220,7 +220,7 @@ function get_person_name($pid, $checkUnknown=true) {
 		$name = get_gedcom_value("NAME", 1, $indirec, '', false);
 	} else {
 		//-- first check if the person is in the cache
-		if ((isset($indilist[$pid]["names"][0][0]))&&($indilist[$pid]["gedfile"]==$gGedcom[$GEDCOM]["id"])) {
+		if ((isset($indilist[$pid]["names"][0][0]))&&($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) {
 			$name = $indilist[$pid]["names"][0][0];
 		} else {
 			//-- cache missed, so load the person into the cache with the find_person_record function
