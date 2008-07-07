@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_db.php,v 1.23 2008/07/07 17:30:14 lsces Exp $
+ * @version $Id: functions_db.php,v 1.24 2008/07/07 20:05:16 lsces Exp $
  * @package PhpGedView
  * @subpackage DB
  */
@@ -252,7 +252,7 @@ function load_people($ids) {
 	}
 
 	if ($ids) {
-		$res=$gGedcom->mDb-query(
+		$res=$gGedcom->mDb->query(
 			"SELECT i_gedcom, i_id, i_isdead  FROM ".PHPGEDVIEW_DB_PREFIX."individuals ".
 			"WHERE i_id IN (".join(',', $ids).") AND i_file=".$gGedcom->mGEDCOMId
 		);
@@ -304,7 +304,7 @@ function find_gedcom_record($pid, $gedfile='') {
 
 	// Look in the tables.
 	$pid=$DBCONN->escapeSimple($pid);
-	$res=$gGedcom->mDb-query(
+	$res=$gGedcom->mDb->query(
 		"SELECT i_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_id='{$pid}' AND i_file={$ged_id} UNION ALL ".
 		"SELECT f_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."families    WHERE f_id='{$pid}' AND f_file={$ged_id} UNION ALL ".
 		"SELECT s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources     WHERE s_id='{$pid}' AND s_file={$ged_id} UNION ALL ".
@@ -320,7 +320,7 @@ function find_gedcom_record($pid, $gedfile='') {
 	// Use LIKE to match case-insensitively, as this can still use the database indexes.
 	$pid=str_replace(array('_', '%','@'), array('@_','@%', '@@'), $pid);
 	$like=($DBTYPE=='pgsql') ? 'ILIKE' : 'LIKE';
-	$res=$gGedcom->mDb-query(
+	$res=$gGedcom->mDb->query(
 		"SELECT i_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_id {$like} '{$pid}' ESCAPE '@' AND i_file={$ged_id} UNION ALL ".
 		"SELECT f_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."families    WHERE f_id {$like} '{$pid}' ESCAPE '@' AND f_file={$ged_id} UNION ALL ".
 		"SELECT s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources     WHERE s_id {$like} '{$pid}' ESCAPE '@' AND s_file={$ged_id} UNION ALL ".
@@ -366,7 +366,7 @@ function find_source_record($pid, $gedfile="") {
 
 	// Look in the table.
 	$pid=$DBCONN->escapeSimple($pid);
-	$res=$gGedcom->mDb-query(
+	$res=$gGedcom->mDb->query(
 		"SELECT s_gedcom, s_name FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_id='{$pid}' AND s_file={$ged_id}"
 	);
 	if (DB::isError($res)) return "";
@@ -410,7 +410,7 @@ function find_repo_record($pid, $gedfile="") {
 
 	// Look in the table.
 	$pid=$DBCONN->escapeSimple($pid);
-	$res=$gGedcom->mDb-query(
+	$res=$gGedcom->mDb->query(
 		"SELECT o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='REPO' AND o_id='{$pid}' AND o_file={$ged_id}"
 	);
 	$row=$res->fetchRow();
@@ -456,7 +456,7 @@ function find_media_record($pid, $gedfile='') {
 
 	// Look in the table.
 	$escpid=$DBCONN->escapeSimple($pid);
-	$res=$gGedcom->mDb-query(
+	$res=$gGedcom->mDb->query(
 		"SELECT m_gedrec, m_file, m_titl, m_ext FROM ".PHPGEDVIEW_DB_PREFIX."media ".
 		"WHERE m_media='{$escpid}' AND m_gedfile={$ged_id}"
 	);
@@ -485,7 +485,7 @@ function find_first_person() {
 	global $gGedcom;
 
 	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=". $gGedcom->mGEDCOMId ." ORDER BY i_id";
-	$res = $gGedcom->mDb-query($sql,false,1);
+	$res = $gGedcom->mDb->query($sql,false,1);
 	$row = $res->fetchRow();
 	$res->free();
 	if (!DB::isError($row))
@@ -514,7 +514,7 @@ function update_isdead($gid, $indi) {
 		if (empty($isdead))
 			$isdead = 0;
 		$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."individuals SET i_isdead=$isdead WHERE i_id LIKE '".$DBCONN->escapeSimple($gid)."' AND i_file=".$DBCONN->escapeSimple($indi["gedfile"]);
-		$res = $gGedcom->mDb-query($sql);
+		$res = $gGedcom->mDb->query($sql);
 	}
 	if (isset($indilist[$gid]))
 		$indilist[$gid]["isdead"] = $isdead;
@@ -531,7 +531,7 @@ function reset_isdead() {
 	global $TBLPREFIX;
 
 	$sql = "UPDATE ".PHPGEDVIEW_DB_PREFIX."individuals SET i_isdead=-1 WHERE i_file=". $gGedcom->mGEDCOMId ;
-	$gGedcom->mDb-query($sql);
+	$gGedcom->mDb->query($sql);
 }
 
 /**
@@ -542,16 +542,16 @@ function reset_isdead() {
  * @return array the array of source-titles
  */
 function get_source_add_title_list() {
-	global $sourcelist, $TBLPREFIX;
+	global $sourcelist, $gGedcom;
 
 	$sourcelist = array();
 
  	$sql = "SELECT s_id, s_file, s_file as s_name, s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=". $gGedcom->mGEDCOMId ." AND ((s_gedcom LIKE '% _HEB %') OR (s_gedcom LIKE '% ROMN %'));";
 
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while ($row = $res->fetchRow()){
 		$source = array();
 		$row = db_cleanup($row);
 		$ct = preg_match("/\d ROMN (.*)/", $row["s_gedcom"], $match);
@@ -561,7 +561,6 @@ function get_source_add_title_list() {
 		$source["gedfile"] = $row["s_file"];
 		$sourcelist[$row["s_id"]] = $source;
 	}
-	$res->free();
 
 	return $sourcelist;
 }
@@ -574,15 +573,15 @@ function get_source_add_title_list() {
  * @return array the array of sources
  */
 function get_source_list() {
-	global $sourcelist, $TBLPREFIX;
+	global $sourcelist, $gGedcom;
 
 	$sourcelist = array();
 
 	$sql = "SELECT s_id, s_name, s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=". $gGedcom->mGEDCOMId ." ORDER BY s_name";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while ($row =& $res->fetchRow()){
 		$source = array();
 		$source["name"] = $row["s_name"];
 		$source["gedcom"] = $row["s_gedcom"];
@@ -597,12 +596,12 @@ function get_source_list() {
 
 //-- get the repositorylist from the datastore
 function get_repo_list() {
-	global $repolist, $TBLPREFIX;
+	global $repolist, $gGedcom;
 
 	$repolist = array();
 
 	$sql = "SELECT o_id, o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=". $gGedcom->mGEDCOMId ." AND o_type='REPO'";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -627,12 +626,12 @@ function get_repo_list() {
 
 //-- get the repositorylist from the datastore
 function get_repo_id_list() {
-	global $TBLPREFIX;
+	global $gGedcom;
 
 	$repo_id_list = array();
 
 	$sql = "SELECT o_id, o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=". $gGedcom->mGEDCOMId ." AND o_type='REPO' ORDER BY o_id";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -660,13 +659,13 @@ function get_repo_id_list() {
  * @return array the array of repository-titles
  */
 function get_repo_add_title_list() {
-	global $TBLPREFIX;
+	global $gGedcom;
 
 	$repolist = array();
 
  	$sql = "SELECT o_id, o_file, o_file as o_name, o_type, o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_type='REPO' AND o_file=". $gGedcom->mGEDCOMId ." AND ((o_gedcom LIKE '% _HEB %') OR (o_gedcom LIKE '% ROMN %'));";
 
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -694,7 +693,7 @@ function get_indi_list() {
 		return $indilist;
 	$indilist = array();
 	$sql = "SELECT i_id, i_gedcom, i_name, i_isdead, i_letter, i_surname  FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=". $gGedcom->mGEDCOMId ." ORDER BY i_surname";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -709,7 +708,7 @@ function get_indi_list() {
 	$res->free();
 
 	$sql = "SELECT n_gid, n_name, n_letter, n_surname, n_type FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=". $gGedcom->mGEDCOMId ." ORDER BY n_surname";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -739,7 +738,7 @@ function get_asso_list($type = "all", $ipid='') {
 			$sql .= "LIKE '% ASSO @$ipid@%'";
 		else
 			$sql .= "LIKE '% ASSO %'";
-		$res = $gGedcom->mDb-query($sql);
+		$res = $gGedcom->mDb->query($sql);
 
 		$ct = $res->numRows();
 		while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -780,7 +779,7 @@ function get_asso_list($type = "all", $ipid='') {
 			$sql .= "LIKE '% ASSO @$ipid@%'";
 		else
 			$sql .= "LIKE '% ASSO %'";
-		$res = $gGedcom->mDb-query($sql);
+		$res = $gGedcom->mDb->query($sql);
 
 		$ct = $res->numRows();
 		while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -814,7 +813,7 @@ function get_fam_list() {
 		return $famlist;
 	$famlist = array();
 	$sql = "SELECT f_id, f_husb,f_wife, f_chil, f_gedcom, f_numchil FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -854,7 +853,7 @@ function get_other_list() {
 	$otherlist = array();
 
 	$sql = "SELECT o_id, o_type, o_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$ct = $res->numRows();
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -929,7 +928,7 @@ function search_indis($query, $allgeds=false, $ANDOR="AND") {
 	}
 	//-- do some sorting in the DB, it won't be as good as the PHP sorting
 	$sql .= " ORDER BY i_surname, i_name";
-	$res = $gGedcom->mDb-query($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 
 	$gedold = $GEDCOM;
 	if (!DB::isError($res)) {
@@ -1000,7 +999,7 @@ function search_indis_names($query, $allgeds=false) {
 		}
 	if (!$allgeds)
 		$sql .= " AND i_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 	if (!DB::isError($res)) {
 		while ($row = $res->fetchRow()){
 			$row = db_cleanup($row);
@@ -1039,7 +1038,7 @@ function search_indis_names($query, $allgeds=false) {
 	}
 	if (!$allgeds)
 		$sql .= " AND i_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 
 	if (!DB::isError($res)) {
 		while ($row = $res->fetchRow()){
@@ -1232,7 +1231,7 @@ function search_indis_soundex($soundex, $lastname, $firstname='', $place='', $sg
 			}
 			//--group by
 			$sql .= "GROUP BY i_id";
-			$res = $gGedcom->mDb-query($sql);
+			$res = $gGedcom->mDb->query($sql);
 		}
 	}
 	return $res;
@@ -1252,7 +1251,7 @@ function get_recent_changes($jd=0, $allgeds=false) {
 	$sql .= " ORDER BY d_julianday1 DESC";
 
 	$changes = array();
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 			if (preg_match("/\w+:\w+/", $row['d_gid'])==0) {
@@ -1308,7 +1307,7 @@ function search_indis_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 	if (!$allgeds)
 		$sql .= "AND d_file=". $gGedcom->mGEDCOMId ." ";
 	$sql .= "ORDER BY d_year DESC, d_mon DESC, d_day DESC";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow()){
@@ -1371,7 +1370,7 @@ function search_indis_daterange($start, $end, $fact='', $allgeds=false, $ANDOR="
 	if (!$allgeds)
 		$sql .= "AND d_file=". $gGedcom->mGEDCOMId ." ";
 	$sql .= "ORDER BY d_julianday1";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow()){
@@ -1440,7 +1439,7 @@ function search_fams($query, $allgeds=false, $ANDOR="AND", $allnames=false) {
 		$sql .= ")";
 	}
 
-	$res = $gGedcom->mDb-query($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 
 	$gedold = $GEDCOM;
 	if (!DB::isError($res)) {
@@ -1507,7 +1506,7 @@ function search_fams_names($query, $ANDOR="AND", $allnames=false, $gedcnt=1) {
 	}
 	$sql .= ")";
 
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if (!DB::isError($res)) {
 		$gedold = $GEDCOM;
@@ -1599,7 +1598,7 @@ function search_fams_members($query, $allgeds=false, $ANDOR="AND", $allnames=fal
 		}
 		$sql .= ")";
 	}
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$i=0;
 	while ($row =& $res->fetchRow()){
@@ -1690,7 +1689,7 @@ function search_sources($query, $allgeds=false, $ANDOR="AND") {
 		$sql .= ")";
 	}
 
-	$res = $gGedcom->mDb-query($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow()){
@@ -1735,7 +1734,7 @@ function search_sources_dates($day="", $month="", $year="", $fact="", $allgeds=f
 		$sql .= "AND d_file=". $gGedcom->mGEDCOMId ." ";
 	$sql .= "GROUP BY s_id ORDER BY d_year, d_month, d_day DESC";
 
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if (!DB::isError($res)) {
 		$gedold = $GEDCOM;
@@ -1803,7 +1802,7 @@ function search_other($query, $allgeds=false, $type="", $ANDOR="AND") {
 		$sql .= ")";
 	}
 
-	$res = $gGedcom->mDb-query($sql, false);
+	$res = $gGedcom->mDb->query($sql, false);
 
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow()){
@@ -1848,7 +1847,7 @@ function search_other_dates($day="", $month="", $year="", $fact="", $allgeds=fal
 		$sql .= "AND d_file=". $gGedcom->mGEDCOMId ." ";
 	$sql .= "GROUP BY o_id ORDER BY d_year, d_month, d_day DESC";
 
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if (!DB::isError($res)) {
 		$gedold = $GEDCOM;
@@ -1890,7 +1889,7 @@ function get_place_parent_id($parent, $level) {
 	for ($i=0; $i<$level; $i++) {
 		$escparent=preg_replace("/\?/","\\\\\\?", $DBCONN->escapeSimple($parent[$i]));
 		$psql = "SELECT p_id FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=".$i." AND p_parent_id=$parent_id AND p_place LIKE '".$escparent."' AND p_file=". $gGedcom->mGEDCOMId ." ORDER BY p_place";
-		$res = $gGedcom->mDb-query($psql);
+		$res = $gGedcom->mDb->query($psql);
 		$row =& $res->fetchRow();
 		$res->free();
 		if (empty($row[0]))
@@ -1916,7 +1915,7 @@ function get_place_list() {
 		$parent_id = get_place_parent_id($parent, $level);
 		$sql = "SELECT p_place FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_level=$level AND p_parent_id=$parent_id AND p_file=". $gGedcom->mGEDCOMId ." ORDER BY p_place";
 	}
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	while ($row =& $res->fetchRow()) {
 		$placelist[] = $row[0];
@@ -1939,7 +1938,7 @@ function get_place_positions($parent, $level='') {
 	else {
 		//-- we don't know the level so get the any matching place
 		$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks, ".PHPGEDVIEW_DB_PREFIX."places WHERE p_place LIKE '".$DBCONN->escapeSimple($parent)."' AND p_file=pl_file AND p_id=pl_p_id AND p_file=". $gGedcom->mGEDCOMId ;
-		$res = $gGedcom->mDb-query($sql);
+		$res = $gGedcom->mDb->query($sql);
 		while ($row =& $res->fetchRow()) {
 			$positions[] = $row[0];
 		}
@@ -1947,7 +1946,7 @@ function get_place_positions($parent, $level='') {
 		return $positions;
 	}
 	$sql = "SELECT DISTINCT pl_gid FROM ".PHPGEDVIEW_DB_PREFIX."placelinks WHERE pl_p_id=$p_id AND pl_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	while ($row =& $res->fetchRow()) {
 		$positions[] = $row[0];
@@ -1961,7 +1960,7 @@ function find_place_list($place) {
 	global $gGedcom, $placelist;
 
 	$sql = "SELECT p_id, p_place, p_parent_id  FROM ".PHPGEDVIEW_DB_PREFIX."places WHERE p_file=". $gGedcom->mGEDCOMId ." ORDER BY p_parent_id, p_id";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	while ($row =& $res->fetchRow()) {
 		if ($row[2]==0)
@@ -1992,10 +1991,10 @@ function get_media_list() {
 	if (!isset($medialinks))
 		$medialinks = array();
 	$sqlmm = "SELECT mm_gid, mm_media FROM ".PHPGEDVIEW_DB_PREFIX."media_mapping WHERE mm_gedfile = ". $gGedcom->mGEDCOMId ." ORDER BY mm_id ASC";
-	$resmm =@ $gGedcom->mDb-query($sqlmm);
+	$resmm =@ $gGedcom->mDb->query($sqlmm);
 	while ($rowmm =& $resmm->fetchRow(DB_FETCHMODE_ASSOC)){
 		$sqlm = "SELECT m_id, m_titl, m_gedrec, m_file FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_media='{$rowmm['mm_media']}' AND m_gedfile=". $gGedcom->mGEDCOMId ;
-		$resm =@ $gGedcom->mDb-query($sqlm);
+		$resm =@ $gGedcom->mDb->query($sqlm);
 		while ($rowm =& $resm->fetchRow(DB_FETCHMODE_ASSOC)){
 			$filename = check_media_depth($rowm["m_file"], "NOTRUNC");
 			$thumbnail = str_replace($MEDIA_DIRECTORY, $MEDIA_DIRECTORY."thumbs/", $filename);
@@ -2129,9 +2128,9 @@ function get_fam_alpha() {
 			$famalpha[$v] = $v;
 
 	$sql = "SELECT DISTINCT i_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=". $gGedcom->mGEDCOMId ." AND i_gedcom LIKE '%1 FAMS%' ORDER BY alpha";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while ($row = $res->fetchRow()){
 		$letter = str2upper($row["alpha"]);
 		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian")
 			$letter = str_replace($danishFrom, $danishTo, $letter);
@@ -2155,12 +2154,11 @@ function get_fam_alpha() {
 		}
 		$famalpha[$letter] = $letter;
 	}
-	$res->free();
 
 	$sql = "SELECT DISTINCT n_letter AS alpha FROM ".PHPGEDVIEW_DB_PREFIX."names, ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=n_file AND i_id=n_gid AND n_file=". $gGedcom->mGEDCOMId ." AND i_gedcom LIKE '%1 FAMS%' ORDER BY alpha";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	while ($row = $res->fetchRow()){
 		$letter = str2upper($row["alpha"]);
 		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian")
 			$letter = str_replace($danishFrom, $danishTo, $letter);
@@ -2184,15 +2182,13 @@ function get_fam_alpha() {
 		}
 		$famalpha[$letter] = $letter;
 	}
-	$res->free();
 
 	$sql = "SELECT f_id FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=". $gGedcom->mGEDCOMId ." AND (f_husb='' OR f_wife='')";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if ($res->numRows()>0) {
 		$famalpha["@"] = "@";
 	}
-	$res->free();
 
 	return $famalpha;
 }
@@ -2225,6 +2221,7 @@ function get_alpha_indis($letter) {
 	$checkDictSort = true;
 
 	$sql = "SELECT i_id, i_gedcom, i_name, i_letter,i_surname, i_isdead FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE ";
+	$param = array();
 	if ($LANGUAGE == "danish" || $LANGUAGE == "norwegian") {
 		if ($letter == "Ø")
 			$text = "OE";
@@ -2234,21 +2231,26 @@ function get_alpha_indis($letter) {
 			else
 				if ($letter == "Å")
 					$text = "AA";
-		if (isset($text))
-			$sql .= "(i_letter = '".$DBCONN->escapeSimple($letter)."' OR i_name LIKE '%/".$DBCONN->escapeSimple($text)."%') ";
-		else
+		if (isset($text)) {
+			$sql .= "( i_letter = ? OR i_name LIKE ? ) ";
+			$param[] = $letter;
+			$param[] = '%'.$text.'%';
+		} else {
 			if ($letter=="A")
-				$sql .= "i_letter LIKE '".$DBCONN->escapeSimple($letter)."' ";
+				$sql .= "i_letter LIKE ? ";
 			else
-				$sql .= "i_letter LIKE '".$DBCONN->escapeSimple($letter)."%' ";
+				$sql .= "i_letter LIKE ? || '%' ";
+			$param[] = $letter;
+		}
 		$checkDictSort = false;
 	} else
 		if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
 			$isMultiLetter = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 			if ($isMultiLetter!==false) {
-				$sql .= "i_letter = '".$DBCONN->escapeSimple($letter)."' ";
+				$sql .= "i_letter = ? ";
 				$checkDictSort = false;
 			}
+			$param[] = $letter;
 		}
 	if ($checkDictSort) {
 		$text = "";
@@ -2264,60 +2266,65 @@ function get_alpha_indis($letter) {
 						break;
 				}
 				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="")
-					$sql .= "(i_letter LIKE '".$DBCONN->escapeSimple($letter)."%'".$text.") ";
+					$sql .= "(i_letter LIKE ? || '%' ".$text.") ";
 				else
-					$sql .= "(i_letter = '".$DBCONN->escapeSimple($letter)."'".$text.") ";
+					$sql .= "(i_letter = ? ".$text.") ";
+				$param[] = $letter;
 			} else {
 				$inArray = strpos($LCDiacritStrip, $letter);
 				if ($inArray!==false) {
+					$param[] = $letter;	
 					while (true) {
-						$text .= " OR i_letter = '".$DBCONN->escapeSimple(substr($LCDiacritWhole, ($inArray+$inArray), 2))."'";
+						$text .= " OR i_letter = ?";
 						$inArray ++;
+						$param[] = substr($LCDiacritWhole, ($inArray+$inArray), 2);
 						if ($inArray > strlen($LCDiacritStrip))
 							break;
 						if (substr($LCDiacritStrip, $inArray, 1)!=$letter)
 							break;
 					}
 					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="")
-						$sql .= "(i_letter LIKE '".$DBCONN->escapeSimple($letter)."%'".$text.") ";
+						$sql .= "(i_letter LIKE ? || '%' ".$text.") ";
 					else
-						$sql .= "(i_letter = '".$DBCONN->escapeSimple($letter)."'".$text.") ";
+						$sql .= "(i_letter = ? ".$text.") ";
 				}
 			}
 		}
 		if ($text=="") {
 			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="")
-				$sql .= "i_letter LIKE '".$DBCONN->escapeSimple($letter)."%'";
+				$sql .= "i_letter LIKE ? || '%' ";
 			else
-				$sql .= "i_letter = '".$DBCONN->escapeSimple($letter)."'";
+				$sql .= "i_letter = ? ";
+			$param[] = $letter;
 		}
 	}
 
 	//-- add some optimization if the surname is set to speed up the lists
-	if (!empty($surname))
-		$sql .= "AND i_surname LIKE '%".$DBCONN->escapeSimple($surname)."%' ";
-	$sql .= "AND i_file=". $gGedcom->mGEDCOMId ." ORDER BY i_name";
-	$res = $gGedcom->mDb-query($sql);
-	if (!DB::isError($res)) {
-		while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-			$row = db_cleanup($row);
-			//if (substr($row["i_letter"], 0, 1)==substr($letter, 0, 1)||(isset($text)?substr($row["i_letter"], 0, 1)==substr($text, 0, 1):FALSE)){
-				$indi = array();
-				$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], 'P'));
-				$indi["isdead"] = $row["i_isdead"];
-				$indi["gedcom"] = $row["i_gedcom"];
-				$indi["gedfile"] =  $gGedcom->mGEDCOMId ;
-				$tindilist[$row["i_id"]] = $indi;
-				//-- cache the item in the $indilist for improved speed
-				$indilist[$row["i_id"]] = $indi;
-			//}
-		}
-		$res->free();
+	if (!empty($surname)) {
+		$sql .= "AND i_surname LIKE ? ";
+		$param[] = '%'.$surname.'%';
+	}
+	$sql .= "AND i_file = ? ORDER BY i_name";
+	$param[] = $gGedcom->mGEDCOMId;
+	$res = $gGedcom->mDb->query( $sql, $param );
+	while ($row = $res->fetchRow()){
+		$row = db_cleanup($row);
+		//if (substr($row["i_letter"], 0, 1)==substr($letter, 0, 1)||(isset($text)?substr($row["i_letter"], 0, 1)==substr($text, 0, 1):FALSE)){
+			$indi = array();
+			$indi["names"] = array(array($row["i_name"], $row["i_letter"], $row["i_surname"], 'P'));
+			$indi["isdead"] = $row["i_isdead"];
+			$indi["gedcom"] = $row["i_gedcom"];
+			$indi["gedfile"] =  $gGedcom->mGEDCOMId ;
+			$tindilist[$row["i_id"]] = $indi;
+			//-- cache the item in the $indilist for improved speed
+			$indilist[$row["i_id"]] = $indi;
+		//}
 	}
 
 	$checkDictSort = true;
 
 	$sql = "SELECT i_id, i_name, i_file, i_isdead, i_gedcom, i_letter, i_surname, n_letter, n_name, n_surname, n_letter, n_type FROM ".PHPGEDVIEW_DB_PREFIX."individuals, ".PHPGEDVIEW_DB_PREFIX."names WHERE i_id=n_gid AND i_file=n_file AND ";
+	$param = array();
 	if ($LANGUAGE == "danish" || $LANGUAGE == "norwegian") {
 		if ($letter == "Ø")
 			$text = "OE";
@@ -2327,19 +2334,24 @@ function get_alpha_indis($letter) {
 			else
 				if ($letter == "Å")
 					$text = "AA";
-		if (isset($text))
-			$sql .= "(n_letter = '".$DBCONN->escapeSimple($letter)."' OR n_letter = '".$DBCONN->escapeSimple($text)."') ";
-		else
+		if (isset($text)) {
+			$sql .= "( n_letter = ? OR n_name LIKE ? ) ";
+			$param[] = $letter;
+			$param[] = '%'.$text.'%';
+		} else {
+			$param[] = $letter;
 			if ($letter=="A")
-				$sql .= "n_letter LIKE '".$DBCONN->escapeSimple($letter)."' ";
+				$sql .= "n_letter LIKE ? ";
 			else
-				$sql .= "n_letter LIKE '".$DBCONN->escapeSimple($letter)."%' ";
+				$sql .= "n_letter LIKE ? || '%' ";
+		}
 		$checkDictSort = false;
 	} else
 		if ($MULTI_LETTER_ALPHABET[$LANGUAGE]!="") {
 			$isMultiLetter = strpos($MULTI_LETTER_ALPHABET[$LANGUAGE], " ".$letter." ");
 			if ($isMultiLetter!==false) {
-				$sql .= "n_letter = '".$DBCONN->escapeSimple($letter)."' ";
+				$param[] = $letter;
+				$sql .= "n_letter = ? ";
 				$checkDictSort = false;
 			}
 		}
@@ -2348,41 +2360,46 @@ function get_alpha_indis($letter) {
 		if ($DICTIONARY_SORT[$LANGUAGE]) {
 			$inArray = strpos($UCDiacritStrip, $letter);
 			if ($inArray!==false) {
+				$param[] = $letter;
 				while (true) {
-					$text .= " OR n_letter = '".$DBCONN->escapeSimple(substr($UCDiacritWhole, ($inArray+$inArray), 2))."'";
+					$text .= " OR n_letter = ? ";
 					$inArray ++;
+					$param[] = substr($UCDiacritWhole, ($inArray+$inArray), 2);
 					if ($inArray > strlen($UCDiacritStrip))
 						break;
 					if (substr($UCDiacritStrip, $inArray, 1)!=$letter)
 						break;
 				}
 				if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="")
-					$sql .= "(n_letter LIKE '".$DBCONN->escapeSimple($letter)."%'".$text.")";
+					$sql .= "(n_letter LIKE ? || '%' ".$text.")";
 				else
-					$sql .= "(n_letter = '".$DBCONN->escapeSimple($letter)."'".$text.")";
+					$sql .= "(n_letter = ? ".$text.")";
 			} else {
 				$inArray = strpos($LCDiacritStrip, $letter);
 				if ($inArray!==false) {
+					$param[] = $letter;
 					while (true) {
-						$text .= " OR n_letter = '".$DBCONN->escapeSimple(substr($LCDiacritWhole, ($inArray+$inArray), 2))."'";
+						$text .= " OR n_letter = ? ";
 						$inArray ++;
+						$param[] = substr($LCDiacritWhole, ($inArray+$inArray), 2);
 						if ($inArray > strlen($LCDiacritStrip))
 							break;
 						if (substr($LCDiacritStrip, $inArray, 1)!=$letter)
 							break;
 					}
 					if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="")
-						$sql .= "(n_letter LIKE '".$DBCONN->escapeSimple($letter)."%'".$text.")";
+						$sql .= "(n_letter LIKE ? || '%' ".$text.")";
 					else
-						$sql .= "(n_letter = '".$DBCONN->escapeSimple($letter)."'".$text.")";
+						$sql .= "(n_letter = ? ".$text.")";
 				}
 			}
 		}
 		if ($text=="") {
+			$param[] = $letter;
 			if ($MULTI_LETTER_ALPHABET[$LANGUAGE]=="")
-				$sql .= "n_letter LIKE '".$DBCONN->escapeSimple($letter)."%'";
+				$sql .= "n_letter LIKE ? || '%' ";
 			else
-				$sql .= "n_letter = '".$DBCONN->escapeSimple($letter)."'";
+				$sql .= "n_letter = ? ";
 		}
 	}
 	//-- add some optimization if the surname is set to speed up the lists
@@ -2390,10 +2407,10 @@ function get_alpha_indis($letter) {
 		$sql .= "AND n_surname LIKE '%".$DBCONN->escapeSimple($surname)."%' ";
 	if (!$SHOW_MARRIED_NAMES)
 		$sql .= "AND n_type!='C' ";
-	$sql .= "AND i_file=". $gGedcom->mGEDCOMId ." ORDER BY i_name";
-	$res = $gGedcom->mDb-query($sql);
-	if (!DB::isError($res)) {
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
+	$sql .= "AND i_file = ? ORDER BY i_name";
+	$param[] = $gGedcom->mGEDCOMId;
+	$res = $gGedcom->mDb->query( $sql, $param );
+	while ($row =& $res->fetchRow()){
 		$row = db_cleanup($row);
 		//if (substr($row["n_letter"], 0, strlen($letter))==$letter||(isset($text)?substr($row["n_letter"], 0, strlen($text))==$text:FALSE)){
 			if (!isset($indilist[$row["i_id"]]) || !isset($indilist[$row["i_id"]]["names"])) {
@@ -2413,8 +2430,6 @@ function get_alpha_indis($letter) {
 				$tindilist[$row["i_id"]] = $indilist[$row["i_id"]];
 			}
 		//}
-	}
-	$res->free();
 	}
 
 	return $tindilist;
@@ -2588,7 +2603,7 @@ function get_alpha_fams($letter) {
 			}
 			if (!empty($hname)) {
 				$wname = get_sortable_name($WIFE);
-				if (hasRTLText($hname)) {
+/*				if (hasRTLText($hname)) {
 					$indirec = find_person_record($WIFE);
 					if (isset($indilist[$WIFE]["names"])) {
 						foreach ($indilist[$WIFE]["names"] as $n=>$namearray) {
@@ -2600,6 +2615,7 @@ function get_alpha_fams($letter) {
 						}
 					}
 				}
+*/
 				$name = $hname ." + ". $wname;
 				if ($famlist[$famid]["wife"]==$gid)
 					$name = $wname ." + ". $hname; // force husb first
@@ -2617,7 +2633,7 @@ function get_alpha_fams($letter) {
 	//-- SHOULD WE SHOW THE UNDEFINED? MA
 	if ($letter=="@") {
 		$sql = "SELECT f_id, f_gedcom, f_husb, f_wife, f_chil FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE (f_husb='' OR f_wife='') AND f_file=". $gGedcom->mGEDCOMId ;
-		$res = $gGedcom->mDb-query($sql);
+		$res = $gGedcom->mDb->query($sql);
 
 		if ($res->numRows()>0) {
 			while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -2723,7 +2739,7 @@ function get_surname_fams($surname) {
 	//-- SHOULD WE SHOW THE UNDEFINED?
 	if ($surname=="@N.N.") {
 		$sql = "SELECT f_id, f_gedcom, f_husb, f_wife, f_chil FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE (f_husb='' OR f_wife='') AND f_file=". $gGedcom->mGEDCOMId ;
-		$res = $gGedcom->mDb-query($sql);
+		$res = $gGedcom->mDb->query($sql);
 
 		if ($res->numRows()>0) {
 			while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
@@ -2755,7 +2771,7 @@ function find_rin_id($rin) {
 	global $TBLPREFIX;
 
 	$sql = "SELECT i_id FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_rin='$rin' AND i_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		return $row["i_id"];
@@ -2789,7 +2805,7 @@ function get_list_size($list, $filter="") {
 			$sql = "SELECT count(i_file) FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=". $gGedcom->mGEDCOMId ;
 			if ($filter)
 				$sql .= " AND i_gedcom $term '$filter'";
-			$res = $gGedcom->mDb-query($sql);
+			$res = $gGedcom->mDb->query($sql);
 			$row =& $res->fetchRow();
 			$res->free();
 			return $row[0];
@@ -2798,7 +2814,7 @@ function get_list_size($list, $filter="") {
 			$sql = "SELECT count(f_file) FROM ".PHPGEDVIEW_DB_PREFIX."families WHERE f_file=". $gGedcom->mGEDCOMId ;
 			if ($filter)
 				$sql .= " AND f_gedcom $term '$filter'";
-			$res = $gGedcom->mDb-query($sql);
+			$res = $gGedcom->mDb->query($sql);
 
 			$row =& $res->fetchRow();
 			$res->free();
@@ -2808,7 +2824,7 @@ function get_list_size($list, $filter="") {
 			$sql = "SELECT count(s_file) FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=". $gGedcom->mGEDCOMId ;
 			if ($filter)
 				$sql .= " AND s_gedcom $term '$filter'";
-			$res = $gGedcom->mDb-query($sql);
+			$res = $gGedcom->mDb->query($sql);
 
 			$row =& $res->fetchRow();
 			$res->free();
@@ -2818,7 +2834,7 @@ function get_list_size($list, $filter="") {
 			$sql = "SELECT count(m_id) FROM ".PHPGEDVIEW_DB_PREFIX."media WHERE m_gedfile=". $gGedcom->mGEDCOMId ;
 			if ($filter)
 				$sql .= " AND m_gedrec $term '$filter'";
-			$res = $gGedcom->mDb-query($sql);
+			$res = $gGedcom->mDb->query($sql);
 			//-- prevent failure if DB tables are lost
 			if (DB::isError($res)) return 0;
 			$row =& $res->fetchRow();
@@ -2829,7 +2845,7 @@ function get_list_size($list, $filter="") {
 			$sql = "SELECT count(o_file) FROM ".PHPGEDVIEW_DB_PREFIX."other WHERE o_file=". $gGedcom->mGEDCOMId ;
 			if ($filter)
 				$sql .= " AND o_gedcom $term '$filter'";
-			$res = $gGedcom->mDb-query($sql);
+			$res = $gGedcom->mDb->query($sql);
 
 			$row =& $res->fetchRow();
 			$res->free();
@@ -2849,7 +2865,7 @@ function get_top_surnames($num) {
 
 	$surnames = array();
 	$sql = "SELECT COUNT(i_surname) AS count, i_surname FROM ".PHPGEDVIEW_DB_PREFIX."individuals WHERE i_file=". $gGedcom->mGEDCOMId ." GROUP BY i_surname ORDER BY count DESC";
-	$res = $gGedcom->mDb-query($sql, true, $num+1);
+	$res = $gGedcom->mDb->query($sql, true, $num+1);
 
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow()) {
@@ -2863,7 +2879,7 @@ function get_top_surnames($num) {
 		$res->free();
 	}
 	$sql = "SELECT COUNT(n_surname) AS count, n_surname FROM ".PHPGEDVIEW_DB_PREFIX."names WHERE n_file=". $gGedcom->mGEDCOMId ." AND n_type!='C' GROUP BY n_surname ORDER BY count DESC";
-	$res = $gGedcom->mDb-query($sql, true, $num+1);
+	$res = $gGedcom->mDb->query($sql, true, $num+1);
 
 	if (!DB::isError($res)) {
 		while ($row =& $res->fetchRow()) {
@@ -2912,7 +2928,7 @@ function get_server_list(){
 
 	if (isset($gGedcom) && check_for_import($GEDCOM)) {
 		$sql = "SELECT s_id ,s_name, s_gedcom FROM ".PHPGEDVIEW_DB_PREFIX."sources WHERE s_file=". $gGedcom->mGEDCOMId ." AND s_gedcom LIKE '%1 _DBID%' ORDER BY s_name";
-		$res = $gGedcom->mDb-query($sql, false);
+		$res = $gGedcom->mDb->query($sql, false);
 		if (DB::isError($res))
 			return $sitelist;
 
@@ -2945,7 +2961,7 @@ function get_faq_data($id='') {
 	$sql = "SELECT b_id, b_location, b_order, b_config, b_username FROM ".PHPGEDVIEW_DB_PREFIX."blocks WHERE (b_username='$GEDCOM' OR b_username='*all*') AND b_name='faq'";
 	if ($id != '')
 		$sql .= " AND b_order='".$id."'";
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
 		$faqs[$row["b_order"]][$row["b_location"]]["text"] = unserialize($row["b_config"]);
@@ -3007,7 +3023,7 @@ function get_remote_id($rfn) {
 	global $gGedcom, $DBCONN;
 
 	$sql = "SELECT r_gid FROM ".PHPGEDVIEW_DB_PREFIX."remotelinks WHERE r_linkid='".$DBCONN->escapeSimple($rfn)."' AND r_file=". $gGedcom->mGEDCOMId ;
-	$res = $gGedcom->mDb-query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if ($res->numRows()>0) {
 		$row = $res->fetchRow();
@@ -3153,7 +3169,7 @@ function get_anniversary_events($jd, $facts='') {
 		$ind_sql="SELECT d_gid, i_gedcom, 'INDI', d_type, d_day, d_month, d_year, d_fact, d_type FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."individuals {$where} AND d_gid=i_id AND d_file=i_file ORDER BY d_day ASC, d_year DESC";
 		$fam_sql="SELECT d_gid, f_gedcom, 'FAM',  d_type, d_day, d_month, d_year, d_fact, d_type FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."families    {$where} AND d_gid=f_id AND d_file=f_file ORDER BY d_day ASC, d_year DESC";
 		foreach (array($ind_sql, $fam_sql) as $sql) {
-			$res=$gGedcom->mDb-query($sql);
+			$res=$gGedcom->mDb->query($sql);
 			while ($row=&$res->fetchRow()) {
 				// Generate a regex to match the retrieved date - so we can find it in the original gedcom record.
 				// TODO having to go back to the original gedcom is lame.  This is why it is so slow, and needs
@@ -3227,7 +3243,7 @@ function get_calendar_events($jd1, $jd2, $facts='') {
 	$ind_sql="SELECT d_gid, i_gedcom, 'INDI', d_type, d_day, d_month, d_year, d_fact, d_type FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."individuals {$where} AND d_gid=i_id AND d_file=i_file ORDER BY d_julianday1";
 	$fam_sql="SELECT d_gid, f_gedcom, 'FAM',  d_type, d_day, d_month, d_year, d_fact, d_type FROM ".PHPGEDVIEW_DB_PREFIX."dates, ".PHPGEDVIEW_DB_PREFIX."families    {$where} AND d_gid=f_id AND d_file=f_file ORDER BY d_julianday1";
 	foreach (array($ind_sql, $fam_sql) as $sql) {
-		$res=$gGedcom->mDb-query($sql);
+		$res=$gGedcom->mDb->query($sql);
 		while ($row=&$res->fetchRow()) {
 			// Generate a regex to match the retrieved date - so we can find it in the original gedcom record.
 			// TODO having to go back to the original gedcom is lame.  This is why it is so slow, and needs
@@ -3391,7 +3407,7 @@ function create_user($username, $password) {
 
 	$username=$DBCONN->escapeSimple($username);
 	$password=$DBCONN->escapeSimple($password);
-	$gGedcom->mDb-query("INSERT INTO ".PHPGEDVIEW_DB_PREFIX."users (u_username, u_password) VALUES ('{$username}', '{$password}')");
+	$gGedcom->mDb->query("INSERT INTO ".PHPGEDVIEW_DB_PREFIX."users (u_username, u_password) VALUES ('{$username}', '{$password}')");
 
 	if ($DBCONN->Affected_Rows()==0) {
 		return '';
@@ -3405,34 +3421,34 @@ function rename_user($old_username, $new_username) {
 
 	$olduser=$DBCONN->escapeSimple($old_username);
 	$newuser=$DBCONN->escapeSimple($new_username);
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_username='{$new_username}' WHERE u_username='{$old_username}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_username='{$new_username}' WHERE u_username='{$old_username}'");
 
 	// For databases without foreign key constraints, manually update dependent tables
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."blocks    SET b_username ='{$new_username}' WHERE b_username ='{$old_username}'");
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."favorites SET fv_username='{$new_username}' WHERE fv_username='{$old_username}'");
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."messages  SET m_from     ='{$new_username}' WHERE m_from     ='{$old_username}'");
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."messages  SET m_to       ='{$new_username}' WHERE m_to       ='{$old_username}'");
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."news      SET n_username ='{$new_username}' WHERE n_username ='{$old_username}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."blocks    SET b_username ='{$new_username}' WHERE b_username ='{$old_username}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."favorites SET fv_username='{$new_username}' WHERE fv_username='{$old_username}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."messages  SET m_from     ='{$new_username}' WHERE m_from     ='{$old_username}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."messages  SET m_to       ='{$new_username}' WHERE m_to       ='{$old_username}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."news      SET n_username ='{$new_username}' WHERE n_username ='{$old_username}'");
 }
 
 function delete_user($user_id) {
 	global $DBCONN, $TBLPREFIX;
 
 	$user_id=$DBCONN->escapeSimple($user_id);
-	$gGedcom->mDb-query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$user_id}'");
+	$gGedcom->mDb->query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$user_id}'");
 
 	// For databases without foreign key constraints, manually update dependent tables
-	$gGedcom->mDb-query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."blocks    WHERE b_username ='{$user_id}'");
-	$gGedcom->mDb-query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_username='{$user_id}'");
-	$gGedcom->mDb-query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."messages  WHERE m_from     ='{$user_id}' OR m_to='{$user_id}'");
-	$gGedcom->mDb-query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."news      WHERE n_username ='{$user_id}'");
+	$gGedcom->mDb->query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."blocks    WHERE b_username ='{$user_id}'");
+	$gGedcom->mDb->query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."favorites WHERE fv_username='{$user_id}'");
+	$gGedcom->mDb->query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."messages  WHERE m_from     ='{$user_id}' OR m_to='{$user_id}'");
+	$gGedcom->mDb->query("DELETE FROM ".PHPGEDVIEW_DB_PREFIX."news      WHERE n_username ='{$user_id}'");
 }
 
 function get_all_users($order='ASC', $key1='lastname', $key2='firstname') {
 	global $DBCONN, $TBLPREFIX;
 
 	$users=array();
-	$res=$gGedcom->mDb-query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users ORDER BY u_{$key1} {$order}, u_{$key2} {$order}");
+	$res=$gGedcom->mDb->query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users ORDER BY u_{$key1} {$order}, u_{$key2} {$order}");
 	while ($row=$res->fetchRow()) {
 		$users[$row[0]]=$row[0];
 	}
@@ -3443,7 +3459,7 @@ function get_all_users($order='ASC', $key1='lastname', $key2='firstname') {
 function get_user_count() {
 	global $TBLPREFIX;
 
-	$res=$gGedcom->mDb-query("SELECT count(u_username) FROM ".PHPGEDVIEW_DB_PREFIX."users");
+	$res=$gGedcom->mDb->query("SELECT count(u_username) FROM ".PHPGEDVIEW_DB_PREFIX."users");
 	$row=$res->fetchRow();
 	$res->free();
 	return $row[0];
@@ -3454,7 +3470,7 @@ function get_logged_in_users() {
 	global $DBCONN, $TBLPREFIX;
 
 	$users=array();
-	$res=$gGedcom->mDb-query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_loggedin='Y'");
+	$res=$gGedcom->mDb->query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_loggedin='Y'");
 	while ($row=$res->fetchRow()) {
 		$users[$row[0]]=$row[0];
 	}
@@ -3468,7 +3484,7 @@ function get_idle_users($time) {
 
 	$time=(int)($time);
 	$users=array();
-	$res=$gGedcom->mDb-query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_loggedin='Y' AND u_sessiontime BETWEEN 1 AND {$time}");
+	$res=$gGedcom->mDb->query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_loggedin='Y' AND u_sessiontime BETWEEN 1 AND {$time}");
 	while ($row=$res->fetchRow()) {
 		$users[$row[0]]=$row[0];
 	}
@@ -3486,7 +3502,7 @@ function get_user_id($username) {
 
 	$username=$DBCONN->escapeSimple($username);
 
-	$res=$gGedcom->mDb-query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$username}'", false);
+	$res=$gGedcom->mDb->query("SELECT u_username FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$username}'", false);
 	// We may call this function before creating the table, so must check for errors.
 	if ($res!=false && !DB::isError($res)) {
 		if ($row=$res->fetchRow()) {
@@ -3510,7 +3526,7 @@ function set_user_password($user_id, $password) {
 
 	$user_id=$DBCONN->escapeSimple($user_id);
 	$password=$DBCONN->escapeSimple($password);
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_password='{$password}' WHERE u_username='{$user_id}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_password='{$password}' WHERE u_username='{$user_id}'");
 
 	global $PGV_USERS_cache;
 	if (isset($PGV_USERS_cache[$user_id])) {
@@ -3522,7 +3538,7 @@ function get_user_password($user_id) {
 	global $DBCONN, $TBLPREFIX;
 
 	$user_id=$DBCONN->escapeSimple($user_id);
-	$res=$gGedcom->mDb-query("SELECT u_password FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$user_id}'");
+	$res=$gGedcom->mDb->query("SELECT u_password FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$user_id}'");
 	$row=$res->fetchRow();
 	$res->free();
 	if ($row) {
@@ -3555,7 +3571,7 @@ function get_user_setting($user_id, $parameter) {
 
 	$user_id=$DBCONN->escapeSimple($user_id);
 	$sql="SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_username='{$user_id}'";
-	$res=$gGedcom->mDb-query($sql, false);
+	$res=$gGedcom->mDb->query($sql, false);
 	if ($res==false || DB::isError($res))
 		return null;
 	$row=$res->fetchRow(DB_FETCHMODE_ASSOC);
@@ -3573,7 +3589,7 @@ function set_user_setting($user_id, $parameter, $value) {
 
 	$user_id=$DBCONN->escapeSimple($user_id);
 	$value   =$DBCONN->escapeSimple($value);
-	$gGedcom->mDb-query("UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_{$parameter}='{$value}' WHERE u_username='{$user_id}'");
+	$gGedcom->mDb->query("UPDATE ".PHPGEDVIEW_DB_PREFIX."users SET u_{$parameter}='{$value}' WHERE u_username='{$user_id}'");
 	
 	global $PGV_USERS_cache;
 	if (isset($PGV_USERS_cache[$user_id])) {
@@ -3584,7 +3600,7 @@ function set_user_setting($user_id, $parameter, $value) {
 function admin_user_exists() {
 	global $DBCONN, $TBLPREFIX;
 
-	$res=$gGedcom->mDb-query("SELECT COUNT(u_username) FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_canadmin='Y'", false);
+	$res=$gGedcom->mDb->query("SELECT COUNT(u_username) FROM ".PHPGEDVIEW_DB_PREFIX."users WHERE u_canadmin='Y'", false);
 	// We may call this function before creating the table, so must check for errors.
 	if ($res!=false && !DB::isError($res)) {
 		$row=$res->fetchRow();
@@ -3665,7 +3681,7 @@ function get_user_from_gedcom_xref($ged_id, $xref) {
 
 	$ged_name=get_gedcom_from_id($ged_id);
 
-	$res=$gGedcom->mDb-query("SELECT u_username, u_gedcomid FROM ".PHPGEDVIEW_DB_PREFIX."users");
+	$res=$gGedcom->mDb->query("SELECT u_username, u_gedcomid FROM ".PHPGEDVIEW_DB_PREFIX."users");
 	$username=false;
 	while ($row=$res->fetchRow()) {
 		if ($row[1]) {
