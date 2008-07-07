@@ -3,7 +3,7 @@
  * Name Specific Functions
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2008 John Finlay and Others.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +20,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.9 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: functions_name.php,v 1.10 2008/07/07 17:30:16 lsces Exp $
  */
 
-/**
- * security check to prevent hackers from directly accessing this file
- */
-if (strstr($_SERVER["SCRIPT_NAME"],"functions_name.php")) {
-	print "Why do you want to do that?";
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
 }
+
+$NPFX_accept = array("Adm", "Amb", "Brig", "Can", "Capt", "Chan", "Chapln", "Cmdr", "Col", "Cpl", "Cpt", "Dr", "Gen", "Gov", "Hon", "Lady", "Lt", "Mr", "Mrs", "Ms", "Msgr", "Pfc", "Pres", "Prof", "Pvt", "Rabbi", "Rep", "Rev", "Sen", "Sgt", "Sir", "Sr", "Sra", "Srta", "Ven");
 
 /**
  * Get array of common surnames from index
@@ -39,11 +38,12 @@ if (strstr($_SERVER["SCRIPT_NAME"],"functions_name.php")) {
  * @param int $min the number of times a surname must occur before it is added to the array
  */
 function get_common_surnames_index($ged) {
-// generate direct from database
-	if (empty($GEDCOMS[$ged]["commonsurnames"])) store_gedcoms();
+	global $gGedcom;
+
+	if (empty($gGedcom[$ged]["commonsurnames"])) store_gedcoms();
 	$surnames = array();
-	if (empty($GEDCOMS[$ged]["commonsurnames"]) || ($GEDCOMS[$ged]["commonsurnames"]==",")) return $surnames;
-//	$names = preg_split("/[,;]/"[$ged]["commonsurnames"]);
+	if (empty($gGedcom[$ged]["commonsurnames"]) || ($gGedcom[$ged]["commonsurnames"]==",")) return $surnames;
+	$names = preg_split("/[,;]/", $gGedcom[$ged]["commonsurnames"]);
 	foreach($names as $indexval => $name) {
 		$name = trim($name);
 		if (!empty($name)) $surnames[$name]["name"] = stripslashes($name);
@@ -59,10 +59,10 @@ function get_common_surnames_index($ged) {
  * @param int $min the number of times a surname must occur before it is added to the array
  */
 function get_common_surnames($min) {
-	global $GEDCOM, $indilist, $CONFIGURED, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
+	global $TBLPREFIX, $GEDCOM, $indilist, $CONFIGURED, $gGedcom, $COMMON_NAMES_ADD, $COMMON_NAMES_REMOVE, $pgv_lang, $HNN, $ANN;
 
 	$surnames = array();
-	if (!$CONFIGURED || (!check_for_import($GEDCOM))) return $surnames;
+	if (!$CONFIGURED || !adminUserExists() || (count($gGedcom)==0) || (!check_for_import($GEDCOM))) return $surnames;
 	//-- this line causes a bug where the common surnames list is not properly updated
 	// if ((!isset($indilist))||(!is_array($indilist))) return $surnames;
 	$surnames = get_top_surnames(100);
@@ -71,7 +71,7 @@ function get_common_surnames($min) {
 	$i=0;
 	foreach($surnames as $indexval => $surname) {
 		$surname["name"] = trim($surname["name"]);
-		if (!empty($surname["name"]) 
+		if (!empty($surname["name"])
 				&& stristr($surname["name"], "@N.N")===false
 				&& stristr($surname["name"], $HNN)===false
 				&& stristr($surname["name"], $ANN.",")===false
@@ -98,81 +98,10 @@ function get_common_surnames($min) {
 		}
 	}
 
+	//-- check if we found some, else recurse
+	if (empty($topsurns) && $min>2) $topsurns = get_common_surnames($min/2);
 	uasort($topsurns, "itemsort");
 	return $topsurns;
-}
-
-/**
- * Get the name from the raw gedcom record
- *
- * @param string $indirec the raw gedcom record to get the name from
- */
-function get_name_in_record($indirec) {
-	$name = "";
-
-	$nt = preg_match("/1 NAME (.*)/", $indirec, $ntmatch);
-	if ($nt>0) {
-		$name = trim($ntmatch[1]);
-		$name = preg_replace(array("/__+/", "/\.\.+/", "/^\?+/"), array("", "", ""), $name);
-
-		//-- check for a surname
-		$ct = preg_match("~/(.*)/~", $name, $match);
-		if ($ct > 0) {
-			$surname = trim($match[1]);
-			$surname = preg_replace(array("/__+/", "/\.\.+/", "/^\?+/"), array("", "", ""), $surname);
-			if (empty($surname)) $name = preg_replace("~/(.*)/~", "/@N.N./", $name);
-		}
-		else {
-			//-- check for the surname SURN tag
-			$ct = preg_match("/2 SURN (.*)/", $indirec, $match);
-			if ($ct>0) {
-				$pt = preg_match("/2 SPFX (.*)/", $indirec, $pmatch);
-				if ($pt>0) $name .=" ".trim($pmatch[1]);
-				$surname = trim($match[1]);
-				$surname = preg_replace(array("/__+/", "/\.\.+/", "/^\?+/"), array("", "", ""), $surname);
-				if (empty($surname)) $name .= " /@N.N./";
-				else $name .= " /".$surname."/";
-			}
-			else $name .= " /@N.N./";
-		}
-		
-		$givens = trim(preg_replace("~/.*/~", "", $name));
-		
-		if (empty($givens)) $name = "@P.N. ".$name;
-	}
-	else {
-		/*-- this is all extraneous to the 1 NAME tag and according to the gedcom spec
-		-- the 1 NAME tag should take preference
-		*/
-		$name = "";
-		//-- check for the given names
-		$gt = preg_match("/2 GIVN (.*)/", $indirec, $gmatch);
-		if ($gt>0) $name .= trim($gmatch[1]);
-		else $name .= "@P.N.";
-
-		//-- check for the surname
-		$ct = preg_match("/2 SURN (.*)/", $indirec, $match);
-		if ($ct>0) {
-			$pt = preg_match("/2 SPFX (.*)/", $indirec, $pmatch);
-			if ($pt>0) $name .=" ".trim($pmatch[1]);
-			$surname = trim($match[1]);
-			if (empty($surname)) $name .= " /@N.N./";
-			else $name .= " /".$surname."/";
-		}
-		if (empty($name)) $name = "@P.N. /@N.N./";
-
-		$st = preg_match("/2 NSFX (.*)/", $indirec, $smatch);
-		if ($st>0) $name.=" ".trim($smatch[1]);
-//		$pt = preg_match("/2 SPFX (.*)/", $indirec, $pmatch);
-//		if ($pt>0) $name =strtolower(trim($pmatch[1]))." ".$name;
-	}
-	// handle PAF extra NPFX [ 961860 ]
-	$ct = preg_match("/2 NPFX (.*)/", $indirec, $match);
-	if ($ct>0) {
-		$npfx = trim($match[1]);
-		if (strpos($name, $npfx)===false) $name = $npfx." ".$name;
-	}
-	return $name;
 }
 
 /**
@@ -187,8 +116,8 @@ function get_name_in_record($indirec) {
  * @return string the sortable name
  */
 function get_sortable_name($pid, $alpha="", $surname="", $allnames=false) {
-	global $SHOW_LIVING_NAMES, $PRIV_PUBLIC;
-	global $gGedcom, $indilist, $pgv_lang;
+	global $TBLPREFIX, $SHOW_LIVING_NAMES, $PRIV_PUBLIC;
+	global $GEDCOM, $gGedcom, $indilist, $pgv_lang;
 
 	$mynames = array();
 
@@ -208,19 +137,18 @@ function get_sortable_name($pid, $alpha="", $surname="", $allnames=false) {
 		//-- cache missed, so load the person into the cache with the find_person_record function
 		//-- and get the name from the cache again
 		$gedrec = find_person_record($pid);
-		if (empty($gedrec)) $gedrec = find_record_in_file($pid);
-		if (!empty($gedrec)) {
+		if (empty($gedrec)) $gedrec = find_updated_record($pid);
+		if (!empty($indilist[$pid]["names"])) {
 			$names = $indilist[$pid]["names"];
 		}
 		else {
-			if ($allnames == true) {
-				$mynames[] = "@N.N., @P.N.";
-				return $mynames;
-			}
-			else return "@N.N., @P.N.";
+			if ($allnames)
+				return array("@N.N., @P.N.");
+			else
+				return "@N.N., @P.N.";
 		}
 	}
-	if ($allnames == true) {
+	if ($allnames) {
 		$mynames = array();
 		foreach ($names as $key => $name) {
 			$mynames[] = sortable_name_from_name($name[0]);
@@ -240,6 +168,7 @@ function get_sortable_name($pid, $alpha="", $surname="", $allnames=false) {
  * @return string 	The new name in the form Surname, Given Names
  */
 function sortable_name_from_name($name) {
+	global $NPFX_accept;
 	//-- remove any unwanted characters from the name
 	if (preg_match("/^\.(\.*)$|^\?(\?*)$|^_(_*)$|^,(,*)$/", $name)) $name = preg_replace(array("/,/","/\./","/_/","/\?/"), array("","","",""), $name);
 	$ct = preg_match("~(.*)/(.*)/(.*)~", $name, $match);
@@ -252,6 +181,11 @@ function sortable_name_from_name($name) {
 			$givenname = $othername;
 			$othername = "";
 		}
+
+		// Remove any prefixes from given name
+		while (preg_match('/^(\w+)\.? +(.*)/', $givenname, $match) && in_array($match[1], $NPFX_accept))
+			$givenname=$match[2];
+
 		if (empty($givenname)) $givenname = "@P.N.";
 		$name = $surname;
 		if (!empty($othername)) $name .= " ".$othername;
@@ -275,39 +209,36 @@ function get_person_name($pid, $checkUnknown=true) {
 	global $NAME_REVERSE;
 	global $NAME_FROM_GEDCOM;
 	global $indilist;
-	global $gGedcom;
+	global $GEDCOM, $gGedcom;
 
 	$name = "";
 
 	//-- get the name from the gedcom record
 	if ($NAME_FROM_GEDCOM) {
 		$indirec = find_person_record($pid);
-		if (!$indirec) $indirec = find_record_in_file($pid);
-		$name = get_name_in_record($indirec);
-	}
-	else {
+		if (!$indirec) $indirec = find_updated_record($pid);
+		$name = get_gedcom_value("NAME", 1, $indirec, '', false);
+	} else {
 		//-- first check if the person is in the cache
-		if ((isset($indilist[$pid]["names"][0][0]))&&($indilist[$pid]["gedfile"]==$gGedcom->mGEDCOMId)) {
+		if ((isset($indilist[$pid]["names"][0][0]))&&($indilist[$pid]["gedfile"]==$gGedcom[$GEDCOM]["id"])) {
 			$name = $indilist[$pid]["names"][0][0];
-		}
-		else {
+		} else {
 			//-- cache missed, so load the person into the cache with the find_person_record function
 			//-- and get the name from the cache again
 			$gedrec = find_person_record($pid);
-			if (empty($gedrec)) $gedrec = find_record_in_file($pid);
+			if (empty($gedrec)) {
+				$gedrec = find_updated_record($pid);
+			}
 			if (!empty($gedrec)) {
-				if (isset($indilist[$pid]["names"])) $name = $indilist[$pid]["names"][0][0];
-				else {
-					$names = get_indi_names($gedrec);
-					$name = $names[0][0];
-				}
+				$names = get_indi_names($gedrec);
+				$name = $names[0][0];
 			}
 		}
 	}
 
 	if ($NAME_REVERSE) $name = reverse_name($name);
 	
-	if ($checkUnknown) $name = check_NN($name);
+//	if ($checkUnknown) $name = check_NN($name);
 	return $name;
 }
 
@@ -334,7 +265,7 @@ function reverse_name($name) {
 		$name .= " ".$givenname;
 		if (!empty($othername)) $name .= " ".$othername;
 	}
-	
+
 	return $name;
 }
 
@@ -387,7 +318,7 @@ function get_source_descriptor($sid) {
  * @return string the title of the repository
  */
 function get_repo_descriptor($rid) {
-	global $WORD_WRAPPED_NOTES;
+	global $TBLPREFIX, $WORD_WRAPPED_NOTES;
 	global $GEDCOM, $repo_id_list;
 
 	if ($rid=="") return false;
@@ -402,7 +333,6 @@ function get_repo_descriptor($rid) {
 	return false;
 }
 
-//==== MA
 /**
  * get the additional descriptive title of the source
  *
@@ -410,7 +340,7 @@ function get_repo_descriptor($rid) {
  * @return string the additional title of the source
  */
 function get_add_source_descriptor($sid) {
-	global $WORD_WRAPPED_NOTES;
+	global $TBLPREFIX, $WORD_WRAPPED_NOTES;
 	global $GEDCOM, $sourcelist;
 	$title = "";
 	if ($sid=="") return false;
@@ -418,10 +348,10 @@ function get_add_source_descriptor($sid) {
 	$gedrec = find_source_record($sid);
 	if (!empty($gedrec)) {
 		$ct = preg_match("/\d ROMN (.*)/", $gedrec, $match);
- 		if ($ct>0) return($match[1]);
+		if ($ct>0) return($match[1]);
 		$ct = preg_match("/\d _HEB (.*)/", $gedrec, $match);
- 		if ($ct>0) return($match[1]);
- 	}
+		if ($ct>0) return($match[1]);
+	}
 	return false;
 }
 
@@ -432,7 +362,7 @@ function get_add_source_descriptor($sid) {
  * @return string the additional title of the repository
  */
 function get_add_repo_descriptor($rid) {
-	global $WORD_WRAPPED_NOTES;
+	global $TBLPREFIX, $WORD_WRAPPED_NOTES;
 	global $GEDCOM, $repolist;
 	$title = "";
 	if ($rid=="") return false;
@@ -440,10 +370,10 @@ function get_add_repo_descriptor($rid) {
 	$gedrec = find_repo_record($rid);
 	if (!empty($gedrec)) {
 		$ct = preg_match("/\d ROMN (.*)/", $gedrec, $match);
- 		if ($ct>0) return($match[1]);
+		if ($ct>0) return($match[1]);
 		$ct = preg_match("/\d _HEB (.*)/", $gedrec, $match);
- 		if ($ct>0) return($match[1]);
- 	}
+		if ($ct>0) return($match[1]);
+	}
 	return false;
 }
 
@@ -462,10 +392,11 @@ function get_sortable_family_descriptor($fid) {
 		else $wname = $pgv_lang["private"];
 	}
 	else $wname = "@N.N., @P.N.";
+
 	if (!empty($hname) && !empty($wname)) $result = check_NN($hname)." + ".check_NN($wname);
 	else if (!empty($hname) && empty($wname)) $result = check_NN($hname);
 	else if (empty($hname) && !empty($wname)) $result = check_NN($wname);
-	
+
 	return $result;
 }
 
@@ -488,10 +419,11 @@ function get_family_descriptor($fid) {
 		if ($NAME_REVERSE) $wname = "@N.N. @P.N.";
 		else $wname = "@P.N. @N.N.";
 	}
+	$result = "";
 	if (!empty($hname) && !empty($wname)) $result = check_NN($hname)." + ".check_NN($wname);
 	else if (!empty($hname) && empty($wname)) $result = check_NN($hname);
 	else if (empty($hname) && !empty($wname)) $result = check_NN($wname);
-	
+
 	return $result;
 }
 
@@ -504,21 +436,21 @@ function get_family_add_descriptor($fid) {
 		else $hname = $pgv_lang["private"];
 	}
 	else $hname = "";
-	// handle the additional name of a non existing spouse the same way as of 
-	// a spouse who does not have an additional name 
-	
+	// handle the additional name of a non existing spouse the same way as of
+	// a spouse who does not have an additional name
+
 	if ($parents["WIFE"]) {
 		if (displayDetailsById($parents["WIFE"]) || showLivingNameById($parents["WIFE"]))
 			$wname = get_add_person_name($parents["WIFE"]);
 		else $wname = $pgv_lang["private"];
 	}
 	else $wname = "";
-		
-	if (!empty($hname) && !empty($wname)) $result = check_NN($hname) . " + " . check_NN($wname);
-	else if (!empty($hname) && empty($wname)) $result = check_NN($hname);
-	else if (empty($hname) && !empty($wname)) $result = check_NN($wname);
+
+	if (!empty($hname) && !empty($wname)) $result = $hname . " + " . $wname;
+	else if (!empty($hname) && empty($wname)) $result = $hname;
+	else if (empty($hname) && !empty($wname)) $result = $wname;
 	else $result = "";
-	
+
 	return $result;
 }
 
@@ -530,6 +462,8 @@ function get_add_person_name($pid) {
 	$record = find_person_record($pid);
 	$name_record = get_sub_record(1, "1 NAME", $record);
 	$name = get_add_person_name_in_record($name_record);
+	$name = check_NN($name); 
+		
 	return $name;
 }
 
@@ -550,10 +484,10 @@ function get_add_person_name_in_record($name_record, $keep_slash=false) {
 				$name = trim($names[0])." ".trim($names[1]);
 			}
 		}
-	    else $name = trim($names[0]);
+		else $name = trim($names[0]);
 	}
 	else $name = "";
-	
+
 	if ($NAME_REVERSE) $name = reverse_name($name);
 	return $name;
 }
@@ -570,7 +504,7 @@ function get_sortable_add_name($pid) {
 	// Check for ROMN name
 	$romn = preg_match("/(2 ROMN (.*)|2 _HEB (.*))/", $name_record, $romn_match);
 	if ($romn > 0){
-    	$names = preg_split("/\//", $romn_match[count($romn_match)-1]);
+		$names = preg_split("/\//", $romn_match[count($romn_match)-1]);
 		if ($names[0] == "") $names[0] = "@P.N.";	//-- MA
 		if (empty($names[1])) $names[1] = "@N.N.";	//-- MA
 		if (count($names)>1) {
@@ -601,7 +535,7 @@ function get_sortable_add_name($pid) {
  * @return string	The updated name
  */
 function strip_prefix($lastname){
-	$name = preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z]*[\. ]/"), array(",",",",""), $lastname);
+	$name = preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^([a-z]{1,4}[\. \_\-\(\[])+/"), array(",",",",""), $lastname);
 	$name = trim($name);
 	if ($name=="") return $lastname;
 	return $name;
@@ -650,23 +584,23 @@ function surname_count($nsurname) {
 	$lname = strip_prefix($nsurname);
 	if (empty($lname)) $lname = $nsurname;
 	$sort_letter=get_first_letter($lname);
-	$tsurname = preg_replace(array("/ [jJsS][rR]\.?/", "/ I+/"), array("",""), $nsurname);
-	$tsurname = str2upper($tsurname);
-	if (empty($surname) || (str2upper($surname)==$tsurname)) {
-		if (!isset($surnames[$tsurname])) {
-			$surnames[$tsurname] = array();
-			$surnames[$tsurname]["name"] = $nsurname;
-			$surnames[$tsurname]["match"] = 1;
-			$surnames[$tsurname]["fam"] = 1;
-			$surnames[$tsurname]["alpha"] = get_first_letter($tsurname);
+		$tsurname = preg_replace(array("/ [jJsS][rR]\.?/", "/ I+/"), array("",""), $nsurname);
+		$tsurname = str2upper($tsurname);
+		if (empty($surname) || (str2upper($surname)==$tsurname)) {
+			if (!isset($surnames[$tsurname])) {
+				$surnames[$tsurname] = array();
+				$surnames[$tsurname]["name"] = $nsurname;
+				$surnames[$tsurname]["match"] = 1;
+				$surnames[$tsurname]["fam"] = 1;
+				$surnames[$tsurname]["alpha"] = get_first_letter($tsurname);
+			}
+			else {
+				$surnames[$tsurname]["match"]++;
+				if ($i==0 || $testname != $tsurname) $surnames[$tsurname]["fam"]++;
+			}
+			if ($i==0) $testname = $tsurname;
 		}
-		else {
-			$surnames[$tsurname]["match"]++;
-			if ($i==0 || $testname != $tsurname) $surnames[$tsurname]["fam"]++;
-		}
-		if ($i==0) $testname = $tsurname;
-	}
-	return $nsurname;
+		return $nsurname;
 }
 
 /**
@@ -678,9 +612,18 @@ function surname_count($nsurname) {
  */
 function get_first_letter($text, $import=false) {
 	global $LANGUAGE, $CHARACTER_SET;
-	global $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
+	global $MULTI_LETTER_ALPHABET, $digraph, $trigraph, $quadgraph, $digraphAll, $trigraphAll, $quadgraphAll;
+
+	$danishFrom = array("AA", "Aa", "AE", "Ae", "OE", "Oe", "aa", "ae", "oe");
+	$danishTo   = array("Å", "Å", "Æ", "Æ", "Ø", "Ø", "å", "æ", "ø");
 
 	$text=trim(str2upper($text));
+	if (!$import) {
+		if ($LANGUAGE=="danish" || $LANGUAGE=="norwegian") {
+			$text = str_replace($danishFrom, $danishTo, $text);
+		}
+	}
+
 	$multiByte = false;
 	// Look for 4-byte combinations that should be treated as a single character
 	$letter = substr($text, 0, 4);
@@ -689,7 +632,7 @@ function get_first_letter($text, $import=false) {
 	} else {
 		if (isset($quadgraph[$letter])) $multiByte = true;
 	}
-	
+
 	if (!$multiByte) {
 		// 4-byte combination isn't listed: try 3-byte combination
 		$letter = substr($text, 0, 3);
@@ -699,7 +642,7 @@ function get_first_letter($text, $import=false) {
 			if (isset($trigraph[$letter])) $multiByte = true;
 		}
 	}
-	
+
 	if (!$multiByte) {
 		// 3-byte combination isn't listed: try 2-byte combination
 		$letter = substr($text, 0, 2);
@@ -709,7 +652,7 @@ function get_first_letter($text, $import=false) {
 			if (isset($digraph[$letter])) $multiByte = true;
 		}
 	}
-	
+
 	if (!$multiByte) {
 		// All lists failed: try for a UTF8 character
 		$charLen = 1;
@@ -719,6 +662,8 @@ function get_first_letter($text, $import=false) {
 		if ((ord($letter) & 0xF8) == 0xF0) $charLen = 4;		// 4-byte sequence
 		$letter = substr($text, 0, $charLen);
 	}
+        if ($letter=="/") $letter="@"; //where has @P.N. vanished from names with a null firstname?
+	
 	return $letter;
 }
 
@@ -730,11 +675,12 @@ function get_first_letter($text, $import=false) {
 function check_NN($names) {
 	global $pgv_lang, $UNDERLINE_NAME_QUOTES;
 	global $unknownNN, $unknownPN;
-	
+
 	$fullname = "";
+return $fullname;
 
 	if (!is_array($names)){
-		$lang = 'other'; // whatLanguage($names);
+		$lang = whatLanguage($names);
 		$NN = $unknownNN[$lang];
 		$names = stripslashes($names);
 		$names = preg_replace(array("~ /~","~/,~","~/~"), array(" ", ",", " "), $names);
@@ -758,15 +704,15 @@ function check_NN($names) {
 				$unknown = true;
 				$names[$i] = preg_replace("/@N.N.?/", $unknownNN[$lang], trim($names[$i]));
 			}
-            if (stristr($names[$i], "@P.N")) $names[$i] = $unknownPN[$lang];
- 			if ($i==1 && $unknown && count($names)==3) $fullname .= ", ";
- 			else if ($i==2 && $unknown && count($names)==3) $fullname .= " + ";
-			else if ($i==2 && stristr($names[2], "Individual ") && count($names) == 3) $fullname .= " + ";
+			if (stristr($names[$i], "@P.N")) $names[$i] = $unknownPN[$lang];
+			if ($i==1 && $unknown && count($names)==3) $fullname .= ", ";
+			else if ($i==2 && $unknown && count($names)==3) $fullname .= " + ";
+				else if ($i==2 && stristr($names[2], "Individual ") && count($names) == 3) $fullname .= " + ";
 			else if ($i==2 && count($names)>3) $fullname .= " + ";
-			else $fullname .= ", ";
-			$fullname .= trim($names[$i]);
+				else $fullname .= ", ";
+				$fullname .= trim($names[$i]);
+			}
 		}
-	}
 	$fullname = trim($fullname);
 	if (substr($fullname,-1)==",") $fullname = substr($fullname,0,strlen($fullname)-1);
 	if (substr($fullname,0,2)==", ") $fullname = substr($fullname,2);
@@ -774,6 +720,17 @@ function check_NN($names) {
 	if (empty($fullname)) return $pgv_lang["NN"];
 
 	return $fullname;
+}
+
+// Returns 1 if $string is valid 7 bit ASCII and 0 otherwise.
+function is_7bitascii($string) {
+	return preg_match('/^(?:[\x09\x0A\x0D\x20-\x7E])*$/', $string);
+}
+
+// Returns 1 if $string is valid UTF-8 and 0 otherwise.
+// See http://w3.org/International/questions/qa-forms-utf-8.html
+function is_utf8($string) {
+	return preg_match('/^(?:[\x09\x0A\x0D\x20-\x7E]|[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2})*$/', $string);
 }
 
 /**
@@ -787,7 +744,72 @@ function check_NN($names) {
  * @todo look at function performance as it is much slower than strtolower
  */
 function str2lower($value) {
-return strtolower($value);
+	global $ALPHABET_upper, $ALPHABET_lower;
+	static $all_ALPHABET_upper, $all_ALPHABET_lower;
+
+	// Input may be 7 or 8 bit ASCII and we need UTF8 to work properly
+	if (is_7bitascii($value))
+		return strtolower($value);
+	else if (!is_utf8($value))
+		$value=utf8_encode($value);
+
+	//-- get all of the upper and lower alphabets as a string
+	if (!isset($all_ALPHABET_upper)) {
+		$all_ALPHABET_upper = "";
+		$all_ALPHABET_lower = "";
+		foreach ($ALPHABET_upper as $l => $up_alphabet){
+			$lo_alphabet = $ALPHABET_lower[$l];
+			$ll = strlen($lo_alphabet);
+			$ul = strlen($up_alphabet);
+			if ($ll < $ul) $lo_alphabet .= substr($up_alphabet, $ll);
+			if ($ul < $ll) $up_alphabet .= substr($lo_alphabet, $ul);
+			$all_ALPHABET_lower .= $lo_alphabet;
+			$all_ALPHABET_upper .= $up_alphabet;
+		}
+	}
+
+	$len=strlen($value);
+	for ($i=0; $i<$len;) {
+		$letter=ord($value[$i]);
+		if ($letter < 0x80) { // 7 bit ASCII
+			$value[$i]=strtolower($value[$i]);
+			$i++;
+		} else if ($letter < 0xC0) { // 8 bit ASCII
+			$pos=strpos($all_ALPHABET_upper, $value[$i]);
+			if ($pos===false)
+				$i++;
+			else
+				$value[$i++]=$all_ALPHABET_lower[$pos];
+		} else if ($letter < 0xE0) { // 2 byte UNICODE
+			$pos=strpos($all_ALPHABET_upper, $value[$i].$value[$i+1]);
+			if ($pos===false)
+				$i+=2;
+			else {
+				$value[$i++]=$all_ALPHABET_lower[$pos++];
+				$value[$i++]=$all_ALPHABET_lower[$pos  ];
+			}
+		} else if ($letter < 0xF0) { // 3 byte UNICODE
+			$pos=strpos($all_ALPHABET_upper, $value[$i].$value[$i+1].$value[$i+2]);
+			if ($pos===false)
+				$i+=3;
+			else {
+				$value[$i++]=$all_ALPHABET_lower[$pos++];
+				$value[$i++]=$all_ALPHABET_lower[$pos++];
+				$value[$i++]=$all_ALPHABET_lower[$pos  ];
+			}
+		}	else { // 4 byte UNICODE
+			$pos=strpos($all_ALPHABET_upper, $value[$i].$value[$i+1].$value[$i+2].$value[$i+3]);
+			if ($pos===false)
+				$i+=4;
+			else	{
+				$value[$i++]=$all_ALPHABET_lower[$pos++];
+				$value[$i++]=$all_ALPHABET_lower[$pos++];
+				$value[$i++]=$all_ALPHABET_lower[$pos++];
+				$value[$i++]=$all_ALPHABET_lower[$pos  ];
+			}
+		}
+	}
+	return $value;
 }
 // END function str2lower
 
@@ -802,8 +824,73 @@ return strtolower($value);
  * @todo look at function performance as it is much slower than strtoupper
  */
 function str2upper($value) {
-return strtoupper($value);
+	global $ALPHABET_upper, $ALPHABET_lower;
+	static $all_ALPHABET_upper, $all_ALPHABET_lower;
+
+	// Input may be 7 or 8 bit ASCII and we need UTF8 to work properly
+	if (is_7bitascii($value))
+		return strtoupper($value);
+	else if (!is_utf8($value))
+		$value=utf8_encode($value);
+
+	//-- get all of the upper and lower alphabets as a string
+	if (!isset($all_ALPHABET_upper)) {
+		$all_ALPHABET_upper = "";
+		$all_ALPHABET_lower = "";
+		foreach ($ALPHABET_upper as $l => $up_alphabet){
+			$lo_alphabet = $ALPHABET_lower[$l];
+			$ll = strlen($lo_alphabet);
+			$ul = strlen($up_alphabet);
+			if ($ll < $ul) $lo_alphabet .= substr($up_alphabet, $ll);
+			if ($ul < $ll) $up_alphabet .= substr($lo_alphabet, $ul);
+			$all_ALPHABET_lower .= $lo_alphabet;
+			$all_ALPHABET_upper .= $up_alphabet;
+		}
+	}
+
+	$len=strlen($value);
+	for ($i=0; $i<$len;) {
+		$letter=ord($value[$i]);
+		if ($letter < 0x80) { // 7 bit ASCII
+			$value[$i]=strtoupper($value[$i]);
+			$i++;
+		} else if ($letter < 0xC0) { // 8 bit ASCII
+			$pos=strpos($all_ALPHABET_lower, $value[$i]);
+			if ($pos===false)
+				$i++;
+			else
+				$value[$i++]=$all_ALPHABET_upper[$pos];
+		} else if ($letter < 0xE0) { // 2 byte UNICODE
+			$pos=strpos($all_ALPHABET_lower, $value[$i].$value[$i+1]);
+			if ($pos===false)
+		 		$i+=2;
+			else {
+				$value[$i++]=$all_ALPHABET_upper[$pos++];
+				$value[$i++]=$all_ALPHABET_upper[$pos  ];
+			}
+		} else if ($letter < 0xF0) { // 3 byte UNICODE
+			$pos=strpos($all_ALPHABET_lower, $value[$i].$value[$i+1].$value[$i+2]);
+			if ($pos!==false) {
+				$value[$i++]=$all_ALPHABET_upper[$pos++];
+				$value[$i++]=$all_ALPHABET_upper[$pos++];
+				$value[$i++]=$all_ALPHABET_upper[$pos  ];
+			} else
+				$i+=3;
+		}	else { // 4 byte UNICODE
+			$pos=strpos($all_ALPHABET_lower, $value[$i].$value[$i+1].$value[$i+2].$value[$i+3]);
+			if ($pos!==false) {
+				$value[$i++]=$all_ALPHABET_upper[$pos++];
+				$value[$i++]=$all_ALPHABET_upper[$pos++];
+				$value[$i++]=$all_ALPHABET_upper[$pos++];
+				$value[$i++]=$all_ALPHABET_upper[$pos  ];
+			} else
+				$i+=4;
+		}
+	}
+	return $value;
 }
+// END function str2upper
+
 
 /**
  * Convert a string to UTF8
@@ -816,30 +903,30 @@ return strtoupper($value);
  */
 function smart_utf8_decode($in_str)
 {
-  $new_str = html_entity_decode(htmlentities($in_str, ENT_COMPAT, 'UTF-8'));
-  $new_str = str_replace("&oelig;", "\x9c", $new_str);
-  $new_str = str_replace("&OElig;", "\x8c", $new_str);
-  return $new_str;
+	$new_str = html_entity_decode(htmlentities($in_str, ENT_COMPAT, 'UTF-8'));
+	$new_str = str_replace("&oelig;", "\x9c", $new_str);
+	$new_str = str_replace("&OElig;", "\x8c", $new_str);
+	return $new_str;
 	/**
-   // Replace ? with a unique string
-   $new_str = str_replace("?", "q0u0e0s0t0i0o0n", $in_str);
+	// Replace ? with a unique string
+	$new_str = str_replace("?", "q0u0e0s0t0i0o0n", $in_str);
 
-   // Try the utf8_decode
-   $new_str=utf8_decode($new_str);
+	// Try the utf8_decode
+	$new_str=utf8_decode($new_str);
 
-   // if it contains ? marks
-   if (strpos($new_str,"?") !== false)
-   {
-       // Something went wrong, set new_str to the original string.
-       $new_str=$in_str;
-   }
-   else
-   {
-       // If not then all is well, put the ?-marks back where is belongs
-       $new_str = str_replace("q0u0e0s0t0i0o0n", "?", $new_str);
-   }
-   return $new_str;
-   **/
+	// if it contains ? marks
+	if (strpos($new_str,"?") !== false)
+	{
+	// Something went wrong, set new_str to the original string.
+	$new_str=$in_str;
+	}
+	else
+	{
+	// If not then all is well, put the ?-marks back where is belongs
+	$new_str = str_replace("q0u0e0s0t0i0o0n", "?", $new_str);
+	}
+	return $new_str;
+	**/
 }
 
 /**
@@ -848,6 +935,7 @@ function smart_utf8_decode($in_str)
  * @return array	The array of individual names
  */
 function get_indi_names($indirec, $import=false) {
+	global $NAME_REVERSE;
 	$names = array();
 	//-- get all names
 	$namerec = get_sub_record(1, "1 NAME", $indirec, 1);
@@ -855,10 +943,18 @@ function get_indi_names($indirec, $import=false) {
 	else {
 		$j = 1;
 		while(!empty($namerec)) {
-			$name = get_name_in_record($namerec);
+			$name = get_gedcom_value("NAME", 1, $namerec, '', false);
+			$name = preg_replace('/\/\//','/@N.N./', $name); // Missing SURN=>@N.N.
+			if ($NAME_REVERSE) { // Missing GIVN=>@P.N.
+				$name=preg_replace('/\/$/', '/ @P.N./', $name);
+			} else {
+				$name=preg_replace('/^\//', '@P.N. /', $name);
+			}
 			$surname = extract_surname($name, false);
 			if (empty($surname)) $surname = "@N.N.";
-			$lname = preg_replace("/^[a-z0-9 \.]+/", "", $surname);
+			//-- all ____ names get changed to @N.N.
+			if (preg_match("/^_+$/", $surname)>0) $surname="@N.N.";
+			$lname = preg_replace("/^[a-z0-9 '\.\-\_\(\[]+/", "", $surname);
 			if (empty($lname)) $lname = $surname;
 			$letter = get_first_letter($lname, $import);
 			$letter = str2upper($letter);
@@ -870,7 +966,8 @@ function get_indi_names($indirec, $import=false) {
 			if (!empty($addname)) {
 				$surname = extract_surname($addname, false);
 				if (empty($surname)) $surname = "@N.N.";
-				$lname = preg_replace("/^[a-z0-9 \.]+/", "", $surname);
+				//-- remove these characters so that they do not get selected as the first letter
+				$lname = preg_replace("/^[a-z0-9 '\.\-\_\(\[]+/", "", $surname);
 				if (empty($lname)) $lname = $surname;
 				$letter = get_first_letter($lname, $import);
 				$letter = str2upper($letter);
@@ -884,7 +981,7 @@ function get_indi_names($indirec, $import=false) {
 				$marriedname = trim($match[$i][1]);
 				$surname = extract_surname($marriedname, false);
 				if (empty($surname)) $surname = "@N.N.";
-				$lname = preg_replace("/^[a-z0-9 \.]+/", "", $surname);
+				$lname = preg_replace("/^[a-z0-9 '\.\-\_\(\[]+/", "", $surname);
 				if (empty($lname)) $lname = $surname;
 				$letter = get_first_letter($lname, $import);
 				$letter = str2upper($letter);
@@ -898,7 +995,7 @@ function get_indi_names($indirec, $import=false) {
 				$marriedname = trim($match[$i][1]);
 				$surname = extract_surname($marriedname, false);
 				if (empty($surname)) $surname = "@N.N.";
-				$lname = preg_replace("/^[a-z0-9 \.]+/", "", $surname);
+				$lname = preg_replace("/^[a-z0-9 '\.\-\_\(\[]+/", "", $surname);
 				if (empty($lname)) $lname = $surname;
 				$letter = get_first_letter($lname, $import);
 				$letter = str2upper($letter);
@@ -918,19 +1015,19 @@ function get_indi_names($indirec, $import=false) {
  * @param string $name	The name
  * @return array		The array of codes
  */
-
 function DMSoundex($name, $option = "") {
+return;
 	global $PGV_BASEDIRECTORY, $dmsoundexlist, $dmcoding, $maxchar, $INDEX_DIRECTORY, $cachecount, $cachename;
-	
+
 	// If the code tables are not loaded, reload! Keep them global!
 	if (!isset($dmcoding)) {
-		$fname = PHPGEDVIEW_PKG_PATH."includes/dmarray.full.utf-8.php";
+		$fname = $PGV_BASEDIRECTORY."includes/dmarray.full.utf-8.php";
 		require($fname);
 	}
-	
+
 	// Load the previously saved cachefile and return. Keep the cache global!
-	
- 	if ($option == "opencache") {
+
+	if ($option == "opencache") {
 		$cachename = $INDEX_DIRECTORY."DM".date("mdHis", filemtime($fname)).".dat";
 		if (file_exists($cachename)) {
 			$fp = fopen($cachename, "r");
@@ -942,7 +1039,6 @@ function DMSoundex($name, $option = "") {
 			return;
 		}
 		else {
- 			
 			$dmsoundexlist = array();
 			// clean up old cache
 			$handle = opendir($INDEX_DIRECTORY);
@@ -951,9 +1047,9 @@ function DMSoundex($name, $option = "") {
 			}
 			closedir($handle);
 			return;
- 		}
- 	}
-	
+		}
+	}
+
 	// Write the cache to disk after use. If nothing is added, just return.
 	if ($option == "closecache") {
 		if (count($dmsoundexlist) == $cachecount) return;
@@ -967,7 +1063,7 @@ function DMSoundex($name, $option = "") {
 
 	// Check if in cache
 	$name = str2upper($name);
-	$name = trim($name);
+	$name = substr(trim($name), 0, 30);
 	if (isset($dmsoundexlist[$name])) return $dmsoundexlist[$name];
 
 	// Define the result array and set the first (empty) result
@@ -976,10 +1072,10 @@ function DMSoundex($name, $option = "") {
 	$rescount = 1;
 	$nlen = strlen($name);
 	$npos = 0;
-	
-	
+
+
 	// Loop here through the characters of the name
-	while($npos < $nlen) { 
+	while($npos < $nlen) {
 		// Check, per length of characterstring, if it exists in the array.
 		// Start from max to length of 1 character
 		$code = array();
@@ -1058,18 +1154,20 @@ function DMSoundex($name, $option = "") {
 
 	// Kill the doubles and zero's in each result
 	// Do this for every result
-	for ($i=0, $max=count($result); $i<$max; $i++) {
+	$ctr = count($result);
+	for ($i=0; $i<$ctr; $i++) {
 		$j=1;
 		$res = $result[$i][0];
 		// and check every code in the result.
 		// codes are stored separately in array elements, to keep
 		// distinction between 6 and 66.
-		
-		while($j<count($result[$i])) {
-	
+
+		$cti = count($result[$i]);
+		while($j<$cti) {
+
 //  Zeroes to remain in the Soundex result
 			if ((($result[$i][$j-1] != $result[$i][$j]) && ($result[$i][$j] != -1)) || $result[$i][$j] == 0) {
-		
+
 				$res .= $result[$i][$j];
 			}
 			$j++;
@@ -1077,22 +1175,13 @@ function DMSoundex($name, $option = "") {
 		// Fill up to 6 digits and store back in the array
 		$result[$i] = substr($res."000000", 0, 6);
 	}
-			
+
 	// Kill the double results in the array
-	if (count($result)>1) {
-		sort($result);
-		for ($i=0; $i<count($result)-1; $i++) {
-			while ((isset($result[$i+1])) && ($result[$i] == $result[$i+1])) {
-				unset($result[$i+1]);
-				sort($result);
-			}
-		}
-			
-	}
+	$result=array_flip(array_flip($result));
 
 	// Store in cache and return
 	$dmsoundexlist[$name] = $result;
-	return $result;			
+	return $result;
 }
 
 ?>

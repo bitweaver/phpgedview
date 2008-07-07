@@ -88,8 +88,7 @@ class GrampsExport {
  */
 	function begin_xml() {
 		global $pgv_lang, $factarray;//, $eventsArray, $dom, $ePeople, $this->eFams, $eSources, $ePlaces, $eObject;
-		$user = getUserName();
-		$user = getUser($user);
+		$user = PGV_USER_NAME;
 
 		$this->dom = new DomDocument("1.0", "UTF-8");
 		$this->dom->formatOutput = true;
@@ -107,11 +106,11 @@ class GrampsExport {
 
 		$eResearcher = $this->dom->createElement("researcher");
 		$eResname = $this->dom->createElement("resname");
-		$etResname = $this->dom->createTextNode($user["firstname"] . " " . $user["lastname"]);
+		$etResname = $this->dom->createTextNode(getUserFullName($user));
 		$etResname = $eResname->appendChild($etResname);
 		$eResname = $eResearcher->appendChild($eResname);
 		$eResemail = $this->dom->createElement("resemail");
-		$etResemail = $this->dom->createTextNode($user["email"]);
+		$etResemail = $this->dom->createTextNode(get_user_setting($user, 'email'));
 		$etResemail = $eResemail->appendChild($etResemail);
 		$eResemail = $eResearcher->appendChild($eResemail);
 		$eResearcher = $eHeader->appendChild($eResearcher);
@@ -147,49 +146,38 @@ class GrampsExport {
 	 */
 	function create_date($eParent, $dateRec, $level) {
 		if (empty($dateRec)) return;
-		$date = get_gedcom_value("DATE", $level, $dateRec);
-		$dateParsed = parse_date($date);
+		$date = new GedcomDate(get_gedcom_value("DATE", $level, $dateRec, '', false));
 
 		//checks to see if there's is a 2nd date value and creates the daterange element
-		if (stristr($date, "/") !== false || empty($dateParsed[1]["year"]) || empty($dateParsed[1]["mon"]) || empty($dateParsed[1]["day"])) {
+		if (!empty($date->qual2)) {
 			$eDateRange = $this->dom->createElement("daterange");
 			$eDateRange = $eParent->appendChild($eDateRange);
 
 			//sets the start date
-			$year = $dateParsed[0]["year"];
-			$month = $dateParsed[0]["mon"];
-			$day = $dateParsed[0]["day"];
-			$eDateRange->setAttribute("start", $this->create_date_value($year, $month, $day));
+			$eDateRange->setAttribute("start", $this->create_date_value($date->MinDate()));
 
 			//sets the stop date
-			$year = $dateParsed[1]["year"];
-			$month = $dateParsed[1]["mon"];
-			$day = $dateParsed[1]["day"];
-			if ($year == null)
-				$year = $dateParsed[0]["year"];
-			if ($month == null)
-				$month = $dateParsed[0]["mon"];
-			if ($day == null)
-				$day = $dateParsed[0]["day"];
-			$eDateRange->setAttribute("stop", $this->create_date_value($year, $month, $day));
+			$eDateRange->setAttribute("stop", $this->create_date_value($date->MaxDate()));
 		} else {
 			//if there's no dateRange, this creates the normal dateval Element
 			$eDateVal = $this->dom->createElement("dateval");
 			$eDateVal = $eParent->appendChild($eDateVal);
 
 			//checks for the Type attribute values
-			if (($subcomp = substr_compare($date, "about", 0)) > 0 && $subcomp != 1)
-				$eDateVal->setAttribute("type", "about");
-			if (($subcomp = substr_compare($date, "after", 0)) > 0 && $subcomp != 1)
-				$eDateVal->setAttribute("type", "after");
-			if (($subcomp = substr_compare($date, "before", 0)) > 0 && $subcomp != 1)
+			switch ($date->qual1) {
+			case 'bef':
 				$eDateVal->setAttribute("type", "before");
+				break;
+			case 'aft':
+				$eDateVal->setAttribute("type", "after");
+				break;
+			case 'abt':
+				$eDateVal->setAttribute("type", "about");
+				break;
+			}
 
 			//sets the date value
-			$year = $dateParsed[0]["year"];
-			$month = $dateParsed[0]["mon"];
-			$day = $dateParsed[0]["day"];
-			$eDateVal->setAttribute("val", $this->create_date_value($year, $month, $day));
+			$eDateVal->setAttribute("val", $this->create_date_value($date->MinDate()));
 		}
 	}
 
@@ -201,39 +189,16 @@ class GrampsExport {
 	}
 
 	/**
-	 * checks if each date value isset and then returns the correct string to match
-	 * the GRAMPS date format
-	 * @param int $year - the year in the date
-	 * @param int $month - the month in the date
-	 * @param int $day - the day in the date
+	 * Convert a date to the GRAMPS date format
+	 * @param CalendarDate $date - a date to convert
 	 */
-	function create_date_value($year, $month, $day) {
-		if ($month == null && $day == null)
-			return $year;
-		else
-			if ($month == null && $day != null)
-				return $year . "-??-" . $day;
-			else
-				if ($month != null && $day == null)
-					return $year . "-" . $month;
-				else {
-					$dateVal = "";
-					if ($year == null)
-						$dateVal .= "????";
-					else
-						$dateVal .= $year;
-					$dateVal .= "-";
-					if ($month == null)
-						$dateVal .= "??";
-					else
-						$dateVal .= $month;
-					$dateVal .= "-";
-					if ($day == null)
-						$dateVal .= "??";
-					else
-						$dateVal .= $day;
-					return $dateVal;
-				}
+	function create_date_value($date) {
+		// Since no calendar is specified, should we always convert to gregorian?
+		$date=$date->convert_to_cal('gregorian');
+		return
+			($date->y==0 ? '????' : $date->Format('Y')) .'-'.
+			($date->m==0 ? '??'   : $date->Format('m')) .'-'.
+			($date->d==0 ? '??'   : $date->Format('d'));
 	}
 	
 	/**

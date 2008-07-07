@@ -3,7 +3,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: lang_codes_std.php,v 1.4 2007/05/28 08:25:52 lsces Exp $
+ * @version $Id: lang_codes_std.php,v 1.5 2008/07/07 17:30:14 lsces Exp $
  *
  * RFC1766 (HTML language codes) refers to ISO standard 639, and specifies that the 
  * 2-character language code of the ISO standard should be used, and that an ISO 
@@ -33,6 +33,11 @@
  * PhpGedView.
  *
  */
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
 
 $lng_codes["en"]    = array("English", "United Kingdom");
 

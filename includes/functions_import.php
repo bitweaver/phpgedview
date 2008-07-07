@@ -4,7 +4,7 @@
  * Import specific functions
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,16 +24,51 @@
  * @package PhpGedView
  * @subpackage DB
  */
-if (strstr($_SERVER["SCRIPT_NAME"], "functions")) {
-	print "Now, why would you want to do that.	You're not hacking are you?";
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
 	exit;
 }
 
-require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_db.php');
-require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_name.php');
-require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_date.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/media_class.php');
+include_once(PHPGEDVIEW_PKG_PATH.'includes/functions_lang.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/mutex_class.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/index_cache.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_privacy.php');
+
+// Programs such as FTM use the "tag formal names" instead of the actual tags.  This list lets us convert.
+$TRANSLATE_TAGS=array(
+	// These are standard tags, as defined in the 5.5.1 gedcom spec.
+	'ABBREVIATION'=>'ABBR', 'ADDRESS'=>'ADDR', 'ADDRESS1'=>'ADR1', 'ADDRESS2'=>'ADR2', 'ADDRESS3'=>'ADR3',
+	'ADOPTION'=>'ADOP', 'ADULT_CHRISTENING'=>'CHRA', 'AGENCY'=>'AGNC', 'ALIAS'=>'ALIA', 'ANCESTORS'=>'ANCE',
+	'ANCES_INTEREST'=>'ANCI', 'ANNULMENT'=>'ANUL', 'ASSOCIATES'=>'ASSO', 'AUTHOR'=>'AUTH', 'BAPTISM'=>'BAPM',
+	'BAPTISM_LDS'=>'BAPL', 'BAR_MITZVAH'=>'BARM', 'BAS_MITZVAH'=>'BASM', 'BIRTH'=>'BIRT', 'BLESSING'=>'BLES',
+	'BURIAL'=>'BURI', 'CALL_NUMBER'=>'CALN', 'CASTE'=>'CAST', 'CAUSE'=>'CAUS', 'CENSUS'=>'CENS',
+	'CHANGE'=>'CHAN', 'CHARACTER'=>'CHAR', 'CHILD'=>'CHIL', 'CHILDREN_COUNT'=>'NCHI', 'CHRISTENING'=>'CHR',
+	'CONCATENATION'=>'CONC', 'CONFIRMATION'=>'CONF', 'CONFIRMATION_LDS'=>'CONL', 'CONTINUED'=>'CONT',
+	'COPYRIGHT'=>'COPR', 'CORPORATE'=>'CORP', 'COUNTRY'=>'CTRY', 'CREMATION'=>'CREM', 'DEATH'=>'DEAT',
+	'_DEGREE'=>'_DEG', 'DESCENDANTS'=>'DESC', 'DESCENDANT_INT'=>'DESI', 'DESTINATION'=>'DEST',
+	'DIVORCE'=>'DIV', 'DIVORCE_FILED'=>'DIVF', 'EDUCATION'=>'EDUC', 'EMIGRATION'=>'EMIG', 'ENDOWMENT'=>'ENDL',
+	'ENGAGEMENT'=>'ENGA', 'EVENT'=>'EVEN', 'FACSIMILE'=>'FAX', 'FAMILY'=>'FAM', 'FAMILY_CHILD'=>'FAMC',
+	'FAMILY_FILE'=>'FAMF', 'FAMILY_SPOUSE'=>'FAMS', 'FIRST_COMMUNION'=>'FCOM', 'FORMAT'=>'FORM',
+	'GEDCOM'=>'GEDC', 'GIVEN_NAME'=>'GIVN', 'GRADUATION'=>'GRAD', 'HEADER'=>'HEAD', 'HUSBAND'=>'HUSB',
+	'IDENT_NUMBER'=>'IDNO', 'IMMIGRATION'=>'IMMI', 'INDIVIDUAL'=>'INDI', 'LANGUAGE'=>'LANG',
+	'LATITUDE'=>'LATI', 'LONGITUDE'=>'LONG', 'MARRIAGE'=>'MARR', 'MARRIAGE_BANN'=>'MARB',
+	'MARRIAGE_COUNT'=>'NMR', 'MARR_CONTRACT'=>'MARC', 'MARR_LICENSE'=>'MARL', 'MARR_SETTLEMENT'=>'MARS',
+	'MEDIA'=>'MEDI', '_MEDICAL'=>'_MDCL', '_MILITARY_SERVICE'=>'_MILT', 'NAME_PREFIX'=>'NPFX',
+	'NAME_SUFFIX'=>'NSFX', 'NATIONALITY'=>'NATI', 'NATURALIZATION'=>'NATU', 'NICKNAME'=>'NICK',
+	'OBJECT'=>'OBJE', 'OCCUPATION'=>'OCCU', 'ORDINANCE'=>'ORDI', 'ORDINATION'=>'ORDN', 'PEDIGREE'=>'PEDI',
+	'PHONE'=>'PHON', 'PHONETIC'=>'FONE', 'PHY_DESCRIPTION'=>'DSCR', 'PLACE'=>'PLAC', 'POSTAL_CODE'=>'POST',
+	'PROBATE'=>'PROB', 'PROPERTY'=>'PROP', 'PUBLICATION'=>'PUBL', 'QUALITY_OF_DATA'=>'QUAL',
+	'REC_FILE_NUMBER'=>'RFN', 'REC_ID_NUMBER'=>'RIN', 'REFERENCE'=>'REFN', 'RELATIONSHIP'=>'RELA',
+	'RELIGION'=>'RELI', 'REPOSITORY'=>'REPO', 'RESIDENCE'=>'RESI', 'RESTRICTION'=>'RESN', 'RETIREMENT'=>'RETI',
+	'ROMANIZED'=>'ROMN', 'SEALING_CHILD'=>'SLGC', 'SEALING_SPOUSE'=>'SLGS', 'SOC_SEC_NUMBER'=>'SSN',
+	'SOURCE'=>'SOUR', 'STATE'=>'STAE', 'STATUS'=>'STAT', 'SUBMISSION'=>'SUBN', 'SUBMITTER'=>'SUBM',
+	'SURNAME'=>'SURN', 'SURN_PREFIX'=>'SPFX', 'TEMPLE'=>'TEMP', 'TITLE'=>'TITL', 'TRAILER'=>'TRLR',
+	'VERSION'=>'VERS', 'WEB'=>'WWW'
+	// TODO: FTM uses the follow tags.  What are their full forms?
+	// _DETS, _SEPR, CITN, _HEIG, _WEIG, _EXCM, _ELEC, _NAME, _MISN, _UNKN
+);
 
 /**
  * import record into database
@@ -43,12 +78,29 @@ require_once(PHPGEDVIEW_PKG_PATH.'includes/index_cache.php');
  * @param boolean $update whether or not this is an updated record that has been accepted
  */
 function import_record($indirec, $update = false) {
-	global $gGedcom, $gBitSystem, $gid, $type, $indilist, $famlist, $sourcelist, $otherlist, $TOTAL_QUERIES, $prepared_statement;
+	global $gGedcom, $gid, $type, $indilist, $famlist, $sourcelist, $otherlist, $TOTAL_QUERIES, $prepared_statement;
 	global $GEDCOM_FILE, $FILE, $pgv_lang, $USE_RIN, $CREATE_GENDEX, $gdfp, $placecache;
 	global $ALPHABET_upper, $ALPHABET_lower, $place_id, $WORD_WRAPPED_NOTES;
 	global $MAX_IDS, $fpnewged, $GEDCOM, $USE_RTL_FUNCTIONS, $GENERATE_UIDS;
+	global $TRANSLATE_TAGS;
 
 	$FILE = $GEDCOM;
+
+	// Clean input record
+	$indirec=preg_replace('/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F]+/', ' ', $indirec); // Illegal control characters
+	$indirec=preg_replace('/[\r\n]+/', "\n", $indirec); // Standardise line endings
+	// EEK! We only need to remove repeated spaces in certain circumstances.
+	// This global replace breaks various other things, so take it out
+	//$indirec=preg_replace('/ {2,}/', ' ', $indirec); // Repeated spaces
+	$indirec=preg_replace('/(^ +| +$)/m', '', $indirec); // Leading/trailing space
+	$indirec=preg_replace('/\n{2,}/', "\n", $indirec); // Blank lines
+	if (!$update) $indirec=str_replace('@@', '@', $indirec); // Escaped @ signs (only if importing from file)
+	
+	// Replace TAG_FORMAL_NAME (as sometimes created by FTM) with TAG
+	if (is_array($TRANSLATE_TAGS)) {
+		foreach ($TRANSLATE_TAGS as $tag_full=>$tag_abbr)
+			$indirec=preg_replace("/^(\d+ (@[^@]+@ )?){$tag_full}\b/m", '$1'.$tag_abbr, $indirec);
+	}
 
 	//-- import different types of records
 	$ct = preg_match("/0 @(.*)@ ([a-zA-Z_]+)/", $indirec, $match);
@@ -87,11 +139,6 @@ function import_record($indirec, $update = false) {
 		if ($MAX_IDS[$type] < $idnum)
 			$MAX_IDS[$type] = $idnum;
 
-	//-- remove double @ signs
-	$indirec = preg_replace("/@+/", "@", $indirec);
-
-	// remove heading spaces
-	$indirec = preg_replace("/\n(\s*)/", "\n", $indirec);
 	if ($USE_RTL_FUNCTIONS) {
 		//-- replace any added ltr processing codes
 		//		$indirec = preg_replace(array("/".html_entity_decode("&rlm;",ENT_COMPAT,"UTF-8")."/", "/".html_entity_decode("&lrm;",ENT_COMPAT,"UTF-8")."/"), array("",""), $indirec);
@@ -104,11 +151,9 @@ function import_record($indirec, $update = false) {
 		) . chr(0x80) . chr(0x8F), chr(0xE2) . chr(0x80) . chr(0x8E)), "", $indirec);
 	}
 
-	//-- if this is an import from an online update then import the places
-	if ($update) {
-		update_places($gid, $indirec, $update);
-		update_dates($gid, $indirec);
-	}
+	// Update the dates and places tables.
+	update_places($gid, $indirec);
+	update_dates($gid, $indirec);
 
 	$newrec = update_media($gid, $indirec, $update);
 	if ($newrec != $indirec) {
@@ -127,7 +172,7 @@ function import_record($indirec, $update = false) {
 	if ($ct) {
 		$rfn = trim($rmatch[1]);
 		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "remotelinks VALUES ( ?, ?, ? )";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $rfn, $gGedcom->mGEDCOMId ) );
+		$res = $gGedcom->mDb->query($sql, array( $gid, $rfn, $gGedcom->mGEDCOMId ) );
 	}
 
 	if ($type == "INDI") {
@@ -149,10 +194,93 @@ function import_record($indirec, $update = false) {
 		foreach ($names as $indexval => $name) {
 			if ($j > 0) {
 				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "names VALUES( ?, ?, ?, ?, ?, ? )";
-				$res = $gBitSystem->mDb->query($sql, array( $gid[$FILE]["id"], $name[0], $name[1], $name[2], $name[3] ) );
-
+				$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId, $name[0], $name[1], $name[2], $name[3] ) );
 			}
 			$j++;
+/*			
+			// Calculate Soundex Values and insert them into the database.
+			$firstName = explode("/", $name[0]);
+			$firstName = $firstName[0];
+			$lastName = $name[2];
+			
+			
+			// Start building the SQL Insert
+			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "soundex VALUES( ?, ?, ?, ?, ?, ?, ? )" .
+			$param = array( $gid, $indexval, $gGedcom->mGEDCOMId );
+			
+			// Ensure there is a firstname or lastname.
+			// If there is no name in a field, it will contain the string "@N.N."
+			
+			if(trim($firstName) != "@P.N.")
+			{
+				Character_Substitute($firstName);
+				// Split the first name array
+				$fnames = explode(" ", $firstName);
+				
+				$std_array = array();
+				$firstName_std_soundex = "";
+				$firstName_dm_soundex = "";
+				$dm_array = array();
+				
+				$combined = "";
+				foreach($fnames as $fn)
+				{
+					if(!empty($fn))
+					{
+						$std_array[] = soundex($fn);
+						$dm_array = array_merge($dm_array, DMSoundex($fn));
+					}
+				}
+				$fn_nospaces = strtr($firstName, " ", "");
+				$dm_array = array_merge($dm_array, DMSoundex($fn_nospaces));
+				
+				$std_array[] = soundex($fn_nospaces);
+				$firstName_dm_soundex .= ":" . implode(":", array_unique($dm_array));
+				
+				$std_array = array_unique($std_array);
+				$firstName_std_soundex = implode(":", $std_array);
+				$param[] = trim($firstName_std_soundex, ":");
+				$param[] = trim($firstName_dm_soundex,":");
+			}
+			else
+			{
+				$param[] = "NULL";
+				$param[] = "NULL";
+			}
+			
+			if(trim($lastName) != "@N.N.")
+			{
+				Character_Substitute($lastName);
+				$lnames = explode(" ", $lastName);
+				$lastName_std_soundex = "";
+				$lastName_dm_soundex = "";
+				$dm_array = array();
+				$std_array = array();
+				
+				foreach($lnames as $ln)
+				{
+					$std_array[] = soundex($ln);
+					$dm_array = array_merge($dm_array, DMSoundex($ln));
+				}
+				
+				$ln_nospaces = strtr($lastName, " ", "");
+				
+				$std_array[] =  soundex($ln_nospaces);
+				$dm_array = array_merge($dm_array, DMSoundex($ln_nospaces));
+				$lastName_std_soundex .= ":" . implode(":", array_unique($std_array));
+				$lastName_dm_soundex .= ":" . implode(":", array_unique($dm_array));
+				
+				$param[] = trim( $lastName_std_soundex,":" );
+				$param[] = trim( $lastName_dm_soundex,":" );
+			}
+			else
+			{
+				$param[] = "NULL";
+				$param[] = "NULL";
+			}
+
+			$res = $gGedcom->mDb->query( $sql, $param );
+*/
 		}
 		$indi["names"] = $names;
 		$indi["isdead"] = $isdead;
@@ -169,12 +297,12 @@ function import_record($indirec, $update = false) {
 			$indi["rin"] = $gid;
 
 		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "individuals VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $indi["gedfile"], $indi["rin"], $names[0][0], -1, $indi["gedcom"], $names[0][1], $names[0][2], 0 ) );
+		$res = $gGedcom->mDb->query($sql, array( $gid, $indi["gedfile"], $indi["rin"], $names[0][0], -1, $indi["gedcom"], $names[0][1], $names[0][2], 0 ) );
 
 		//-- PEAR supports prepared statements in mysqli we will use this code instead of the code above
-		//if (!isset($prepared_statement)) $prepared_statement = $gBitSystem->mDb->prepare("INSERT INTO ".PHPGEDVIEW_DB_PREFIX."individuals VALUES (?,?,?,?,?,?,?,?)");
+		//if (!isset($prepared_statement)) $prepared_statement = $gGedcom->mDb->prepare("INSERT INTO ".PHPGEDVIEW_DB_PREFIX."individuals VALUES (?,?,?,?,?,?,?,?)");
 		//$data = array( $gid, $indi["file"], $indi["rin"], $names[0][0], -1, $indi["gedcom"], $names[0][1], $names[0][2]);
-		//$res =& $gBitSystem->mDb->execute($prepared_statement, $data);
+		//$res =& $gGedcom->mDb->execute($prepared_statement, $data);
 		//$TOTAL_QUERIES++;
 //		if (DB :: isError($res)) {
 			// die(__LINE__." ".__FILE__."  ".$res->getMessage());
@@ -198,6 +326,8 @@ function import_record($indirec, $update = false) {
 			for ($j = 0; $j < $ct; $j++) {
 				$chil .= $match[$j][1] . ";";
 			}
+			$nchi = get_gedcom_value("NCHI", 1, $indirec);
+			if (!empty($nchi)) $ct = $nchi;
 			$fam = array ();
 			$fam["HUSB"] = $parents["HUSB"];
 			$fam["WIFE"] = $parents["WIFE"];
@@ -206,7 +336,7 @@ function import_record($indirec, $update = false) {
 			$fam["gedfile"] = $gGedcom->mGEDCOMId;
 			//$famlist[$gid] = $fam;
 			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "families (f_id, f_file, f_husb, f_wife, f_chil, f_gedcom, f_numchil) VALUES ( ?, ?, ?, ?, ?, ?, ? )";
-			$res = $gBitSystem->mDb->query($sql, array ( $gid, $fam["gedfile"], $fam["HUSB"], $fam["WIFE"], $fam["CHIL"], $fam["gedcom"], $ct ));
+			$res = $gGedcom->mDb->query($sql, array ( $gid, $fam["gedfile"], $fam["HUSB"], $fam["WIFE"], $fam["CHIL"], $fam["gedcom"], $ct ));
 
 		} else
 			if ($type == "SOUR") {
@@ -233,14 +363,14 @@ function import_record($indirec, $update = false) {
 					}
 				}
 				$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "sources VALUES ( ?, ?, ?, ? )";
-				$res = $gBitSystem->mDb->query($sql, array( $gid[$FILE]["id"], $name, $indirec ));
+				$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId, $name, $indirec ));
 
 			} else
 				if ($type == "OBJE") {
 					//-- don't duplicate OBJE records
 					//-- OBJE records are imported by update_media function
 				} else
-					if (preg_match("/_/", $type) == 0) {
+				if ( isset($type) && preg_match("/_/", $type) == 0) {
 						if ($type == "HEAD") {
 							$ct = preg_match("/1 DATE (.*)/", $indirec, $match);
 							if ($ct == 0) {
@@ -250,7 +380,7 @@ function import_record($indirec, $update = false) {
 						}
 						if ($gid=="") $gid = $type;
 						$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "other VALUES ( ?, ?, ?, ? )";
-						$res = $gBitSystem->mDb->query( $sql, array( $gid[$FILE]["id"], $type, $indirec ) );
+						$res = $gGedcom->mDb->query( $sql, array( $gid, $gGedcom->mGEDCOMId, $type, $indirec ) );
 
 					}
 
@@ -270,13 +400,13 @@ function import_record($indirec, $update = false) {
  * @param string $letter	the letter for this name
  */
 function add_new_name($gid, $newname, $letter, $surname, $indirec) {
-	global $USE_RIN, $indilist, $FILE, $gGedcom, $gBitSystem;
+	global $USE_RIN, $indilist, $FILE, $gGedcom;
 
 	$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "names VALUES( ?, ?, ?, ?, ?,'C' )";
-	$res = $gBitSystem->mDb->query($sql, array ( $gid[$FILE]["id"], $newname, $letter, $surname ) );
+	$res = $gGedcom->mDb->query($sql, array ( $gid, $gGedcom->mGEDCOMId, $newname, $letter, $surname ) );
 
 	$sql = "UPDATE " . PHPGEDVIEW_DB_PREFIX . "individuals SET i_gedcom=? WHERE i_id=? AND i_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $indirec, $gid[$FILE]["id"] ));
+	$res = $gGedcom->mDb->query($sql, array( $indirec, $gid, $gGedcom->mGEDCOMId ));
 
 	$indilist[$gid]["names"][] = array (
 		$newname,
@@ -292,15 +422,18 @@ function add_new_name($gid, $newname, $letter, $surname, $indirec) {
  * into the places table
  * @param string $indirec
  */
-function update_places($gid, $indirec, $update = false) {
-	global $FILE, $placecache, $gGedcom, $gBitSystem;
+function update_places($gid, $indirec) {
+	global $gGedcom;
+	global $FILE, $placecache, $TBLPREFIX, $DBCONN, $gGedcom;
 
 	if (!isset($placecache)) $placecache = array();
 	$personplace = array();
-	//-- import all place locations
-	$pt = preg_match_all("/\d PLAC (.*)/", $indirec, $match, PREG_SET_ORDER);
+	// import all place locations, but not control info such as
+	// 0 HEAD/1 PLAC or 0 _EVDEF/1 PLAC
+	$pt = preg_match_all("/[2-9] PLAC (.+)/", $indirec, $match, PREG_SET_ORDER);
 	for ($i = 0; $i < $pt; $i++) {
 		$place = trim($match[$i][1]);
+		$lowplace = str2lower($place);
 		//-- if we have already visited this place for this person then we don't need to again
 		if (isset($personplace[str2lower($place)])) continue;
 		$personplace[str2lower($place)] = 1;
@@ -322,23 +455,22 @@ function update_places($gid, $indirec, $update = false) {
 				if (!isset($personplace[$key])) {
 					$personplace[$key]=1;
 					$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'placelinks VALUES( ?, ?, ? )';
-					$res2 = $gBitSystem->mDb->query($sql, array( $parent_id, $gid[$FILE]["id"] ));
+					$res2 = $gGedcom->mDb->query($sql, array( $parent_id, $gid, $gGedcom->mGEDCOMId ));
 				}
 				$level++;
 				continue;
-				}
+			}
 
 			//-- only search the database while we are finding places in it
 			if ($search) {
 				//-- check if this place and level has already been added
 				$sql = 'SELECT p_id FROM '.PHPGEDVIEW_DB_PREFIX.'places WHERE p_level=? AND p_file=? AND p_parent_id=? AND p_place LIKE ?';
-				$res = $gBitSystem->mDb->query($sql, array( $level[$FILE]['id'], $parent_id, $place ) );
+				$res = $gGedcom->mDb->query($sql, array( $level, $gGedcom->mGEDCOMId, $parent_id, $place ) );
 				if ($res->numRows()>0) {
 					$row = $res->fetchRow();
 					$p_id = $row['p_id'];
 				}
 				else $search = false;
-				$res->free();
 			}
 
 			//-- if we are not searching then we have to insert the place into the db
@@ -347,11 +479,11 @@ function update_places($gid, $indirec, $update = false) {
 				$dm_soundex = DMSoundex($place);
 				$p_id = get_next_id("places", "p_id");
 				$sql = 'INSERT INTO '.PHPGEDVIEW_DB_PREFIX.'places (p_id, p_place, p_level, p_parent_id, p_file) VALUES( ?, ?, ?, ?, ? )';
-				$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $place, $level, $parent_id[$FILE]["id"] ) );
+				$res2 = $gGedcom->mDb->query($sql, array( $p_id, $place, $level, $parent_id, $gGedcom->mGEDCOMId ) );
 					}
 
 			$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'placelinks VALUES( ?, ?, ? )';
-			$res2 = $gBitSystem->mDb->query($sql, array( $p_id, $gid[$FILE]["id"] ) );
+			$res2 = $gGedcom->mDb->query($sql, array( $p_id, $gid, $gGedcom->mGEDCOMId ) );
 			//-- increment the level and assign the parent id for the next place level
 			$parent_id = $p_id;
 			$placecache[$key] = $p_id;
@@ -359,7 +491,6 @@ function update_places($gid, $indirec, $update = false) {
 			$level++;
 		}
 	}
-	return $pt;
 }
 
 /**
@@ -368,62 +499,30 @@ function update_places($gid, $indirec, $update = false) {
  * @param string $indirec
  */
 function update_dates($gid, $indirec) {
-	global $FILE, $gGedcom, $gBitSystem;
-
+	global $FILE, $gGedcom;
 	$count = 0;
 	$pt = preg_match("/\d DATE (.*)/", $indirec, $match);
 	if ($pt == 0)
 		return 0;
 	$facts = get_all_subrecords($indirec, "", false, false, false);
 	foreach ($facts as $f => $factrec) {
-		$fact = "EVEN";
-		$ft = preg_match("/1 (\w+)(.*)/", $factrec, $match);
-		if ($ft > 0) {
+		if (preg_match("/1 (\w+)/", $factrec, $match)) {
 			$fact = trim($match[1]);
-			$event = trim($match[2]);
-		}
-		$pt = preg_match_all("/2 DATE (.*)/", $factrec, $match, PREG_SET_ORDER);
-		for ($i = 0; $i < $pt; $i++) {
-			$datestr = trim($match[$i][1]);
-			$dates = parse_date($datestr);
-			foreach($dates as $di=>$date) {
-				if (empty ($date["day"]))
-					$date["day"] = 0;
-				if (empty ($date["mon"]))
-					$date["mon"] = 0;
-				if (empty ($date["year"]))
-					$date["year"] = 0;
-				$datestamp = $date['year'];
-				if ($date['mon'] < 10)
-				$datestamp .= '0';
-				$datestamp .= (int) $date['mon'];
-				if ($date['day'] < 10)
-				$datestamp .= '0';
-				$datestamp .= (int) $date['day'];
-				$sql = 'INSERT INTO ' . PHPGEDVIEW_DB_PREFIX . 'dates VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ';
-				if (isset ($date["ext"])) {
-					preg_match("/@#D(.*)@/", $date["ext"], $extract_type);
-					$date_types = array (
-						"@#DGREGORIAN@",
-						"@#DJULIAN@",
-						"@#DHEBREW@",
-						"@#DFRENCH R@",
-						"@#DROMAN@",
-						"@#DUNKNOWN@"
-					);
-					if (isset ($extract_type[0]) && in_array($extract_type[0], $date_types))
-						$sql .= "'" . $extract_type[0] . "')";
-					else
-						$sql .= "NULL)";
-				} else
-					$sql .= "NULL)";
-				$res = $gBitSystem->mDb->query($sql, array ( $date["day"], str2upper($date["month"] ), $date["mon"], $date["year"], $datestamp, $fact, $gid[$FILE]["id"] ) );
-
-				$count++;
+			// 1 FACT/2 TYPE XXXX gets recorded as XXXX to enable searching
+			if (($fact=='FACT' || $fact=='EVEN') && preg_match("/\n2 TYPE (\w+)/", $factrec, $match) && array_key_exists($match[1], $factarray))
+				$fact=$match[1];
+			$pt = preg_match_all("/2 DATE (.*)/", $factrec, $match, PREG_SET_ORDER);
+			for ($i = 0; $i < $pt; $i++) {
+				$geddate=new GedcomDate($match[$i][1]);
+				$dates=array($geddate->date1);
+				if ($geddate->date2)
+					$dates[]=$geddate->date2;
+				foreach($dates as $date)
+					$gGedcom->mDb->query("INSERT INTO `".PHPGEDVIEW_DB_PREFIX."dates` (d_day,d_month,d_mon,d_year,d_julianday1,d_julianday2,d_fact,d_gid,d_file,d_type)VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", 
+						array( $date->d, $date->Format('O') ,$date->m, $date->y, $date->minJD, $date->maxJD, $fact, $gid, $gGedcom->mGEDCOMId, $date->CALENDAR_ESCAPE) );
 			}
 		}
 	}
-	return $count;
 }
 
 /**
@@ -436,7 +535,7 @@ function update_dates($gid, $indirec) {
  * @param int $count		The count of OBJE records in the parent record
  */
 function insert_media($objrec, $objlevel, $update, $gid, $count) {
-	global $TBLPREFIX, $media_count, $gBitSystem, $FILE, $found_ids, $fpnewged;
+	global $TBLPREFIX, $media_count, $FILE, $found_ids, $fpnewged;
 
 	//-- check for linked OBJE records
 	//-- linked records don't need to insert to media table
@@ -487,7 +586,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
 			$m_id = get_next_id("media", "m_id");
 			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 			$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-			$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $media->ext, $media->title, $media->file[$FILE]['id'], $objref ));
+			$res = $gGedcom->mDb->query($sql, array ( $mm_id, $m_media, $media->ext, $media->title, $media->file[$FILE]['id'], $objref ));
 			$media_count++;
 			//-- if this is not an update then write it to the new gedcom file
 			if (!$update && !empty ($fpnewged))
@@ -503,7 +602,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
 	//-- add the entry to the media_mapping table
 	$mm_id = get_next_id("media_mapping", "mm_id");
 	$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media_mapping (mm_id, mm_media, mm_gid, mm_order, mm_gedfile, mm_gedrec) VALUES ( ?, ?, ?, ?, ?, ? )";
-	$res = $gBitSystem->mDb->query($sql, array ( $mm_id, $m_media, $gid, $count,  $gGedcom->mGEDCOMId, $objref ) );
+	$res = $gGedcom->mDb->query($sql, array ( $mm_id, $m_media, $gid, $count,  $gGedcom->mGEDCOMId, $objref ) );
 	return $objref;
 	}
 	else {
@@ -517,7 +616,7 @@ function insert_media($objrec, $objlevel, $update, $gid, $count) {
  * @return string	an updated record
  */
 function update_media($gid, $indirec, $update = false, $keepmedia = false) {
-	global $FILE, $gGedcom, $gBitSystem, $MEDIA_ID_PREFIX, $media_count, $found_ids;
+	global $FILE, $gGedcom, $MEDIA_ID_PREFIX, $media_count, $found_ids;
 	global $zero_level_media, $fpnewged, $objelist, $MAX_IDS;
 
 	if (!isset ($media_count))
@@ -530,13 +629,14 @@ function update_media($gid, $indirec, $update = false, $keepmedia = false) {
 		if (!$keepmedia) $MAX_IDS["OBJE"] = 1;
 		else {
 			$sql = "SELECT ni_id FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_type='OBJE' AND ni_gedfile='".$gGedcom->mGEDCOMId."'";
-			$res = $gBitSystem->mDb->query($sql);
+			$res = $gGedcom->mDb->query($sql);
 			$row = $res->fetchRow();
 			$MAX_IDS["OBJE"] = $row[0];
 			$res->free();
 		}
 	}
 
+//		print substr($indirec, 0, 15)."<br />\n";
 	//-- handle level 0 media OBJE seperately
 	$ct = preg_match("/0 @(.*)@ OBJE/", $indirec, $match);
 	if ($ct > 0) {
@@ -570,7 +670,7 @@ function update_media($gid, $indirec, $update = false, $keepmedia = false) {
 			$objelist[$new_m_media] = $media;
 			$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "media (m_id, m_media, m_ext, m_titl, m_file, m_gedfile, m_gedrec)";
 			$sql .= " VALUES( ?, ?, ?, ?, ?, ?, ? )";
-			$res = $gBitSystem->mDb->query($sql, array ( $m_id, $new_m_media, $media->ext, $media->title, $media->file[$FILE]["id"], $indirec ) );
+			$res = $gGedcom->mDb->query($sql, array ( $m_id, $new_m_media, $media->ext, $media->title, $media->file, $gGedcom->mGEDCOMId, $indirec ) );
 			$media_count++;
 		} else {
 			$new_m_media = $new_media;
@@ -687,44 +787,44 @@ function setup_database() {
  * @param boolean $keepmedia	Whether or not to keep media and media links in the tables
  */
 function empty_database($FILE, $keepmedia=false) {
-	global $gGedcom, $gBitSystem;
+	global $gGedcom;
 
 	$FILE = $gGedcom->mGEDCOMId;
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "individuals WHERE i_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "families WHERE f_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "sources WHERE s_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "other WHERE o_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "places WHERE p_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "names WHERE n_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "dates WHERE d_file='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	if (!$keepmedia) {
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media WHERE m_gedfile='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media_mapping WHERE mm_gedfile='$FILE'";
-	$res = $gBitSystem->mDb->query($sql);
+	$res = $gGedcom->mDb->query($sql);
 	}
 	else {
 		//-- make sure that we keep the correct IDs for media
 		$sql = "SELECT ni_id FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_type='OBJE' AND ni_gedfile='".$FILE."'";
-		$res = $gBitSystem->mDb->dbquery($sql);
+		$res = $gGedcom->mDb->dbquery($sql);
 		if ($res->numRows() > 0) {
 			$row =& $res->fetchRow();
 			$num = $row[0];
@@ -732,18 +832,17 @@ function empty_database($FILE, $keepmedia=false) {
 	}
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "nextid WHERE ni_gedfile = ?";
-	$res = $gBitSystem->mDb->query($sql, array( $FILE ));
+	$res = $gGedcom->mDb->query($sql, array( $FILE ));
 	if ($keepmedia && isset($num)) {
 		$sql = "INSERT INTO " . PHPGEDVIEW_DB_PREFIX . "nextid VALUES( ?, 'OBJE', ? )";
-		$res2 = $gBitSystem->mDb->query($sql, array( $num-1, $FILE ));
+		$res2 = $gGedcom->mDb->query($sql, array( $num-1, $FILE ));
 	}
 	
 //	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "soundex WHERE sx_file='$FILE'";
-//	$res = $gBitSystem->mDb->query($sql);
+//	$res = $gGedcom->mDb->query($sql);
 	
 	//-- clear all of the cache files for this gedcom
 	clearCache();
-
 }
 
 /**
@@ -776,7 +875,7 @@ function write_file() {
 	//-- write the gedcom file
 	if (!is_writable($gGedcom->getPath())) {
 		print "ERROR 5: GEDCOM file is not writable.  Unable to complete request.\n";
-		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 5: GEDCOM file is not writable.  Unable to complete request. ->" . PGV_USER_NAME ."<-");
 		return false;
 	}
 	//-- only allow one thread to write the file at a time
@@ -787,7 +886,7 @@ function write_file() {
 	$fp = fopen($gGedcom->getPath(), "wb");
 	if ($fp===false) {
 		print "ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request.\n";
-		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . getUserName() ."<-");
+		AddToChangeLog("ERROR 6: Unable to open GEDCOM file resource.  Unable to complete request. ->" . PGV_USER_NAME ."<-");
 		return false;
 	}
 	$fl = @flock($fp, LOCK_EX);
@@ -877,6 +976,13 @@ function accept_changes($cid) {
 					}
 					else $fcontents = substr($fcontents, 0, $pos1+1).trim($indirec)."\r\n".substr($fcontents, $pos2+1);
 				}
+				else {
+					//-- attempted to replace a record that doesn't exist
+					AddToLog("Corruption found in GEDCOM $GEDCOM Attempted to correct.  Replaced gedcom record $gid was not found in the gedcom file.");
+					$pos1 = strpos($fcontents, "\n0 TRLR");
+					$fcontents = substr($fcontents, 0, $pos1+1).trim($indirec)."\r\n0 TRLR";
+					AddToLog("Gedcom record $gid was appended back to the GEDCOM file.");
+				}
 			}
 			if (!isset($manual_save) || $manual_save==false) {
 				write_file();
@@ -931,7 +1037,7 @@ function accept_changes($cid) {
  * @param string $indirec
  */
 function update_record($indirec, $delete = false) {
-	global $GEDCOM, $gGedcom, $gBitSystem, $FILE;
+	global $GEDCOM, $gGedcom, $FILE;
 
 	if (empty ($FILE))
 		$FILE = $GEDCOM;
@@ -946,62 +1052,65 @@ function update_record($indirec, $delete = false) {
 	}
 
 	$sql = "SELECT pl_p_id FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_gid=? AND pl_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+	$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	$placeids = array ();
 	while ($row = & $res->fetchRow()) {
 		$placeids[] = $row['pl_p_id'];
 	}
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_gid=? AND pl_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+	$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "dates WHERE d_gid=? AND d_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+	$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	//-- delete any unlinked places
 	foreach ($placeids as $indexval => $p_id) {
 		$sql = "SELECT count(pl_p_id) FROM " . PHPGEDVIEW_DB_PREFIX . "placelinks WHERE pl_p_id=? AND pl_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $p_id, $gGedcom->mGEDCOMId ) );
+		$res = $gGedcom->mDb->query($sql, array( $p_id, $gGedcom->mGEDCOMId ) );
 
 		$row = & $res->fetchRow();
 		if ($row['count'] == 0) {
 			$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "places WHERE p_id=? AND p_file=?";
-			$res = $gBitSystem->mDb->query($sql, array( $p_id, $gGedcom->mGEDCOMId ) );
+			$res = $gGedcom->mDb->query($sql, array( $p_id, $gGedcom->mGEDCOMId ) );
 
 		}
 	}
 
 	//-- delete any media mapping references
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media_mapping WHERE mm_gid LIKE ? AND mm_gedfile=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+	$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "remotelinks WHERE r_gid=? AND r_file=?";
-	$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+	$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	if ($type == "INDI") {
 		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "individuals WHERE i_id LIKE ? AND i_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+		$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 		$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "names WHERE n_gid LIKE ? AND n_file=?";
-		$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+		$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+		
+		$sql = "DELETE FROM ".$TBLPREFIX."soundex WHERE sx_i_id LIKE ? AND sx_file = ?";
+		$res = $gGedcom->mDb->query( $sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 	} else
 		if ($type == "FAM") {
 			$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "families WHERE f_id LIKE ? AND f_file=?";
-			$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+			$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 		} else
 			if ($type == "SOUR") {
 				$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "sources WHERE s_id LIKE ? AND s_file=?";
-				$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+				$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 			} else
 				if ($type == "OBJE") {
 					$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "media WHERE m_media LIKE ? AND m_gedfile=?";
-					$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+					$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 				} else {
 					$sql = "DELETE FROM " . PHPGEDVIEW_DB_PREFIX . "other WHERE o_id LIKE ? AND o_file=?";
-					$res = $gBitSystem->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
+					$res = $gGedcom->mDb->query($sql, array( $gid, $gGedcom->mGEDCOMId ) );
 
 				}
 	if (!$delete) {
@@ -1015,7 +1124,6 @@ function cleanup_tags_y(& $irec) {
 		"BAPM","BARM","BASM","BLES","CHRA","CONF","FCOM","ORDN","NATU","EMIG",
 		"IMMI","CENS","PROB","WILL","GRAD","RETI");
 	$irec .= "\r\n1";
-	//	$ft = preg_match_all("/1\s(_?\w+)\s/", $irec, $match);
 	$ft = preg_match_all("/1\s(\w+)\s/", $irec, $match);
 	for ($i = 0; $i < $ft; $i++) {
 		$sfact = $match[1][$i];
@@ -1033,50 +1141,30 @@ function cleanup_tags_y(& $irec) {
 		}
 	}
 	$irec = substr($irec, 0, -3);
-	//	return $irec;
 }
 
-/**
- * Generates a Universally Unique IDentifier, version 4.
- *
- * RFC 4122 (http://www.ietf.org/rfc/rfc4122.txt) defines a special type of Globally
- * Unique IDentifiers (GUID), as well as several methods for producing them. One
- * such method, described in section 4.4, is based on truly random or pseudo-random
- * number generators, and is therefore implementable in a language like PHP.
- *
- * We choose to produce pseudo-random numbers with the Mersenne Twister, and to always
- * limit single generated numbers to 16 bits (ie. the decimal value 65535). That is
- * because, even on 32-bit systems, PHP's RAND_MAX will often be the maximum *signed*
- * value, with only the equivalent of 31 significant bits. Producing two 16-bit random
- * numbers to make up a 32-bit one is less efficient, but guarantees that all 32 bits
- * are random.
- *
- * The algorithm for version 4 UUIDs (ie. those based on random number generators)
- * states that all 128 bits separated into the various fields (32 bits, 16 bits, 16 bits,
- * 8 bits and 8 bits, 48 bits) should be random, except : (a) the version number should
- * be the last 4 bits in the 3rd field, and (b) bits 6 and 7 of the 4th field should
- * be 01. We try to conform to that definition as efficiently as possible, generating
- * smaller values where possible, and minimizing the number of base conversions.
- *
- * @copyright  Copyright (c) CFD Labs, 2006. This function may be used freely for
- *              any purpose ; it is distributed without any form of warranty whatsoever.
- * @author      David Holmes <dholmes@cfdsoftware.net>
- *
- * @return  string  A UUID, made up of 36 hex digits
- */
+// Create a pseudo-random UUID, as per RFC4122
 function uuid() {
-
-	// The field names refer to RFC 4122 section 4.1.2
-
-	return strtoupper(sprintf('%04x%04x%04x%03x4%04x%04x%04x%04x%04x', mt_rand(0, 65535), mt_rand(0, 65535), // 32 bits for "time_low"
-	mt_rand(0, 65535), // 16 bits for "time_mid"
-	mt_rand(0, 4095), // 12 bits before the 0100 of (version) 4 for "time_hi_and_version"
-	bindec(substr_replace(sprintf('%016b', mt_rand(0, 65535)), '01', 6, 2)),
-	// 8 bits, the last two of which (positions 6 and 7) are 01, for "clk_seq_hi_res"
-	// (hence, the 2nd hex digit after the 3rd hyphen can only be 1, 5, 9 or d)
-	// 8 bits for "clk_seq_low"
-	mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535) // 48 bits for "node" 
-	));
+	return sprintf(
+		//'%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X', // RFC4122 format (with hyphens)
+		'%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X', // PAF format (without hyphens)
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255)&0x3f|0x80, // Set the version to random (10xxxxxx)
+		rand(0, 255),
+		rand(0, 255)&0x0f|0x40, // Set the variant to RFC4122 (0100xxxx)
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255),
+		rand(0, 255)
+	);
 }
 
 /**

@@ -4,7 +4,7 @@
  *
  * See the readme file : http://www.phpclasses.org/browse/file/4685.html
  *
- * $Id: cssparser.inc.php,v 1.3 2007/05/27 14:45:31 lsces Exp $
+ * $Id: cssparser.inc.php,v 1.4 2008/07/07 17:30:13 lsces Exp $
  *
  * @author http://www.phpclasses.org/browse/package/1289.html
  * @package PhpGedView

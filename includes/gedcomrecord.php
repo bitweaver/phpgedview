@@ -3,7 +3,7 @@
  * Base class for all gedcom records
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2006	John Finlay and Others
+ * Copyright (C) 2002 to 2007	John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: gedcomrecord.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: gedcomrecord.php,v 1.6 2008/07/07 17:30:13 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -41,6 +41,7 @@ class GedcomRecord {
 	var $type = "";
 	var $changed = false;
 	var $rfn = null;
+	var $disp = null;
 
 	/**
 	 * constructor for this class
@@ -60,7 +61,7 @@ class GedcomRecord {
 					$serviceClient = ServiceClient::getInstance($servid);
 					if (!is_null($serviceClient)) {
 						if (!$simple || $serviceClient->type=='local') {
-							$gedrec = $serviceClient->mergeGedcomRecord($aliaid, $gedrec);
+							$gedrec = $serviceClient->mergeGedcomRecord($aliaid, $gedrec, true);
 						}
 					}
 				}
@@ -79,28 +80,15 @@ class GedcomRecord {
 	/**
 	 * Static function used to get an instance of an object
 	 * @param string $pid	the ID of the object to retrieve
+	 * @return GedcomRecord
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $indilist, $famlist, $sourcelist, $repolist, $otherlist, $GEDCOM, $pgv_changes;
+		global $gedcom_record_cache, $GEDCOM, $pgv_changes;
 
-		//-- first check for the object in the cache
-		if (isset($indilist[$pid]) && $indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($indilist[$pid]['object'])) return $indilist[$pid]['object'];
-		}
-		if (isset($famlist[$pid]) && $famlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($famlist[$pid]['object'])) return $famlist[$pid]['object'];
-		}
-		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($sourcelist[$pid]['object'])) return $sourcelist[$pid]['object'];
-		}
-		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($repolist[$pid]['object'])) return $repolist[$pid]['object'];
-		}
-		if (isset($objectlist[$pid]) && $objectlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($objectlist[$pid]['object'])) return $objectlist[$pid]['object'];
-		}
-		if (isset($otherlist[$pid]) && $otherlist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($otherlist[$pid]['object'])) return $otherlist[$pid]['object'];
+		$ged_id=get_id_from_gedcom($GEDCOM);
+		// Check the cache first
+		if (isset($gedcom_record_cache[$pid][$ged_id])) {
+			return $gedcom_record_cache[$pid][$ged_id];
 		}
 
 		//-- look for the gedcom record
@@ -111,6 +99,7 @@ class GedcomRecord {
 			if ($ct>0) {
 				$servid = trim($match[1]);
 				$remoteid = trim($match[2]);
+				require_once 'includes/serviceclient_class.php';
 				$service = ServiceClient::getInstance($servid);
 				//-- the INDI will be replaced with the type from the remote record
 				$newrec= $service->mergeGedcomRecord($remoteid, "0 @".$pid."@ INDI\r\n1 RFN ".$pid, false);
@@ -119,7 +108,7 @@ class GedcomRecord {
 		}
 		//-- check if it is a new object not yet in the database
 		if (empty($indirec)) {
-			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if (PGV_USER_CAN_EDIT && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$indirec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -132,51 +121,49 @@ class GedcomRecord {
 			if ($type=="INDI") {
 				$record = new Person($indirec, $simple);
 				if (!empty($fromfile)) $record->setChanged(true);
-				$indilist[$pid]['object'] = &$record;
 				return $record;
 			}
 			else if ($type=="FAM") {
 				$record = new Family($indirec, $simple);
 				if (!empty($fromfile)) $record->setChanged(true);
-				$famlist[$pid]['object'] = &$record;
 				return $record;
 			}
 			else if ($type=="SOUR") {
 				$record = new Source($indirec, $simple);
 				if (!empty($fromfile)) $record->setChanged(true);
-				$sourcelist[$pid]['object'] = &$record;
 				return $record;
 			}
 			else if ($type=="REPO") {
 				$record = new Repository($indirec, $simple);
 				if (!empty($fromfile)) $record->setChanged(true);
-				$repolist[$pid]['object'] = &$record;
 				return $record;
 			}
 			else if ($type=="OBJE") {
 				$record = new Media($indirec, $simple);
 				if (!empty($fromfile)) $record->setChanged(true);
-				$objectlist[$pid]['object'] = &$record;
 				return $record;
 			}
 			else {
 				$record = new GedcomRecord($indirec, $simple);
 				if (!empty($fromfile)) $record->setChanged(true);
-				$otherlist[$pid]['object'] = &$record;
 				return $record;
 			}
+			// Store the object in the cache
+			$gedcom_record_cache[$pid][$ged_id]=&$record;
 		}
 		return null;
 	}
 
 	/**
 	 * get the xref
+	 * @return string	returns the person ID
 	 */
 	function getXref() {
 		return $this->xref;
 	}
 	/**
 	 * get the object type
+	 * @return string	returns the type of this object "INDI","FAM", etc.
 	 */
 	function getType() {
 		return $this->type;
@@ -214,6 +201,8 @@ class GedcomRecord {
 	 */
 	function isRemote() {
 		if (is_null($this->rfn)) $this->rfn = get_gedcom_value("RFN", 1, $this->gedrec);
+		if (empty($this->rfn) || $this->xref!=$this->rfn) return false;
+		
 		$parts = preg_split("/:/", $this->rfn);
 		if (count($parts)==2) {
 			return true;
@@ -234,25 +223,32 @@ class GedcomRecord {
 
 	/**
 	 * get the URL to link to this record
-	 * This method should be overriden in child sub-classes
 	 * @string a url that can be used to link to this person
 	 */
-	function getLinkUrl() {
-		global $GEDCOM, $SERVER_URL;
+	function getLinkUrl($link='gedcomrecord.php?pid=') {
+		global $GEDCOM;
 
-		//$url = "index.php";
-		$url = "gedrecord.php?pid=".$this->xref; // no class yet for NOTE record
+		$url = $link.urlencode($this->getXref()).'&amp;ged='.urlencode($GEDCOM);
 		if ($this->isRemote()) {
-			$parts = preg_split("/:/", $this->rfn);
-			$servid = $parts[0];
-			$aliaid = $parts[1];
-			$servrec = find_gedcom_record($servid);
-			if (empty($servrec)) $servrec = find_updated_record($servid);
-			if (!empty($servrec)) {
-				$surl = get_gedcom_value("URL", 1, $servrec);
-				$url = dirname($surl);
-				$gedcom = get_gedcom_value("_DBID", 1, $servrec);
-				if (!empty($gedcom)) $url.="?ged=".$gedcom;
+			list($servid, $aliaid)=explode(':', $this->rfn);
+			if ($aliaid && $servid) {
+				require_once 'includes/serviceclient_class.php';
+				$serviceClient = ServiceClient::getInstance($servid);
+				if ($serviceClient) {
+					$surl = $serviceClient->getURL();
+					$url = $link.urlencode($aliaid);
+					if ($serviceClient->getType()=='remote') {
+						if (!empty($surl)) {
+							$url = dirname($surl).'/'.$url;
+						}
+					} else {
+						$url = $surl.$url;
+					}
+					$gedcom = $serviceClient->getGedfile();
+					if ($gedcom) {
+						$url.='&amp;ged='.urlencode($gedcom);
+					}
+				}
 			}
 		}
 		return $url;
@@ -263,15 +259,16 @@ class GedcomRecord {
 	 * @return string
 	 */
 	function getLinkTitle() {
-		global $gGedcom;
+		global $GEDCOM, $gGedcom;
 
-		$title = $gGedcom->mInfo['title'];
+		$title = $gGedcom->mGedcomName;
 		if ($this->isRemote()) {
 			$parts = preg_split("/:/", $this->rfn);
 			if (count($parts)==2) {
 				$servid = $parts[0];
 				$aliaid = $parts[1];
 				if (!empty($servid)&&!empty($aliaid)) {
+					require_once 'includes/serviceclient_class.php';
 					$serviceClient = ServiceClient::getInstance($servid);
 					if (!empty($serviceClient)) {
 						$title = $serviceClient->getTitle();
@@ -280,6 +277,17 @@ class GedcomRecord {
 			}
 		}
 		return $title;
+	}
+
+	// Get an HTML link to this object, for use in sortable lists.
+	function getXrefLink($target="") {
+		global $SEARCH_SPIDER;
+		if (empty($SEARCH_SPIDER)) {
+			if ($target) $target = "target=\"".$target."\"";
+			return "<a href=\"".$this->getLinkUrl()."#content\" name=\"".preg_replace('/\D/','',$this->getXref())."\" $target>".$this->getXref()."</a>";
+		}
+		else
+			return $this->getXref();
 	}
 
 	/**
@@ -297,7 +305,7 @@ class GedcomRecord {
 	function undoChange() {
 		global $GEDCOM, $pgv_changes;
 		require_once('includes/functions_edit.php');
-		if (!userCanAccept(getUserName())) return false;
+		if (!PGV_USER_CAN_ACCEPT) return false;
 		$cid = $this->xref."_".$GEDCOM;
 		if (!isset($pgv_changes[$cid])) return false;
 		$index = count($pgv_changes[$cid])-1;
@@ -312,7 +320,7 @@ class GedcomRecord {
 	function isMarkedDeleted() {
 		global $pgv_changes, $GEDCOM;
 
-		if (!$gGedcom->isEditable()) return false;
+		if (!PGV_USER_CAN_EDIT) return false;
 		if (isset($pgv_changes[$this->xref."_".$GEDCOM])) {
 			$change = end($pgv_changes[$this->xref."_".$GEDCOM]);
 			if ($change['type']=='delete') return true;
@@ -327,24 +335,8 @@ class GedcomRecord {
 	 * @return boolean
 	 */
 	function canDisplayDetails() {
-		return displayDetails($this->gedrec, $this->type);
-	}
-
-	/**
-	 * get the URL to link to a date
-	 * @string a url that can be used to link to calendar
-	 */
-	function getDateUrl($gedcom_date) {
-		global $GEDCOM;
-		$ged_months = array("", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC");
-		$pdate = parse_date($gedcom_date);
-		list($y, $m, $d) = explode("-", $pdate[0]["sort"]);
-		$d+=0; $m+=0; $y+=0; // convert to num
-		if ($y<1) $y = date('Y');
-		if ($m<1 or $m>12) $url = "calendar.php?action=year&amp;year=".$y."&amp;ged=".$GEDCOM;
-		else if ($d<1 or $d>31) $url = "calendar.php?action=calendar&amp;month=".$ged_months[$m+0]."&amp;year=".$y."&amp;ged=".$GEDCOM;
-		else $url = "calendar.php?action=today&amp;day=".$d."&amp;month=".$ged_months[$m+0]."&amp;year=".$y."&amp;ged=".$GEDCOM;
-		return $url;
+		if (is_null($this->disp)) $this->disp = displayDetailsById($this->xref, $this->type);
+		return $this->disp;
 	}
 	
 	/**
@@ -374,47 +366,112 @@ class GedcomRecord {
 
 	/**
 	 * get the sortable name
-	 * This method should be overriden in child sub-classes
+	 * This method should be overridden in child sub-classes
 	 * (no class yet for NOTE record)
 	 * @return string
 	 */
 	function getSortableName() {
 		return $this->type." ".$this->xref;
 	}
-
+	
 	/**
-	 * get  lastchange record
-	 * @return string the lastchange record
+	 * get the name
+	 * This method should overridden in child sub-classes
+	 * @return string
 	 */
-	function getLastchangeRecord() {
-		return trim(get_sub_record(1, "1 CHAN", $this->gedrec));
+	function getName() {
+		return get_gedcom_value("NAME", 1, $this->gedrec);
+	}
+	
+	/**
+	 * get the additional name
+	 * This method should overridden in child sub-classes
+	 * @return string
+	 */
+	function getAddName() {
+		return "";
 	}
 
-	/**
-	 * get  lastchange date
-	 * @return string the lastchange date
-	 */
-	function getLastchangeDate() {
-		return get_gedcom_value("DATE", 2, $this->getLastchangeRecord(), '', false);
+	// Get all attributes (e.g. DATE or PLAC) from an event (e.g. BIRT or MARR).
+	// This is used to display multiple events on the individual/family lists.
+	// Multiple events can exist because of uncertainty in dates, dates in different
+	// calendars, place-names in both latin and hebrew character sets, etc.
+	// It also allows us to combine dates/places from different events in the summaries.
+	function getAllEventDates($event) {
+		$dates=array();
+		if (ShowFactDetails($event, $this->xref) && preg_match_all("/^1 *{$event}\b.*((?:[\r\n]+[2-9].*)+)/m", $this->gedrec, $events)) {
+			foreach ($events[1] as $event_rec) {
+				if (!FactViewRestricted($this->xref, $event_rec) && preg_match_all("/^2 DATE +(.+)/m", $event_rec, $ged_dates)) {
+					foreach ($ged_dates[1] as $ged_date) {
+						$dates[]=new GedcomDate($ged_date);
+					}
+				}
+			}
+		}
+		return $dates;
+	}
+	function getAllEventPlaces($event) {
+		$places=array();
+		if (ShowFactDetails($event, $this->xref) && preg_match_all("/^1 *{$event}\b.*((?:[\r\n]+[2-9].*)+)/m", $this->gedrec, $events)) {
+			foreach ($events[1] as $event_rec) {
+				if (!FactViewRestricted($this->xref, $event_rec) && preg_match_all("/^(?:2 PLAC|3 (?:ROMN|FONE|_HEB)) +(.+)/m", $event_rec, $ged_places)) {
+					foreach ($ged_places[1] as $ged_place) {
+						$places[]=$ged_place;
+					}
+				}
+			}
+		}
+		return $places;
 	}
 
-	/**
-	 * get sortable lastchange date
-	 * @return string the lastchange date in sortable format YYYY-MM-DD HH:MM
-	 */
-	function getSortableLastchangeDate() {
-		$pdate = parse_date($this->getLastchangeDate());
-		$ptime = get_gedcom_value("DATE:TIME", 2, $this->getLastchangeRecord());
-		$sdate = sprintf("%04d-%02d-%02d %s", $pdate[0]["year"], $pdate[0]["mon"], $pdate[0]["day"], $ptime);
-		return $sdate;
+	// Get all the events of a type.
+	// TODO: event handling needs to be tidied up - with the event class from PGV4.2 ??
+	function getAllEvents($event) {
+		$event_recs=array();
+		if (ShowFactDetails($event, $this->xref) && preg_match_all("/^1 *{$event}\b.*((?:[\r\n]+[2-9].*)+)/m", $this->gedrec, $events)) {
+			foreach ($events[0] as $event_rec) {
+				if (!FactViewRestricted($this->xref, $event_rec)) {
+					$event_recs[]=$event_rec;
+				}
+			}	
+		}
+		return $event_recs;
 	}
 
-	/**
-	 * get lastchange PGV user
-	 * @return string the lastchange user
-	 */
-	function getLastchangeUser() {
-		return get_gedcom_value("_PGVU", 2, $this->getLastchangeRecord(), '', false);
+	//////////////////////////////////////////////////////////////////////////////
+	// Get the last-change timestamp for this record - optionally wrapped in a
+	// link to ourself.
+	//////////////////////////////////////////////////////////////////////////////
+	function LastChangeTimestamp($add_url) {
+		global $DATE_FORMAT, $TIME_FORMAT;
+		$chan_rec=get_sub_record(1, '1 CHAN', $this->gedrec);
+		if (empty($chan_rec))
+			return '&nbsp;';
+		$d=new GedcomDate(get_gedcom_value('DATE', 2, $chan_rec, '', false));
+		if (preg_match('/^(\d\d):(\d\d):(\d\d)/', get_gedcom_value('DATE:TIME', 2, $chan_rec, '', false).':00', $match)) {
+			$t=mktime($match[1], $match[2], $match[3]);
+			$sort=$d->MinJD().$match[1].$match[2].$match[3];
+			$text=strip_tags($d->Display(false, "{$DATE_FORMAT} -", array()).date(" {$TIME_FORMAT}", $t));
+		} else {
+			$sort=$d->MinJD().'000000';
+			$text=strip_tags($d->Display(false, "{$DATE_FORMAT}", array()));
+		}
+		if ($add_url)
+			$text='<a name="'.$sort.'" href="'.$this->getLinkUrl().'">'.$text.'</a>';
+		return $text;
+	}
+
+	//////////////////////////////////////////////////////////////////////////////
+	// Get the last-change user for this record
+	//////////////////////////////////////////////////////////////////////////////
+	function LastchangeUser() {
+		$chan_rec=get_sub_record(1, '1 CHAN', $this->gedrec);
+		if (empty($chan_rec))
+			return '&nbsp;';
+		$chan_user=get_gedcom_value("_PGVU", 2, $chan_rec, '', false);
+		if (empty($chan_user))
+			return '&nbsp;';
+		return $chan_user;
 	}
 }
 ?>

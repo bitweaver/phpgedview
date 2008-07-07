@@ -1,4 +1,10 @@
 <?php
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
 # $Id$
 $TEMPLE_CODES = array();
 $TEMPLE_CODES["ABA"]=	"Aba, Nigeria";

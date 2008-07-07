@@ -21,7 +21,7 @@
  * Other special characters are all listed at the bottom.
  * 
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,10 +39,15 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: specialchars.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: specialchars.php,v 1.3 2008/07/07 17:30:13 lsces Exp $
  */
-require $confighelpfile["english"];
-if (file_exists($confighelpfile[$LANGUAGE])) require $confighelpfile[$LANGUAGE];
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
+loadLangFile("pgv_confighelp");
 
 $specialchar_languages = array(
 	"af" => "Afrikaans",
@@ -950,7 +955,7 @@ $ucspecialchars = array(
         "Á" => "Á", // A with acute
         "Â" => "Â", // A with circumflex
         "Ã" => "Ã", // A with tilde
-        "� " => "� ", // A with dot below
+        "Ạ" => "Ạ", // A with dot below
         "Ả" => "Ả", // A with hook above
         "Ă" => "Ă", // A with breve
         "Ấ" => "Ấ", // A with circumflex and acute
@@ -983,7 +988,7 @@ $ucspecialchars = array(
         "Ó" => "Ó", // O with acute
         "Ô" => "Ô", // O with circumflex
         "Õ" => "Õ", // O with tilde
-        "� " => "� ", // O with horn
+        "Ơ" => "Ơ", // O with horn
         "Ọ" => "Ọ", // O with dot below
         "Ỏ" => "Ỏ", // O with hook above
         "Ố" => "Ố", // O with circumflex and acute
@@ -994,7 +999,7 @@ $ucspecialchars = array(
         "Ớ" => "Ớ", // O with horn and acute
         "Ờ" => "Ờ", // O with horn and grave
         "Ở" => "Ở", // O with horn and hook above
-        "� " => "� ", // O with horn and tilde
+        "Ỡ" => "Ỡ", // O with horn and tilde
         "Ợ" => "Ợ", // O with horn and dot below
         "Ù" => "Ù", // U with grave
         "Ú" => "Ú", // U with acute
@@ -1014,7 +1019,7 @@ $ucspecialchars = array(
         "Ỹ" => "Ỹ", // Y with tilde
 	);
 	$lcspecialchars = array(
-        "� " => "� ", // a with grave
+        "à" => "à", // a with grave
         "á" => "á", // a with acute
         "â" => "â", // a with circumflex
         "ã" => "ã", // a with tilde

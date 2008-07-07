@@ -5,7 +5,7 @@
  * -> NEVER manually delete or edit this file <-
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,42 +21,47 @@
  * along with this program; if not;write to the Free Software
  * Foundation;Inc.;59 Temple Place;Suite 330;Boston;MA  02111-1307  USA
  *
- * $Id: lang_settings_std.php,v 1.5 2007/05/28 08:32:54 lsces Exp $
+ * $Id: lang_settings_std.php,v 1.6 2008/07/07 17:30:14 lsces Exp $
  *
  * @package PhpGedView
  * @subpackage Languages
  */
 
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
 //-- NEVER manually delete or edit this entry and every line below this entry! --START--//
-// Unless you are moving language support to bitweaver :)
-// Now that languages have been stripped all the translation stuff 
-// can be switched to using tra()
 
 // Array definition of language_settings
 $language_settings = array();
 
 //-- settings for english
-$lang = array();
-$lang["pgv_langname"]    = "english";
-$lang["pgv_lang_use"]    = true;
-$lang["pgv_lang"]    = "English";
-$lang["lang_short_cut"]    = "en";
-$lang["langcode"]    = "en;en-us;en-au;en-bz;en-ca;en-ie;en-jm;en-nz;en-ph;en-za;en-tt;en-gb;en-zw;";
-$lang["pgv_language"]    = "languages/lang.en.php";
-$lang["confighelpfile"]    = "languages/configure_help.en.php";
-$lang["helptextfile"]    = "languages/help_text.en.php";
-$lang["flagsfile"]    = "../users/icons/flags/Great_Britain.gif.gif";
-$lang["factsfile"]    = "languages/facts.en.php";
-$lang["DATE_FORMAT"]    = "D M Y";
-$lang["TIME_FORMAT"]    = "g:i:sa";
-$lang["WEEK_START"]    = "0";
-$lang["TEXT_DIRECTION"]    = "ltr";
-$lang["NAME_REVERSE"]    = false;
-$lang["ALPHABET_upper"]    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-$lang["ALPHABET_lower"]    = "abcdefghijklmnopqrstuvwxyz";
-$lang["DICTIONARY_SORT"]	= true;
-$language_settings["english"]  = $lang;
-
-//-- NEVER manually delete or edit this entry and every line above this entry! --END--//
-
+$language_settings['english']=array(
+'pgv_langname'=>'english',
+'pgv_lang_use'=>true,
+'pgv_lang'=>'English',
+'lang_short_cut'=>'en',
+'langcode'=>'en;en-us;en-au;en-bz;en-ca;en-ie;en-jm;en-nz;en-ph;en-za;en-tt;en-gb;en-zw;',
+'pgv_language'=>'languages/lang.en.php',
+'confighelpfile'=>'languages/configure_help.en.php',
+'helptextfile'=>'languages/help_text.en.php',
+'flagsfile'=>'images/flags/usa.gif',
+'factsfile'=>'languages/facts.en.php',
+'adminfile'=>'languages/admin.en.php',
+'editorfile'=>'languages/editor.en.php',
+'countryfile'=>'languages/countries.en.php',
+'faqlistfile'=>'languages/faqlist.en.php',
+'extrafile'=>'languages/extra.en.php',
+'DATE_FORMAT'=>'D M Y',
+'TIME_FORMAT'=>'g:i:sa',
+'WEEK_START'=>'0',
+'TEXT_DIRECTION'=>'ltr',
+'NAME_REVERSE'=>false,
+'ALPHABET_upper'=>'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+'ALPHABET_lower'=>'abcdefghijklmnopqrstuvwxyz',
+'MULTI_LETTER_ALPHABET'=>'',
+'DICTIONARY_SORT'=>true
+);
 ?>

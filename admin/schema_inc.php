@@ -57,10 +57,23 @@ PHPGEDVIEW_DB_PREFIX.'names' => "
 	n_type C(10)
 ",
 
+PHPGEDVIEW_DB_PREFIX.'soundex' => "
+	sx_i_id C(255) PRIMARY,
+	sx_file I PRIMARY, 
+	sx_n_id C(255) NOTNULL,
+	sx_fn_std_code X, 
+	sx_fn_dm_code X, 
+	sx_ln_std_code X, 
+	sx_ln_dm_code X
+",
+
 PHPGEDVIEW_DB_PREFIX.'dates' => "
 	d_day I,
 	d_month C(5),
 	d_mon I,
+	d_year I,
+	d_julianday1 I,
+	d_julianday2 I,
 	d_year I,
 	d_datestamp I,
 	d_fact C(10),
@@ -188,6 +201,8 @@ $indices = array (
 	'date_month_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_month', 'opts' => NULL ),
 	'date_mon_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_mon', 'opts' => NULL ),
 	'date_year_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_year', 'opts' => NULL ),
+	'date_julianday1_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_julianday1', 'opts' => NULL ),
+	'date_julianday2_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_julianday2', 'opts' => NULL ),
 	'date_datestamp_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_datestamp', 'opts' => NULL ),
 	'date_fact_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_fact', 'opts' => NULL ),
 	'date_gid_idx' => array( 'table' => PHPGEDVIEW_DB_PREFIX.'dates', 'cols' => 'd_gid', 'opts' => NULL ),

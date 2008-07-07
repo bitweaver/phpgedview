@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: source_class.php,v 1.5 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: source_class.php,v 1.6 2008/07/07 17:30:13 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -45,9 +45,10 @@ class Source extends GedcomRecord {
 	function Source($gedrec) {
 		parent::GedcomRecord($gedrec);
 		$this->disp = displayDetailsByID($this->xref, "SOUR");
-		$this->name = get_source_descriptor($this->xref);
+		
+		$this->name = PrintReady(get_source_descriptor($this->xref));
 		$add_descriptor = get_add_source_descriptor($this->xref);
-		if ($add_descriptor) $this->name .= " - ".$add_descriptor;
+		if ($add_descriptor) $this->name .= " - ".PrintReady($add_descriptor);
 	}
 
 	/**
@@ -55,10 +56,12 @@ class Source extends GedcomRecord {
 	 * @param string $pid	the ID of the source to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $sourcelist, $GEDCOM, $pgv_changes;
+		global $gedcom_record_cache, $GEDCOM, $pgv_changes;
 
-		if (isset($sourcelist[$pid]) && $sourcelist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($sourcelist[$pid]['object'])) return $sourcelist[$pid]['object'];
+		$ged_id=get_id_from_gedcom($GEDCOM);
+		// Check the cache first
+		if (isset($gedcom_record_cache[$pid][$ged_id])) {
+			return $gedcom_record_cache[$pid][$ged_id];
 		}
 
 		$sourcerec = find_source_record($pid);
@@ -67,13 +70,14 @@ class Source extends GedcomRecord {
 			if ($ct>0) {
 				$servid = trim($match[1]);
 				$remoteid = trim($match[2]);
+				require_once 'includes/serviceclient_class.php';
 				$service = ServiceClient::getInstance($servid);
 				$newrec= $service->mergeGedcomRecord($remoteid, "0 @".$pid."@ SOUR\r\n1 RFN ".$pid, false);
 				$sourcerec = $newrec;
 			}
 		}
 		if (empty($sourcerec)) {
-			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if (PGV_USER_CAN_EDIT && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$sourcerec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -81,7 +85,8 @@ class Source extends GedcomRecord {
 		if (empty($sourcerec)) return null;
 		$source = new Source($sourcerec, $simple);
 		if (!empty($fromfile)) $source->setChanged(true);
-		$sourcelist[$pid]['object'] = &$source;
+		// Store the object in the cache
+		$gedcom_record_cache[$pid][$ged_id]=&$source;
 		return $source;
 	}
 
@@ -200,6 +205,17 @@ class Source extends GedcomRecord {
 
 		$this->indilist = search_indis($query);
 		uasort($this->indilist, "itemsort");
+		
+		//-- load up the families with 1 query
+		$famids = array();
+		foreach($this->indilist as $gid=>$indi) {
+			$ct = preg_match_all("/1 FAMS @(.*)@/", $indi["gedcom"], $match, PREG_SET_ORDER);
+			for($i=0; $i<$ct; $i++) {
+				$famid = $match[$i][1];
+				$famids[] = $famid;
+			}
+		}
+		load_families($famids);
 		return $this->indilist;
 	}
 
@@ -289,32 +305,7 @@ class Source extends GedcomRecord {
 	 * @string a url that can be used to link to this source
 	 */
 	function getLinkUrl() {
-		global $GEDCOM;
-
-		$url = "source.php?sid=".$this->getXref()."&amp;ged=".$GEDCOM;
-		if ($this->isRemote()) {
-			$parts = preg_split("/:/", $this->rfn);
-			if (count($parts)==2) {
-				$servid = $parts[0];
-				$aliaid = $parts[1];
-				if (!empty($servid)&&!empty($aliaid)) {
-					$serviceClient = ServiceClient::getInstance($servid);
-					if (!empty($serviceClient)) {
-						$surl = $serviceClient->getURL();
-						$url = "source.php?sid=".$aliaid;
-						if ($serviceClient->getType()=="remote") {
-							if (!empty($surl)) $url = dirname($surl)."/".$url;
-						}
-						else {
-							$url = $surl.$url;
-						}
-						$gedcom = $serviceClient->getGedfile();
-						if (!empty($gedcom)) $url.="&amp;ged=".$gedcom;
-					}
-				}
-			}
-		}
-		return $url;
+		return parent::getLinkUrl('source.php?sid=');
 	}
 }
 ?>

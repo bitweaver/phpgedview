@@ -3,7 +3,7 @@
  * Class file for a Repository (REPO) object
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	John Finlay and Others
+ * Copyright (C) 2002 to 2007	John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: repository_class.php,v 1.3 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: repository_class.php,v 1.4 2008/07/07 17:30:13 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -53,25 +53,28 @@ class Repository extends GedcomRecord {
 	 * @param string $pid	the ID of the repository to retrieve
 	 */
 	function &getInstance($pid, $simple=true) {
-		global $repolist, $GEDCOM, $pgv_changes;
+		global $gedcom_record_cache, $GEDCOM, $pgv_changes;
 
-		if (isset($repolist[$pid]) && $repolist[$pid]['gedfile']==$gGedcom->mGEDCOMId) {
-			if (isset($repolist[$pid]['object'])) return $repolist[$pid]['object'];
+		$ged_id=get_id_from_gedcom($GEDCOM);
+		// Check the cache first
+		if (isset($gedcom_record_cache[$pid][$ged_id])) {
+			return $gedcom_record_cache[$pid][$ged_id];
 		}
 
-		$repositoryrec = find_repository_record($pid);
+		$repositoryrec = find_repo_record($pid);
 		if (empty($repositoryrec)) {
 			$ct = preg_match("/(\w+):(.+)/", $pid, $match);
 			if ($ct>0) {
 				$servid = trim($match[1]);
 				$remoteid = trim($match[2]);
+				require_once 'includes/serviceclient_class.php';
 				$service = ServiceClient::getInstance($servid);
 				$newrec= $service->mergeGedcomRecord($remoteid, "0 @".$pid."@ REPO\r\n1 RFN ".$pid, false);
 				$repositoryrec = $newrec;
 			}
 		}
 		if (empty($repositoryrec)) {
-			if ($gGedcom->isEditable() && isset($pgv_changes[$pid."_".$GEDCOM])) {
+			if (PGV_USER_CAN_EDIT && isset($pgv_changes[$pid."_".$GEDCOM])) {
 				$repositoryrec = find_updated_record($pid);
 				$fromfile = true;
 			}
@@ -79,7 +82,8 @@ class Repository extends GedcomRecord {
 		if (empty($repositoryrec)) return null;
 		$repository = new Repository($repositoryrec, $simple);
 		if (!empty($fromfile)) $repository->setChanged(true);
-		$repolist[$pid]['object'] = &$repository;
+		// Store the object in the cache
+		$gedcom_record_cache[$pid][$ged_id]=&$repository;
 		return $repository;
 	}
 
@@ -219,32 +223,7 @@ class Repository extends GedcomRecord {
 	 * @string a url that can be used to link to this repository
 	 */
 	function getLinkUrl() {
-		global $GEDCOM;
-
-		$url = "repo.php?rid=".$this->getXref()."&amp;ged=".$GEDCOM;
-		if ($this->isRemote()) {
-			$parts = preg_split("/:/", $this->rfn);
-			if (count($parts)==2) {
-				$servid = $parts[0];
-				$aliaid = $parts[1];
-				if (!empty($servid)&&!empty($aliaid)) {
-					$serviceClient = ServiceClient::getInstance($servid);
-					if (!empty($serviceClient)) {
-						$surl = $serviceClient->getURL();
-						$url = "repo.php?rid=".$aliaid;
-						if ($serviceClient->getType()=="remote") {
-							if (!empty($surl)) $url = dirname($surl)."/".$url;
-						}
-						else {
-							$url = $surl.$url;
-						}
-						$gedcom = $serviceClient->getGedfile();
-						if (!empty($gedcom)) $url.="&amp;ged=".$gedcom;
-					}
-				}
-			}
-		}
-		return $url;
+		return parent::getLinkUrl('repo.php?rid=');
 	}
 }
 ?>

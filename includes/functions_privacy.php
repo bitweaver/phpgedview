@@ -5,7 +5,7 @@
  * See http://www.phpgedview.net/privacy.php for more information on privacy in PhpGedView
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: functions_privacy.php,v 1.6 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: functions_privacy.php,v 1.7 2008/07/07 17:30:13 lsces Exp $
  * @package PhpGedView
  * @subpackage Privacy
  */
@@ -31,7 +31,7 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-if (isset($USE_RELATIONSHIP_PRIVACY)) {
+if ($USE_RELATIONSHIP_PRIVACY) {
 	/**
 	 * store relationship paths in a cache
 	 *
@@ -58,7 +58,7 @@ if (!function_exists("is_dead")) {
  * 5. A marriage record with a date greater than <var>$MAX_ALIVE_AGE</var>-10
  * 6. A date in the spouse record greater than <var>$MAX_ALIVE_AGE</var>
  * 7. A date in the children's record that is greater than <var>$MAX_ALIVE_AGE</var>-10
- * 8. A date in the grand childnren's record that is greater than <var>$MAX_ALIVE_AGE</var>-30
+ * 8. A date in the grand children's record that is greater than <var>$MAX_ALIVE_AGE</var>-30
  *
  * This function should only be called once per individual.  In index mode this is called during
  * the Gedcom import.  In MySQL mode this is called the first time the individual is accessed
@@ -67,7 +67,7 @@ if (!function_exists("is_dead")) {
  * @param string $indirec the raw gedcom record
  * @return bool true if dead false if alive
  */
-function is_dead($indirec, $cyear="") {
+function is_dead($indirec, $cyear="", $import=false) {
 	global $CHECK_CHILD_DATES;
 	global $MAX_ALIVE_AGE;
 	global $HIDE_LIVE_PEOPLE;
@@ -130,6 +130,9 @@ function is_dead($indirec, $cyear="") {
 			}
 		}
 	}
+
+	//-- during import we can't check child dates
+	if ($import) return -1;
 
 	// If we found no dates then check the dates of close relatives.
 	if($CHECK_CHILD_DATES ) {
@@ -289,6 +292,56 @@ function displayDetails($indirec) {
 
 //-- allow users to overide functions in privacy file
 if (!function_exists("displayDetailsByID")) {
+	
+/**
+ * checks if the person has died recently before showing their data
+ * @param string $pid	the id of the person to check
+ * @return boolean
+ */
+function checkPrivacyByYear($pid) {
+	global $MAX_ALIVE_AGE;
+	
+	$cyear = date("Y");
+	$indirec = find_person_record($pid);
+	//-- check death record
+	$deatrec = get_sub_record(1, "1 DEAT", $indirec);
+	$ct = preg_match("/2 DATE .*(\d\d\d\d).*/", $deatrec, $match);
+	if ($ct>0) {
+		$dyear = $match[1];
+		if (($cyear-$dyear) <= $MAX_ALIVE_AGE-25) {
+			return false;
+		}
+	}
+
+	//-- check marriage records
+	$famids = find_families_in_record($indirec, "FAMS");
+	foreach($famids as $indexval => $famid) {
+		$famrec = find_family_record($famid);
+		//-- check death record
+		$marrrec = get_sub_record(1, "1 MARR", $indirec);
+		$ct = preg_match("/2 DATE .*(\d\d\d\d).*/", $marrrec, $match);
+		if ($ct>0) {
+			$myear = $match[1];
+			if (($cyear-$myear) <= $MAX_ALIVE_AGE-15) {
+				return false;
+			}
+		}
+	}
+
+	//-- check birth record
+	$birtrec = get_sub_record(1, "1 BIRT", $indirec);
+	$ct = preg_match("/2 DATE .*(\d\d\d\d).*/", $birtrec, $match);
+	if ($ct>0) {
+		$byear = $match[1];
+		if (($cyear-$byear) <= $MAX_ALIVE_AGE) {
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+	
 /**
  * check if details for a GEDCOM XRef ID should be shown
  *
@@ -310,142 +363,165 @@ function displayDetailsByID($pid, $type = "INDI") {
 	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE, $USE_RELATIONSHIP_PRIVACY, $CHECK_MARRIAGE_RELATIONS, $MAX_RELATION_PATH_LENGTH;
 	global $global_facts, $person_privacy, $user_privacy, $HIDE_LIVE_PEOPLE, $GEDCOM, $SHOW_DEAD_PEOPLE, $MAX_ALIVE_AGE, $PRIVACY_BY_YEAR;
 	global $PRIVACY_CHECKS, $PRIVACY_BY_RESN, $SHOW_SOURCES, $SHOW_LIVING_NAMES;
-	global $indilist;
+	global $indilist, $gGedcom, $SQL_LOG, $INDEX_DIRECTORY;
+	
+	static $privacy_cache = array();
 
 	if (!$HIDE_LIVE_PEOPLE) return true;
 	if (empty($pid)) return true;
 
+	$pkey = $gGedcom->mGEDCOMId.$pid;
 	//-- check if the privacy has been cached and use it
-	if ($type=="INDI" && isset($indilist[$pid]['privacy'])
-			&& isset($indilist[$pid]['gedfile'])
-			&& ($indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId)) {
-		return $indilist[$pid]['privacy'];
+	if (isset($privacy_cache[$pkey])) {
+		return $privacy_cache[$pkey];
 	}
 
 	//-- keep a count of how many times we have checked for privacy
 	if (!isset($PRIVACY_CHECKS)) $PRIVACY_CHECKS = 1;
 	else $PRIVACY_CHECKS++;
 
-	//print "checking privacy for $pid<br />";
-	if ($type=="INDI" && isset($indilist[$pid]['gedfile']) 
-		&& $indilist[$pid]['gedfile']==$gGedcom->mGEDCOMId) $cache_privacy = true;
-	else $cache_privacy = false;
+	if (!empty($SQL_LOG)) {
+		$fp = fopen($INDEX_DIRECTORY."/sql_log.txt", "a");
+		$backtrace = debug_backtrace();
+		$temp = "";
+		if (isset($backtrace[2])) $temp .= basename($backtrace[2]["file"])." (".$backtrace[2]["line"].")";
+		if (isset($backtrace[1])) $temp .= basename($backtrace[1]["file"])." (".$backtrace[1]["line"].")";
+		$temp .= basename($backtrace[0]["file"])." (".$backtrace[0]["line"].")";
+		fwrite($fp, date("Y-m-d H:i:s")."\t".$_SERVER["SCRIPT_NAME"]."\t".$temp."\t".$PRIVACY_CHECKS."- checking privacy for ".$type." ".$pid."\r\n");
+		fclose($fp);
+	}
 
-	$username = getUserName();
-	if (!empty($username)) {
+	$cache_privacy = true;
+
+	//-- start of user specific privacy checks
+	$username = PGV_USER_NAME;
+	if ($username) {
 		if (isset($user_privacy[$username]["all"])) {
-			if ($user_privacy[$username]["all"] >= getUserAccessLevel($username)) {
-				if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+			if ($user_privacy[$username]["all"] >= PGV_USER_ACCESS_LEVEL) {
+				if ($cache_privacy) $privacy_cache[$pkey] = true;
 				return true;
-			}
-			else {
-				if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+			} else {
+				if ($cache_privacy) $privacy_cache[$pkey] = false;
 				return false;
 			}
 		}
 		if (isset($user_privacy[$username][$pid])) {
-			if ($user_privacy[$username][$pid] >= getUserAccessLevel($username)) {
-				if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+			if ($user_privacy[$username][$pid] >= PGV_USER_ACCESS_LEVEL) {
+				if ($cache_privacy) $privacy_cache[$pkey] = true;
 				return true;
-			}
-			else {
-				if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+			} else {
+				if ($cache_privacy) $privacy_cache[$pkey] = false;
 				return false;
 			}
 		}
+		
 		if (isset($person_privacy[$pid])) {
-			if ($person_privacy[$pid]>=getUserAccessLevel($username)) {
-				if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+			if ($person_privacy[$pid]>=PGV_USER_ACCESS_LEVEL) {
+				if ($cache_privacy) $privacy_cache[$pkey] = true;
 				return true;
 			}
 			else {
-				if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+				if ($cache_privacy) $privacy_cache[$pkey] = false;
 				return false;
 			}
 		}
-		if (userGedcomAdmin($username)) {
-			if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+		if (PGV_USER_GEDCOM_ADMIN) {
+			if ($cache_privacy) $privacy_cache[$pkey] = true;
 			return true;
 		}
-		if (userCanAccess($username)) {
-			$user = getUser($username);
+		
+		//-- look for an Ancestral File RESN (restriction) tag
+		if (isset($PRIVACY_BY_RESN) && ($PRIVACY_BY_RESN==true)) {
+			$gedrec = find_gedcom_record($pid);
+			$resn = get_gedcom_value("RESN", 1, $gedrec);
+			if (!empty($resn)) {
+				if ($resn == "confidential") $ret = false;
+				else if ($resn=="privacy" && PGV_USER_GEDCOM_ID != $pid) $ret = false;
+				else $ret = true;
+				if (!$ret) {
+					if ($cache_privacy) $privacy_cache[$pkey] = $ret;
+					return $ret;
+				}
+			}
+		}
+	
+		if (PGV_USER_CAN_ACCESS) {
 			if ($type=="INDI") {
 				$isdead = is_dead_id($pid);
-				if ($USE_RELATIONSHIP_PRIVACY || $user["relationship_privacy"]=="Y") {
+				if ($USE_RELATIONSHIP_PRIVACY || get_user_setting($username, 'relationship_privacy')=="Y") {
 					if ($isdead) {
-						if ($cache_privacy) $indilist[$pid]['privacy'] = true;
-						return true;
-					}
-					else {
-						if (empty($user["gedcomid"][$GEDCOM])) {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+						if ($SHOW_DEAD_PEOPLE>=PGV_USER_ACCESS_LEVEL) {
+							if ($PRIVACY_BY_YEAR && $SHOW_DEAD_PEOPLE==PGV_USER_ACCESS_LEVEL) {
+								if (!checkPrivacyByYear($pid)) {
+									if ($cache_privacy) $privacy_cache[$pkey] = false;
+									return false;
+								}
+							}
+							if ($cache_privacy) $privacy_cache[$pkey] = true;
+							return true;
+						} else {
+							if ($cache_privacy) $privacy_cache[$pkey] = false;
 							return false;
 						}
-						if ($user["gedcomid"][$GEDCOM]==$pid) {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+					} else {
+						$my_id=PGV_USER_GEDCOM_ID;
+						if (empty($my_id)) {
+							if ($cache_privacy) $privacy_cache[$pkey] = false;
+							return false;
+						}
+						if ($my_id==$pid) {
+							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
 						}
-						$path_length = $MAX_RELATION_PATH_LENGTH;
-						if ($user["max_relation_path"]>0) $path_length = $user["max_relation_path"];
-						$relationship = get_relationship($user["gedcomid"][$GEDCOM], $pid, $CHECK_MARRIAGE_RELATIONS, $path_length);
+						if (get_user_setting($username, 'max_relation_path')>0) {
+							$path_length = get_user_setting($username, 'max_relation_path');
+						} else {
+							$path_length = $MAX_RELATION_PATH_LENGTH;
+						}
+						$relationship = get_relationship(PGV_USER_GEDCOM_ID, $pid, $CHECK_MARRIAGE_RELATIONS, $path_length);
 						if ($relationship!==false) {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
-						}
-						else {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+						} else {
+							if ($cache_privacy) $privacy_cache[$pkey] = false;
 							return false;
 						}
 					}
-				}
-				else {
+				} else {
 					if ($isdead) {
-						if ($SHOW_DEAD_PEOPLE>=getUserAccessLevel($username)) {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+						if ($SHOW_DEAD_PEOPLE>=PGV_USER_ACCESS_LEVEL) {
+							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
-						}
-						else {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+						} else {
+							if ($cache_privacy) $privacy_cache[$pkey] = false;
 							return false;
 						}
-					}
-					else {
-						if ($SHOW_LIVING_NAMES>=getUserAccessLevel($username)) {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+					} else {
+						if ($SHOW_LIVING_NAMES>=PGV_USER_ACCESS_LEVEL) {
+							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
-						}
-						else {
-							if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+						} else {
+							if ($cache_privacy) $privacy_cache[$pkey] = false;
 							return false;
 						}
 					}
 				}
-			}
-			//-- look for an Ancestral File RESN (restriction) tag
-			if (isset($PRIVACY_BY_RESN) && ($PRIVACY_BY_RESN==true)) {
-				$gedrec = find_gedcom_record($pid);
-				$resn = get_gedcom_value("RESN", 1, $gedrec);
-				if (($resn == "confidential") && (!userGedcomAdmin($username))) $ret = false;
-				else if (($resn == "privacy") && (($user["gedcomid"][$GEDCOM] != $pid) || (!userGedcomAdmin($username)))) $ret = false;
-				else $ret = true;
-				if ($cache_privacy) $indilist[$pid]['privacy'] = $ret;
-				return $ret;
 			}
 		}
-	}
+	} //-- end the user specif privacy settings
+	
 	//-- check the person privacy array for an exception
 	if (isset($person_privacy[$pid])) {
-		if ($person_privacy[$pid]>=getUserAccessLevel($username)) {
+		if ($person_privacy[$pid]>=PGV_USER_ACCESS_LEVEL) {
 			if ($cache_privacy) {
 				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
-				$indilist[$pid]['privacy'] = true;
+				$privacy_cache[$pkey] = true;
 			}
 			return true;
-		}
-		else {
+		} else {
 			if ($cache_privacy) {
 				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
-				$indilist[$pid]['privacy'] = false;
+				$privacy_cache[$pkey] = false;
 			}
 			return false;
 		}
@@ -456,11 +532,10 @@ function displayDetailsByID($pid, $type = "INDI") {
 		$gedrec = find_gedcom_record($pid);
 		$resn = get_gedcom_value("RESN", 1, $gedrec);
 		if ($resn == "none") {
-			if ($cache_privacy) $indilist[$pid]['privacy'] = true;
+			if ($cache_privacy) $privacy_cache[$pkey] = true;
 			return true;
-		}
-		else if (!empty($resn)) {
-			if ($cache_privacy) $indilist[$pid]['privacy'] = false;
+		} else if (!empty($resn)) {
+			if ($cache_privacy) $privacy_cache[$pkey] = false;
 			return false;
 		}
 	}
@@ -468,125 +543,100 @@ function displayDetailsByID($pid, $type = "INDI") {
 	if ($type=="INDI") {
 		//-- option to keep person living if they haven't been dead very long
 		if ($PRIVACY_BY_YEAR) {
-			$cyear = date("Y");
-			$indirec = find_person_record($pid);
-			//-- check death record
-			$deatrec = get_sub_record(1, "1 DEAT", $indirec);
-			$ct = preg_match("/2 DATE .*(\d\d\d\d).*/", $deatrec, $match);
-			if ($ct>0) {
-				$dyear = $match[1];
-				if (($cyear-$dyear) <= $MAX_ALIVE_AGE-25) {
-					if ($cache_privacy) {
-						$indilist[$pid]['privacy'] = false;
+			if (!checkPrivacyByYear($pid)) {
+				if ($cache_privacy) {
+					$privacy_cache[$pkey] = false;
 					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
-					}
-					return false;
 				}
-			}
-
-			//-- check marriage records
-			$famids = find_sfamily_ids($pid);
-			foreach($famids as $indexval => $famid) {
-				$famrec = find_family_record($famid);
-				//-- check death record
-				$marrrec = get_sub_record(1, "1 MARR", $indirec);
-				$ct = preg_match("/2 DATE .*(\d\d\d\d).*/", $marrrec, $match);
-				if ($ct>0) {
-					$myear = $match[1];
-					if (($cyear-$myear) <= $MAX_ALIVE_AGE-15) {
-						if ($cache_privacy) {
-							$indilist[$pid]['privacy'] = false;
-						$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
-						}
-						return false;
-					}
-				}
-			}
-
-			//-- check birth record
-			$birtrec = get_sub_record(1, "1 BIRT", $indirec);
-			$ct = preg_match("/2 DATE .*(\d\d\d\d).*/", $birtrec, $match);
-			if ($ct>0) {
-				$byear = $match[1];
-				if (($cyear-$byear) <= $MAX_ALIVE_AGE) {
-					if ($cache_privacy) {
-						$indilist[$pid]['privacy'] = false;
-					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
-					}
-					return false;
-				}
+				return false;
 			}
 		}
 		
 		$disp = is_dead_id($pid);
 		if ($disp) {
-			if ($SHOW_DEAD_PEOPLE>=getUserAccessLevel($username)) {
+			if ($SHOW_DEAD_PEOPLE>=PGV_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) {
-					$indilist[$pid]['privacy'] = true;
+					$privacy_cache[$pkey] = true;
 				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return true;
-			}
-			else {
+			} else {
 				if ($cache_privacy) {
-					$indilist[$pid]['privacy'] = false;
+					$privacy_cache[$pkey] = false;
 				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return false;
 			}
-		}
-		else {
+		} else {
 			if (empty($username)) {
 				if ($cache_privacy) {
 					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
-					$indilist[$pid]['privacy'] = false;
+					$privacy_cache[$pkey] = false;
 				}
 				return false;
 			}
-			if ($SHOW_LIVING_NAMES>getUserAccessLevel($username)) {
+			if ($SHOW_LIVING_NAMES>PGV_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) {
-					$indilist[$pid]['privacy'] = true;
-				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
+					$privacy_cache[$pkey] = true;
+					$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return true;
-			}
-			else {
+			} else {
 				if ($cache_privacy) {
-					$indilist[$pid]['privacy'] = false;
+					$privacy_cache[$pkey] = false;
 				$indilist[$pid]['gedfile'] = $gGedcom->mGEDCOMId;
 				}
 				return false;
 			}
 		}
 	}
-    if ($type=="FAM") {
-	    //-- check if we can display both parents
+	if ($type=="FAM") {
+		//-- check if we can display at least one parent
 		$parents = find_parents($pid);
-		$display = displayDetailsByID($parents["HUSB"]);
-		if ($display) {
-			$display = displayDetailsByID($parents["WIFE"]);
-		}
+		$display = displayDetailsByID($parents["HUSB"]) || displayDetailsByID($parents["WIFE"]);
+		$privacy_cache[$pkey] = $display;
 		return $display;
-    }
-    if ($type=="SOUR") {
-	    if ($SHOW_SOURCES>=getUserAccessLevel($username)) return true;
-		else return false;
-    }
-    if ($type=="REPO") {
-	    if ($SHOW_SOURCES>=getUserAccessLevel($username)) return true;
-		else return false;
-    }
-    if ($type=="OBJE") {
-    	//-- for media privacy check all of the links to the media
-	    $links = get_media_relations($pid);
-	    $disp = true;
-	    foreach($links as $gid=>$type) {
-	    	$disp = $disp && displayDetailsById($gid, id_type($gid));
-	    	if (!$disp) return false;
-	    }
-	    return $disp;
-    }
-    return true;
+	}
+	if ($type=="SOUR") {
+		if ($SHOW_SOURCES>=PGV_USER_ACCESS_LEVEL) {
+			$disp = true;
+			$sourcerec = find_source_record($pid);
+			if (!empty($sourcerec)) {
+				$repoid = get_gedcom_value("REPO", 1, $sourcerec);
+				$disp = displayDetailsByID($repoid, "REPO");
+			}
+			$privacy_cache[$pkey] = $disp;
+			return $disp;
+		} else {
+			$privacy_cache[$pkey] = false;
+			return false;
+		}
+	}
+	if ($type=="REPO") {
+		if ($SHOW_SOURCES>=PGV_USER_ACCESS_LEVEL) {
+			$privacy_cache[$pkey] = true;
+			return true;
+		} else {
+			$privacy_cache[$pkey] = false;
+			return false;
+		}
+	}
+	if ($type=="OBJE") {
+		//-- for media privacy check all of the links to the media
+		$links = get_media_relations($pid);
+		$disp = true;
+		foreach($links as $gid=>$type) {
+			$disp = $disp && displayDetailsById($gid, id_type($gid));
+			if (!$disp) {
+				$privacy_cache[$pkey] = false;
+				return false;
+			}
+		}
+		$privacy_cache[$pkey] = $disp;
+		return $disp;
+	}
+	$privacy_cache[$pkey] = true;
+	return true;
 }
 }
 
@@ -635,27 +685,27 @@ if (!function_exists("showLivingNameByID")) {
  * @return	boolean return true to show the person's name, return false to keep it private
  */
 function showLivingNameByID($pid) {
-	global $SHOW_LIVING_NAMES, $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $person_privacy, $user_privacy;
+	global $SHOW_LIVING_NAMES, $person_privacy, $user_privacy;
 
 	if (displayDetailsById($pid)) return true;
-	$username = getUserName();
+	$username = PGV_USER_NAME;
 	if (!empty($username)) {
 		if (isset($user_privacy[$username]["all"])) {
-			if ($user_privacy[$username]["all"] >= getUserAccessLevel($username)) return true;
+			if ($user_privacy[$username]["all"] >= PGV_USER_ACCESS_LEVEL) return true;
 			else return false;
 		}
 		if (isset($user_privacy[$username][$pid])) {
-			if ($user_privacy[$username][$pid] >= getUserAccessLevel($username)) return true;
+			if ($user_privacy[$username][$pid] >= PGV_USER_ACCESS_LEVEL) return true;
 			else return false;
 		}
 	}
 
 	if (isset($person_privacy[$pid])) {
-		if ($person_privacy[$pid]>=getUserAccessLevel($username)) return true;
+		if ($person_privacy[$pid]>=PGV_USER_ACCESS_LEVEL) return true;
 		else return false;
 	}
 
-	if ($SHOW_LIVING_NAMES>=getUserAccessLevel($username)) return true;
+	if ($SHOW_LIVING_NAMES>=PGV_USER_ACCESS_LEVEL) return true;
 	return false;
 }
 }
@@ -674,31 +724,31 @@ if (!function_exists("showFact")) {
  * @param	string $pid the GEDCOM XRef ID for the entity to check privacy settings
  * @return	boolean return true to show the fact, return false to keep it private
  */
-function showFact($fact, $pid) {
-	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE;
+function showFact($fact, $pid, $type='INDI') {
 	global $global_facts, $person_facts, $SHOW_SOURCES;
-// TODO fix privacy from bitweaver user table
-return true;
-	$username = getUserName();
 
 	//-- first check the global facts array
 	if (isset($global_facts[$fact]["show"])) {
-		if (getUserAccessLevel($username)>$global_facts[$fact]["show"]) return false;
+		if (PGV_USER_ACCESS_LEVEL>$global_facts[$fact]["show"])
+			return false;
 	}
 	//-- check the person facts array
 	if (isset($person_facts[$pid][$fact]["show"])) {
-		if (getUserAccessLevel($username)>$person_facts[$pid][$fact]["show"]) return false;
+		if (PGV_USER_ACCESS_LEVEL>$person_facts[$pid][$fact]["show"])
+			return false;
 	}
 	if ($fact=="SOUR") {
-		if ($SHOW_SOURCES<getUserAccessLevel($username)) return false;
+		if ($SHOW_SOURCES<PGV_USER_ACCESS_LEVEL)
+			return false;
 	}
 	if ($fact!="NAME") {
-		$gedrec = find_gedcom_record($pid);
-		$disp = displayDetails($gedrec);
-		return $disp;
+		return displayDetailsById($pid, $type);
+	} else {
+		if (!displayDetailsById($pid, $type))
+			return showLivingNameById($pid);
+		else
+			return true;
 	}
-	else if (!displayDetails(find_gedcom_record($pid))) return showLivingNameById($pid);
-	else return true;
 }
 }
 
@@ -717,20 +767,15 @@ if (!function_exists("showFactDetails")) {
  * @return	boolean return true to show the fact details, return false to keep it private
  */
 function showFactDetails($fact, $pid) {
-	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE;
 	global $global_facts, $person_facts;
-// TODO fix privacy from bitweaver user table
-return true;
-
-	$username = getUserName();
 
 	//-- first check the global facts array
 	if (isset($global_facts[$fact]["details"])) {
-		if (getUserAccessLevel($username)>$global_facts[$fact]["details"]) return false;
+		if (PGV_USER_ACCESS_LEVEL>$global_facts[$fact]["details"]) return false;
 	}
 	//-- check the person facts array
 	if (isset($person_facts[$pid][$fact]["details"])) {
-		if (getUserAccessLevel($username)>$person_facts[$pid][$fact]["details"]) return false;
+		if (PGV_USER_ACCESS_LEVEL>$person_facts[$pid][$fact]["details"]) return false;
 	}
 
 	return showFact($fact, $pid);
@@ -746,8 +791,9 @@ return true;
  * @return string the privatized gedcom record
  */
 function privatize_gedcom($gedrec) {
-	global $pgv_lang, $GEDCOM, $SHOW_PRIVATE_RELATIONSHIPS, $pgv_private_records;
-
+	global $pgv_lang, $factarray, $GEDCOM, $SHOW_PRIVATE_RELATIONSHIPS, $pgv_private_records;
+	global $global_facts, $person_facts;
+	
 	$gt = preg_match("/0 @(.+)@ (.+)/", $gedrec, $gmatch);
 	if ($gt > 0) {
 		$gid = trim($gmatch[1]);
@@ -825,6 +871,20 @@ function privatize_gedcom($gedrec) {
 			return $newrec;
 		}
 		else {
+			//-- check if we need to do any fact privacy checking
+			//---- check for RESN
+			$resn = false;
+			if (preg_match("/\d RESN/", $gedrec)) $resn = true;
+			//---- check for any person facts
+			$ppriv = isset($person_facts[$gid]);
+			//---- check for any global facts
+			$gpriv = false;
+			foreach($global_facts as $key=>$gfact) {
+				if (preg_match("/1 ".$key."/", $gedrec)>0) $gpriv = true;
+			}
+			//-- if no fact privacy then return the record
+			if (!$resn && !$ppriv && !$gpriv) return $gedrec;
+			
 			$newrec = "0 @".$gid."@ $type\r\n";
 			//-- check all of the sub facts for access
 			$subs = get_all_subrecords($gedrec, "", false, false, false);
@@ -832,8 +892,13 @@ function privatize_gedcom($gedrec) {
 				$ct = preg_match("/1 (\w+)/", $sub, $match);
 				if ($ct > 0) $type = trim($match[1]);
 				else $type="";
+				if (($type=='FACT' || $type=='EVEN') && preg_match('/2 TYPE (\w+)/', $sub, $match) && array_key_exists($match[1], $factarray)) {
+					$type=$match[1];
+				}
 				if (FactViewRestricted($gid, $sub)==false && showFact($type, $gid) && showFactDetails($type, $gid)) $newrec .= $sub;
-				else $pgv_private_records[$gid] .= $sub;
+				else {
+					$pgv_private_records[$gid] .= $sub;
+				}
 			}
 			return $newrec;
 		}
@@ -857,15 +922,22 @@ function get_last_private_data($gid) {
  * checks the current user and returns their privacy access level
  * @return int		their access level
  */
-function getUserAccessLevel($username="") {
-	global $PRIV_PUBLIC, $PRIV_NONE, $PRIV_USER, $GEDCOM;
+function getUserAccessLevel() {
+	global $PRIV_PUBLIC, $PRIV_NONE, $PRIV_USER;
 
-	if (empty($username)) $username = getUserName();
-	if (empty($username)) return $PRIV_PUBLIC;
-
-	if (userGedcomAdmin($username)) return $PRIV_NONE;
-	if (userCanAccess($username)) return $PRIV_USER;
-	return $PRIV_PUBLIC;
+	if (getUserId()) {
+		if (userGedcomAdmin()) {
+			return $PRIV_NONE;
+		} else {
+			if (userCanAccess()) {
+				return $PRIV_USER;
+			} else {
+				return $PRIV_PUBLIC;
+			}
+		}
+	} else {
+		return $PRIV_PUBLIC;
+	}
 }
 
 /**
@@ -877,25 +949,28 @@ function getUserAccessLevel($username="") {
  * @return int		Allowed or not allowed
  */
 function FactEditRestricted($pid, $factrec) {
-	global $GEDCOM, $gBitUser;
-	$user = getUser(getuserName());
-	$myindi = "";
-	if (isset($user["gedcomid"][$GEDCOM])) trim($myindi = $user["gedcomid"][$GEDCOM]);
-	$ct = preg_match("/2 RESN (.*)/", $factrec, $match);
-	if ($ct == 0) return false;
-	if ($ct > 0) {
+	if (PGV_USER_GEDCOM_ADMIN) {
+		return false;
+	}
+	
+	if (preg_match("/2 RESN (.*)/", $factrec, $match)) {
 		$match[1] = strtolower(trim($match[1]));
-		if ($match[1] == "none") return false;
-		if ((($match[1] == "confidential") || ($match[1] == "locked")) && (($gBitUser->isAdmin()) || (userGedcomAdmin(getUserName())))) return false;
-		if (($match[1] == "privacy") && (($gBitUser->isAdmin()) || ($myindi == $pid) || (userGedcomAdmin(getUserName())))) return false;
-		if (substr($pid,0,1) == "F"){
-			$famrec = find_family_record($pid);
-			$parents = find_parents_in_record($famrec);
-			if (($match[1] == "privacy") && (($gBitUser->isAdmin()) || ($myindi == $parents["HUSB"]) || (userGedcomAdmin(getUserName())))) return false;
-			if (($match[1] == "privacy") && (($gBitUser->isAdmin()) || ($myindi == $parents["WIFE"]) || (userGedcomAdmin(getUserName())))) return false;
+		if ($match[1] == "privacy" || $match[1]=="locked") {
+			$myindi=PGV_USER_GEDCOM_ID;
+			if ($myindi == $pid) {
+				return false;
+			}
+			if (id_type($pid)=='FAM') {
+				$famrec = find_family_record($pid);
+				$parents = find_parents_in_record($famrec);
+				if ($myindi == $parents["HUSB"] || $myindi == $parents["WIFE"]) {
+					return false;
+				}
+			}
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
 /**
@@ -907,30 +982,29 @@ function FactEditRestricted($pid, $factrec) {
  * @return int		Allowed or not allowed
  */
 function FactViewRestricted($pid, $factrec) {
-	global $GEDCOM, $FAM_ID_PREFIX;
-	$ct = preg_match("/2 RESN (.*)/", $factrec, $match);
-	if ($ct == 0) return false;
-	$username = getUserName();
-	$user = getUser($username);
-	$myindi = "";
-	if (isset($user["gedcomid"][$GEDCOM])) $myindi = trim($user["gedcomid"][$GEDCOM]);
-	$pid = trim($pid);
-	if ($ct > 0) {
+	if (PGV_USER_GEDCOM_ADMIN) {
+		return false;
+	}
+	
+	if (preg_match("/2 RESN (.*)/", $factrec, $match)) {
 		$match[1] = strtolower(trim($match[1]));
-		if ($match[1] == "none") return false;
-		if ($match[1] == "locked") return false;
-		if (($match[1] == "confidential") && (userGedcomAdmin($username))) return false;
-		if (($match[1] == "privacy") && (($myindi == $pid) || (userGedcomAdmin($username)))) return false;
-		//-- NOTE: This could lead to a potential bug in GEDCOMS that do not prefix their records with a number
-		//-- it is safer to look up the gedcom record
-		if (substr($pid,0,1) == $FAM_ID_PREFIX){
-			$famrec = find_family_record($pid);
-			$parents = find_parents_in_record($famrec);
-			if (($match[1] == "privacy") && (($myindi == $parents["WIFE"]) || (userGedcomAdmin($username)))) return false;
-			if (($match[1] == "privacy") && (($myindi == $parents["HUSB"]) || (userGedcomAdmin($username)))) return false;
+		if ($match[1] == "confidential") return true;
+		if ($match[1] == "privacy") {
+			$myindi=PGV_USER_GEDCOM_ID;
+			if ($myindi == $pid) {
+				return false;
+			}
+			if (id_type($pid)=='FAM') {
+				$famrec = find_family_record($pid);
+				$parents = find_parents_in_record($famrec);
+				if ($myindi == $parents["WIFE"] || $myindi == $parents["HUSB"]) {
+					return false;
+				}
+			}
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
 ?>

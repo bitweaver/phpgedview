@@ -1,15 +1,15 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.5 2008/06/25 22:21:16 spiderr Exp $
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.6 2008/07/07 17:26:43 lsces Exp $
 require_once( '../../bit_setup_inc.php' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 if ( isset($_REQUEST['g_id']) ) {
 	$gGedcom = new BitGEDCOM( $_REQUEST['g_id'] );
 	$gGedcom->load();
+	
 }
 else 
 	$gGedcom = new BitGEDCOM();
-//include_once( PHPGEDVIEW_PKG_PATH.'lookup_article_topic_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
@@ -27,8 +27,8 @@ if( isset( $_REQUEST['fSubmitAddGedcom'] ) ) {
 } elseif( !empty( $_REQUEST['fRemoveGedcom'] )&& $gGedcom ) {
 	$gGedcom->expunge();
 } elseif( !empty( $_REQUEST['fUpload'] )&& $gGedcom ) {
-	$this->expungeGedcom($_REQUEST['g_id']);
-	$this->importGedcom();
+	$gGedcom->expungeGedcom($_REQUEST['g_id']);
+	$gGedcom->importGedcom();
 }
 
 $gBitSmarty->assign_by_ref( "gContent", $gGedcom );
@@ -39,5 +39,5 @@ $listgedcoms = $gGedcom->getList( $listHash );
 $gBitSmarty->assign_by_ref( 'listgedcoms', $listgedcoms );
 $gBitSmarty->assign_by_ref( 'listInfo', $listHash['listInfo'] );
 
-$gBitSystem->display( 'bitpackage:phpgedview/admin_gedcoms.tpl', tra( 'Manage Gedcoms' ) , array( 'display_mode' => 'admin' ));
+$gBitSystem->display( 'bitpackage:phpgedview/admin_gedcoms.tpl', tra( 'Manage Gedcoms' ) );
 ?>

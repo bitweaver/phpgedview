@@ -1,64 +1,56 @@
 <?php
 /***************************************************************************
- * FeedCreator class v1.7.2-ppt
- * originally (c) Kai Blankenhorn
- * www.bitfolge.de
- * kaib@bitfolge.de
- * v1.3 work by Scott Reynen (scott@randomchaos.com) and Kai Blankenhorn
- * v1.5 OPML support by Dirk Clemens
- * v1.7.2-mod on-the-fly feed generation by Fabian Wolf (info@f2w.de)
- * v1.7.2-ppt ATOM 1.0 support by Mohammad Hafiz bin Ismail (mypapit@gmail.com)
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * @author www.bitfolge.de
- * @package PhpGedView
- * @subpackage RSS
- * @version $Id: feedcreator.class.php,v 1.3 2007/05/27 14:45:32 lsces Exp $
- *
- * Changelog:
- *
- * v1.7.2-ppt	11-21-05
- *	added Atom 1.0 support
- *	added enclosure support for RSS 2.0/ATOM 1.0
- *	added docs for v1.7.2-ppt only!
- *
- * v1.7.2-mod	03-12-05
- *	added output function outputFeed for on-the-fly feed generation
- *
- * v1.7.2	10-11-04
- *	license changed to LGPL
- *
- * v1.7.1
- *	fixed a syntax bug
- *	fixed left over debug code
- *
- * v1.7	07-18-04
- * 	added HTML and JavaScript feeds (configurable via CSS) (thanks to Pascal Van Hecke)
- *	added HTML descriptions for all feed formats (thanks to Pascal Van Hecke)
- *	added a switch to select an external stylesheet (thanks to Pascal Van Hecke)
- *	changed default content-type to application/xml
- *	added character encoding setting
- *	fixed numerous smaller bugs (thanks to S�ren Fuhrmann of golem.de)
- *	improved changing ATOM versions handling (thanks to August Trometer)
- *	improved the UniversalFeedCreator's useCached method (thanks to S�ren Fuhrmann of golem.de)
- *	added charset output in HTTP headers (thanks to S�ren Fuhrmann of golem.de)
- *	added Slashdot namespace to RSS 1.0 (thanks to S�ren Fuhrmann of golem.de)
- *
- * See www.bitfolge.de for additional changelog info
- */
+
+FeedCreator class v1.8.0-dev (development)
+http://feedcreator.org
+maintained by Mohammad Hafiz bin Ismail (info@mypapit.net)
+feedcreator.org
+
+originally (c) Kai Blankenhorn
+www.bitfolge.de
+kaib@bitfolge.de
+
+
+v1.3 work by Scott Reynen (scott@randomchaos.com) and Kai Blankenhorn
+v1.5 OPML support by Dirk Clemens
+v1.7.2-mod on-the-fly feed generation by Fabian Wolf (info@f2w.de)
+v1.7.2-ppt ATOM 1.0 support by Mohammad Hafiz bin Ismail (mypapit@gmail.com)
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+****************************************************************************
+
+
+
+
+***************************************************************************/
+
+/*** GENERAL USAGE *********************************************************
+
+Please refer to to /example directory
+
+
+***************************************************************************
+*          A little setup                                                 *
+**************************************************************************/
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
 // your local timezone, set to "" to disable or for GMT
 define("TIME_ZONE","");
 
@@ -69,7 +61,7 @@ define("TIME_ZONE","");
  * Version string.
  **/
 
-define("FEEDCREATOR_VERSION", "FeedCreator 1.7.2-ppt (phpgedview.net)");
+define("FEEDCREATOR_VERSION", "FeedCreator 1.8.0-dev");
 
 
 
@@ -88,7 +80,7 @@ class FeedItem extends HtmlDescribable {
 	/**
 	 * Optional attributes of an item.
 	 */
-	var $author, $authorEmail, $image, $category, $comments, $guid, $source, $creator;
+	var $author, $authorEmail, $authorURL,$image, $category, $categoryScheme, $comments, $guid, $source, $creator, $contributor;
 
 	/**
 	 * Publishing date of an item. May be in one of the following formats:
@@ -106,12 +98,12 @@ class FeedItem extends HtmlDescribable {
 	var $date;
 
 	/**
-	 * Add <enclosure> element tag RSS 2.0
+	 * Add <enclosure> element tag RSS 2.0, supported by ATOM 1.0 too
 	 * modified by : Mohammad Hafiz bin Ismail (mypapit@gmail.com)
 	 *
 	 *
 	 * display :
-	 * <enclosure length="17691" url="http://something.com/picture.jpg" type="images/jpeg" />
+	 * <enclosure length="17691" url="http://something.com/picture.jpg" type="image/jpeg" />
 	 *
 	 */
 	var $enclosure;
@@ -126,6 +118,9 @@ class FeedItem extends HtmlDescribable {
 	 */
 	var $additionalElements = Array();
 
+
+
+
 	// on hold
 	// var $source;
 }
@@ -139,13 +134,21 @@ class EnclosureItem extends HtmlDescribable {
 	var $url,$length,$type;
 
 	/*
+	*
+	* supported by ATOM 1.0 only
+	*
+	*/
+
+	var $language, $title;
+	/*
 	* For use with another extension like Yahoo mRSS
 	* Warning :
 	* These variables might not show up in
 	* later release / not finalize yet!
 	*
+	*
+	* var $width, $height, $title, $description, $keywords, $thumburl;
 	*/
-	var $width, $height, $title, $description, $keywords, $thumburl;
 
 	var $additionalElements = Array();
 
@@ -270,67 +273,20 @@ class FeedHtmlField {
 class UniversalFeedCreator extends FeedCreator {
 	var $_feed;
 
-	function _setMIME($format) {
-		switch (strtoupper($format)) {
-
-			case "2.0":
-				// fall through
-			case "RSS2.0":
-				header('Content-type: text/xml', true);
-				break;
-
-			case "1.0":
-				// fall through
-			case "RSS1.0":
-				header('Content-type: text/xml', true);
-				break;
-
-			case "PIE0.1":
-				header('Content-type: text/xml', true);
-				break;
-
-			case "MBOX":
-				header('Content-type: text/plain', true);
-				break;
-
-			case "OPML":
-				header('Content-type: text/xml', true);
-				break;
-
-			case "ATOM":
-				// fall through: always the latest ATOM version
-			case "ATOM1.0":
-				header('Content-type: application/xml', true);
-				break;
-
-			case "ATOM0.3":
-				header('Content-type: application/xml', true);
-				break;
+	function _setMIME() {
+		//switch (strtoupper($format)) {
 
 
-			case "HTML":
-				header('Content-type: text/html', true);
-				break;
+		header('Content-type: ' . $this->contentType .'; charset=' . $this->encoding, true);
 
-			case "JS":
-				// fall through
-			case "JAVASCRIPT":
-				header('Content-type: text/javascript', true);
-				break;
 
-			default:
-			case "0.91":
-				// fall through
-			case "RSS0.91":
-				header('Content-type: text/xml', true);
-				break;
-		}
 	}
 
 	function _setFormat($format) {
 		switch (strtoupper($format)) {
 
 			case "2.0":
+			case "RSS": //added 8 Jan 2007
 				// fall through
 			case "RSS2.0":
 				$this->_feed = new RSSCreator20();
@@ -343,6 +299,7 @@ class UniversalFeedCreator extends FeedCreator {
 				break;
 
 			case "0.91":
+
 				// fall through
 			case "RSS0.91":
 				$this->_feed = new RSSCreator091();
@@ -482,10 +439,17 @@ class FeedCreator extends HtmlDescribable {
 	var $syndicationURL, $image, $language, $copyright, $pubDate, $lastBuildDate, $editor, $editorEmail, $webmaster, $category, $docs, $ttl, $rating, $skipHours, $skipDays;
 
 	/**
-	* The url of the external xsl stylesheet used to format the naked rss feed.
+	* The url of the external xsl stylesheet used to format the naked syndication feed.
 	* Ignored in the output when empty.
 	*/
 	var $xslStyleSheet = "";
+
+
+	/**
+	* The url of the external css stylesheet used to format the naked syndication feed.
+	* Ignored in the output when empty.
+		*/
+	var $cssStyleSheet = "";
 
 
 	/**
@@ -505,8 +469,17 @@ class FeedCreator extends HtmlDescribable {
 	/**
 	 * This feed's character encoding.
 	 * @since 1.6.1
-	 **/
+	 *
+	 * var $encoding = "ISO-8859-1"; //original :p
+	 */
 	var $encoding = "utf-8";
+
+	/*
+	 * Generator string
+	 *
+	 */
+
+	 var $generator = "info@mypapit.net";
 
 
 	/**
@@ -530,6 +503,15 @@ class FeedCreator extends HtmlDescribable {
 		$this->items[] = $item;
 	}
 
+	/**
+	 *
+	 *
+	 *
+	 **/
+	 function version() {
+
+	 	return FEEDCREATOR_VERSION." (".$this->generator.")";
+	 }
 
 	/**
 	 * Truncates a string to a certain length at the most sensible point.
@@ -577,7 +559,7 @@ class FeedCreator extends HtmlDescribable {
 	 * Syndic8.com.
 	 */
 	function _createGeneratorComment() {
-		return "<!-- generator=\"".FEEDCREATOR_VERSION."\" -->\n";
+		return "<!-- generator=\"".$this->version()."\" -->\n";
 	}
 
 
@@ -597,6 +579,8 @@ class FeedCreator extends HtmlDescribable {
 		}
 		return $ae;
 	}
+
+
 
 	function _createStylesheetReferences() {
 		$xml = "";
@@ -715,6 +699,44 @@ class FeedCreator extends HtmlDescribable {
 		echo $this->createFeed();
 	}
 
+	function setEncoding($encoding="utf-8") {
+		$this->encoding = "utf-8";
+
+	}
+
+	/**
+		 * Creates a string containing all additional namespace specified
+		 */
+
+	function addNamespace($ns,$uri)
+	{
+		$array = array_combine(array($ns),array($uri));
+		$this->namespace = array_merge($array,$this->namespace);
+	}
+
+	function _createNamespace() {
+			$ns = "";
+
+			if (is_array($this->namespace)) {
+				foreach($this->namespace AS $key => $value) {
+					$ns.= " xmlns:$key=\"$value\"";
+				}
+			}
+			return $ns;
+	}
+
+
+
+	/**
+	*
+	* Additional namespace for custom modules and tags
+	*
+	* $key=>$value pair will match namespace xmlns:$key="$value" in tags
+	* EXPERIMENTAL!
+	*
+	*/
+	var $namespace = Array();
+
 
 }
 
@@ -786,7 +808,12 @@ class FeedDate {
 	function rfc822() {
 		//return gmdate("r",$this->unix);
 		$date = gmdate("D, d M Y H:i:s", $this->unix);
-		if (TIME_ZONE!="") $date .= " ".str_replace(":","",TIME_ZONE);
+
+		if (TIME_ZONE!="") {
+			$date .= " ".str_replace(":","",TIME_ZONE);
+		} else {
+			$date .= " ".str_replace(":","","GMT");
+		}
 		return $date;
 	}
 
@@ -908,9 +935,14 @@ class RSSCreator091 extends FeedCreator {
 	 */
 	var $RSSVersion;
 
+	function addNamespace($ns,$uri) {
+		parent::addNamespace($ns,$uri);
+	}
+
 	function RSSCreator091() {
 		$this->_setRSSVersion("0.91");
 		$this->contentType = "application/rss+xml";
+
 	}
 
 	/**
@@ -921,6 +953,8 @@ class RSSCreator091 extends FeedCreator {
 		$this->RSSVersion = $version;
 	}
 
+
+
 	/**
 	 * Builds the RSS feed's text. The feed will be compliant to RDF Site Summary (RSS) 1.0.
 	 * The feed will contain all items previously added in the same order.
@@ -930,7 +964,14 @@ class RSSCreator091 extends FeedCreator {
 		$feed = "<?xml version=\"1.0\" encoding=\"".$this->encoding."\"?>\n";
 		$feed.= $this->_createGeneratorComment();
 		$feed.= $this->_createStylesheetReferences();
-		$feed.= "<rss version=\"".$this->RSSVersion."\">\n";
+
+		if ($this->RSSVersion == "2.0" || $this->RSSVersion == "1.0" ) {
+			$feed.= "<rss version=\"".$this->RSSVersion."\" ". $this->_createNamespace(). ">\n";
+		} else {
+			$feed.= "<rss version=\"".$this->RSSVersion."\">\n";
+		}
+
+
 		$feed.= "    <channel>\n";
 		$feed.= "        <title>".FeedCreator::iTrunc(htmlspecialchars($this->title),100)."</title>\n";
 		$this->descriptionTruncSize = 500;
@@ -938,7 +979,7 @@ class RSSCreator091 extends FeedCreator {
 		$feed.= "        <link>".$this->link."</link>\n";
 		$now = new FeedDate();
 		$feed.= "        <lastBuildDate>".htmlspecialchars($now->rfc822())."</lastBuildDate>\n";
-		$feed.= "        <generator>".FEEDCREATOR_VERSION."</generator>\n";
+		$feed.= "        <generator>". $this->version()."</generator>\n";
 
 		if ($this->image!=null) {
 			$feed.= "        <image>\n";
@@ -990,7 +1031,10 @@ class RSSCreator091 extends FeedCreator {
 		if ($this->skipDays!="") {
 			$feed.= "        <skipDays>".htmlspecialchars($this->skipDays)."</skipDays>\n";
 		}
-		$feed.= $this->_createAdditionalElements($this->additionalElements, "    ");
+
+		if ($this->RSSVersion == "2.0" || $this->RSSVersion == "1.0" ) {
+			$feed.= $this->_createAdditionalElements($this->additionalElements, "    ");
+		}
 
 		for ($i=0;$i<count($this->items);$i++) {
 			$feed.= "        <item>\n";
@@ -999,7 +1043,11 @@ class RSSCreator091 extends FeedCreator {
 			$feed.= "            <description>".$this->items[$i]->getDescription()."</description>\n";
 
 			if ($this->items[$i]->author!="") {
-				$feed.= "            <author>".htmlspecialchars($this->items[$i]->author)."</author>\n";
+				if ($this->items[$i]->authorEmail!="") {
+					$feed.= "            <author> " . htmlspecialchars($this->items[$i]->authorEmail) . " (".htmlspecialchars($this->items[$i]->author).")</author>\n";
+				} else {
+				      $feed.= "            <author> no_email@example.com (".htmlspecialchars($this->items[$i]->author).")</author>\n";
+				}
 			}
 			/*
 			// on hold
@@ -1008,7 +1056,13 @@ class RSSCreator091 extends FeedCreator {
 			}
 			*/
 			if ($this->items[$i]->category!="") {
-				$feed.= "            <category>".htmlspecialchars($this->items[$i]->category)."</category>\n";
+				$feed.= "            <category ";
+
+				if (!empty($this->items[$i]->categoryScheme)) {
+
+					$feed.=" domain=\"". htmlspecialchars($this->items[$i]->categoryScheme)."\"";
+				}
+				$feed.=">".htmlspecialchars($this->items[$i]->category)."</category>\n";
 			}
 			if ($this->items[$i]->comments!="") {
 				$feed.= "            <comments>".htmlspecialchars($this->items[$i]->comments)."</comments>\n";
@@ -1017,21 +1071,29 @@ class RSSCreator091 extends FeedCreator {
 			$itemDate = new FeedDate($this->items[$i]->date);
 				$feed.= "            <pubDate>".htmlspecialchars($itemDate->rfc822())."</pubDate>\n";
 			}
+
+
 			if ($this->items[$i]->guid!="") {
-				$feed.= "            <guid>".htmlspecialchars($this->items[$i]->guid)."</guid>\n";
+				$feed.= "            <guid isPermaLink=\"false\">".htmlspecialchars($this->items[$i]->guid)."</guid>\n";
+			} else {
+			$feed.= "            <guid isPermaLink=\"false\">".htmlspecialchars($this->items[$i]->link)."</guid>\n";
+
 			}
-			$feed.= $this->_createAdditionalElements($this->items[$i]->additionalElements, "        ");
+
+			if ($this->RSSVersion == "2.0" || $this->RSSVersion == "1.0" ) {
+				$feed.= $this->_createAdditionalElements($this->items[$i]->additionalElements, "        ");
+			}
 
 			if ($this->RSSVersion == "2.0" && $this->items[$i]->enclosure != NULL)
-				{
-				                $feed.= "            <enclosure url=\"";
-				                $feed.= $this->items[$i]->enclosure->url;
-				                $feed.= "\" length=\"";
-				                $feed.= $this->items[$i]->enclosure->length;
-				                $feed.= "\" type=\"";
-				                $feed.= $this->items[$i]->enclosure->type;
-				                $feed.= "\"/>\n";
-		            	}
+			{
+				$feed.= "            <enclosure url=\"";
+				$feed.= $this->items[$i]->enclosure->url;
+				$feed.= "\" length=\"";
+				$feed.= $this->items[$i]->enclosure->length;
+				$feed.= "\" type=\"";
+				$feed.= $this->items[$i]->enclosure->type;
+				$feed.= "\"/>\n";
+		        }
 
 
 
@@ -1132,6 +1194,7 @@ class PIECreator01 extends FeedCreator {
 	function AtomCreator10() {
 		$this->contentType = "application/atom+xml";
 		$this->encoding = "utf-8";
+
 	}
 
 	function createFeed() {
@@ -1157,8 +1220,18 @@ class PIECreator01 extends FeedCreator {
 			}
 			$feed.= "    </author>\n";
 		}
-		$feed.= "    <generator>".FEEDCREATOR_VERSION."</generator>\n";
-		$feed.= "<link rel=\"self\" type=\"application/atom+xml\" href=\"". $this->syndicationURL . "\" />\n";
+		if ($this->category!="") {
+
+
+					$feed.= "    <category term=\"" . htmlspecialchars($this->category) . "\" />\n";
+		}
+		if ($this->copyright!="") {
+					$feed.= "    <rights>".FeedCreator::iTrunc(htmlspecialchars($this->copyright),100)."</rights>\n";
+		}
+		$feed.= "    <generator>".$this->version()."</generator>\n";
+
+
+		$feed.= "    <link rel=\"self\" type=\"application/atom+xml\" href=\"". htmlspecialchars($this->syndicationURL). "\" />\n";
 		$feed.= $this->_createAdditionalElements($this->additionalElements, "    ");
 		for ($i=0;$i<count($this->items);$i++) {
 			$feed.= "    <entry>\n";
@@ -1170,18 +1243,82 @@ class PIECreator01 extends FeedCreator {
 			$itemDate = new FeedDate($this->items[$i]->date);
 			$feed.= "        <published>".htmlspecialchars($itemDate->iso8601())."</published>\n";
 			$feed.= "        <updated>".htmlspecialchars($itemDate->iso8601())."</updated>\n";
-			$feed.= "        <id>".htmlspecialchars($this->items[$i]->link)."</id>\n";
+
+
+			$tempguid = $this->items[$i]->link;
+			if ($this->items[$i]->guid!="") {
+				$tempguid = $this->items[$i]->guid;
+			}
+
+			$feed.= "        <id>". htmlspecialchars($tempguid)."</id>\n";
 			$feed.= $this->_createAdditionalElements($this->items[$i]->additionalElements, "        ");
 			if ($this->items[$i]->author!="") {
 				$feed.= "        <author>\n";
 				$feed.= "            <name>".htmlspecialchars($this->items[$i]->author)."</name>\n";
+				if ($this->items[$i]->authorEmail!="") {
+				$feed.= "            <email>".htmlspecialchars($this->items[$i]->authorEmail)."</email>\n";
+				}
+
+				if ($this->items[$i]->authorURL!="") {
+								$feed.= "            <uri>".htmlspecialchars($this->items[$i]->authorURL)."</uri>\n";
+				}
+
 				$feed.= "        </author>\n";
 			}
-			if ($this->items[$i]->description!="") {
-				$feed.= "        <summary>".htmlspecialchars($this->items[$i]->description)."</summary>\n";
+
+			if ($this->items[$i]->category!="") {
+				$feed.= "        <category ";
+
+				if ($this->items[$i]->categoryScheme!="") {
+				   $feed.=" scheme=\"".htmlspecialchars($this->items[$i]->categoryScheme)."\" ";
+				}
+
+				$feed.="term=\"" . htmlspecialchars($this->items[$i]->category) . "\" />\n";
 			}
+
+			if ($this->items[$i]->description!="") {
+
+
+			/*
+			 * ATOM should have at least summary tag, however this implementation may be inaccurate
+			 */
+			 	$tempdesc = $this->items[$i]->getDescription();
+			 	$temptype="";
+
+
+				if ($this->items[$i]->descriptionHtmlSyndicated){
+					$temptype=" type=\"html\"";
+					$tempdesc = $this->items[$i]->getDescription();
+
+				}
+
+				if (empty($this->items[$i]->descriptionTruncSize)) {
+					$feed.= "        <content". $temptype . ">". $tempdesc ."</content>\n";
+				}
+
+
+				$feed.= "        <summary". $temptype . ">". $tempdesc ."</summary>\n";
+			} else {
+
+				$feed.= "	 <summary>no summary</summary>\n";
+
+			}
+
 			if ($this->items[$i]->enclosure != NULL) {
-			$feed.="        <link rel=\"enclosure\" href=\"". $this->items[$i]->enclosure->url ."\" type=\"". $this->items[$i]->enclosure->type."\"  length=\"". $this->items[$i]->enclosure->length . "\" />\n";
+				$feed.="        <link rel=\"enclosure\" href=\"". $this->items[$i]->enclosure->url ."\" type=\"". $this->items[$i]->enclosure->type."\"  length=\"". $this->items[$i]->enclosure->length ."\"";
+
+				if ($this->items[$i]->enclosure->language != ""){
+					 $feed .=" xml:lang=\"". $this->items[$i]->enclosure->language . "\" ";
+				}
+
+				if ($this->items[$i]->enclosure->title != ""){
+					 $feed .=" title=\"". $this->items[$i]->enclosure->title . "\" ";
+				}
+
+				$feed .=" /> \n";
+
+
+
 			}
 			$feed.= "    </entry>\n";
 		}
@@ -1239,7 +1376,7 @@ class AtomCreator03 extends FeedCreator {
 			}
 			$feed.= "    </author>\n";
 		}
-		$feed.= "    <generator>".FEEDCREATOR_VERSION."</generator>\n";
+		$feed.= "    <generator>".$this->version()."</generator>\n";
 		$feed.= $this->_createAdditionalElements($this->additionalElements, "    ");
 		for ($i=0;$i<count($this->items);$i++) {
 			$feed.= "    <entry>\n";
@@ -1260,7 +1397,8 @@ class AtomCreator03 extends FeedCreator {
 				$feed.= "        </author>\n";
 			}
 			if ($this->items[$i]->description!="") {
-				$feed.= "        <summary>".htmlspecialchars($this->items[$i]->description)."</summary>\n";
+				$feed.= "        <summary>".htmlspecialchars( strip_tags($this->items[$i]->description) )."</summary>\n";
+
 			}
 			$feed.= "    </entry>\n";
 		}
@@ -1281,7 +1419,7 @@ class MBOXCreator extends FeedCreator {
 
 	function MBOXCreator() {
 		$this->contentType = "text/plain";
-		$this->encoding = "utf-8";
+		$this->encoding = "ISO-8859-15";
 	}
 
 	function qp_enc($input = "", $line_max = 76) {
@@ -1374,7 +1512,7 @@ class OPMLCreator extends FeedCreator {
 		$feed = "<?xml version=\"1.0\" encoding=\"".$this->encoding."\"?>\n";
 		$feed.= $this->_createGeneratorComment();
 		$feed.= $this->_createStylesheetReferences();
-		$feed.= "<opml xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n";
+		$feed.= "<opml xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" version=\"1.0\">\n";
 		$feed.= "    <head>\n";
 		$feed.= "        <title>".htmlspecialchars($this->title)."</title>\n";
 		if ($this->pubDate!="") {
@@ -1400,7 +1538,12 @@ class OPMLCreator extends FeedCreator {
 			$feed.= " text=\"".$title."\"";
 			//$feed.= " description=\"".htmlspecialchars($this->items[$i]->description)."\"";
 			$feed.= " url=\"".htmlspecialchars($this->items[$i]->link)."\"";
-			$feed.= "/>\n";
+
+			if ($this->items[$i]->syndicationURL !="") {
+				$feed.= " xmlUrl=\"" . $this->items[$i]->syndicationURL . "\"";
+			}
+
+			$feed.= " />\n";
 		}
 		$feed.= "    </body>\n";
 		$feed.= "</opml>\n";
@@ -1599,4 +1742,10 @@ class JSCreator extends HTMLCreator {
 	}
 
 }
+
+
+
+
+
+
 ?>

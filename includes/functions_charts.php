@@ -3,7 +3,7 @@
  * Functions used for charts
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: functions_charts.php,v 1.6 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: functions_charts.php,v 1.7 2008/07/07 17:30:13 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -47,7 +47,7 @@ function print_sosa_number($sosa, $pid = "", $arrowDirection = "up") {
 	if ($arrowDirection=="blank") $visibility = "hidden";
 	else $visibility = "normal";
 	print "<td class=\"subheaders center\" style=\"vertical-align: middle; text-indent: 0px; margin-top: 0px; white-space: nowrap; visibility: $visibility;\">";
-	print "&lrm;$personLabel&lrm;";
+	print getLRM() . $personLabel . getLRM();
 	if ($sosa != "1" && $pid != "") {
 		if ($arrowDirection=="left") $dir = 0;
 		else if ($arrowDirection=="right") $dir = 1;
@@ -112,7 +112,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	print_family_header($famid);
 
 	// -- get the new record and parents if in editing show changes mode
-	if (($gGedcom->isEditable()) && (isset($pgv_changes[$famid . "_" . $GEDCOM]))) {
+	if (PGV_USER_CAN_EDIT && isset($pgv_changes[$famid . "_" . $GEDCOM])) {
 		$newrec = find_updated_record($famid);
 		$newparents = find_parents_in_record($newrec);
 	}
@@ -182,7 +182,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
 	print "</tr></table>\n\n";
 	if ($sosa!=0) {
 		print "<a href=\"family.php?famid=$famid\" class=\"details1\">";
-		if ($SHOW_ID_NUMBERS) print "&lrm;($famid)&lrm;&nbsp;&nbsp;";
+		if ($SHOW_ID_NUMBERS) print getLRM() . "($famid)" . getLRM() . "&nbsp;&nbsp;";
 		else print str_repeat("&nbsp;", 10);
 		if (showFact("MARR", $famid)) print_simple_fact($family->getGedcomRecord(), "MARR", $wife->getXref()); else print $pgv_lang["private"];
 		print "</a>";
@@ -263,7 +263,7 @@ function print_family_parents($famid, $sosa = 0, $label="", $parid="", $gparid="
  * @param string $label optional indi label (descendancy booklet)
  */
 function print_family_children($famid, $childid = "", $sosa = 0, $label="", $personcount="1") {
-	global $pgv_lang, $pbwidth, $pbheight, $view, $show_famlink, $show_cousins;
+	global $pgv_lang, $factarray, $pbwidth, $pbheight, $view, $show_famlink, $show_cousins;
 	global $PGV_IMAGE_DIR, $PGV_IMAGES, $show_changes, $pgv_changes, $GEDCOM, $SHOW_ID_NUMBERS, $TEXT_DIRECTION;
 
 	$children = get_children_ids($famid);
@@ -353,7 +353,7 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 						if ($famid) {
 							print "<br />";
 							print "<a class=\"details1\" href=\"family.php?famid=$famid\">";
-							if ($SHOW_ID_NUMBERS) print "&lrm;&nbsp;($famid)&nbsp;&lrm;";
+							if ($SHOW_ID_NUMBERS) print getLRM() . "&nbsp;($famid)&nbsp;" . getLRM();
 							print "</a>";
 						}
 						print "</td>\n";
@@ -421,8 +421,8 @@ function print_family_children($famid, $childid = "", $sosa = 0, $label="", $per
 	   print_help_link("add_child_help", "qm", "add_child_to_family");
 		print "<a href=\"javascript:;\" onclick=\"return addnewchild('$famid','');\">" . $pgv_lang["add_child_to_family"] . "</a>";
 		print "<span style='white-space:nowrap;'>";
-		print " <a href=\"javascript:;\" onclick=\"return addnewchild('$famid','M');\">[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sex"]["small"] . "\" title=\"" . $pgv_lang["son"] . "\" alt=\"" . $pgv_lang["son"] . "\" class=\"sex_image\" />]</a>";
-		print " <a href=\"javascript:;\" onclick=\"return addnewchild('$famid','F');\">[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sexf"]["small"] . "\" title=\"" . $pgv_lang["daughter"] . "\" alt=\"" . $pgv_lang["daughter"] . "\" class=\"sex_image\" />]</a>";
+		print " <a href=\"javascript:;\" onclick=\"return addnewchild('$famid','M');\">[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sex"]["small"] . "\" title=\"" . $pgv_lang["son"] . "\" alt=\"" . $pgv_lang["son"] . "\" class=\"gender_image\" />]</a>";
+		print " <a href=\"javascript:;\" onclick=\"return addnewchild('$famid','F');\">[<img src=\"$PGV_IMAGE_DIR/" . $PGV_IMAGES["sexf"]["small"] . "\" title=\"" . $pgv_lang["daughter"] . "\" alt=\"" . $pgv_lang["daughter"] . "\" class=\"gender_image\" />]</a>";
 		print "</span>";
    }
 }
@@ -581,7 +581,7 @@ function print_family_facts($famid, $sosa = 0) {
 			}
 		}
 		if ((count($indifacts) > 0) || (count($otheritems) > 0)) {
-			usort($indifacts, "compare_facts");
+			sort_facts($indifacts);
 			print "\n\t<span class=\"subheaders\">" . $pgv_lang["family_group_info"];
 			if ($SHOW_ID_NUMBERS and $famid != "") print "&nbsp;&nbsp;&nbsp;($famid)";
 			print "</span><br />\n\t<table class=\"facts_table\">";
@@ -690,33 +690,30 @@ function print_sosa_family($famid, $childid, $sosa, $label="", $parid="", $gpari
  * @return string $rootid validated root ID
  */
 function check_rootid($rootid) {
-	global $user, $GEDCOM, $GEDCOM_ID_PREFIX, $PEDIGREE_ROOT_ID, $USE_RIN;
+	global $PEDIGREE_ROOT_ID, $USE_RIN;
 	// -- if the $rootid is not already there then find the first person in the file and make him the root
-	if (empty($rootid)) {
-		$rootid = find_first_person();
-	}
-/*		$user = getUser(getUserName());
-		if ((!empty($user["rootid"][$GEDCOM])) && (find_person_record($user["rootid"][$GEDCOM]))) $rootid = $user["rootid"][$GEDCOM];
-		else if ((!empty($user["gedcomid"][$GEDCOM])) && (find_person_record($user["gedcomid"][$GEDCOM]))) $rootid = $user["gedcomid"][$GEDCOM];
-		// -- allow users to overide default id in the config file.
-		if (empty($rootid)) {
-			$PEDIGREE_ROOT_ID = trim($PEDIGREE_ROOT_ID);
-			if ((!empty($PEDIGREE_ROOT_ID)) && (find_person_record($PEDIGREE_ROOT_ID))) $rootid = $PEDIGREE_ROOT_ID;
-			else $rootid = find_first_person();
-		}
-	}
-*/
-	if ($USE_RIN) {
-		$indirec = find_person_record($rootid);
-		if ($indirec == false) $rootid = find_rin_id($rootid);
-	} else {
-		if (preg_match("/[A-Za-z]+/", $rootid) == 0) {
-			$GEDCOM_ID_PREFIX = trim($GEDCOM_ID_PREFIX);
-			$rootid = $GEDCOM_ID_PREFIX . $rootid;
+	if (!find_person_record($rootid)) {
+		if (find_person_record(PGV_USER_ROOT_ID)) {
+			$rootid=PGV_USER_ROOT_ID;
+		} else {
+			if (find_person_record(PGV_USER_GEDCOM_ID)) {
+				$rootid=PGV_USER_GEDCOM_ID;
+			} else {
+				if (find_person_record(trim($PEDIGREE_ROOT_ID))) {
+					$rootid=trim($PEDIGREE_ROOT_ID);
+				} else {
+					$rootid=find_first_person();
+				}
+			}
 		}
 	}
 
-	return strtoupper($rootid);
+	if ($USE_RIN) {
+		$indirec = find_person_record($rootid);
+		if ($indirec == false) $rootid = find_rin_id($rootid);
+	}
+
+	return $rootid;
 }
 
 /**
@@ -733,7 +730,7 @@ function ancestry_array($rootid, $maxgen=0) {
 	global $PEDIGREE_GENERATIONS, $SHOW_EMPTY_BOXES;
 	// -- maximum size of the id array
 	if ($maxgen==0) $maxgen = $PEDIGREE_GENERATIONS;
-	$treesize = pow(2, ($maxgen+1));
+	$treesize = pow(2, ($maxgen));
 
 	$treeid = array();
 	$treeid[0] = "";
@@ -745,10 +742,30 @@ function ancestry_array($rootid, $maxgen=0) {
 		if (!empty($treeid[$i])) {
 			$person = Person::getInstance($treeid[$i]);
 			$families = $person->getChildFamilies();
-			foreach($families as $famid=>$family) {
-				/*@var $family Family */
-				if (empty($treeid[($i * 2)])) $treeid[($i * 2)] = $family->getHusbId(); // -- set father id
-				if (empty($treeid[($i * 2) + 1])) $treeid[($i * 2) + 1] = $family->getWifeId(); // -- set mother id
+			$family=false;
+			if (count($families)>1) {
+				// If there is more than one FAMC record, choose the preferred parents:
+				$indirec=$person->getGedcomRecord();
+				// a) records with "2 _PRIMARY"
+				foreach ($families as $famid=>$fam)
+					if (empty($family) && preg_match("/\n\s*1\s+FAMC\s+@{$famid}@\s*\n(\s*[2-9].*\n)*(\s*2\s+_PRIMARY Y\b)/i", $indirec))
+					$family=$fam;
+				// b) records with "2 PEDI birt"
+				foreach ($families as $famid=>$fam)
+					if (empty($family) && preg_match("/\n\s*1\s+FAMC\s+@{$famid}@\s*\n(\s*[2-9].*\n)*(\s*2\s+PEDI\s+birth?\b)/i", $indirec))
+					$family=$fam;
+				// c) records with no "2 PEDI"
+				foreach ($families as $famid=>$fam)
+					if (empty($family) && !preg_match("/\n\s*1\s+FAMC\s+@{$famid}@\s*\n(\s*[2-9].*\n)*(\s*2\s+PEDI\b)/i", $indirec))
+					$family=$fam;
+			}
+			// d) any record
+			if (empty($family) && count($families>0))
+				$family=reset($families);
+			// Store the prefered parents
+			if (!empty($family)) {
+				$treeid[($i * 2)] = $family->getHusbId();
+				$treeid[($i * 2) + 1] = $family->getWifeId();
 			}
 		}
 	}
@@ -774,7 +791,7 @@ function pedigree_array($rootid) {
 	$treeid = ancestry_array($rootid);
 	$treesize = count($treeid)-1;
 	//-- ancestry_array puts everyone at $i+1
-	for($i=0; $i<$treesize-1; $i++) $treeid[$i] = $treeid[$i+1]; 
+	for($i=0; $i<$treesize; $i++) $treeid[$i] = $treeid[$i+1];
 
 	// -- detect the highest generation that actually has a person in it and use it for the pedigree generations
 	if (!$SHOW_EMPTY_BOXES) {
@@ -836,159 +853,145 @@ function print_url_arrow($id, $url, $label, $dir=2) {
  *
  * @param string $sosa sosa number
  */
-function get_sosa_name( $sosa ) {
+function get_sosa_name($sosa) {
 	global $LANGUAGE, $pgv_lang;
 
 	if ($sosa<2) return "";
 	$sosaname = "";
 	$sosanr = floor($sosa/2);
-	$gen = floor( log($sosanr) / log(2) );
+	$gen = floor(log($sosanr) / log(2));
 
     // first try a generic algorithm, this is later overridden
 	// by language specific algorithms.
-	if (isset($pgv_lang["sosa_$sosa"]) && !empty($pgv_lang["sosa_$sosa"]))
-	{
-	    $sosaname = $pgv_lang["sosa_$sosa"];
-	}
-	else if($gen > 2)
-	{
-        $paternal = (floor($sosa/pow(2,$gen)) == 2);
-		if ($sosa%2){
-			if($paternal && !empty($pgv_lang["sosa_paternal_male_n_generations"])) {
-				$sosaname = sprintf($pgv_lang["sosa_paternal_male_n_generations"], $gen+1, $gen, $gen-1);
+	if (!empty($pgv_lang["sosa_$sosa"])) $sosaname = $pgv_lang["sosa_$sosa"];
+	else if($gen > 2) {
+		switch ($LANGUAGE) {
+		case "danish":
+		case "norwegian":
+		case "swedish":
+			$sosaname = "";
+			$addname = "";
+			$father = strtolower($pgv_lang["father"]);
+			$mother = strtolower($pgv_lang["mother"]);
+			$grand = "be".($LANGUAGE == "danish"?"dste":"ste");
+			$great = "olde";
+			$tip = "tip".($LANGUAGE == "danish"?"-":"p-");
+			for($i = $gen; $i > 2; $i--) {
+				$sosaname .= $tip;
 			}
-			else if ( !empty($pgv_lang["sosa_maternal_male_n_generations"])){
-				$sosaname = sprintf($pgv_lang["sosa_maternal_male_n_generations"], $gen+1, $gen, $gen-1);
+			if ($gen >= 2) $sosaname .= $great;
+			if ($gen == 1) $sosaname .= $grand;
+	
+			for ($i=$gen; $i>0; $i--){
+				if (!(floor($sosa/(pow(2,$i)))%2)) $addname .= $father;
+				else $addname .= $mother;
+				if (($gen%2 && !($i%2)) || (!($gen%2) && $i%2)) $addname .= "s ";
 			}
-		}
-		else {
-			if($paternal && !empty($pgv_lang["sosa_paternal_female_n_generations"])) {
-				$sosaname = sprintf($pgv_lang["sosa_paternal_female_n_generations"], $gen+1, $gen, $gen-1);
+			if ($LANGUAGE == "swedish") $sosaname = $addname;
+			if ($sosa%2==0){
+				$sosaname .= $father;
+				if ($gen>0) $addname .= $father;
+			} else {
+				$sosaname .= $mother;
+				if ($gen>0) $addname .= $mother;
 			}
-			else if (!empty($pgv_lang["sosa_maternal_female_n_generations"])){
-				$sosaname = sprintf($pgv_lang["sosa_maternal_female_n_generations"], $gen+1, $gen, $gen-1);
+			$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
+			if ($LANGUAGE != "swedish") if (!empty($addname)) $sosaname .= ($gen>5?"<br />&nbsp;&nbsp;&nbsp;&nbsp;":"")." <small>(".$addname.")</small>";
+			break;
+	
+		case "dutch":
+			// reference: http://nl.wikipedia.org/wiki/Voorouder
+			// Our numbers are 2 less than those shown in the article.  We number parents
+			// as generation zero where the article numbers them as generation 2.
+		    $sosaname = "";
+		    // Please leave the following strings untranslated
+		    if ($gen & 512) break;					// 512 or higher
+			if ($gen & 256) $sosaname .= "hoog";	// 256 to 511
+			if ($gen & 128) $sosaname .= "opper";	// 128 to 511
+			if ($gen & 64) $sosaname .= "aarts";	// 64 to 511
+			if ($gen & 32) $sosaname .= "voor";		// 32 to 511
+			if ($gen & 16) $sosaname .= "edel";		// 16 to 511
+			if ($gen & 8) $sosaname .= "stam";		// 8 to 511
+			if ($gen & 4) $sosaname .= "oud";		// 4 to 511
+			$gen = $gen & 3;
+			if ($gen == 3) $sosaname .= "betovergroot";
+			if ($gen == 2) $sosaname .= "overgroot";
+			if ($gen == 1) $sosaname .= "groot";
+			if ($sosa%2==0) $sosaname .= $pgv_lang["father"];
+			else $sosaname .= $pgv_lang["mother"];
+			$sosaname = strtolower($sosaname);
+			break;
+	
+		case "finnish":
+		    $sosaname = "";
+			$father = str2lower($pgv_lang["father"]);
+			$mother = str2lower($pgv_lang["mother"]);
+	//		$father = "isä";
+	//		$mother = "äiti";
+	//		$pgv_lang["sosa_2"]= "äidin";	//Grand (mother)
+			for ($i=$gen; $i>0; $i--){
+				if (!(floor($sosa/(pow(2,$i)))%2)) $sosaname .= $father."n";
+	//			else $sosaname .= $pgv_lang["sosa_2"];
+				else $sosaname .= substr($mother, 0,3)."din";
 			}
-		}
-    }
-
-	if ($LANGUAGE == "danish" || $LANGUAGE == "norwegian" || $LANGUAGE == "swedish") {
-		$sosaname = "";
-		$addname = "";
-		$father = strtolower($pgv_lang["father"]);
-		$mother = strtolower($pgv_lang["mother"]);
-		$grand = "be".($LANGUAGE == "danish"?"dste":"ste");
-		$great = "olde";
-		$tip = "tip".($LANGUAGE == "danish"?"-":"p-");
-		for($i = $gen; $i > 2; $i--) {
-			$sosaname .= $tip;
-		}
-		if ($gen >= 2) $sosaname .= $great;
-		if ($gen == 1) $sosaname .= $grand;
-
-		for ($i=$gen; $i>0; $i--){
-			if (!(floor($sosa/(pow(2,$i)))%2)) $addname .= $father;
-			else $addname .= $mother;
-			if (($gen%2 && !($i%2)) || (!($gen%2) && $i%2)) $addname .= "s ";
-		}
-		if ($LANGUAGE == "swedish") $sosaname = $addname;
-		if (!($sosa%2)){
-			$sosaname .= $father;
-			if ($gen>0) $addname .= $father;
-		}
-		else {
-			$sosaname .= $mother;
-			if ($gen>0) $addname .= $mother;
-		}
-		$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
-		if ($LANGUAGE != "swedish") if (!empty($addname)) $sosaname .= ($gen>5?"<br />&nbsp;&nbsp;&nbsp;&nbsp;":"")." <small>(".$addname.")</small>";
-	}
-	if ($LANGUAGE == "dutch") {
-	    $sosaname = "";
-		if ($gen & 256) $sosaname .= $pgv_lang["sosa_11"];
-		if ($gen & 128) $sosaname .= $pgv_lang["sosa_10"];
-		if ($gen & 64) $sosaname .= $pgv_lang["sosa_9"];
-		if ($gen & 32) $sosaname .= $pgv_lang["sosa_8"];
-		if ($gen & 16) $sosaname .= $pgv_lang["sosa_7"];
-		if ($gen & 8) $sosaname .= $pgv_lang["sosa_6"];
-		if ($gen & 4) $sosaname .= $pgv_lang["sosa_5"];
-		$gen = $gen - floor($gen / 4)*4;
-		if ($gen == 3) $sosaname .= $pgv_lang["sosa_4"].$pgv_lang["sosa_3"].$pgv_lang["sosa_2"];
-		if ($gen == 2) $sosaname .= $pgv_lang["sosa_3"].$pgv_lang["sosa_2"];
-		if ($gen == 1) $sosaname .= $pgv_lang["sosa_2"];
-		if ($sosa%2) $sosaname .= strtolower($pgv_lang["mother"]);
-		else $sosaname .= strtolower($pgv_lang["father"]);
-		$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
-		return $sosaname;
-	}
-	if ($LANGUAGE == "finnish") {
-	    $sosaname = "";
-		$father = str2lower($pgv_lang["father"]);
-		$mother = str2lower($pgv_lang["mother"]);
-//		$father = "isä";
-//		$mother = "äiti";
-//		$pgv_lang["sosa_2"]= "äidin";	//Grand (mother)
-		for ($i=$gen; $i>0; $i--){
-			if (!(floor($sosa/(pow(2,$i)))%2)) $sosaname .= $father."n";
-//			else $sosaname .= $pgv_lang["sosa_2"];
-			else $sosaname .= substr($mother, 0,3)."din";
-		}
-		if (!($sosa%2)) $sosaname .= $father;
-		else $sosaname .= $mother;
-		if (substr($sosaname, 0,1)=="i") $sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
-		else $sosaname = str2upper(substr($mother, 0,2)).substr($sosaname,2);
-	}
-	if ($LANGUAGE == "german") {
-	    $sosaname = "";
-		for($i = $gen; $i > 1; $i--) {
-			$sosaname .= "Ur-";
-		}
-		if ($gen >= 1) $sosaname .= "Groß";
-		if (!($sosa%2)) $sosaname .= strtolower($pgv_lang["father"]);
-		else $sosaname .= strtolower($pgv_lang["mother"]);
-		$sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
-	}
-	if ($LANGUAGE == "hebrew") {
-	    $sosaname = "";
-		$addname = "";
-		$father = $pgv_lang["father"];
-		$mother = $pgv_lang["mother"];
-		$greatf = $pgv_lang["sosa_22"];
-		$greatm = $pgv_lang["sosa_21"];
-		$of = $pgv_lang["sosa_23"];
-		$grandfather = $pgv_lang["sosa_4"];
-		$grandmother = $pgv_lang["sosa_5"];
-//		$father = "Aba";
-//		$mother = "Ima";
-//		$grandfather = "Saba";
-//		$grandmother = "Savta";
-//		$greatf = " raba";
-//		$greatm = " rabta";
-//		$of = " shel ";
-		for ($i=$gen; $i>=0; $i--){
-			if ($i==0){
-				if (!($sosa%2)) $addname .= "f";
+			if ($sosa%2==0) $sosaname .= $father;
+			else $sosaname .= $mother;
+			if (substr($sosaname, 0,1)=="i") $sosaname = str2upper(substr($sosaname, 0,1)).substr($sosaname,1);
+			else $sosaname = str2upper(substr($mother, 0,2)).substr($sosaname,2);
+			break;
+	
+		case "hebrew":
+		    $sosaname = "";
+			$addname = "";
+			$father = $pgv_lang["father"];
+			$mother = $pgv_lang["mother"];
+			$greatf = $pgv_lang["sosa_22"];
+			$greatm = $pgv_lang["sosa_21"];
+			$of = $pgv_lang["sosa_23"];
+			$grandfather = $pgv_lang["sosa_4"];
+			$grandmother = $pgv_lang["sosa_5"];
+	//		$father = "Aba";
+	//		$mother = "Ima";
+	//		$grandfather = "Saba";
+	//		$grandmother = "Savta";
+	//		$greatf = " raba";
+	//		$greatm = " rabta";
+	//		$of = " shel ";
+			for ($i=$gen; $i>=0; $i--) {
+				if ($i==0) {
+					if (!($sosa%2)) $addname .= "f";
+					else $addname .= "m";
+				}
+				else if (!(floor($sosa/(pow(2,$i)))%2)) $addname .= "f";
 				else $addname .= "m";
+				if ($i==0 || strlen($addname)==3) {
+					if (strlen($addname)==3) {
+						if (substr($addname, 2,1)=="f") $addname = $grandfather.$greatf;
+						else $addname = $grandmother.$greatm;
+					}
+					else if (strlen($addname)==2) {
+						if (substr($addname, 1,1)=="f") $addname = $grandfather;
+						else $addname = $grandmother;
+					}
+					else {
+						if ($addname=="f") $addname = $father;
+						else $addname = $mother;
+					}
+					$sosaname = $addname.($i<$gen-2?$of:"").$sosaname;
+					$addname="";
+				}
 			}
-			else if (!(floor($sosa/(pow(2,$i)))%2)) $addname .= "f";
-			else $addname .= "m";
-			if ($i==0 || strlen($addname)==3){
-				if (strlen($addname)==3){
-					if (substr($addname, 2,1)=="f") $addname = $grandfather.$greatf;
-					else $addname = $grandmother.$greatm;
-				}
-				else if (strlen($addname)==2){
-					if (substr($addname, 1,1)=="f") $addname = $grandfather;
-					else $addname = $grandmother;
-				}
-				else {
-					if ($addname=="f") $addname = $father;
-					else $addname = $mother;
-				}
-				$sosaname = $addname.($i<$gen-2?$of:"").$sosaname;
-				$addname="";
+			break;
+	
+		default:
+			$paternal = (floor($sosa/pow(2,$gen)) == 2) ? "paternal" : "maternal";
+			$male = ($sosa%2==0) ? "male" : "female";
+			if (!empty($pgv_lang["sosa_{$paternal}_{$male}_n_generations"])) {
+				$sosaname = sprintf($pgv_lang["sosa_{$paternal}_{$male}_n_generations"], $gen+1, $gen, $gen-1);
 			}
-		}
+	    }
 	}
+
 	if (!empty($sosaname)) return "$sosaname<!-- sosa=$sosa nr=$sosanr gen=$gen -->";
 	else return  "<!-- sosa=$sosa nr=$sosanr gen=$gen -->";
 }

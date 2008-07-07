@@ -22,8 +22,13 @@
 //   The use of this software is at the risk of the user.
 //
 // --------------------------------------------------------------------------------
-// $Id: pclzip.lib.php,v 1.2 2006/10/01 22:44:03 lsces Exp $
+// $Id: pclzip.lib.php,v 1.3 2008/07/07 17:30:15 lsces Exp $
 // --------------------------------------------------------------------------------
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
 
   // ----- Constants
   define( 'PCLZIP_READ_BLOCK_SIZE', 2048 );
@@ -56,7 +61,8 @@
   //       Samples :
   // define( 'PCLZIP_TEMPORARY_DIR', '/temp/' );
   // define( 'PCLZIP_TEMPORARY_DIR', 'C:/Temp/' );
-  define( 'PCLZIP_TEMPORARY_DIR', '' );
+  global $INDEX_DIRECTORY;
+  define( 'PCLZIP_TEMPORARY_DIR', $INDEX_DIRECTORY );
 
 // --------------------------------------------------------------------------------
 // ***** UNDER THIS LINE NOTHING NEEDS TO BE MODIFIED *****

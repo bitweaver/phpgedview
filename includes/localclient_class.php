@@ -20,8 +20,13 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: localclient_class.php,v 1.4 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: localclient_class.php,v 1.5 2008/07/07 17:30:13 lsces Exp $
  */
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
 
 require_once 'includes/serviceclient_class.php';
 
@@ -54,9 +59,14 @@ class LocalClient extends ServiceClient {
 	
 	/**
 	 * merge a local gedcom record with the information from the remote site
+	 * @param string $xref		the remote ID to merge with
+	 * @param string $localrec	the local gedcom record to merge the remote record with
+	 * @param boolean $isStub	whether or not this is a stub record
+	 * @param boolean $firstLink	is this the first time this record is being linked
 	 */
 	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
 		global $FILE, $GEDCOM, $indilist, $famlist, $sourcelist, $otherlist;
+		global $gGedcom;
 		
 		$localkey = $this->xref.":".$xref;
 		//-- check the memory cache
@@ -79,8 +89,8 @@ class LocalClient extends ServiceClient {
 			{
 				$pid = trim($match[1]);
 				$localrec = $this->UpdateFamily($localrec,$gedrec);
+				//-- restore the correct id since it may have been changed by the UpdateFamily method
 				$localrec = preg_replace("/0 @(.*)@/", "0 @$pid@", $localrec);
-//				print $localrec;
 				replace_gedrec($pid,$localrec);
 			}
 		}
@@ -96,25 +106,25 @@ class LocalClient extends ServiceClient {
 			if (isset($indilist[$xref])) {
 				$indi = $indilist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $gGedcom->mGEDCOMId;
+				$indi["gedfile"] = $gGedcom[$GEDCOM]["id"];
 				$indilist[$localkey] = $indi;
 			}
 			if (isset($famlist[$xref])) {
 				$indi = $famlist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $gGedcom->mGEDCOMId;
+				$indi["gedfile"] = $gGedcom[$GEDCOM]["id"];
 				$famlist[$localkey] = $indi;
 			}
 			if (isset($otherlist[$xref])) {
 				$indi = $otherlist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $gGedcom->mGEDCOMId;
+				$indi["gedfile"] = $gGedcom[$GEDCOM]["id"];
 				$otherlist[$localkey] = $indi;
 			}
 			if (isset($sourcelist[$xref])) {
 				$indi = $sourcelist[$xref];
 				$indi["gedcom"] = $localrec;
-				$indi["gedfile"] = $gGedcom->mGEDCOMId;
+				$indi["gedfile"] = $gGedcom[$GEDCOM]["id"];
 				$sourcelist[$localkey] = $indi;
 			}
 		}

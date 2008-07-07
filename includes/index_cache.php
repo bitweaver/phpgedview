@@ -3,7 +3,7 @@
  * Index caching functions
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_cache.php,v 1.2 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: index_cache.php,v 1.3 2008/07/07 17:30:14 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -41,6 +41,9 @@ function loadCachedBlock($block, $index) {
 	//-- ignore caching when DEBUG is set
 	if (isset($DEBUG) && $DEBUG==true) return false;
 
+	//-- ignore caching for logged in users
+	if (PGV_USER_ID) return false;
+
 	//-- ignore cache when its life is not configured or when its life is zero
 	$cacheLife = 0;
 	if (isset($block[1]['cache'])) $cacheLife = $block[1]['cache'];
@@ -49,23 +52,6 @@ function loadCachedBlock($block, $index) {
 	}
 	if ($cacheLife==0) return false;
 
-	//-- ignore caching for logged in users 
-	$uname = getUserName();
-	if (!empty($uname)) return false;
-
-	//-- check for cache file
-	if (!file_exists($INDEX_DIRECTORY."/cache")) {
-		mkdir($INDEX_DIRECTORY."/cache");
-		return false;
-	}
-	if (!file_exists($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE])) {
-		mkdir($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]);
-		return false;
-	}
-	if (!file_exists($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM)) {
-		mkdir($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM);
-		return false;
-	}
 	$fname = $INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM."/".$index."_".$block[0];
 	if (file_exists($fname)) {
 		// Check for expired cache (<0: no expiry), 0: immediate, >0: expires in x days)  Zero already checked
@@ -87,7 +73,7 @@ function loadCachedBlock($block, $index) {
  * @param array $block	[0]:name of the block to save, [1]:block's configuration
  * @param int $index	An id for this block in the case of multiple instances of the same block on the page
  * @param string $content	the actual content to save in the cache
- * @return boolean  returns false if the block could not be loaded from cache
+ * @return boolean  returns false if the block could not be saved to cache
  */
 function saveCachedBlock($block, $index, $content) {
 	global $PGV_BLOCKS, $INDEX_DIRECTORY, $DEBUG, $lang_short_cut, $LANGUAGE, $GEDCOM;
@@ -95,30 +81,35 @@ function saveCachedBlock($block, $index, $content) {
 	//-- ignore caching when DEBUG is set
 	if (isset($DEBUG) && $DEBUG==true) return false;
 
+	//-- ignore caching for logged in users
+	if (PGV_USER_ID) return false;
+
 	//-- ignore cache when its life is not configured or when its life is zero
 	$cacheLife = 0;
 	if (isset($block[1]['cache'])) $cacheLife = $block[1]['cache'];
 	else if (isset($PGV_BLOCKS[$block[0]]['config']['cache'])) $cacheLife = $PGV_BLOCKS[$block[0]]['config']['cache'];
 	if ($cacheLife==0) return false;
+	
+	$fname = $INDEX_DIRECTORY."/cache";
+	@mkdir($fname);
+	//--many people are not going to like automatically setting the permissions
+	//--777 is considered a security risk, if we can create the directory we should be able to write to it
+	//--do we need a windows specific check here instead?
+	//@chmod($fname, 0777);	// Make SURE this dir. has 0777 perm. (so Admin can delete it without "root" access)
 
-	//-- ignore caching for logged in users 
-	$uname = getUserName();
-	if (!empty($uname)) return false;
+	$fname .= "/".$lang_short_cut[$LANGUAGE];
+	@mkdir($fname);
+	//@chmod($fname, 0777);
 
-	//-- check for cache file
-	if (!file_exists($INDEX_DIRECTORY."/cache")) {
-		mkdir($INDEX_DIRECTORY."/cache");
-	}
-	if (!file_exists($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE])) {
-		mkdir($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]);
-	}
-	if (!file_exists($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM)) {
-		mkdir($INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM);
-	}
-	$fname = $INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM."/".$index."_".$block[0];
-	$fp = fopen($fname, "wb");
-	fwrite($fp, $content);
-	fclose($fp);
+	$fname .= "/".$GEDCOM;
+	@mkdir($fname);
+	//@chmod($fname, 0777);
+
+	$fname .= "/".$index."_".$block[0];
+	$fp = @fopen($fname, "wb");
+	if (!$fp) return false;
+	@fwrite($fp, $content);
+	@fclose($fp);
 	return true;
 }
 
@@ -133,13 +124,13 @@ function clearCache() {
 		if (file_exists($fname)) {
 			$dir = dir($fname);
 			while (false !== ($entry = $dir->read())) {
-			   if ($entry!="." && $entry!="..") unlink($fname."/".$entry);
+			   if ($entry!="." && $entry!="..") @unlink($fname."/".$entry);
 			}
 		}
 	}
 	
 	if (file_exists($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php")) {
-		unlink($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php");
+		@unlink($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php");
 	}
 }
 ?>

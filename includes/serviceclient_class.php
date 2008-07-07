@@ -3,7 +3,7 @@
  * Class used to access records and data on a remote server
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	PGV Development Team
+ * Copyright (C) 2002 to 2008 PGV Development Team, all rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,13 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: serviceclient_class.php,v 1.6 2007/06/09 21:11:04 lsces Exp $
+ * @version $Id: serviceclient_class.php,v 1.7 2008/07/07 17:30:15 lsces Exp $
  */
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
 
 require_once(PHPGEDVIEW_PKG_PATH.'includes/gedcomrecord.php');
 include_once(PHPGEDVIEW_PKG_PATH.'SOAP/Client.php');
@@ -38,6 +43,7 @@ class ServiceClient extends GedcomRecord {
 	var $password = "";
 	var $type = "";
 	var $data_type = "";
+	var $client_type = "SOAP"; // whether to use SOAP or PEAR:SOAP by default
 	var $DEBUG = false;
 
 	/**
@@ -79,8 +85,8 @@ class ServiceClient extends GedcomRecord {
 	function getTitle() {
 		global $pgv_lang;
 
-		if (empty($this->name)) return $pgv_lang["unknown"];
-		return $this->name;
+		if (empty($this->title)) return $pgv_lang["unknown"];
+		return $this->title;
 	}
 
 	function getURL() {
@@ -100,13 +106,19 @@ class ServiceClient extends GedcomRecord {
 	function authenticate() {
 		if (!empty($this->SID)) return $this->SID;
 		if (is_null($this->soapClient)) {
-			AddToLog("getting wsdl");
-			//	get the wsdl and cache it
-			$wsdl = new SOAP_WSDL($this->url);
-			AddToLog("wsdl found");
-			//change the encoding style
-			$this->__change_encoding($wsdl);
-			$this->soapClient = $wsdl->getProxy();
+			if (!class_exists('SoapClient') || $this->client_type=='PEAR:SOAP') {
+				AddToLog('Using PEAR:SOAP library');
+				//	get the wsdl and cache it
+				$wsdl = new SOAP_WSDL($this->url);
+				//change the encoding style
+				$this->__change_encoding($wsdl);
+				$this->soapClient = $wsdl->getProxy();
+			}
+			else {
+				AddtoLog("Using SOAP Extension");
+				//-- don't use exceptions in PHP 4
+				$this->soapClient = new SoapClient($this->url, array('exceptions' => 0));
+			}
 		}
 		if (!$this->isError($this->soapClient)) {
 			$res = $this->soapClient->Authenticate($this->username, $this->password, $this->gedfile, "",$this->data_type);
@@ -136,8 +148,11 @@ if ($this->DEBUG) print "In getRemoteRecord($remoteid)<br />";
 		if (!is_object($this->soapClient)) $this->authenticate();
 		if (!is_object($this->soapClient)||$this->isError($this->soapClient)) return false;
 		$rec = $this->soapClient->getGedcomRecord($this->SID, $remoteid);
-		$rec = preg_replace("/@(.*)@/", "@".$this->xref.":$1@", $rec);
-		return $rec;
+		if (is_string($rec)) {
+			$rec = preg_replace("/@([^#@\s]+)@/", "@".$this->xref.":$1@", $rec);
+			return $rec;
+		}
+		else return "";
 	}
 
 	/**
@@ -164,7 +179,10 @@ if ($this->DEBUG) print "In getRemoteRecord($remoteid)<br />";
 	 */
 	function _merge($record1, $record2)
 	{
-if ($this->DEBUG) print "In _merge()<br />";
+if ($this->DEBUG) {
+	print "\n\n<br />In _merge()<br />\n\n";
+	//debug_print_backtrace();
+}
 		// Returns second record if first is empty, no merge needed
 		if (empty($record1)) return $record2;
 		// Returns first record if second is empty, no merge needed
@@ -189,7 +207,7 @@ if ($this->DEBUG) print "In _merge()<br />";
 				$subrec = preg_replace("/\s+/", " ", $subrec);
 
 				foreach($remoterecs as $ind2=>$subrec2)
-				{				
+				{
 					$subrec2 = trim($subrec2);
 					$subrec2 = preg_replace("/\s+/", " ", $subrec2);
 
@@ -281,7 +299,7 @@ if ($this->DEBUG) print "In UpdateFamily()<br />";
 			}
 		}
 		
-		//-- remove all family records so that we can add them back in if we need to
+		//-- remove all remote family links added in _merge() so that we can add them back in if we need to
 		$record1 = preg_replace("/\d FAM[SC] @".$this->xref.":[\w\d]+@\r?\n/", "", $record1);
 //		print "[<pre>$record1</pre>]";
 		
@@ -362,18 +380,20 @@ if ($this->DEBUG) print "In UpdateFamily()<br />";
 		// This Adds any new familys to the person.
 		if(count($FamilyListChild)>0){
 			for($i=0;$i<count($FamilyListChild);$i++){
-				if (!empty($FamilyChildrenList[$i])){
-					$record1.="\r\n1 FAMC @".$this->xref.":".$FamilyListChild[$i]."@";
-//					replace_gedrec($personId1, $record1);
-				}
+//				if (!empty($FamilyChildrenList[$i])){
+					$record1.="\r\n1 FAMC @";
+					if (strpos($FamilyListChild[$i], $this->xref)!==0) $record1 .= $this->xref.":";
+					$record1 .= $FamilyListChild[$i]."@";
+//				}
 			}
 		}
 		if(count($FamilyListSpouse)>0){
 			for($i=0;$i<count($FamilyListSpouse);$i++){
-				if (!empty($FamilyChildrenList[$i])){
-					$record1.="\r\n1 FAMS @".$this->xref.":".$FamilyListSpouse[$i]."@";
-//					replace_gedrec($personId1, $record1);
-				}
+//				if (!empty($FamilyChildrenList[$i])){
+					$record1.="\r\n1 FAMS @";
+					if (strpos($FamilyListSpouse[$i], $this->xref)!==0) $record1 .= $this->xref.":";
+					$record1 .= $FamilyListSpouse[$i]."@";
+//				}
 			}
 		}
 		return $record1;
@@ -391,7 +411,7 @@ if ($this->DEBUG) print "In MergeForUpdateFamily()<br />";
 		//print_r($Familylist);
 		$FamilyListReturn=$Familylist;
 
-		if (isset($pgv_changes[$Family1."_".$GEDCOM])) $famrec1 = find_record_in_file($Family1);
+		if (isset($pgv_changes[$Family1."_".$GEDCOM])) $famrec1 = find_updated_record($Family1);
 		else $famrec1 = find_family_record($Family1);
 
 		$ct = preg_match("/(\w+):(.+)/", $Family2, $match);
@@ -551,12 +571,17 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 		}
 		else return false;
 		$family1 = Family::getInstance($family1);
+		if (is_null($family1)) return false;
 		$family2 = new Family($famrec2);
 
-		// Creat the fathers if their is some
-		$father1 = $family1->getHusband();
+		if (!is_null($family1)) {
+			// Creat the fathers if their is some
+			$father1 = $family1->getHusband();
+			$CountFamily1+=1.0;
+			$mother1=$family1->getWife();
+			$CountFamily1+=1.0;
+		}
 		$father2 = $family2->getHusband();
-		$CountFamily1+=1.0;
 		$CountFamily2+=1.0;
 		if(empty($father1)){
 			unset($father1);
@@ -568,9 +593,7 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 		}
 
 		// Creat the mothers if their is some
-		$mother1=$family1->getWife();
 		$mother2=$family2->getWife();
-		$CountFamily1+=1.0;
 		$CountFamily2+=1.0;
 		if(empty($mother1)){
 			unset($mother1);
@@ -635,7 +658,7 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 	 * @param string $remote	the remote id that matches the $local id
 	 */
 	function setSameId($local, $remote) {
-		global $gBitSystem, $GEDCOM;
+		global $TBLPREFIX, $DBCONN, $gGedcom, $GEDCOM;
 		
 		if ($local == $remote) {
 			debug_print_backtrace();
@@ -644,35 +667,11 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 		//-- check if the link already exists
 		$gid = get_remote_id($remote);
 		if (empty($gid)) {
-			$sql = "INSERT INTO ".PHPGEDVIEW_DB_PREFIX."remotelinks VALUES ( ?, ?, ? )";
-			$res = $gBitSystem->mDb->query( $sql, array( $local, $remote, $gGedcom->mGEDCOMId ));
+			$sql = "INSERT INTO ".$TBLPREFIX."remotelinks VALUES ('".$DBCONN->escapeSimple($local)."','".$DBCONN->escapeSimple($remote)."','".$DBCONN->escapeSimple($gGedcom[$GEDCOM]["id"])."')";
+			$res = dbquery($sql);
 		}
 	}
 	
-	/**
-	 * Merges two people together
-	 * --not used
-	 function MergePeople($Person1,$Person2){
-		$PersonName1=$Person1->getName();
-		$PersonSex1=$Person1->getSex();
-		$PersonBirth1=$Person1->getBirthDate();
-		$PersonDeath1=$Person1->getDeathDate();
-		$PersonName2=$Person2->getName();
-		$PersonSex2=$Person2->getSex();
-		$PersonBirth2=$Person2->getBirthDate();
-		$PersonDeath2=$Person2->getDeathDate();
-		if (empty($PersonName1)){$PersonName1=$PersonName2;}
-		elseif(empty($PersonName2)){}
-		if (empty($PersonSex1)){$PersonSex1=$Person2;}
-		elseif (empty($PersonSex2)){}
-		if (empty($PersonBirth1)){$PersonBirth1=$PersonBirth2;}
-		elseif(empty($PersonBirth2)){}
-		if (empty($PersonDeath1)){$PersonDeath1=$PersonDeath2;}
-		elseif(empty($PersonDeath2)){}
-		return $Person1;
-	 }
-	 */
-
 	/**
 	 * Compares to see if two people are the same, and it returns true if they are, but
 	 * false if they are not. It only compares the name, sex birthdate, and deathdate
@@ -681,65 +680,53 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 	 function ComparePeople(&$Person1,&$Person2){
 		$PersonName1=$Person1->getName();
 		$PersonSex1=$Person1->getSex();
-		$PersonBirth1=$Person1->getBirthDate();
-		$PersonDeath1=$Person1->getDeathDate();
+		$PersonBirth1=$Person1->getEstimatedBirthDate();
+		$PersonDeath1=$Person1->getEstimatedDeathDate();
 
 		$PersonName2=$Person2->getName();
 		$PersonSex2=$Person2->getSex();
-		$PersonBirth2=$Person2->getBirthDate();
-		$PersonDeath2=$Person2->getDeathDate();
+		$PersonBirth2=$Person2->getEstimatedBirthDate();
+		$PersonDeath2=$Person2->getEstimatedDeathDate();
 
 		$count=0;
-		$Probabilty=0;
-		//print "<br/>".$PersonName1." == ".$PersonName2;
-		//print "<br/>".$PersonBirth1." == ".$PersonBirth2;
-		//print "<br/>".$PersonDeath1." == ".$PersonDeath2;
-		//print "<br/>".$PersonSex1." == ".$PersonSex2;
+		$Probability=0;
 		if (!empty($PersonName1)&&!empty($PersonName2)){
 			$lev = levenshtein(str2lower($PersonName1), str2lower($PersonName2));
-			//print "Levenshtein = $lev ";
 			if($lev<4){
-				$Probabilty+=2;
-			}
-			else
-				$Probabilty-=2;
+				$Probability+=2;
+			} else
+				$Probability-=2;
 			$count+=2;
 		}
-		if (!empty($PersonSex1)&&!empty($PersonSex2)){
-			if($PersonSex1==$PersonSex2){
-				//print "same sex ";
-				$Probabilty+=1;
-			}
-			else {
-				//print "not same sex ";
-				$Probabilty-=2;
-			}
-			$count++;
-		}
-		if (!empty($PersonBirth1)&&!empty($PersonBirth2)){
-			if($PersonBirth1==$PersonBirth2){
-				//print "same birth ";
-				$Probabilty+=1;
-			}
-			else {
-				//print "not same birth ";
-				$Probabilty-=1;
+		$sex_prob=array('UU'=>0, 'UF'=>0, 'UM'=>0, 'MU'=>0, 'FU'=>0, 'MM'=>1, 'FF'=>1,'MF'=>-2, 'FM'=>-2);
+		$Probability+=$sex_prob[$PersonSex1.$PersonSex2];
+		$count++;
+
+		if ($PersonBirth1->isOK() && $PersonBirth2->isOK()) {
+			$diff=abs($PersonBirth1->JD() - $PersonBirth2->JD());
+			if ($diff==0) {
+				$Probability+=2;
+			} elseif ($diff<366) {
+				$Probability+=1;
+			} else {
+				$Probability-=1;
 			}
 			$count++;
 		}
-		if (!empty($PersonDeath1)&&!empty($PersonDeath2)){
-			if($PersonDeath1==$PersonDeath2){
-				//print "same death ";
-				$Probabilty+=1;
-			}
-			else {
-				//print "not same death ";
-				$Probabilty-=1;
+
+		if ($PersonDeath1->isOK() && $PersonDeath2->isOK()) {
+			$diff=abs($PersonDeath1->JD() - $PersonDeath2->JD());
+			if ($diff==0) {
+				$Probability+=2;
+			} elseif ($diff<366) {
+				$Probability+=1;
+			} else {
+				$Probability-=1;
 			}
 			$count++;
 		}
-		$prob=$Probabilty/$count;
-		//print "<br/>Probabilty same person % is ".$prob."=".$Probabilty."/".$count." ID 1 ".$Person1->getXref()." ID 2 ".$Person2->getXref();
+
+		$prob=$Probability/$count;
 		if($prob<0.5){
 			return false;
 		}
@@ -760,29 +747,31 @@ if ($this->DEBUG) print "In CompairForUpdateFamily()<br />";
 			$id = trim($match[$i][1]);
 			$gid = get_remote_id($id);
 			if ($gid!==false)
-			$gedrec = preg_replace("/@".$id."@/", "@".$gid."@", $gedrec);
+				$gedrec = preg_replace("/@".$id."@/", "@".$gid."@", $gedrec);
 			}
 			return $gedrec;
 		}
 
 	/**
 	 * merge a local gedcom record with the information from the remote site
+	 * @param string $xref		the remote ID to merge with
+	 * @param string $localrec	the local gedcom record to merge the remote record with
+	 * @param boolean $isStub	whether or not this is a stub record
+	 * @param boolean $firstLink	is this the first time this record is being linked
 	 */
 	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
 		global $FILE, $GEDCOM, $indilist, $famlist, $sourcelist, $otherlist;
-		global $pgv_changes;
+		global $TBLPREFIX, $pgv_changes;
 if ($this->DEBUG) print "In mergeGedcomRecord($xref)<br />";
 		$FILE = $GEDCOM;
 		if (!$isStub) {
 			$gedrec = find_gedcom_record($this->xref.":".$xref);
 			if (!empty($gedrec)) $localrec = $gedrec;
 		}
-
 		//-- used to force an update on the first time linking a person
 		if ($firstLink) {
 			$this->authenticate();
 			$result = $this->soapClient->getGedcomRecord($this->SID, $xref);
-			//print_r($result);
 			if (PEAR::isError($result) || isset($result->faultcode) || get_class($result)=='SOAP_Fault' || is_object($result)) {
 				if (isset($result->faultstring)) {
 					AddToLog($result->faultstring);
@@ -791,12 +780,13 @@ if ($this->DEBUG) print "In mergeGedcomRecord($xref)<br />";
 				return $localrec;
 			}
 			$gedrec = $result;
-			$gedrec = preg_replace("/@(.*)@/", "@".$this->xref.":$1@", $gedrec);
+			$gedrec = preg_replace("/@([^#@\s]+)@/", "@".$this->xref.":$1@", $gedrec);
 			$gedrec = $this->checkIds($gedrec);
 			$localrec = $this->_merge($localrec, $gedrec);
-			//print "why<pre>".$localrec."</pre>Whynot?";
 			include_once("includes/functions_edit.php");
+			if ($this->DEBUG) print $localrec."<b>$gedrec</b>";
 			$localrec = $this->UpdateFamily($localrec,$gedrec);
+		if ($this->DEBUG) print "post updatefamily<pre>".$localrec."</pre>Whynot?";	
 			$ct=preg_match("/0 @(.*)@/", $localrec, $match);
 			if ($ct>0)
 			{
@@ -808,11 +798,11 @@ if ($this->DEBUG) print "In mergeGedcomRecord($xref)<br />";
 		//-- get the last change date of the record
 		$change_date = get_gedcom_value("CHAN:DATE", 1, $localrec, '', false);
 		if (empty($change_date)) {
-			//print $xref." no change<br />";
+if ($this->DEBUG) print $xref." no change date<br />";
 			$this->authenticate();
 			if (!is_object($this->soapClient) || $this->isError($this->soapClient)) return false;
 			$result = $this->soapClient->getGedcomRecord($this->SID, $xref);
-			//print_r($result);
+if ($this->DEBUG) print_r($result);
 			if (PEAR::isError($result) || isset($result->faultcode) || get_class($result)=='SOAP_Fault' || is_object($result)) {
 				if (isset($result->faultstring)) {
 					AddToLog($result->faultstring);
@@ -821,8 +811,9 @@ if ($this->DEBUG) print "In mergeGedcomRecord($xref)<br />";
 				return $localrec;
 			}
 			$gedrec = $result;
-			$gedrec = preg_replace("/@(.*)@/", "@".$this->xref.":$1@", $gedrec);
+			$gedrec = preg_replace("/@([^#@\s]+)@/", "@".$this->xref.":$1@", $gedrec);
 			$gedrec = $this->checkIds($gedrec);
+			
 			$localrec = $this->_merge($localrec, $gedrec);
 			$ct=preg_match("/0 @(.*)@/", $localrec, $match);
 			if ($ct>0)
@@ -837,24 +828,26 @@ if ($this->DEBUG) print "In mergeGedcomRecord($xref)<br />";
 				else {
 					require_once("includes/functions_import.php");
 if ($this->DEBUG) debug_print_backtrace();
-if ($this->DEBUG) print __LINE__."adding record to the database ".$localrec;
+if ($this->DEBUG) print "\r\n".__LINE__." adding record to the database ".$localrec;
 					update_record($localrec);
 				}
 			}
 		}
 		else {
-			$chan_date = parse_date($change_date);
+			$chan_date = new GedcomDate($change_date);
 			$chan_time_str = get_gedcom_value("CHAN:DATE:TIME", 1, $localrec, '', false);
 			$chan_time = parse_time($chan_time_str);
-			$change_time = mktime($chan_time[0], $chan_time[1], $chan_time[2], (int)$chan_date[0]['mon'], (int)$chan_date[0]['day'], $chan_date[0]['year']);
+			$change_time = mktime($chan_time[0], $chan_time[1], $chan_time[2], $chan_date->date1->m, $chan_date->date1->d, $chan_date->date1->y);
 			/**
 			 * @todo make the timeout a config option
 			 */
 			// Time Clock (determines how often a record is checked)
 			if ($change_time < time()-(60*60*24*14)) // if the last update (to the remote individual) was made more than 14 days ago
 			{
+if ($this->DEBUG) print __LINE__."Old change date... check for updates";
 				//$change_date= "1 JAN 2000";
 				$this->authenticate();
+				if (!is_object($this->soapClient) || $this->isError($this->soapClient)) return false;
 				$person = $this->soapClient->checkUpdatesByID($this->SID, $xref, $change_date);
 				// If there are no changes between the local and remote copies
 				if (PEAR::isError($person) || isset($person->faultcode) || get_class($person)=='SOAP_Fault' || isset($person->error_message_prefix)) {
@@ -886,13 +879,13 @@ if ($this->DEBUG) print __LINE__."adding record to the database ".$localrec;
 				// If changes have been made to the remote record
 				else {
 					$gedrec = $person->gedcom;
-					$gedrec = preg_replace("/@(.*)@/", "@".$this->xref.":$1@", $gedrec);
+					$gedrec = preg_replace("/@([^#@\s]+)@/", "@".$this->xref.":$1@", $gedrec);
 					$gedrec = $this->checkIds($gedrec);
 					$ct=preg_match("/0 @(.*)@/", $localrec, $match);
 					if ($ct>0)
 					{
 						$pid = trim($match[1]);
-						if (isset($pgv_changes[$pid."_".$GEDCOM])) $localrec = find_record_in_file($pid);
+						if (isset($pgv_changes[$pid."_".$GEDCOM])) $localrec = find_updated_record($pid);
 						$localrec = $this->_merge($localrec, $gedrec);
 						if ($isStub) {
 							include_once("includes/functions_edit.php");
@@ -949,18 +942,18 @@ if ($this->DEBUG) print __LINE__."adding record to the database ".$localrec;
 	}
 
 	/**
-	 * get a singleton instance of this record
+	 * get a singleton instance of this client
 	 * @return ServiceClient
 	 */
 	function &getInstance($id) {
-		global $PGV_SERVERS, $SERVER_URL;
+		global $PGV_SERVERS, $SERVER_URL, $GEDCOM;
 
 		if (isset($PGV_SERVERS[$id])) return $PGV_SERVERS[$id];
 		$gedrec = find_gedcom_record($id);
-		if (empty($gedrec)) $gedrec = find_record_in_file($id);
+		if (empty($gedrec)) $gedrec = find_updated_record($id);
 		if (!empty($gedrec)) {
 			$url = get_gedcom_value("URL",1,$gedrec);
-			$gedfile = get_gedcom_value("_GEDF", 1, $gedrec);
+			$gedfile = get_gedcom_value("_DBID", 1, $gedrec);
 			if (empty($url) && empty($gedfile))
 				return null;
 			if (!empty($url) && (strtolower($url)!=strtolower($SERVER_URL))) {
