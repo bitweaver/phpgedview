@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repolist.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: repolist.php,v 1.6 2008/07/07 20:00:26 lsces Exp $
  */
 
 /**
@@ -35,7 +35,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
+//require("config.php");
 require_once("includes/functions_print_lists.php");
 $repolist = get_repo_list();               //-- array of regular repository titles
 $addrepolist = get_repo_add_title_list();  //-- array of additional repository titlesadd
@@ -44,11 +44,9 @@ $cr = count($repolist);
 $ca = count($addrepolist);
 $ctot = $cr + $ca;
 
-print_header($pgv_lang["repo_list"]);
-print "<div class=\"center\">";
-print "<h2>".$pgv_lang["repo_list"]."</h2>\n\t";
-print_repo_table(array_merge($repolist, $addrepolist));
-print "</div>";
-print "<br /><br />";
-print_footer();
-?>
+$gBitSmarty->assign_by_ref( "repolist", $repolist );
+$gBitSmarty->assign_by_ref( "addrepolist", $addrepolist );
+
+$doctitle = "Full Repository List";
+$gBitSmarty->assign( "pagetitle", $doctitle );
+$gBitSystem->display( 'bitpackage:phpgedview/repolist.tpl', tra( 'Repository list' ) );?>

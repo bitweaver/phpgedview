@@ -36,7 +36,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.10 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: famlist.php,v 1.11 2008/07/07 20:00:26 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -138,8 +138,6 @@ if (!(empty($SEARCH_SPIDER))) {
 if (isset($alpha) && !isset($famalpha["$alpha"])) $alpha="";
 
 if (count($famalpha) > 0) {
-	if (empty($SEARCH_SPIDER))
-		print_help_link("alpha_help", "qm", "alpha_index");
 	foreach($famalpha as $letter=>$list) {
 		if (empty($alpha)) {
 			if (!empty($surname)) {
@@ -152,44 +150,15 @@ if (count($famalpha) > 0) {
 				$startalpha = $letter;
 				$alpha = $letter;
 			}
-			print "<a href=\"famlist.php?alpha=".urlencode($letter)."&amp;surname_sublist=".$surname_sublist."&amp;ged=".$GEDCOM."\">";
-			if (($alpha==$letter)&&($show_all=="no")) print "<span class=\"warning\">".$letter."</span>";
-			else print $letter;
-			print "</a> | \n";
 		}
 		if ($letter === "@") $pass = true;
 	}
-	if ($pass == true) {
-		if (isset($alpha) && $alpha == "@") print "<a href=\"famlist.php?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.&amp;ged=".$GEDCOM."\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
-		else print "<a href=\"famlist.php?alpha=@&amp;surname_sublist=yes&amp;surname=@N.N.&amp;ged=".$GEDCOM."\">".PrintReady($pgv_lang["NN"])."</a>";
-		print " | \n";
-		$pass = false;
-	}
-	if ($show_all=="yes") print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=".$surname_sublist."&amp;ged=".$GEDCOM."\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
-	else print "<a href=\"famlist.php?show_all=yes&amp;surname_sublist=".$surname_sublist."&amp;ged=".$GEDCOM."\">".$pgv_lang["all"]."</a>\n";
 	if (isset($startalpha)) $alpha = $startalpha;
+	$gBitSmarty->assign_by_ref( "indialpha", $famalpha );
 }
 
-print "<br /><br />";
 
-if(empty($SEARCH_SPIDER)) {
-	if (isset($alpha) && $alpha != "@") {
-		if ($surname_sublist=="yes") {
-			print_help_link("skip_sublist_help", "qm", "skip_surnames");
-			print "<a href=\"famlist.php?alpha=".$alpha."&amp;surname_sublist=no&amp;show_all=".$show_all."&amp;ged=".$GEDCOM."\">".$pgv_lang["skip_surnames"]."</a>";
-		} else {
-			print_help_link("skip_sublist_help", "qm", "show_surnames");
-			print "<a href=\"famlist.php?alpha=".$alpha."&amp;surname_sublist=yes&amp;show_all=".$show_all."&amp;ged=".$GEDCOM."\">".$pgv_lang["show_surnames"]."</a>";
-		}
-	}
-}
 
-if (empty($SEARCH_SPIDER)) {
-	print_help_link("name_list_help", "qm", "name_list");
-	print "<br /><br />";
-}
-
-print "<table class=\"list_table $TEXT_DIRECTION\"><tr><td class=\"center\">";
 if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	get_fam_list();
 	if (!isset($alpha)) $alpha="";
@@ -211,8 +180,25 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 		else $fam_hide[$gid."[".$fam["gedfile"]."]"] = 1;
 	}
 	uasort($surnames, "itemsort");
-	print_surn_table($surnames, "FAM");
-	if (count($fam_hide)>0) print "<br /><span class=\"warning\">".$pgv_lang["hidden"].": ".count($fam_hide)."</span>";
+asort($surnames);
+	$n = 0;
+	$total = 0;
+	$gBitSmarty->assign( 'url', "famlist.php?ged=".$GEDCOM."&amp;surname=" );
+	$surname_list = array();
+	foreach($surnames as $key => $value) {
+		if (!isset($value["name"])) break;
+		$surn = $value["name"];
+		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
+		$surname_list[$n]['upper'] = $surn;
+		$surname_list[$n]['count'] = $value["match"];
+		$total += $value["match"];
+		$n++;
+	}
+	$listHash = $_REQUEST;
+	$listHash['sub_total'] = $total;
+	$listHash['total_records'] = $n;
+	$gBitSmarty->assign_by_ref( "surnames", $surname_list );
+	$gBitSmarty->assign_by_ref( 'listInfo', $listHash );
 }
 else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	if (!isset($alpha)) $alpha="";
@@ -231,9 +217,26 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 		else $fam_hide[$gid."[".$fam["gedfile"]."]"] = 1;
 	}
 	$i = 0;
-	uasort($surnames, "itemsort");
-	print_surn_table($surnames, "FAM");
-	if (count($fam_hide)>0) print "<br /><span class=\"warning\">".$pgv_lang["hidden"].": ".count($fam_hide)."</span>";
+//	uasort($surnames, "itemsort");
+	asort($surnames);
+	$n = 0;
+	$total = 0;
+	$gBitSmarty->assign( 'url', "famlist.php?ged=".$GEDCOM."&amp;surname=" );
+	$surname_list = array();
+	foreach($surnames as $key => $value) {
+		if (!isset($value["name"])) break;
+		$surn = $value["name"];
+		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
+		$surname_list[$n]['upper'] = $surn;
+		$surname_list[$n]['count'] = $value["match"];
+		$total += $value["match"];
+		$n++;
+	}
+	$listHash = $_REQUEST;
+	$listHash['sub_total'] = $total;
+	$listHash['total_records'] = $n;
+	$gBitSmarty->assign_by_ref( "surnames", $surname_list );
+	$gBitSmarty->assign_by_ref( 'listInfo', $listHash );
 }
 else {
 	$firstname_alpha = false;
@@ -281,34 +284,6 @@ else {
 				$_SESSION[$surname."_firstalphafams"] = $firstalpha;
 			}
 			else $firstalpha = $_SESSION[$surname."_firstalphafams"];
-			print "<td class=\"list_label\" style=\"padding: 0pt 5pt 0pt 5pt; \" colspan=\"2\">";
-			print PrintReady(str_replace("#surname#", check_NN($surname), $pgv_lang["fams_with_surname"]));
-			print "</td></tr><tr>\n";
-			print "<td style=\"text-align:center;\" colspan=\"2\">";
-			print $pgv_lang["first_letter_fname"]."<br />\n";
-			print_help_link("firstname_f_help", "qm", "firstname_alpha_index");
-			foreach($firstalpha as $letter=>$list) {
-				$pass = false;
-				if ($letter != "@") {
-					if (!isset($fstartalpha) && !isset($falpha)) {
-						$fstartalpha = $letter;
-						$falpha = $letter;
-					}
-					print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=".urlencode($letter)."&amp;surname_sublist=".$surname_sublist."&amp;ged=".$GEDCOM."\">";
-					if (($falpha==$letter)&&($show_all_firstnames=="no")) print "<span class=\"warning\">".$letter."</span>";
-					else print $letter;
-					print "</a> | \n";
-				}
-				if ($letter === "@") $pass = true;
-			}
-			if ($pass == true) {
-				if (isset($falpha) && $falpha == "@") print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=@&amp;surname_sublist=yes&amp;ged=".$GEDCOM."\"><span class=\"warning\">".PrintReady($pgv_lang["NN"])."</span></a>";
-				else print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;falpha=@&amp;surname_sublist=yes&amp;ged=".$GEDCOM."\">".PrintReady($pgv_lang["NN"])."</a>";
-				print " | \n";
-				$pass = false;
-			}
-			if ($show_all_firstnames=="yes") print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=no&amp;ged=".$GEDCOM."\"><span class=\"warning\">".$pgv_lang["all"]."</span>\n";
-			else print "<a href=\"famlist.php?alpha=".urlencode($alpha)."&amp;surname=".urlencode($surname)."&amp;show_all_firstnames=yes&amp;ged=".$GEDCOM."\">".$pgv_lang["all"]."</a>\n";
 			if (isset($fstartalpha)) $falpha = $fstartalpha;
 			if ($show_all_firstnames=="no") {
 				$ffamlist = array();
@@ -318,20 +293,18 @@ else {
 				}
 				$tfamlist = $ffamlist;
 			}
-			print "</td></tr><tr>\n";
 		}
 		uasort($tfamlist, "itemsort");
 	}
 }
-print "</td></tr></table>";
 
 if ($show_all=="yes") unset($alpha);
-if (!empty($surname) && $surname_sublist=="yes") $legend = str_replace("#surname#", check_NN($surname), $pgv_lang["fams_with_surname"]);
-else if (isset($alpha) and $show_all=="no") $legend = str_replace("#surname#", $alpha.".", $pgv_lang["fams_with_surname"]);
+if (!empty($surname) && $surname_sublist=="yes") $legend = "Families with surname ".check_NN($surname);
+else if (isset($alpha) and $show_all=="no") $legend = "Families with surname starting ".$alpha;
 else $legend = $pgv_lang["families"];
 if ($show_all_firstnames=="yes") $falpha = "@";
 if (isset($falpha) and $falpha!="@") $legend .= ", ".$falpha.".";
-$legend = PrintReady($legend);
+//$legend = PrintReady($legend);
 
 if (!empty($surname) or $surname_sublist=="no") {
 //	print_fam_table($tfamlist, $legend);

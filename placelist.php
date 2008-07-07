@@ -35,9 +35,9 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
+//require("config.php");
 if (file_exists('modules/googlemap/placehierarchy.php')) require("modules/googlemap/placehierarchy.php");
-require_once("includes/functions_print_lists.php");
+//require_once("includes/functions_print_lists.php");
 
 function case_in_array($value, $array) {
 	foreach($array as $key=>$val) {
@@ -218,7 +218,7 @@ if ($display=="hierarchy") {
 				$mapname = str_replace("Еє","z",$mapname);
 				$mapname = str_replace("Д‡","c",$mapname);
 				$mapname = str_replace("Е„","n",$mapname);
-				$mapname = strtr($mapname,"ЉЊЋљњћџҐµАБВГДЕЖЗИЙКЛМНОПРСТУФХЦШЩЪЫЬЭЯабвгдежзийклмнопрстуфхцшщъыьэя' ","SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyy--");
+				$mapname = strtr($mapname,"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ' ","SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyy--");
 				$imgfile = "places/".$country."/".$mapname.".gif";
 			}
 			if (file_exists($imgfile) and file_exists($mapfile)) {
