@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: gedcomrecord.php,v 1.6 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: gedcomrecord.php,v 1.7 2008/07/07 20:02:27 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -29,7 +29,6 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-require_once(PHPGEDVIEW_PKG_PATH.'includes/functions_privacy.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/person_class.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/family_class.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/source_class.php');
