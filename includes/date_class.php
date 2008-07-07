@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: date_class.php,v 1.1 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: date_class.php,v 1.2 2008/07/07 20:06:30 lsces Exp $
  *
  * NOTE: Since different calendars start their days at different times, (civil
  * midnight, solar midnight, sunset, sunrise, etc.), we convert on the basis of
@@ -1139,7 +1139,8 @@ class GedcomDate {
 		if (strip_tags($tmp)=='')
 			return '<a>&nbsp;</a>';
 		else
-			return "<span class=\"date\">{$tmp}</span>";
+//			return "<span class=\"date\">{$tmp}</span>";
+			return $tmp;
 	}
 
 	// Get the earliest/latest date/JD from this date
