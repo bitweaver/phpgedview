@@ -3,7 +3,7 @@
  * PopUp Window to provide editing features.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007  PGV Development Team
+ * Copyright (C) 2002 to 2008 PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_interface.php,v 1.7 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: edit_interface.php,v 1.8 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**
@@ -44,6 +44,22 @@ require("languages/countries.en.php");
 if (file_exists("languages/countries.".$lang_short_cut[$LANGUAGE].".php")) require("languages/countries.".$lang_short_cut[$LANGUAGE].".php");
 asort($countries);
 
+$action="";
+$linenum="";
+$pid="";
+$famid="";
+if (isset($_REQUEST['action'])) $action = $_REQUEST['action'];
+if (isset($_REQUEST['linenum'])) $linenum = $_REQUEST['linenum'];
+if (isset($_REQUEST['pid'])) $pid = $_REQUEST['pid'];
+if (isset($_REQUEST['famid'])) $famid = $_REQUEST['famid'];
+if (isset($_REQUEST['text'])) $text = $_REQUEST['text'];
+if (isset($_REQUEST['tag'])) $tag = $_REQUEST['tag'];
+if (isset($_REQUEST['famtag'])) $famtag = $_REQUEST['famtag'];
+if (isset($_REQUEST['glevels'])) $glevels = $_REQUEST['glevels'];
+if (isset($_REQUEST['islink'])) $islink = $_REQUEST['islink'];
+if (isset($_REQUEST['type'])) $type = $_REQUEST['type'];
+if (isset($_REQUEST['fact'])) $fact = $_REQUEST['fact'];
+
 // Remove slashes
 if (isset($text)){
 	foreach ($text as $l => $line){
@@ -51,8 +67,6 @@ if (isset($text)){
 	}
 }
 //$DEBUG=1;
-if (!isset($action)) $action="";
-if (!isset($linenum)) $linenum="";
 if ((isset($_POST["preserve_last_changed"])) && ($_POST["preserve_last_changed"] == "on"))
 	$update_CHAN = false;
 else
@@ -154,8 +168,12 @@ print_simple_header("Edit Interface $VERSION");
 		magnify = mag;
 	}
 
-	function edit_close() {
-		if (window.opener.showchanges) window.opener.showchanges();
+	function edit_close(newurl) {
+		if (newurl)
+			window.opener.location=newurl;
+		else
+			if (window.opener.showchanges)
+				window.opener.showchanges();
 		window.close();
 	}
 //-->
@@ -164,48 +182,55 @@ print_simple_header("Edit Interface $VERSION");
 //-- check if user has access to the gedcom record
 $disp = false;
 $success = false;
-$factdisp = true;
-$factedit = true;
+
+/**
+ * Check if the given gedcom record has any RESN editing restrictions
+ * This is used to prevent raw editing and deletion of records that are locked 
+ * @param string $gedrec
+ * @return boolean
+ */
+function checkFactEdit($gedrec) {
+	if (PGV_USER_GEDCOM_ADMIN) {
+		return true;
+	}
+	
+	$ct = preg_match("/2 RESN ((privacy)|(locked))/i", $gedrec, $match);
+	if ($ct > 0) {
+		$match[1] = strtolower(trim($match[1]));
+		
+		$gt = preg_match("/0 @(.+)@ (.+)/", $gedrec, $gmatch);
+		if ($gt > 0) {
+			$gid = trim($gmatch[1]);
+			$type = trim($gmatch[2]);
+			if (PGV_USER_GEDCOM_ID == $gid) {
+				return true;
+			}
+			if ($type=='FAM') {
+				$parents = find_parents_in_record($gedrec);
+				if (PGV_USER_GEDCOM_ID == $parents["HUSB"] || PGV_USER_GEDCOM_ID == $parents["WIFE"]) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	return true;
+}
+//-- end checkFactEdit function
+
 if (!empty($pid)) {
 	$pid = clean_input($pid);
-	if (($pid!="newsour") and ($pid!="newrepo")) {
+	if (($pid!="newsour") && ($pid!="newrepo")) {
 		if (!isset($pgv_changes[$pid."_".$GEDCOM])) $gedrec = find_gedcom_record($pid);
 		else $gedrec = find_updated_record($pid);
 		if (empty($gedrec)) $gedrec =  find_record_in_file($pid);
 		$ct = preg_match("/0 @$pid@ (.*)/", $gedrec, $match);
 		if ($ct>0) {
 			$type = trim($match[1]);
-			//-- if the record is for an INDI then check for display privileges for that indi
-			if ($type=="INDI") {
-				$disp = displayDetailsById($pid);
-				//-- if disp is true, also check for resn access
-				if ($disp == true){
-					$subs = get_all_subrecords($gedrec, "", false, false);
-					foreach($subs as $indexval => $sub) {
-						if (FactViewRestricted($pid, $sub)==true) $factdisp = false;
-						if (FactEditRestricted($pid, $sub)==true) $factedit = false;
-					}
-				}
-			}
-			//-- for FAM check for display privileges on both parents
-			else if ($type=="FAM") {
-				//-- check if there are restrictions on the facts
-				$subs = get_all_subrecords($gedrec, "", false, false);
-				foreach($subs as $indexval => $sub) {
-					if (FactViewRestricted($pid, $sub)==true) $factdisp = false;
-					if (FactEditRestricted($pid, $sub)==true) $factedit = false;
-				}
-				//-- check if we can display both parents
-				$parents = find_parents_in_record($gedrec);
-				$disp = displayDetailsById($parents["HUSB"]);
-				if ($disp) {
-					$disp = displayDetailsById($parents["WIFE"]);
-				}
-			}
-			else {
-				$disp=true;
-			}
+			$disp = displayDetailsById($pid, $type);
 		}
+		checkChangeTime($pid, $gedrec);
 	}
 	else {
 		$disp = true;
@@ -220,37 +245,9 @@ else if (!empty($famid)) {
 		$ct = preg_match("/0 @$famid@ (.*)/", $gedrec, $match);
 		if ($ct>0) {
 			$type = trim($match[1]);
-			//-- if the record is for an INDI then check for display privileges for that indi
-			if ($type=="INDI") {
-				$disp = displayDetailsById($famid);
-				//-- if disp is true, also check for resn access
-				if ($disp == true){
-					$subs = get_all_subrecords($gedrec, "", false, false);
-					foreach($subs as $indexval => $sub) {
-						if (FactViewRestricted($famid, $sub)==true) $factdisp = false;
-						if (FactEditRestricted($famid, $sub)==true) $factedit = false;
-					}
-				}
-			}
-			//-- for FAM check for display privileges on both parents
-			else if ($type=="FAM") {
-				//-- check if there are restrictions on the facts
-				$subs = get_all_subrecords($gedrec, "", false, false);
-				foreach($subs as $indexval => $sub) {
-					if (FactViewRestricted($famid, $sub)==true) $factdisp = false;
-					if (FactEditRestricted($famid, $sub)==true) $factedit = false;
-				}
-				//-- check if we can display both parents
-				$parents = find_parents_in_record($gedrec);
-				$disp = displayDetailsById($parents["HUSB"]);
-				if ($disp) {
-					$disp = displayDetailsById($parents["WIFE"]);
-				}
-			}
-			else {
-				$disp=true;
-			}
+			$disp = displayDetailsById($famid, $type);
 		}
+		checkChangeTime($famid, $gedrec);
 	}
 }
 else if (($action!="addchild")&&($action!="addchildaction")&&($action!="addnewsource")&&($action!="mod_edit_fact")) {
@@ -262,12 +259,12 @@ else {
 	$disp = true;
 }
 
-if ((!$gGedcom->isEditable())||(!$disp)||(!$ALLOW_EDIT_GEDCOM)) {
+if (!PGV_USER_CAN_EDIT || !$disp || !$ALLOW_EDIT_GEDCOM) {
 	//print "pid: $pid<br />";
 	//print "gedrec: $gedrec<br />";
 	print $pgv_lang["access_denied"];
 	//-- display messages as to why the editing access was denied
-	if (!$gGedcom->isEditable()) print "<br />".$pgv_lang["user_cannot_edit"];
+	if (!PGV_USER_CAN_EDIT) print "<br />".$pgv_lang["user_cannot_edit"];
 	if (!$ALLOW_EDIT_GEDCOM) print "<br />".$pgv_lang["gedcom_editing_disabled"];
 	if (!$disp) {
 		print "<br />".$pgv_lang["privacy_prevented_editing"];
@@ -296,9 +293,9 @@ else if ($type=="FAM") {
 }
 else if ($type=="SOUR") {
 	print "<b>".PrintReady(get_source_descriptor($pid))."&nbsp;&nbsp;&nbsp;";
-	if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+	if ($TEXT_DIRECTION=="rtl") print getRLM();
 	print "(".$pid.")";
-	if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+	if ($TEXT_DIRECTION=="rtl") print getRLM();
 	print "</b><br />";
 }
 if (strstr($action,"addchild")) {
@@ -326,44 +323,18 @@ else {
 //------------------------------------------------------------------------------
 switch ($action) {
 case 'delete':
-	global $MEDIA_ID_PREFIX;
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	if (!empty($linenum)) {
 		if ($linenum===0) {
 			if (delete_gedrec($pid)) print $pgv_lang["gedrec_deleted"];
 		}
 		else {
-			$gedlines = preg_split("/\n/", $gedrec);
-
+			$mediaid='';
+			if (isset($_REQUEST['mediaid'])) $mediaid = $_REQUEST['mediaid'];
 			//-- when deleting a media link
 			//-- $linenum comes is an OBJE and the $mediaid to delete should be set
-			if ($linenum=='OBJE') {
-				if (!empty($mediaid)) {
-					for($i=0; $i<count($gedlines); $i++) {
-						if (preg_match("/OBJE @".$mediaid."@/", $gedlines[$i])>0) {
-							$linenum = $i;
-							break;
-						}
-					}
-				}
-			}
-			$newged = "";
-			for($i=0; $i<$linenum; $i++) {
-				if (trim($gedlines[$i])!="") $newged .= $gedlines[$i]."\n";
-			}
-			if (isset($gedlines[$linenum])) {
-				$fields = preg_split("/\s/", $gedlines[$linenum]);
-				$glevel = $fields[0];
-				$i++;
-				if ($i<count($gedlines)) {
-					//-- don't put empty lines in the record
-					while((isset($gedlines[$i]))&&(strlen($gedlines[$i])<4 || $gedlines[$i]{0}>$glevel)) $i++;
-					while($i<count($gedlines)) {
-						if (trim($gedlines[$i])!="") $newged .= $gedlines[$i]."\n";
-						$i++;
-					}
-				}
-			}
+			if (!is_numeric($linenum)) $newged = remove_subrecord($gedrec, $linenum, $mediaid);
+			else $newged = remove_subline($gedrec, $linenum);
 			$success = (replace_gedrec($pid, $newged));
 			if ($success) print "<br /><br />".$pgv_lang["gedrec_deleted"];
 		}
@@ -372,7 +343,7 @@ case 'delete':
 //------------------------------------------------------------------------------
 //-- print a form to edit the raw gedcom record in a large textarea
 case 'editraw':
-	if (!$factedit) {
+	if (!checkFactEdit($gedrec)) {
 		print "<br />".$pgv_lang["privacy_prevented_editing"];
 		if (!empty($pid)) print "<br />".$pgv_lang["privacy_not_granted"]." pid $pid.";
 		if (!empty($famid)) print "<br />".$pgv_lang["privacy_not_granted"]." famid $famid.";
@@ -388,14 +359,14 @@ case 'editraw':
 		print_specialchar_link("newgedrec",true);
 		print "<br />\n";
 		print "<textarea name=\"newgedrec\" id=\"newgedrec\" rows=\"20\" cols=\"60\" dir=\"ltr\">".$gedrec."</textarea>\n<br />";
-		if (UserIsAdmin(GetUserName())) {
+		if (PGV_USER_IS_ADMIN) {
 			print "<table class=\"facts_table\">\n";
 			print "<tr><td class=\"descriptionbox ".$TEXT_DIRECTION." wrap width25\">";
 			print_help_link("no_update_CHAN_help", "qm");
 			print $pgv_lang["admin_override"]."</td><td class=\"optionbox wrap\">\n";
 			print "<input type=\"checkbox\" name=\"preserve_last_changed\" />\n";
 			print $pgv_lang["no_update_CHAN"]."<br />\n";
-			print_fact_date(get_sub_record(1, "1 CHAN", $gedrec), false, true);
+			echo format_fact_date(get_sub_record(1, "1 CHAN", $gedrec), false, true);
 			print "</td></tr>\n";
 			print "</table>";
 		}
@@ -421,13 +392,13 @@ case 'edit':
 
 	print "<table class=\"facts_table\">";
 	$level1type = create_edit_form($gedrec, $linenum, $level0type);
-	if (UserIsAdmin(GetUserName())) {
+	if (PGV_USER_IS_ADMIN) {
 		print "<tr><td class=\"descriptionbox ".$TEXT_DIRECTION." wrap width25\">";
 		print_help_link("no_update_CHAN_help", "qm");
 		print $pgv_lang["admin_override"]."</td><td class=\"optionbox wrap\">\n";
 		print "<input type=\"checkbox\" name=\"preserve_last_changed\" />\n";
 		print $pgv_lang["no_update_CHAN"]."<br />\n";
-		print_fact_date(get_sub_record(1, "1 CHAN", $gedrec), false, true);
+		echo format_fact_date(get_sub_record(1, "1 CHAN", $gedrec), false, true);
 		print "</td></tr>\n";
 		}
 	print "</table>";
@@ -469,7 +440,7 @@ case 'add':
 		print $pgv_lang["admin_override"]."</td><td class=\"optionbox wrap\">\n";
 		print "<input type=\"checkbox\" name=\"preserve_last_changed\" />\n";
 		print $pgv_lang["no_update_CHAN"]."<br />\n";
-		print_fact_date(get_sub_record(1, "1 CHAN", $gedrec), false, true);
+		echo format_fact_date(get_sub_record(1, "1 CHAN", $gedrec), false, true);
 		print "</td></tr>\n";
 	}
 	print "</table>";
@@ -492,7 +463,7 @@ case 'add':
 	break;
 //------------------------------------------------------------------------------
 case 'addchild':
-	print_indi_form("addchildaction", $famid, "", "", "CHIL", @$_REQUEST["sex"]);
+	print_indi_form("addchildaction", $famid, "", "", "CHIL", @$_REQUEST["gender"]);
 	break;
 //------------------------------------------------------------------------------
 case 'addspouse':
@@ -510,7 +481,7 @@ case 'addfamlink':
 	print "<input type=\"hidden\" name=\"famtag\" value=\"$famtag\" />\n";
 	print "<table class=\"facts_table\">";
 	print "<tr><td class=\"facts_label\">".$pgv_lang["family"]."</td>";
-	print "<td class=\"facts_value\"><input type=\"text\" name=\"famid\" size=\"8\" /> ";
+	print "<td class=\"facts_value\"><input type=\"text\" id=\"famid\" name=\"famid\" size=\"8\" /> ";
 	print_findfamily_link("famid");
 	print "\n</td></tr>";
 	if ($famtag=="CHIL") {
@@ -562,21 +533,36 @@ case 'linkfamaction':
 
 		//-- update the individual record for the person
 		if (preg_match("/1 $itag @$famid@/", $gedrec)==0) {
-			$gedrec = trim($gedrec)."\r\n1 $itag @$famid@";
-			if ($itag=="FAMC" && !empty($pedigree)) {
-				$gedrec.="\r\n2 PEDI $pedigree";
-				if ($pedigree=="adopted")
-					$gedrec.="\r\n1 ADOP\r\n2 FAMC @$famid@\r\n3 ADOP BOTH";
+			if ($itag=="FAMC") {
+				$gedrec .= "\r\n";
+				$pedigree="";
+				if (isset($_REQUEST['pedigree'])) $pedigree = $_REQUEST['pedigree'];
+				switch ($pedigree) {
+				case 'birth':
+					$gedrec .= "1 FAMC @$famid@\r\n2 PEDI $pedigree";
+					break;
+				case 'adopted':
+					$gedrec .= "1 FAMC @$famid@\r\n2 PEDI $pedigree\r\n1 ADOP\r\n2 FAMC @$famid@\r\n3 ADOP BOTH";
+					break;
+				case 'sealing':
+					$gedrec .= "1 FAMC @$famid@\r\n2 PEDI $pedigree\r\n1 SLGC\r\n2 FAMC @$famid@";
+					break;
+				case 'foster':
+					$gedrec .= "1 FAMC @$famid@\r\n2 PEDI $pedigree\r\n1 EVEN\r\n2 TYPE $pedigree";
+					break;
+				default:
+					$gedrec .= "1 FAMC @$famid@";
+					break;
+				}
+				$gedrec .= "\r\n";
 			}
-			if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 			replace_gedrec($pid, $gedrec);
 		}
 
 		//-- if it is adding a new child to a family
 		if ($famtag=="CHIL") {
 			if (preg_match("/1 $famtag @$pid@/", $famrec)==0) {
-				$famrec = trim($famrec)."\r\n1 $famtag @$pid@";
-				if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
+				$famrec = trim($famrec) . "\r\n1 $famtag @$pid@\r\n";
 				replace_gedrec($famid, $famrec);
 			}
 		}
@@ -606,7 +592,7 @@ case 'linkfamaction':
 				}
 			}
 			else {
-				$famrec .= "\r\n1 $famtag @$pid@";
+				$famrec .= "\r\n1 $famtag @$pid@\r\n";
 				if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 				replace_gedrec($famid, $famrec);
 			}
@@ -630,9 +616,7 @@ case 'addnewsource':
 		}
 	//-->
 	</script>
-	<b><?php print $pgv_lang["create_source"];
-	$tabkey = 1;
-	 ?></b>
+	<b><?php print $pgv_lang['create_source']; $tabkey = 1; ?></b>
 	<form method="post" action="edit_interface.php" onSubmit="return check_form(this);">
 		<input type="hidden" name="action" value="addsourceaction" />
 		<input type="hidden" name="pid" value="newsour" />
@@ -656,12 +640,12 @@ case 'addnewsource':
 			<td class="optionbox wrap"><textarea tabindex="<?php print $tabkey; ?>" name="PUBL" id="PUBL" rows="5" cols="60"></textarea><br /><?php print_specialchar_link("PUBL",true); ?></td></tr>
 			<?php $tabkey++; ?>
 			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_REPO_help", "qm"); print $factarray["REPO"]; ?></td>
-			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="REPO" id="REPO" value="" size="<?php print (strlen($REPO_ID_PREFIX) + 4); ?>" /> <?php print_findrepository_link("REPO"); print_addnewrepository_link("REPO"); ?></td></tr>
+			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="REPO" id="REPO" value="" size="10" /> <?php print_findrepository_link("REPO"); print_addnewrepository_link("REPO"); ?></td></tr>
 			<?php $tabkey++; ?>
 			<tr><td class="descriptionbox <?php print $TEXT_DIRECTION; ?> wrap width25"><?php print_help_link("edit_CALN_help", "qm"); print $factarray["CALN"]; ?></td>
 			<td class="optionbox wrap"><input tabindex="<?php print $tabkey; ?>" type="text" name="CALN" id="CALN" value="" /></td></tr>
 		</table>
-			<?php print_help_link("edit_SOUR_EVEN_help", "qm"); ?><a href="#"  onclick="return expand_layer('events');"><img id="events_img" src="<?php print $PGV_IMAGE_DIR."/".$PGV_IMAGES["plus"]["other"];?>" border="0" width="11" height="11" alt="" title="" /> 
+			<?php print_help_link("edit_SOUR_EVEN_help", "qm"); ?><a href="#"  onclick="return expand_layer('events');"><img id="events_img" src="<?php print $PGV_IMAGE_DIR."/".$PGV_IMAGES["plus"]["other"]; ?>" border="0" width="11" height="11" alt="" title="" />
 			<?php print $pgv_lang["source_events"]; ?></a>
 			<div id="events" style="display: none;">
 			<table class="facts_table">
@@ -699,6 +683,7 @@ case 'addnewsource':
 case 'addsourceaction':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	$newgedrec = "0 @XREF@ SOUR\r\n";
+	if (isset($_REQUEST['EVEN'])) $EVEN = $_REQUEST['EVEN'];
 	if (!empty($EVEN) && count($EVEN)>0) {
 		$newgedrec .= "1 DATA\r\n";
 		$newgedrec .= "2 EVEN ".implode(",", $EVEN)."\r\n";
@@ -706,37 +691,35 @@ case 'addsourceaction':
 		if (!empty($EVEN_PLAC)) $newgedrec .= "3 PLAC ".$EVEN_PLAC."\r\n";
 		if (!empty($AGNC))	$newgedrec .= "2 AGNC ".$AGNC."\r\n";
 	}
+	if (isset($_REQUEST['ABBR'])) $ABBR = $_REQUEST['ABBR'];
+	if (isset($_REQUEST['TITL'])) $TITL = $_REQUEST['TITL'];
+	if (isset($_REQUEST['_HEB'])) $_HEB = $_REQUEST['_HEB'];
+	if (isset($_REQUEST['ROMN'])) $ROMN = $_REQUEST['ROMN'];
+	if (isset($_REQUEST['AUTH'])) $AUTH = $_REQUEST['AUTH'];
+	if (isset($_REQUEST['PUBL'])) $PUBL = $_REQUEST['PUBL'];
+	if (isset($_REQUEST['REPO'])) $REPO = $_REQUEST['REPO'];
+	if (isset($_REQUEST['CALN'])) $CALN = $_REQUEST['CALN'];
 	if (!empty($ABBR)) $newgedrec .= "1 ABBR $ABBR\r\n";
 	if (!empty($TITL)) {
 		$newgedrec .= "1 TITL $TITL\r\n";
 		if (!empty($_HEB)) $newgedrec .= "2 _HEB $_HEB\r\n";
-		if (!empty($ROMN)) $newgedrec .= "2 ROMN $_HEB\r\n";
+		if (!empty($ROMN)) $newgedrec .= "2 ROMN $ROMN\r\n";
 	}
 	if (!empty($AUTH)) $newgedrec .= "1 AUTH $AUTH\r\n";
-	if (!empty($PUBL)) $newgedrec .= "1 PUBL $PUBL\r\n";
+	if (!empty($PUBL)) {
+		$newlines = preg_split("/\r?\n/",$PUBL,-1,PREG_SPLIT_NO_EMPTY);
+		for($k=0; $k<count($newlines); $k++) {
+			if ( $k==0 ) $newgedrec .= "1 PUBL $newlines[$k]\r\n";
+			else $newgedrec .= "2 CONT $newlines[$k]\r\n";
+		}
+	}
 	if (!empty($REPO)) {
 		$newgedrec .= "1 REPO @$REPO@\r\n";
 		if (!empty($CALN)) $newgedrec .= "2 CALN $CALN\r\n";
 	}
-	$newlines = preg_split("/\r?\n/", $newgedrec);
-	$newged = $newlines[0]."\r\n";
-	for($k=1; $k<count($newlines); $k++) {
-		if (((preg_match("/\d .... .*/", $newlines[$k])==0) and strlen($newlines[$k])!=0)) $newlines[$k] = "2 CONT ".$newlines[$k];
-		if (strlen($newlines[$k])>255) {
-			while(strlen($newlines[$k])>255) {
-				$newPiece = rtrim(substr($newlines[$k], 0, 255));
-				$newged .= $newPiece."\r\n";
-				$newlines[$k] = substr($newlines[$k], strlen($newPiece));
-				$newlines[$k] = "2 CONC ".$newlines[$k];
-			}
-			$newged .= trim($newlines[$k])."\r\n";
-		}
-		else {
-			$newged .= trim($newlines[$k])."\r\n";
-		}
-	}
-	if ($GLOBALS["DEBUG"]) print "<pre>$newged</pre>";
-	$xref = append_gedrec($newged);
+	if ($GLOBALS["DEBUG"]) print "<pre>$newgedrec</pre>";
+	$xref = append_gedrec($newgedrec);
+	$link = "source.php?sid=$xref&amp;show_changes=yes";
 	if ($xref) {
 		print "<br /><br />\n".$pgv_lang["new_source_created"]."<br /><br />";
 		print "<a href=\"javascript:// SOUR $xref\" onclick=\"openerpasteid('$xref'); return false;\">".$pgv_lang["paste_id_into_field"]." <b>$xref</b></a>\n";
@@ -798,35 +781,35 @@ case 'addnewrepository':
 case 'addrepoaction':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	$newgedrec = "0 @XREF@ REPO\r\n";
+	if (isset($_REQUEST['NAME'])) $NAME = $_REQUEST['NAME'];
+	if (isset($_REQUEST['_HEB'])) $_HEB = $_REQUEST['_HEB'];
+	if (isset($_REQUEST['ROMN'])) $ROMN = $_REQUEST['ROMN'];
+	if (isset($_REQUEST['ADDR'])) $ADDR = $_REQUEST['ADDR'];
+	if (isset($_REQUEST['PHON'])) $PHON = $_REQUEST['PHON'];
+	if (isset($_REQUEST['FAX'])) $FAX = $_REQUEST['FAX'];
+	if (isset($_REQUEST['EMAIL'])) $EMAIL = $_REQUEST['EMAIL'];
+	if (isset($_REQUEST['WWW'])) $WWW = $_REQUEST['WWW'];
+	
 	if (!empty($NAME)) {
 		$newgedrec .= "1 NAME $NAME\r\n";
 		if (!empty($_HEB)) $newgedrec .= "2 _HEB $_HEB\r\n";
-		if (!empty($ROMN)) $newgedrec .= "2 ROMN $_HEB\r\n";
+		if (!empty($ROMN)) $newgedrec .= "2 ROMN $ROMN\r\n";
 	}
-	if (!empty($ADDR)) $newgedrec .= "1 ADDR $ADDR\r\n";
+	if (!empty($ADDR)) {
+		$newlines = preg_split("/\r?\n/",$ADDR,-1,PREG_SPLIT_NO_EMPTY);
+		for($k=0; $k<count($newlines); $k++) {
+			if ( $k==0 ) $newgedrec .= "1 ADDR $newlines[$k]\r\n";
+			else $newgedrec .= "2 CONT $newlines[$k]\r\n";
+		}
+	}
 	if (!empty($PHON)) $newgedrec .= "1 PHON $PHON\r\n";
 	if (!empty($FAX)) $newgedrec .= "1 FAX $FAX\r\n";
 	if (!empty($EMAIL)) $newgedrec .= "1 EMAIL $EMAIL\r\n";
 	if (!empty($WWW)) $newgedrec .= "1 WWW $WWW\r\n";
-	$newlines = preg_split("/\r?\n/", $newgedrec);
-	$newged = $newlines[0]."\r\n";
-	for($k=1; $k<count($newlines); $k++) {
-		if ((preg_match("/\d (.....|....|...) .*/", $newlines[$k])==0) and (strlen($newlines[$k])!=0)) $newlines[$k] = "2 CONT ".$newlines[$k];
-		if (strlen($newlines[$k])>255) {
-			while(strlen($newlines[$k])>255) {
-				$newPiece = rtrim(substr($newlines[$k], 0, 255));
-				$newged .= $newPiece."\r\n";
-				$newlines[$k] = substr($newlines[$k], strlen($newPiece));
-				$newlines[$k] = "2 CONC ".$newlines[$k];
-			}
-			$newged .= trim($newlines[$k])."\r\n";
-		}
-		else {
-			$newged .= trim($newlines[$k])."\r\n";
-		}
-	}
-	if ($GLOBALS["DEBUG"]) print "<pre>$newged</pre>";
-	$xref = append_gedrec($newged);
+
+	if ($GLOBALS["DEBUG"]) print "<pre>$newgedrec</pre>";
+	$xref = append_gedrec($newgedrec);
+	$link = "repo.php?rid=$xref&amp;show_changes=yes";
 	if ($xref) {
 		print "<br /><br />\n".$pgv_lang["new_repo_created"]."<br /><br />";
 		print "<a href=\"javascript:// REPO $xref\" onclick=\"openerpasteid('$xref'); return false;\">".$pgv_lang["paste_rid_into_field"]." <b>$xref</b></a>\n";
@@ -835,6 +818,7 @@ case 'addrepoaction':
 //------------------------------------------------------------------------------
 //-- get the new incoming raw gedcom record and store it in the file
 case 'updateraw':
+	if (isset($_REQUEST['newgedrec'])) $newgedrec = $_REQUEST['newgedrec'];
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	if ($GLOBALS["DEBUG"]) print "<pre>$newgedrec</pre>";
 	$newgedrec = trim($newgedrec);
@@ -851,6 +835,7 @@ case 'update':
 	if (in_array($tag[0], $emptyfacts) && array_unique($text)==array("") && !$islink[0]) $text[0]="Y";
 	//-- check for photo update
 	if (count($_FILES)>0) {
+		if (isset($_REQUEST['folder'])) $folder = $_REQUEST['folder'];
 		$uploaded_files = array();
 		$upload_errors = array($pgv_lang["file_success"], $pgv_lang["file_too_big"], $pgv_lang["file_too_big"],$pgv_lang["file_partial"], $pgv_lang["file_missing"]);
 		if (substr($folder,0,1) == "/") $folder = substr($folder,1);
@@ -890,6 +875,20 @@ case 'update':
 		while(($i<count($gedlines))&&($gedlines[$i]{0}>$glevel)) $i++;
 	}
 	if (!isset($glevels)) $glevels = array();
+	if (isset($_REQUEST['NAME'])) $NAME = $_REQUEST['NAME'];
+	if (isset($_REQUEST['TYPE'])) $TYPE = $_REQUEST['TYPE'];
+	if (isset($_REQUEST['NPFX'])) $NPFX = $_REQUEST['NPFX'];
+	if (isset($_REQUEST['GIVN'])) $GIVN = $_REQUEST['GIVN'];
+	if (isset($_REQUEST['NICK'])) $NICK = $_REQUEST['NICK'];
+	if (isset($_REQUEST['SPFX'])) $SPFX = $_REQUEST['SPFX'];
+	if (isset($_REQUEST['SURN'])) $SURN = $_REQUEST['SURN'];
+	if (isset($_REQUEST['NSFX'])) $NSFX = $_REQUEST['NSFX'];
+	if (isset($_REQUEST['ROMN'])) $ROMN = $_REQUEST['ROMN'];
+	if (isset($_REQUEST['FONE'])) $FONE = $_REQUEST['FONE'];
+	if (isset($_REQUEST['_AKA'])) $_AKA = $_REQUEST['_AKA'];
+	if (isset($_REQUEST['_HEB'])) $_HEB = $_REQUEST['_HEB'];
+	if (isset($_REQUEST['_MARNM'])) $_MARNM = $_REQUEST['_MARNM'];
+	
 	if (!empty($NAME)) $newged .= "1 NAME $NAME\r\n";
 	if (!empty($TYPE)) $newged .= "2 TYPE $TYPE\r\n";
 	if (!empty($NPFX)) $newged .= "2 NPFX $NPFX\r\n";
@@ -901,7 +900,7 @@ case 'update':
 
 	//-- Refer to Bug [ 1329644 ] Add Married Name - Wrong Sequence
 	$newged = handle_updates($newged);
-	
+
 	if (!empty($ROMN)) $newged .= "2 ROMN $ROMN\r\n";
 	if (!empty($FONE)) $newged .= "2 FONE $FONE\r\n";
 	if (!empty($_AKA)) $newged .= "2 _AKA $_AKA\r\n";
@@ -919,6 +918,24 @@ case 'update':
 //------------------------------------------------------------------------------
 case 'addchildaction':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
+
+	splitSOUR();			// separate SOUR record from the rest
+
+	if (isset($_REQUEST['NAME'])) $NAME = $_REQUEST['NAME'];
+	if (isset($_REQUEST['TYPE'])) $TYPE = $_REQUEST['TYPE'];
+	if (isset($_REQUEST['NPFX'])) $NPFX = $_REQUEST['NPFX'];
+	if (isset($_REQUEST['GIVN'])) $GIVN = $_REQUEST['GIVN'];
+	if (isset($_REQUEST['NICK'])) $NICK = $_REQUEST['NICK'];
+	if (isset($_REQUEST['SPFX'])) $SPFX = $_REQUEST['SPFX'];
+	if (isset($_REQUEST['SURN'])) $SURN = $_REQUEST['SURN'];
+	if (isset($_REQUEST['NSFX'])) $NSFX = $_REQUEST['NSFX'];
+	if (isset($_REQUEST['ROMN'])) $ROMN = $_REQUEST['ROMN'];
+	if (isset($_REQUEST['FONE'])) $FONE = $_REQUEST['FONE'];
+	if (isset($_REQUEST['_AKA'])) $_AKA = $_REQUEST['_AKA'];
+	if (isset($_REQUEST['_HEB'])) $_HEB = $_REQUEST['_HEB'];
+	if (isset($_REQUEST['_MARNM'])) $_MARNM = $_REQUEST['_MARNM'];
+	if (isset($_REQUEST['SEX'])) $SEX = $_REQUEST['SEX'];
+	
 	$gedrec = "0 @REF@ INDI\r\n1 NAME $NAME\r\n";
 	if (!empty($TYPE)) $gedrec .= "2 TYPE $TYPE\r\n";
 	if (!empty($NPFX)) $gedrec .= "2 NPFX $NPFX\r\n";
@@ -933,6 +950,16 @@ case 'addchildaction':
 	if (!empty($_HEB)) $gedrec .= "2 _HEB $_HEB\r\n";
 	if (!empty($_MARNM)) $gedrec .= "2 _MARNM $_MARNM\r\n";
 	$gedrec .= "1 SEX $SEX\r\n";
+	
+	if (isset($_REQUEST['BIRT_DATE'])) $BIRT_DATE = $_REQUEST['BIRT_DATE'];
+	if (isset($_REQUEST['BIRT_PLAC'])) $BIRT_PLAC = $_REQUEST['BIRT_PLAC'];
+	if (isset($_REQUEST['BIRT_ROMN'])) $BIRT_ROMN = $_REQUEST['BIRT_ROMN'];
+	if (isset($_REQUEST['BIRT_FONE'])) $BIRT_FONE = $_REQUEST['BIRT_FONE'];
+	if (isset($_REQUEST['BIRT__HEB'])) $BIRT__HEB = $_REQUEST['BIRT__HEB'];
+	if (isset($_REQUEST['BIRT_LATI'])) $BIRT_LATI = $_REQUEST['BIRT_LATI'];
+	if (isset($_REQUEST['BIRT_LONG'])) $BIRT_LONG = $_REQUEST['BIRT_LONG'];
+	if (isset($_REQUEST['SOUR_BIRT'])) $SOUR_BIRT = $_REQUEST['SOUR_BIRT'];
+	if (isset($_REQUEST['BIRT'])) $BIRT = $_REQUEST['BIRT'];
 	if ((!empty($BIRT_DATE))||(!empty($BIRT_PLAC))) {
 		$gedrec .= "1 BIRT\r\n";
 		if (!empty($BIRT_DATE)) {
@@ -950,12 +977,22 @@ case 'addchildaction':
 				$gedrec .= "4 LONG $BIRT_LONG\r\n";
 			}
 		}
-		if (isset($SOUR_BIRT) and $SOUR_BIRT and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-			$gedrec .= "2 SOUR @".$text[0]."@\r\n";
-			if ($tag[1]=="PAGE" and $text[1]!="") $gedrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+		if (isset($SOUR_BIRT) && $SOUR_BIRT=="Y" && count($tagSOUR)>0) {
+			$gedrec = updateSOUR($gedrec, 2);
 		}
 	}
 	else if (!empty($BIRT)) $gedrec .= "1 BIRT Y\r\n";
+	
+	if (isset($_REQUEST['DEAT'])) $DEAT = $_REQUEST['DEAT'];
+	if (isset($_REQUEST['DEAT_DATE'])) $DEAT_DATE = $_REQUEST['DEAT_DATE'];
+	if (isset($_REQUEST['DEAT_PLAC'])) $DEAT_PLAC = $_REQUEST['DEAT_PLAC'];
+	if (isset($_REQUEST['DEAT_ROMN'])) $DEAT_ROMN = $_REQUEST['DEAT_ROMN'];
+	if (isset($_REQUEST['DEAT_FONE'])) $DEAT_FONE = $_REQUEST['DEAT_FONE'];
+	if (isset($_REQUEST['DEAT__HEB'])) $DEAT__HEB = $_REQUEST['DEAT__HEB'];
+	if (isset($_REQUEST['DEAT_LATI'])) $DEAT_LATI = $_REQUEST['DEAT_LATI'];
+	if (isset($_REQUEST['DEAT_LONG'])) $DEAT_LONG = $_REQUEST['DEAT_LONG'];
+	if (isset($_REQUEST['DEAT'])) $DEAT = $_REQUEST['DEAT'];
+	if (isset($_REQUEST['SOUR_DEAT'])) $SOUR_DEAT = $_REQUEST['SOUR_DEAT'];
 	if ((!empty($DEAT_DATE))||(!empty($DEAT_PLAC))) {
 		$gedrec .= "1 DEAT\r\n";
 		if (!empty($DEAT_DATE)) {
@@ -973,34 +1010,72 @@ case 'addchildaction':
 				$gedrec .= "4 LONG $DEAT_LONG\r\n";
 			}
 		}
-		if (isset($SOUR_DEAT) and $SOUR_DEAT and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-			$gedrec .= "2 SOUR @".$text[0]."@\r\n";
-			if ($tag[1]=="PAGE" and $text[1]!="") $gedrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+		if (isset($SOUR_DEAT) && $SOUR_DEAT=="Y" && count($tagSOUR)>0) {
+			$gedrec = updateSOUR($gedrec, 2);
 		}
 	}
 	else if (!empty($DEAT)) $gedrec .= "1 DEAT Y\r\n";
 	if (!empty($famid)) {
-		$gedrec.="1 FAMC @$famid@\r\n";
-		if (!empty($PEDI))
-			$gedrec.="2 PEDI $PEDI\r\n";
+		$gedrec .= "\r\n";
+		$PEDI="";
+		if (isset($_REQUEST['PEDI'])) $PEDI = $_REQUEST['PEDI'];
+		switch ($PEDI) {
+		case 'birth':
+			$gedrec.="1 FAMC @$famid@\r\n2 PEDI $PEDI";
+			break;
+		case 'adopted':
+			$gedrec.="1 FAMC @$famid@\r\n2 PEDI $PEDI\r\n1 ADOP\r\n2 FAMC @$famid@\r\n3 ADOP BOTH";
+			break;
+		case 'sealing':
+			$gedrec.="1 FAMC @$famid@\r\n2 PEDI $PEDI\r\n1 SLGC\r\n2 FAMC @$famid@";
+			break;
+		case 'foster':
+			$gedrec.="1 FAMC @$famid@\r\n2 PEDI $PEDI\r\n1 EVEN\r\n2 TYPE $PEDI";
+			break;
+		default:
+			$gedrec.="1 FAMC @$famid@";
+			break;
+		}
+		$gedrec .= "\r\n";
 	}
 
-	$gedrec = handle_updates($gedrec);
+	if (isset($_REQUEST['SOUR_INDI'])) $SOUR_INDI = $_REQUEST['SOUR_INDI'];
+	if (isset($SOUR_INDI) && $SOUR_INDI=="Y") $gedrec = handle_updates($gedrec);
+	else $gedrec = updateRest($gedrec);
 
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 	$xref = append_gedrec($gedrec);
+	$link = "individual.php?pid=$xref&amp;show_changes=yes";
 	if ($xref) {
 		print "<br /><br />".$pgv_lang["update_successful"];
 		$gedrec = "";
 		if (!empty($famid)) {
-			if (!isset($pgv_changes[$famid."_".$GEDCOM])) $gedrec = find_gedcom_record($famid);
-			else $gedrec = find_updated_record($famid);
-			if (!empty($gedrec)) {
-				$gedrec = trim($gedrec);
-				$gedrec .= "\r\n1 CHIL @$xref@";
-				if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
-				replace_gedrec($famid, $gedrec);
+			// Insert new child at the right place [ 1686246 ]
+			$newchild = Person::getInstance($xref);
+			$family = Family::getInstance($famid);
+			if ($family->getUpdatedFamily()) $family = $family->getUpdatedFamily();
+			$gedrec = $family->gedrec;
+			$done = false;
+			foreach($family->getChildren() as $key=>$child) {
+				if (GedcomDate::Compare($newchild->getBirthDate(), $child->getBirthDate())<0) {
+					// new child is older : insert before
+					$gedrec = str_replace("1 CHIL @".$child->getXref()."@",
+																"1 CHIL @$xref@\r\n1 CHIL @".$child->getXref()."@",
+																$gedrec);
+					$done = true;
+					break;
+				}
 			}
+			// new child is the only one
+			if (count($family->getChildren())<1) $gedrec .= "\r\n1 CHIL @$xref@";
+			else if (!$done) {
+				// new child is the youngest or undated : insert after
+				$gedrec = str_replace("1 CHIL @".$child->getXref()."@",
+															"1 CHIL @".$child->getXref()."@\r\n1 CHIL @$xref@",
+															$gedrec);
+			}
+			if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
+			replace_gedrec($famid, $gedrec);
 		}
 		$success = true;
 	}
@@ -1008,6 +1083,24 @@ case 'addchildaction':
 //------------------------------------------------------------------------------
 case 'addspouseaction':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
+
+	splitSOUR();			// separate SOUR record from the rest
+
+	if (isset($_REQUEST['NAME'])) $NAME = $_REQUEST['NAME'];
+	if (isset($_REQUEST['TYPE'])) $TYPE = $_REQUEST['TYPE'];
+	if (isset($_REQUEST['NPFX'])) $NPFX = $_REQUEST['NPFX'];
+	if (isset($_REQUEST['GIVN'])) $GIVN = $_REQUEST['GIVN'];
+	if (isset($_REQUEST['NICK'])) $NICK = $_REQUEST['NICK'];
+	if (isset($_REQUEST['SPFX'])) $SPFX = $_REQUEST['SPFX'];
+	if (isset($_REQUEST['SURN'])) $SURN = $_REQUEST['SURN'];
+	if (isset($_REQUEST['NSFX'])) $NSFX = $_REQUEST['NSFX'];
+	if (isset($_REQUEST['ROMN'])) $ROMN = $_REQUEST['ROMN'];
+	if (isset($_REQUEST['FONE'])) $FONE = $_REQUEST['FONE'];
+	if (isset($_REQUEST['_AKA'])) $_AKA = $_REQUEST['_AKA'];
+	if (isset($_REQUEST['_HEB'])) $_HEB = $_REQUEST['_HEB'];
+	if (isset($_REQUEST['_MARNM'])) $_MARNM = $_REQUEST['_MARNM'];
+	if (isset($_REQUEST['SEX'])) $SEX = $_REQUEST['SEX'];
+	
 	$gedrec = "0 @REF@ INDI\r\n1 NAME $NAME\r\n";
 	if (!empty($TYPE)) $gedrec .= "2 TYPE $TYPE\r\n";
 	if (!empty($NPFX)) $gedrec .= "2 NPFX $NPFX\r\n";
@@ -1022,6 +1115,16 @@ case 'addspouseaction':
 	if (!empty($_HEB)) $gedrec .= "2 _HEB $_HEB\r\n";
 	if (!empty($_MARNM)) $gedrec .= "2 _MARNM $_MARNM\r\n";
 	$gedrec .= "1 SEX $SEX\r\n";
+	
+	if (isset($_REQUEST['BIRT_DATE'])) $BIRT_DATE = $_REQUEST['BIRT_DATE'];
+	if (isset($_REQUEST['BIRT_PLAC'])) $BIRT_PLAC = $_REQUEST['BIRT_PLAC'];
+	if (isset($_REQUEST['BIRT_ROMN'])) $BIRT_ROMN = $_REQUEST['BIRT_ROMN'];
+	if (isset($_REQUEST['BIRT_FONE'])) $BIRT_FONE = $_REQUEST['BIRT_FONE'];
+	if (isset($_REQUEST['BIRT__HEB'])) $BIRT__HEB = $_REQUEST['BIRT__HEB'];
+	if (isset($_REQUEST['BIRT_LATI'])) $BIRT_LATI = $_REQUEST['BIRT_LATI'];
+	if (isset($_REQUEST['BIRT_LONG'])) $BIRT_LONG = $_REQUEST['BIRT_LONG'];
+	if (isset($_REQUEST['SOUR_BIRT'])) $SOUR_BIRT = $_REQUEST['SOUR_BIRT'];
+	if (isset($_REQUEST['BIRT'])) $BIRT = $_REQUEST['BIRT'];
 	if ((!empty($BIRT_DATE))||(!empty($BIRT_PLAC))) {
 		$gedrec .= "1 BIRT\r\n";
 		if (!empty($BIRT_DATE)) {
@@ -1039,12 +1142,22 @@ case 'addspouseaction':
 				$gedrec .= "4 LONG $BIRT_LONG\r\n";
 			}
 		}
-		if (isset($SOUR_BIRT) and $SOUR_BIRT and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-			$gedrec .= "2 SOUR @".$text[0]."@\r\n";
-			if ($tag[1]=="PAGE" and $text[1]!="") $gedrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+		if (isset($SOUR_BIRT) && $SOUR_BIRT=="Y" && count($tagSOUR)>0) {
+			$gedrec = updateSOUR($gedrec, 2);
 		}
 	}
 	else if (!empty($BIRT)) $gedrec .= "1 BIRT Y\r\n";
+	
+	if (isset($_REQUEST['DEAT'])) $DEAT = $_REQUEST['DEAT'];
+	if (isset($_REQUEST['DEAT_DATE'])) $DEAT_DATE = $_REQUEST['DEAT_DATE'];
+	if (isset($_REQUEST['DEAT_PLAC'])) $DEAT_PLAC = $_REQUEST['DEAT_PLAC'];
+	if (isset($_REQUEST['DEAT_ROMN'])) $DEAT_ROMN = $_REQUEST['DEAT_ROMN'];
+	if (isset($_REQUEST['DEAT_FONE'])) $DEAT_FONE = $_REQUEST['DEAT_FONE'];
+	if (isset($_REQUEST['DEAT__HEB'])) $DEAT__HEB = $_REQUEST['DEAT__HEB'];
+	if (isset($_REQUEST['DEAT_LATI'])) $DEAT_LATI = $_REQUEST['DEAT_LATI'];
+	if (isset($_REQUEST['DEAT_LONG'])) $DEAT_LONG = $_REQUEST['DEAT_LONG'];
+	if (isset($_REQUEST['SOUR_DEAT'])) $SOUR_DEAT = $_REQUEST['SOUR_DEAT'];
+	if (isset($_REQUEST['DEAT'])) $DEAT = $_REQUEST['DEAT'];
 	if ((!empty($DEAT_DATE))||(!empty($DEAT_PLAC))) {
 		$gedrec .= "1 DEAT\r\n";
 		if (!empty($DEAT_DATE)) {
@@ -1062,15 +1175,19 @@ case 'addspouseaction':
 				$gedrec .= "4 LONG $DEAT_LONG\r\n";
 			}
 		}
-		if (isset($SOUR_DEAT) and $SOUR_DEAT and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-			$gedrec .= "2 SOUR @".$text[0]."@\r\n";
-			if ($tag[1]=="PAGE" and $text[1]!="") $gedrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+		if (isset($SOUR_DEAT) && $SOUR_DEAT=="Y" && count($tagSOUR)>0) {
+			$gedrec = updateSOUR($gedrec, 2);
 		}
 	}
 	else if (!empty($DEAT)) $gedrec .= "1 DEAT Y\r\n";
-	$gedrec = handle_updates($gedrec);
+
+	if (isset($_REQUEST['SOUR_INDI'])) $SOUR_INDI = $_REQUEST['SOUR_INDI'];
+	if (isset($SOUR_INDI) && $SOUR_INDI=="Y") $gedrec = handle_updates($gedrec);
+	else $gedrec = updateRest($gedrec);
+
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 	$xref = append_gedrec($gedrec);
+	$link = "individual.php?pid=$xref&amp;show_changes=yes";
 	if ($xref) print "<br /><br />".$pgv_lang["update_successful"];
 	else exit;
 	$spouserec = $gedrec;
@@ -1087,6 +1204,17 @@ case 'addspouseaction':
 			$famrec .= "1 WIFE @$xref@\r\n";
 			$famrec .= "1 HUSB @$pid@\r\n";
 		}
+		
+		if (isset($_REQUEST['MARR_DATE'])) $MARR_DATE = $_REQUEST['MARR_DATE'];
+		if (isset($_REQUEST['MARR_PLAC'])) $MARR_PLAC = $_REQUEST['MARR_PLAC'];
+		if (isset($_REQUEST['MARR_ROMN'])) $MARR_ROMN = $_REQUEST['MARR_ROMN'];
+		if (isset($_REQUEST['MARR_FONE'])) $MARR_FONE = $_REQUEST['MARR_FONE'];
+		if (isset($_REQUEST['MARR__HEB'])) $MARR__HEB = $_REQUEST['MARR__HEB'];
+		if (isset($_REQUEST['MARR_LATI'])) $MARR_LATI = $_REQUEST['MARR_LATI'];
+		if (isset($_REQUEST['MARR_LONG'])) $MARR_LONG = $_REQUEST['MARR_LONG'];
+		if (isset($_REQUEST['MARR'])) $MARR = $_REQUEST['MARR'];
+		if (isset($_REQUEST['SOUR_MARR'])) $SOUR_MARR = $_REQUEST['SOUR_MARR'];
+		if (isset($_REQUEST['SOUR_FAM'])) $SOUR_FAM = $_REQUEST['SOUR_FAM'];
 		if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
 			$famrec .= "1 MARR\r\n";
 			if (!empty($MARR_DATE)) {
@@ -1104,12 +1232,15 @@ case 'addspouseaction':
 					$famrec .= "4 LONG $MARR_LONG\r\n";
 				}
 			}
-			if (isset($SOUR_MARR) and $SOUR_MARR and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-				$famrec .= "2 SOUR @".$text[0]."@\r\n";
-				if ($tag[1]=="PAGE" and $text[1]!="") $famrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+			if (isset($SOUR_MARR) && $SOUR_MARR=="Y" && count($tagSOUR)>0) {
+				$famrec = updateSOUR($famrec, 2);
 			}
 		}
 		else if (!empty($MARR)) $famrec .= "1 MARR Y\r\n";
+
+		if (isset($SOUR_FAM) && $SOUR_FAM=="Y")  $famrec = handle_updates($famrec);
+		else $famrec = updateRest($famrec);
+
 		if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 		$famid = append_gedrec($famrec);
 	}
@@ -1118,8 +1249,17 @@ case 'addspouseaction':
 		if (isset($pgv_changes[$famid."_".$GEDCOM])) $famrec = find_updated_record($famid);
 		else $famrec = find_family_record($famid);
 		if (!empty($famrec)) {
-			$famrec = trim($famrec);
-			$famrec .= "\r\n1 $famtag @$xref@\r\n";
+			$famrec = trim($famrec) . "\r\n1 $famtag @$xref@\r\n";
+			if (isset($_REQUEST['MARR_DATE'])) $MARR_DATE = $_REQUEST['MARR_DATE'];
+			if (isset($_REQUEST['MARR_PLAC'])) $MARR_PLAC = $_REQUEST['MARR_PLAC'];
+			if (isset($_REQUEST['MARR_ROMN'])) $MARR_ROMN = $_REQUEST['MARR_ROMN'];
+			if (isset($_REQUEST['MARR_FONE'])) $MARR_FONE = $_REQUEST['MARR_FONE'];
+			if (isset($_REQUEST['MARR__HEB'])) $MARR__HEB = $_REQUEST['MARR__HEB'];
+			if (isset($_REQUEST['MARR_LATI'])) $MARR_LATI = $_REQUEST['MARR_LATI'];
+			if (isset($_REQUEST['MARR_LONG'])) $MARR_LONG = $_REQUEST['MARR_LONG'];
+			if (isset($_REQUEST['MARR'])) $MARR = $_REQUEST['MARR'];
+			if (isset($_REQUEST['SOUR_MARR'])) $SOUR_MARR = $_REQUEST['SOUR_MARR'];
+			if (isset($_REQUEST['SOUR_FAM'])) $SOUR_FAM = $_REQUEST['SOUR_FAM'];
 			if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
 				$famrec .= "1 MARR\r\n";
 				if (!empty($MARR_DATE)) {
@@ -1137,12 +1277,15 @@ case 'addspouseaction':
 						$famrec .= "4 LONG $MARR_LONG\r\n";
 					}
 				}
-				if (isset($SOUR_MARR) and $SOUR_MARR and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-					$famrec .= "2 SOUR @".$text[0]."@\r\n";
-					if ($tag[1]=="PAGE" and $text[1]!="") $famrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+				if (isset($SOUR_MARR) && $SOUR_MARR=="Y" && count($tagSOUR)>0) {
+					$famrec = handle_updates($famrec, 2);
 				}
 			}
 			else if (!empty($MARR)) $famrec .= "1 MARR Y\r\n";
+
+			if (isset($SOUR_FAM) && $SOUR_FAM=="Y")  $famrec = handle_updates($famrec);
+			else $famrec = updateRest($famrec);
+
 			if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 			replace_gedrec($famid, $famrec);
 		}
@@ -1153,8 +1296,7 @@ case 'addspouseaction':
 		$gedrec = find_updated_record($xref);
 		**/
 		$gedrec = $spouserec;
-		$gedrec = trim($gedrec);
-		$gedrec .= "\r\n1 FAMS @$famid@\r\n";
+		$gedrec = trim($gedrec) . "\r\n1 FAMS @$famid@\r\n";
 		if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 		replace_gedrec($xref, $gedrec);
 	}
@@ -1163,8 +1305,7 @@ case 'addspouseaction':
 		if (!isset($pgv_changes[$pid."_".$GEDCOM])) $indirec = find_gedcom_record($pid);
 		else $indirec = find_updated_record($pid);
 		if ($indirec) {
-			$indirec = trim($indirec);
-			$indirec .= "\r\n1 FAMS @$famid@\r\n";
+			$indirec = trim($indirec) . "\r\n1 FAMS @$famid@\r\n";
 			if ($GLOBALS["DEBUG"]) print "<pre>$indirec</pre>";
 			replace_gedrec($pid, $indirec);
 		}
@@ -1173,6 +1314,10 @@ case 'addspouseaction':
 //------------------------------------------------------------------------------
 case 'linkspouseaction':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
+
+	splitSOUR();			// separate SOUR record from the rest
+
+	if (isset($_REQUEST['spid'])) $spid = $_REQUEST['spid'];
 	if (!empty($spid)) {
 		if (isset($pgv_changes[$spid.'_'.$GEDCOM])) $gedrec = find_updated_record($spid);
 		else $gedrec = find_person_record($spid);
@@ -1191,6 +1336,16 @@ case 'linkspouseaction':
 					$famrec .= "1 WIFE @$spid@\r\n";
 					$famrec .= "1 HUSB @$pid@\r\n";
 				}
+				if (isset($_REQUEST['MARR_DATE'])) $MARR_DATE = $_REQUEST['MARR_DATE'];
+				if (isset($_REQUEST['MARR_PLAC'])) $MARR_PLAC = $_REQUEST['MARR_PLAC'];
+				if (isset($_REQUEST['MARR_ROMN'])) $MARR_ROMN = $_REQUEST['MARR_ROMN'];
+				if (isset($_REQUEST['MARR_FONE'])) $MARR_FONE = $_REQUEST['MARR_FONE'];
+				if (isset($_REQUEST['MARR__HEB'])) $MARR__HEB = $_REQUEST['MARR__HEB'];
+				if (isset($_REQUEST['MARR_LATI'])) $MARR_LATI = $_REQUEST['MARR_LATI'];
+				if (isset($_REQUEST['MARR_LONG'])) $MARR_LONG = $_REQUEST['MARR_LONG'];
+				if (isset($_REQUEST['MARR'])) $MARR = $_REQUEST['MARR'];
+				if (isset($_REQUEST['SOUR_MARR'])) $SOUR_MARR = $_REQUEST['SOUR_MARR'];
+				if (isset($_REQUEST['SOUR_FAM'])) $SOUR_FAM = $_REQUEST['SOUR_FAM'];
 				if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
 					$famrec .= "1 MARR\r\n";
 					if (!empty($MARR_DATE)) {
@@ -1208,12 +1363,15 @@ case 'linkspouseaction':
 							$famrec .= "4 LONG $MARR_LONG\r\n";
 						}
 					}
-					if (isset($SOUR_MARR) and $SOUR_MARR and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-						$famrec .= "2 SOUR @".$text[0]."@\r\n";
-						if ($tag[1]=="PAGE" and $text[1]!="") $famrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+					if (isset($SOUR_MARR) && $SOUR_MARR=="Y" && count($tagSOUR)>0) {
+						$famrec = updateSOUR($famrec, 2);
 					}
 				}
 				else if (!empty($MARR)) $famrec .= "1 MARR Y\r\n";
+
+				if (isset($SOUR_FAM) && $SOUR_FAM=="Y")  $famrec = handle_updates($famrec);
+				else $famrec = updateRest($famrec);
+
 				if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 				$famid = append_gedrec($famrec);
 			}
@@ -1227,8 +1385,7 @@ case 'linkspouseaction':
 				if (!isset($pgv_changes[$pid."_".$GEDCOM])) $indirec = find_gedcom_record($pid);
 				else $indirec = find_updated_record($pid);
 				if (!empty($indirec)) {
-					$indirec = trim($indirec);
-					$indirec .= "\r\n1 FAMS @$famid@\r\n";
+					$indirec = trim($indirec) . "\r\n1 FAMS @$famid@\r\n";
 					if ($GLOBALS["DEBUG"]) print "<pre>$indirec</pre>";
 					replace_gedrec($pid, $indirec);
 				}
@@ -1239,6 +1396,23 @@ case 'linkspouseaction':
 //------------------------------------------------------------------------------
 case 'addnewparentaction':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
+
+	splitSOUR();			// separate SOUR record from the rest
+	if (isset($_REQUEST['NAME'])) $NAME = $_REQUEST['NAME'];
+	if (isset($_REQUEST['TYPE'])) $TYPE = $_REQUEST['TYPE'];
+	if (isset($_REQUEST['NPFX'])) $NPFX = $_REQUEST['NPFX'];
+	if (isset($_REQUEST['GIVN'])) $GIVN = $_REQUEST['GIVN'];
+	if (isset($_REQUEST['NICK'])) $NICK = $_REQUEST['NICK'];
+	if (isset($_REQUEST['SPFX'])) $SPFX = $_REQUEST['SPFX'];
+	if (isset($_REQUEST['SURN'])) $SURN = $_REQUEST['SURN'];
+	if (isset($_REQUEST['NSFX'])) $NSFX = $_REQUEST['NSFX'];
+	if (isset($_REQUEST['ROMN'])) $ROMN = $_REQUEST['ROMN'];
+	if (isset($_REQUEST['FONE'])) $FONE = $_REQUEST['FONE'];
+	if (isset($_REQUEST['_AKA'])) $_AKA = $_REQUEST['_AKA'];
+	if (isset($_REQUEST['_HEB'])) $_HEB = $_REQUEST['_HEB'];
+	if (isset($_REQUEST['_MARNM'])) $_MARNM = $_REQUEST['_MARNM'];
+	if (isset($_REQUEST['SEX'])) $SEX = $_REQUEST['SEX'];
+	
 	$gedrec = "0 @REF@ INDI\r\n1 NAME $NAME\r\n";
 	if (!empty($TYPE)) $gedrec .= "2 TYPE $TYPE\r\n";
 	if (!empty($NPFX)) $gedrec .= "2 NPFX $NPFX\r\n";
@@ -1253,6 +1427,16 @@ case 'addnewparentaction':
 	if (!empty($_HEB)) $gedrec .= "2 _HEB $_HEB\r\n";
 	if (!empty($_MARNM)) $gedrec .= "2 _MARNM $_MARNM\r\n";
 	$gedrec .= "1 SEX $SEX\r\n";
+	
+	if (isset($_REQUEST['BIRT_DATE'])) $BIRT_DATE = $_REQUEST['BIRT_DATE'];
+	if (isset($_REQUEST['BIRT_PLAC'])) $BIRT_PLAC = $_REQUEST['BIRT_PLAC'];
+	if (isset($_REQUEST['BIRT_ROMN'])) $BIRT_ROMN = $_REQUEST['BIRT_ROMN'];
+	if (isset($_REQUEST['BIRT_FONE'])) $BIRT_FONE = $_REQUEST['BIRT_FONE'];
+	if (isset($_REQUEST['BIRT__HEB'])) $BIRT__HEB = $_REQUEST['BIRT__HEB'];
+	if (isset($_REQUEST['BIRT_LATI'])) $BIRT_LATI = $_REQUEST['BIRT_LATI'];
+	if (isset($_REQUEST['BIRT_LONG'])) $BIRT_LONG = $_REQUEST['BIRT_LONG'];
+	if (isset($_REQUEST['SOUR_BIRT'])) $SOUR_BIRT = $_REQUEST['SOUR_BIRT'];
+	if (isset($_REQUEST['BIRT'])) $BIRT = $_REQUEST['BIRT'];
 	if ((!empty($BIRT_DATE))||(!empty($BIRT_PLAC))) {
 		$gedrec .= "1 BIRT\r\n";
 		if (!empty($BIRT_DATE)) {
@@ -1270,12 +1454,22 @@ case 'addnewparentaction':
 				$gedrec .= "4 LONG $BIRT_LONG\r\n";
 			}
 		}
-		if (isset($SOUR_BIRT) and $SOUR_BIRT and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-			$gedrec .= "2 SOUR @".$text[0]."@\r\n";
-			if ($tag[1]=="PAGE" and $text[1]!="") $gedrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+		if (isset($SOUR_BIRT) && $SOUR_BIRT=="Y" && count($tagSOUR)>0) {
+			$gedrec = updateSOUR($gedrec, 2);
 		}
 	}
 	else if (!empty($BIRT)) $gedrec .= "1 BIRT Y\r\n";
+	
+	if (isset($_REQUEST['DEAT'])) $DEAT = $_REQUEST['DEAT'];
+	if (isset($_REQUEST['DEAT_DATE'])) $DEAT_DATE = $_REQUEST['DEAT_DATE'];
+	if (isset($_REQUEST['DEAT_PLAC'])) $DEAT_PLAC = $_REQUEST['DEAT_PLAC'];
+	if (isset($_REQUEST['DEAT_ROMN'])) $DEAT_ROMN = $_REQUEST['DEAT_ROMN'];
+	if (isset($_REQUEST['DEAT_FONE'])) $DEAT_FONE = $_REQUEST['DEAT_FONE'];
+	if (isset($_REQUEST['DEAT__HEB'])) $DEAT__HEB = $_REQUEST['DEAT__HEB'];
+	if (isset($_REQUEST['DEAT_LATI'])) $DEAT_LATI = $_REQUEST['DEAT_LATI'];
+	if (isset($_REQUEST['DEAT_LONG'])) $DEAT_LONG = $_REQUEST['DEAT_LONG'];
+	if (isset($_REQUEST['SOUR_DEAT'])) $SOUR_DEAT = $_REQUEST['SOUR_DEAT'];
+	if (isset($_REQUEST['DEAT'])) $DEAT = $_REQUEST['DEAT'];
 	if ((!empty($DEAT_DATE))||(!empty($DEAT_PLAC))) {
 		$gedrec .= "1 DEAT\r\n";
 		if (!empty($DEAT_DATE)) {
@@ -1293,15 +1487,19 @@ case 'addnewparentaction':
 				$gedrec .= "4 LONG $DEAT_LONG\r\n";
 			}
 		}
-		if (isset($SOUR_DEAT) and $SOUR_DEAT and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-			$gedrec .= "2 SOUR @".$text[0]."@\r\n";
-			if ($tag[1]=="PAGE" and $text[1]!="") $gedrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+		if (isset($SOUR_DEAT) && $SOUR_DEAT=="Y" && count($tagSOUR)>0) {
+			$gedrec = updateSOUR($gedrec, 2);
 		}
 	}
 	else if (!empty($DEAT)) $gedrec .= "1 DEAT Y\r\n";
-	$gedrec = handle_updates($gedrec);
+
+	if (isset($_REQUEST['SOUR_INDI'])) $SOUR_INDI = $_REQUEST['SOUR_INDI'];
+	if (isset($SOUR_INDI) && $SOUR_INDI=="Y") $gedrec = handle_updates($gedrec);
+	else $gedrec = updateRest($gedrec);
+
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 	$xref = append_gedrec($gedrec);
+	$link = "individual.php?pid=$xref&amp;show_changes=yes";
 	if ($xref) print "<br /><br />".$pgv_lang["update_successful"];
 	else exit;
 	$spouserec = $gedrec;
@@ -1316,6 +1514,17 @@ case 'addnewparentaction':
 			$famrec .= "1 WIFE @$xref@\r\n";
 			$famrec .= "1 CHIL @$pid@\r\n";
 		}
+		
+		if (isset($_REQUEST['MARR_DATE'])) $MARR_DATE = $_REQUEST['MARR_DATE'];
+		if (isset($_REQUEST['MARR_PLAC'])) $MARR_PLAC = $_REQUEST['MARR_PLAC'];
+		if (isset($_REQUEST['MARR_ROMN'])) $MARR_ROMN = $_REQUEST['MARR_ROMN'];
+		if (isset($_REQUEST['MARR_FONE'])) $MARR_FONE = $_REQUEST['MARR_FONE'];
+		if (isset($_REQUEST['MARR__HEB'])) $MARR__HEB = $_REQUEST['MARR__HEB'];
+		if (isset($_REQUEST['MARR_LATI'])) $MARR_LATI = $_REQUEST['MARR_LATI'];
+		if (isset($_REQUEST['MARR_LONG'])) $MARR_LONG = $_REQUEST['MARR_LONG'];
+		if (isset($_REQUEST['MARR'])) $MARR = $_REQUEST['MARR'];
+		if (isset($_REQUEST['SOUR_MARR'])) $SOUR_MARR = $_REQUEST['SOUR_MARR'];
+		if (isset($_REQUEST['SOUR_FAM'])) $SOUR_FAM = $_REQUEST['SOUR_FAM'];
 		if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
 			$famrec .= "1 MARR\r\n";
 			if (!empty($MARR_DATE)) {
@@ -1333,12 +1542,14 @@ case 'addnewparentaction':
 					$famrec .= "4 LONG $MARR_LONG\r\n";
 				}
 			}
-			if (isset($SOUR_MARR) and $SOUR_MARR and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-				$famrec .= "2 SOUR @".$text[0]."@\r\n";
-				if ($tag[1]=="PAGE" and $text[1]!="") $famrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+			if (isset($SOUR_MARR) && $SOUR_MARR=="Y" && count($tagSOUR)>0) {
+				$famrec = updateSOUR($famrec, 2);
 			}
 		}
 		else if (!empty($MARR)) $famrec .= "1 MARR Y\r\n";
+
+		if (isset($SOUR_FAM) && $SOUR_FAM=="Y") $famrec = handle_updates($famrec);
+		else $famrec = updateRest($famrec);
 
 		if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 		$famid = append_gedrec($famrec);
@@ -1348,8 +1559,18 @@ case 'addnewparentaction':
 		if (isset($pgv_changes[$famid."_".$GEDCOM])) $famrec = find_updated_record($famid);
 		else $famrec = find_family_record($famid);
 		if (!empty($famrec)) {
-			$famrec = trim($famrec);
-			$famrec .= "\r\n1 $famtag @$xref@\r\n";
+			$famrec = trim($famrec) . "\r\n1 $famtag @$xref@\r\n";
+			
+			if (isset($_REQUEST['MARR_DATE'])) $MARR_DATE = $_REQUEST['MARR_DATE'];
+			if (isset($_REQUEST['MARR_PLAC'])) $MARR_PLAC = $_REQUEST['MARR_PLAC'];
+			if (isset($_REQUEST['MARR_ROMN'])) $MARR_ROMN = $_REQUEST['MARR_ROMN'];
+			if (isset($_REQUEST['MARR_FONE'])) $MARR_FONE = $_REQUEST['MARR_FONE'];
+			if (isset($_REQUEST['MARR__HEB'])) $MARR__HEB = $_REQUEST['MARR__HEB'];
+			if (isset($_REQUEST['MARR_LATI'])) $MARR_LATI = $_REQUEST['MARR_LATI'];
+			if (isset($_REQUEST['MARR_LONG'])) $MARR_LONG = $_REQUEST['MARR_LONG'];
+			if (isset($_REQUEST['MARR'])) $MARR = $_REQUEST['MARR'];
+			if (isset($_REQUEST['SOUR_MARR'])) $SOUR_MARR = $_REQUEST['SOUR_MARR'];
+			if (isset($_REQUEST['SOUR_FAM'])) $SOUR_FAM = $_REQUEST['SOUR_FAM'];
 			if ((!empty($MARR_DATE))||(!empty($MARR_PLAC))) {
 				$famrec .= "1 MARR\r\n";
 				if (!empty($MARR_DATE)) {
@@ -1367,12 +1588,15 @@ case 'addnewparentaction':
 						$famrec .= "4 LONG $MARR_LONG\r\n";
 					}
 				}
-				if (isset($SOUR_MARR) and $SOUR_MARR and $tag[0]=="SOUR" and $text[0]!="" and $islink[0]) {
-					$famrec .= "2 SOUR @".$text[0]."@\r\n";
-					if ($tag[1]=="PAGE" and $text[1]!="") $famrec .= "3 ".$tag[1]." ".$text[1]."\r\n";
+				if (isset($SOUR_MARR) && $SOUR_MARR=="Y" && count($tagSOUR)>0) {
+					$famrec = updateSOUR($famrec, 2);
 				}
 			}
 			else if (!empty($MARR)) $famrec .= "1 MARR Y\r\n";
+
+			if (isset($SOUR_FAM) && $SOUR_FAM=="Y") $famrec = handle_updates($famrec);
+			else $famrec = updateRest($famrec);
+
 			if ($GLOBALS["DEBUG"]) print "<pre>$famrec</pre>";
 			replace_gedrec($famid, $famrec);
 		}
@@ -1384,8 +1608,7 @@ case 'addnewparentaction':
 			else $gedrec = find_person_record($xref);
 			**/
 			$gedrec = $spouserec;
-			$gedrec = trim($gedrec);
-			$gedrec .= "\r\n1 FAMS @$famid@\r\n";
+			$gedrec = trim($gedrec) . "\r\n1 FAMS @$famid@\r\n";
 			if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 			replace_gedrec($xref, $gedrec);
 	}
@@ -1397,8 +1620,7 @@ case 'addnewparentaction':
 		if ($indirec) {
 			$ct = preg_match("/1 FAMC @$famid@/", $indirec);
 			if ($ct==0) {
-				$indirec = trim($indirec);
-				$indirec .= "\r\n1 FAMC @$famid@\r\n";
+				$indirec = trim($indirec) . "\r\n1 FAMC @$famid@\r\n";
 				if ($GLOBALS["DEBUG"]) print "<pre>$indirec</pre>";
 				replace_gedrec($pid, $indirec);
 			}
@@ -1409,7 +1631,7 @@ case 'addnewparentaction':
 case 'deleteperson':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
-	if (!$factedit) {
+	if (!checkFactEdit($gedrec)) {
 		print "<br />".$pgv_lang["privacy_prevented_editing"];
 		if (!empty($pid)) print "<br />".$pgv_lang["privacy_not_granted"]." pid $pid.";
 		if (!empty($famid)) print "<br />".$pgv_lang["privacy_not_granted"]." famid $famid.";
@@ -1422,7 +1644,7 @@ case 'deleteperson':
 case 'deletefamily':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
-	if (!$factedit) {
+	if (!checkFactEdit($gedrec)) {
 		print "<br />".$pgv_lang["privacy_prevented_editing"];
 		if (!empty($pid)) print "<br />".$pgv_lang["privacy_not_granted"]." pid $pid.";
 		if (!empty($famid)) print "<br />".$pgv_lang["privacy_not_granted"]." famid $famid.";
@@ -1595,12 +1817,20 @@ case 'copy':
 	break;
 //------------------------------------------------------------------------------
 case 'paste':
-	$gedrec .= "\r\n".$_SESSION["clipboard"][$fact]["factrec"];
+	$gedrec .= "\r\n".$_SESSION["clipboard"][$fact]["factrec"]."\r\n";
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
 	if ($GLOBALS["DEBUG"]) print "<pre>$gedrec</pre>";
 	$success = replace_gedrec($pid, $gedrec);
 	if ($success) print "<br /><br />".$pgv_lang["update_successful"];
 	break;
+
+	
+//LBox ==============================================================
+case 'reorder_media':
+	include_once("modules/lightbox/functions/reorder_media.php");
+	break;	
+//LBox ==============================================================	
+	
 //------------------------------------------------------------------------------
 case 'reorder_children':
 	require_once("js/prototype.js.htm");
@@ -1614,24 +1844,30 @@ case 'reorder_children':
 		<input type="hidden" name="option" value="bybirth" />
 		<ul id="reorder_list">
 		<?php
+			// reorder children in modified families [ 1840895 ]
+			$family = Family::getInstance($pid);
+			$ids = $family->getChildrenIds();
+			if ($family->getUpdatedFamily()) $family = $family->getUpdatedFamily();
 			$children = array();
-			$ct = preg_match_all("/1 CHIL @(.+)@/", $gedrec, $match, PREG_SET_ORDER);
-			for($i=0; $i<$ct; $i++) {
-				$child = trim($match[$i][1]);
-				$irec = find_person_record($child);
-				if ($irec===false) $irec = find_updated_record($child);
-				if (isset($indilist[$child])) $children[$child] = $indilist[$child];
+			foreach ($family->getChildren() as $k=>$child) {
+				$bdate = $child->getEstimatedBirthDate();
+				if ($bdate->isOK()) {
+					$sortkey = $bdate->JD();
+				} else {
+					$sortkey = 1e8; // birth date missing => sort last
+				}
+				$children[$child->getXref()] = $sortkey;
 			}
 			if ((!empty($option))&&($option=="bybirth")) {
-				uasort($children, "compare_date");
+				asort($children);
 			}
 			$i=0;
-			foreach($children as $pid=>$child) {
-				print "<li class=\"facts_value\" style=\"cursor:move;margin-bottom:2px;\" id=\"li_$pid\" >";
-				//print_pedigree_person($pid,2,false);
-				print "<span class=\"name2\">".PrintReady(get_person_name($pid))."</span>";
-				print_first_major_fact($pid);
-				print "<input type=\"hidden\" name=\"order[$pid]\" value=\"$i\"/>";
+			foreach($children as $id=>$child) {
+				print "<li style=\"cursor:move;margin-bottom:2px;\"";
+				if (!in_array($id, $ids)) print " class=\"facts_valueblue\"";
+				print " id=\"li_$id\" >";
+				print_pedigree_person($id, 2, false);
+				print "<input type=\"hidden\" name=\"order[$id]\" value=\"$i\"/>";
 				print "</li>";
 				$i++;
 			}
@@ -1642,6 +1878,7 @@ case 'reorder_children':
 	new Effect.BlindDown('reorder_list', {duration: 1});
 	Sortable.create('reorder_list',
 		{
+			scroll:window,
 			onUpdate : function() {
 				inputs = $('reorder_list').getElementsByTagName("input");
 				for (var i = 0; i < inputs.length; i++) inputs[i].value = i;
@@ -1650,9 +1887,9 @@ case 'reorder_children':
 	);
 // ]]>
 </script>
-		<button type="submit"><?php print $pgv_lang["save"];?></button>
-		<button type="submit" onclick="document.reorder_form.action.value='reorder_children'; document.reorder_form.submit();"><?php print $pgv_lang["sort_by_birth"];?></button>
-		<button type="submit" onclick="window.close();"><?php print $pgv_lang["cancel"];?></button>
+		<button type="submit"><?php print $pgv_lang["save"]; ?></button>
+		<button type="submit" onclick="document.reorder_form.action.value='reorder_children'; document.reorder_form.submit();"><?php print $pgv_lang["sort_by_birth"]; ?></button>
+		<button type="submit" onclick="window.close();"><?php print $pgv_lang["cancel"]; ?></button>
 	</form>
 	<?php
 	break;
@@ -1711,14 +1948,14 @@ case 'changefamily':
 	<?php print $pgv_lang["change_family_instr"]; ?>
 	<form name="changefamform" method="post" action="edit_interface.php">
 		<input type="hidden" name="action" value="changefamily_update" />
-		<input type="hidden" name="famid" value="<?php print $famid;?>" />
+		<input type="hidden" name="famid" value="<?php print $famid; ?>" />
 		<table class="width50 <?php print $TEXT_DIRECTION; ?>">
 			<tr><td colspan="3" class="topbottombar"><?php print $pgv_lang["change_family_members"]; ?></td></tr>
 			<tr>
 			<?php
 			if (!is_null($father)) {
 			?>
-				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $father->getLabel(); ?></b><input type="hidden" name="HUSB" value="<?php print $father->getXref();?>" /></td>
+				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $father->getLabel(); ?></b><input type="hidden" name="HUSB" value="<?php print $father->getXref(); ?>" /></td>
 				<td id="HUSBName" class="optionbox wrap <?php print $TEXT_DIRECTION; ?>"><?php print PrintReady($father->getName()); ?></td>
 			<?php
 			}
@@ -1738,7 +1975,7 @@ case 'changefamily':
 			<?php
 			if (!is_null($mother)) {
 			?>
-				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $mother->getLabel(); ?></b><input type="hidden" name="WIFE" value="<?php print $mother->getXref();?>" /></td>
+				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $mother->getLabel(); ?></b><input type="hidden" name="WIFE" value="<?php print $mother->getXref(); ?>" /></td>
 				<td id="WIFEName" class="optionbox wrap <?php print $TEXT_DIRECTION; ?>"><?php print PrintReady($mother->getName()); ?></td>
 			<?php
 			}
@@ -1760,7 +1997,7 @@ case 'changefamily':
 				if (!is_null($child)) {
 				?>
 			<tr>
-				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $child->getLabel(); ?></b><input type="hidden" name="CHIL<?php print $i; ?>" value="<?php print $child->getXref();?>" /></td>
+				<td class="descriptionbox <?php print $TEXT_DIRECTION; ?>"><b><?php print $child->getLabel(); ?></b><input type="hidden" name="CHIL<?php print $i; ?>" value="<?php print $child->getXref(); ?>" /></td>
 				<td id="CHILName<?php print $i; ?>" class="optionbox wrap"><?php print PrintReady($child->getName()); ?></td>
 				<td class="optionbox wrap <?php print $TEXT_DIRECTION; ?>">
 					<a href="javascript:;" id="childrem<?php print $i; ?>" style="display: block;" onclick="document.changefamform.CHIL<?php print $i; ?>.value=''; document.getElementById('CHILName<?php print $i; ?>').innerHTML=''; this.style.display='none'; return false;"><?php print $pgv_lang["remove"]; ?></a>
@@ -1796,14 +2033,15 @@ case 'changefamily_update':
 	$children = $family->getChildren();
 	$updated = false;
 	//-- add the new father link
+	if (isset($_REQUEST['HUSB'])) $HUSB = $_REQUEST['HUSB'];
 	if (!empty($HUSB) && (is_null($father) || $father->getXref()!=$HUSB)) {
 		if (strstr($gedrec, "1 HUSB")!==false)
 			$gedrec = preg_replace("/1 HUSB @.*@/", "1 HUSB @$HUSB@", $gedrec);
-		else $gedrec .= "\r\n1 HUSB @$HUSB@";
+		else $gedrec .= "\r\n1 HUSB @$HUSB@\r\n";
 		if (isset($pgv_changes[$HUSB."_".$GEDCOM])) $indirec = find_updated_record($HUSB);
 		else $indirec = find_person_record($HUSB);
 		if (!empty($indirec) && (preg_match("/1 FAMS @$famid@/", $indirec)==0)) {
-			$indirec .= "\r\n1 FAMS @$famid@";
+			$indirec .= "\r\n1 FAMS @$famid@\r\n";
 			replace_gedrec($HUSB, $indirec);
 		}
 		$updated = true;
@@ -1833,14 +2071,15 @@ case 'changefamily_update':
 		}
 	}
 	//-- add the new mother link
+	if (isset($_REQUEST['WIFE'])) $WIFE = $_REQUEST['WIFE'];
 	if (!empty($WIFE) && (is_null($mother) || $mother->getXref()!=$WIFE)) {
 		if (strstr($gedrec, "1 WIFE")!==false)
 			$gedrec = preg_replace("/1 WIFE @.*@/", "1 WIFE @$WIFE@", $gedrec);
-		else $gedrec .= "\r\n1 WIFE @$WIFE@";
+		else $gedrec .= "\r\n1 WIFE @$WIFE@\r\n";
 		if (isset($pgv_changes[$WIFE."_".$GEDCOM])) $indirec = find_updated_record($WIFE);
 		else $indirec = find_person_record($WIFE);
 		if (!empty($indirec) && (preg_match("/1 FAMS @$famid@/", $indirec)==0)) {
-			$indirec .= "\r\n1 FAMS @$famid@";
+			$indirec .= "\r\n1 FAMS @$famid@\r\n";
 			replace_gedrec($WIFE, $indirec);
 		}
 		$updated = true;
@@ -1874,17 +2113,17 @@ case 'changefamily_update':
 	$i=0;
 	$var = "CHIL".$i;
 	$newchildren = array();
-	while(isset($$var)) {
-		$CHIL = $$var;
+	while(isset($_REQUEST[$var])) {
+		$CHIL = $_REQUEST[$var];
 		if (!empty($CHIL)) {
 			$newchildren[] = $CHIL;
 			if (preg_match("/1 CHIL @$CHIL@/", $gedrec)==0) {
-				$gedrec .= "\r\n1 CHIL @$CHIL@";
+				$gedrec .= "\r\n1 CHIL @$CHIL@\r\n";
 				$updated = true;
 				if (isset($pgv_changes[$CHIL."_".$GEDCOM])) $indirec = find_updated_record($CHIL);
 				else $indirec = find_person_record($CHIL);
 				if (!empty($indirec) && (preg_match("/1 FAMC @$famid@/", $indirec)==0)) {
-					$indirec .= "\r\n1 FAMC @$famid@";
+					$indirec .= "\r\n1 FAMC @$famid@\r\n";
 					replace_gedrec($CHIL, $indirec);
 				}
 			}
@@ -1929,16 +2168,17 @@ case 'changefamily_update':
 //------------------------------------------------------------------------------
 case 'reorder_update':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
+	if (isset($_REQUEST['order'])) $order = $_REQUEST['order'];
 	asort($order);
 	reset($order);
 	$newgedrec = $gedrec;
 	foreach($order as $child=>$num) {
-		// move each child subrecord to the bottom
+		// move each child subrecord to the bottom, in the order specified
 		$subrec = get_sub_record(1, "1 CHIL @".$child."@", $gedrec);
 		$subrec = trim($subrec,"\r\n");
 		if ($GLOBALS["DEBUG"]) echo "<pre>[".$subrec."]</pre>";
 		$newgedrec = str_replace($subrec,"", $newgedrec);
-		$newgedrec .= $subrec."\r\n";
+		$newgedrec .= "\r\n".$subrec."\r\n";
 	}
 	if ($GLOBALS["DEBUG"]) print "<pre>$newgedrec</pre>";
 	$success = (replace_gedrec($pid, $newgedrec));
@@ -1957,23 +2197,17 @@ case 'reorder_fams':
 		<input type="hidden" name="option" value="bymarriage" />
 		<ul id="reorder_list">
 		<?php
-			$fams = array();
-			$ct = preg_match_all("/1 FAMS @(.+)@/", $gedrec, $match, PREG_SET_ORDER);
-			for($i=0; $i<$ct; $i++) {
-				$famid = trim($match[$i][1]);
-				$frec = find_family_record($famid);
-				if ($frec===false) $frec = find_updated_record($famid);
-				if (isset($famlist[$famid])) $fams[$famid] = $famlist[$famid];
-			}
+			$person = Person::getInstance($pid);
+			$fams = $person->getSpouseFamilies();
 			if ((!empty($option))&&($option=="bymarriage")) {
 				$sortby = "MARR";
-				uasort($fams, "compare_date");
+				uasort($fams, "compare_date_gedcomrec");
 			}
 			$i=0;
-			foreach($fams as $famid=>$fam) {
+			foreach($fams as $famid=>$family) {
 				print "<li class=\"facts_value\" style=\"cursor:move;margin-bottom:2px;\" id=\"li_$famid\" >";
 				print "<span class=\"name2\">".PrintReady(get_family_descriptor($famid))."</span><br />";
-				print_simple_fact($fam["gedcom"], "MARR", $famid);
+				print_simple_fact($family->getGedcomRecord(), "MARR", $famid);
 				print "<input type=\"hidden\" name=\"order[$famid]\" value=\"$i\"/>";
 				print "</li>";
 				$i++;
@@ -1985,6 +2219,7 @@ case 'reorder_fams':
 	new Effect.BlindDown('reorder_list', {duration: 1});
 	Sortable.create('reorder_list',
 		{
+			scroll:window,
 			onUpdate : function() {
 				inputs = $('reorder_list').getElementsByTagName("input");
 				for (var i = 0; i < inputs.length; i++) inputs[i].value = i;
@@ -1993,15 +2228,16 @@ case 'reorder_fams':
 	);
 // ]]>
 </script>
-		<button type="submit"><?php print $pgv_lang["save"];?></button>
-		<button type="submit" onclick="document.reorder_form.action.value='reorder_fams'; document.reorder_form.submit();"><?php print $pgv_lang["sort_by_marriage"];?></button>
-		<button type="submit" onclick="window.close();"><?php print $pgv_lang["cancel"];?></button>
+		<button type="submit"><?php print $pgv_lang["save"]; ?></button>
+		<button type="submit" onclick="document.reorder_form.action.value='reorder_fams'; document.reorder_form.submit();"><?php print $pgv_lang["sort_by_marriage"]; ?></button>
+		<button type="submit" onclick="window.close();"><?php print $pgv_lang["cancel"]; ?></button>
 	</form>
 	<?php
 	break;
 //------------------------------------------------------------------------------
 case 'reorder_fams_update':
 	if ($GLOBALS["DEBUG"]) phpinfo(32);
+	if (isset($_REQUEST['order'])) $order = $_REQUEST['order'];
 	asort($order);
 	reset($order);
 	$lines = preg_split("/\n/", $gedrec);
@@ -2020,6 +2256,7 @@ case 'reorder_fams_update':
 //-- the following section provides a hook for modules
 //-- for reuse of editing functions from forms
 case 'mod_edit_fact':
+	if (isset($_REQUEST['mod'])) $mod = $_REQUEST['mod'];
 	include_once('modules/'.$mod.'/'.$mod.'.php');
 	$module = new $mod();
 	if (method_exists($module, "edit_fact")) {
@@ -2027,13 +2264,19 @@ case 'mod_edit_fact':
 	}
 	break;
 }
+// Redirect to new record, if requested
+if (isset($_REQUEST['goto'])) $goto = $_REQUEST['goto'];
+if (isset($_REQUEST['link'])) $link = $_REQUEST['link'];
+if (empty($goto) || empty($link))
+	$link='';
 //------------------------------------------------------------------------------
 // autoclose window when update successful
-if ($success and $EDIT_AUTOCLOSE and !$GLOBALS["DEBUG"]) {
+if ($success && $EDIT_AUTOCLOSE && !$GLOBALS["DEBUG"]) {
 	if ($action=="copy") print "\n<script type=\"text/javascript\">\n<!--\nwindow.close();\n//-->\n</script>";
-	else print "\n<script type=\"text/javascript\">\n<!--\nedit_close();\n//-->\n</script>";
+	else print "\n<script type=\"text/javascript\">\n<!--\nedit_close('{$link}');\n//-->\n</script>";
 }
 
-print "<div class=\"center\"><a href=\"javascript:;\" onclick=\"edit_close();\">".$pgv_lang["close_window"]."</a></div><br />\n";
+
+print "<div class=\"center\"><a href=\"javascript:;\" onclick=\"edit_close('{$link}');\">".$pgv_lang["close_window"]."</a></div><br />\n";
 print_simple_footer();
 ?>

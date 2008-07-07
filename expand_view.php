@@ -3,7 +3,7 @@
  * Used by AJAX to load the expanded view inside person boxes
  * 
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2008 John Finlay and Others, all rights reserved
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +20,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: expand_view.php,v 1.1 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: expand_view.php,v 1.2 2008/07/07 18:01:13 lsces Exp $
  */
 require_once("config.php");
 
-$pid = $_REQUEST['pid'];
+$pid = "";
+if (isset($_REQUEST['pid'])) $pid = $_REQUEST['pid'];
+$pid = clean_input($pid);
+
 $indirec = find_person_record($pid);
 
 $skipfacts = array("SEX","FAMS","FAMC","NAME","TITL","NOTE","SOUR","SSN","OBJE","HUSB","WIFE","CHIL","ALIA","ADDR","PHON","SUBM","_EMAIL","CHAN","URL","EMAIL","WWW","RESI","_UID","_TODO");
@@ -69,7 +72,7 @@ $subfacts = get_all_subrecords($indirec, implode(",", $skipfacts));
 				if ($details!="Y" && $details!="N") print PrintReady($details);
 			}
 			else print PrintReady($details);
-			print_fact_date($factrec, false, false, $fact, $pid, $indirec);
+			echo format_fact_date($factrec, false, false, $fact, $pid, $indirec);
 			//-- print spouse name for marriage events
 			$ct = preg_match("/_PGVFS @(.*)@/", $factrec, $match);
 			if ($ct>0) {
@@ -87,7 +90,7 @@ $subfacts = get_all_subrecords($indirec, implode(",", $skipfacts));
 				if ($spouse!=="") print " - ";
 				print "<a href=\"family.php?famid=$famid\">[".$pgv_lang["view_family"]."]</a>\n";
 			}
-			print_fact_place($factrec, true, true);
+			echo format_fact_place($factrec, true, true);
 		}
-	  }
+	 }
 ?>

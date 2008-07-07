@@ -41,18 +41,18 @@ class BitGEDCOM extends LibertyContent {
 		if( ! @$this->verifyId( $this->mGEDCOMId ) ) {
 			$this->mGEDCOMId = NULL;
 		} else {
-			$this->mGEDCOMId = 2;
+			$this->mGEDCOMId = 1;
 		}
 		if( ! @$this->verifyId( $this->mContentId ) ) {
 			$this->mContentId = NULL;
 		}
 // TODO - Bodge to get started - to be replaced with default BitGEDCOM
 global $GEDCOM;
-//if(!isset($GEDCOM)) {
-	$GEDCOM = "CAINEFull.GED";
-	$this->mGedcomName = "CAINEFull.GED";
-	$this->mGEDCOMId = 2;
-//}
+if(!isset($GEDCOM)) {
+	$GEDCOM = "CAINE.GED";
+	$this->mGedcomName = "CAINE.GED";
+	$this->mGEDCOMId = 1;
+}
 	}
 
 	/**
@@ -194,7 +194,7 @@ global $GEDCOM;
 						LEFT JOIN `".BIT_DB_PREFIX."users_users` uuc ON (uuc.`user_id` = lc.`user_id`)
 					WHERE ged.`g_$lookupColumn`=? $whereSql";
 
-			if( $rs = $this->mDb->query($sql, array($bindVars)) ) {
+			if( $rs = $this->mDb->query($sql, array( '1' )) ) {
 				$this->mInfo = $rs->fields;
 
 				$this->mGEDCOMId = $this->mInfo['g_id'];
@@ -498,10 +498,6 @@ function importGedcom() {
 	$sourcelist = array ();
 	$otherlist = array ();
 
-global $GEDCOM;
-$GEDCOM = basename($this->mInfo['g_path']);
-$gGedcom->mGEDCOMId = $this->mInfo['g_id'];
-
 	//-- as we are importing the file, a new file is being written to store any
 	//-- changes that might have occurred to the gedcom file (eg. conversion of
 	//-- media objects).  After the import is complete the new file is
@@ -550,7 +546,6 @@ $gGedcom->mGEDCOMId = $this->mInfo['g_id'];
 
 			//-- import anything that is not a blob
 			if (preg_match("/\n1 BLOB/", $indirec) == 0) {
-global $gid;
 				import_record(trim($indirec));
 				$place_count += update_places($gid, $indirec);
 				$date_count += update_dates($gid, $indirec);
@@ -578,8 +573,9 @@ global $gid;
 	if (!$res) {
 		$this->mError = "Unable to copy updated GEDCOM file ".STORAGE_PKG_PATH.PHPGEDVIEW_PKG_NAME."/".basename($this->mInfo['g_path']).".new to ".$this->mInfo['g_path'];
 	} else {
+		global $gBitUser;
 		@unlink(STORAGE_PKG_PATH.PHPGEDVIEW_PKG_NAME."/".basename($this->mInfo['g_path']).".new");
-		$logline = $this->addToLog($this->mInfo['g_path']." updated by >".getUserName()."<");
+		$logline = $this->addToLog($this->mInfo['g_path']." updated by >".$gBitUser->getDisplayName()."<");
 //		if (!empty ($COMMIT_COMMAND))
 //		check_in($logline, $GEDCOM_FILE, $INDEX_DIRECTORY);
 	}
@@ -737,7 +733,6 @@ function pedigreeArray( $id = 0 ) {
 			$ind_total += $res['count'];
 			$ret[] = $aux;
 		}
-
 		$pListHash['cant'] = $cant->NumRows();
 		$pListHash['listInfo']['sub_total'] = $tot;
 		LibertyContent::postGetList( $pListHash );

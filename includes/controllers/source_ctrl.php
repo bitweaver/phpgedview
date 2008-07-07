@@ -24,7 +24,14 @@
  * @version $Id$
  */
 
-// Initialization
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -39,8 +46,7 @@ require_once("config.php");
 require_once('includes/functions_print_facts.php');
 require_once('includes/controllers/basecontrol.php');
 require_once('includes/source_class.php');
-require_once($factsfile["english"]);
-if (file_exists($factsfile[$LANGUAGE])) require_once($factsfile[$LANGUAGE]);
+require_once('includes/menu.php');
 
 $nonfacts = array();
 /**
@@ -50,6 +56,7 @@ class SourceControllerRoot extends BaseController {
 	var $sid;
 	var $show_changes = "yes";
 	var $action = "";
+	/* @var Source */
 	var $source = null;
 	var $uname = "";
 	var $diffsource = null;
@@ -69,6 +76,9 @@ class SourceControllerRoot extends BaseController {
 	function init() {
 		global $pgv_lang, $CONTACT_EMAIL, $GEDCOM, $pgv_changes;
 		
+		//-- keep the time of this access to help with concurrent edits
+		$_SESSION['last_access_time'] = time();
+		
 		if (!empty($_REQUEST["show_changes"])) $this->show_changes = $_REQUEST["show_changes"];
 		if (!empty($_REQUEST["action"])) $this->action = $_REQUEST["action"];
 		if (!empty($_REQUEST["sid"])) $this->sid = strtoupper($_REQUEST["sid"]);
@@ -86,7 +96,7 @@ class SourceControllerRoot extends BaseController {
 			exit;
 		}
 		
-		$this->uname = getUserName();
+		$this->uname = PGV_USER_NAME;
 		
 		//-- perform the desired action
 		switch($this->action) {
@@ -96,12 +106,15 @@ class SourceControllerRoot extends BaseController {
 			case "accept":
 				$this->acceptChanges();
 				break;
+			case "undo":
+				$this->source->undoChange();
+				break;
 		}
 		
 		//-- check for the user
 		//-- if the user can edit and there are changes then get the new changes
-		if ($this->show_changes=="yes" && userCanEdit($this->uname) && isset($pgv_changes[$this->sid."_".$GEDCOM])) {
-			$newrec = find_record_in_file($this->sid);
+		if ($this->show_changes=="yes" && PGV_USER_CAN_EDIT && isset($pgv_changes[$this->sid."_".$GEDCOM])) {
+			$newrec = find_updated_record($this->sid);
 			$this->diffsource = new Source($newrec);
 			$this->diffsource->setChanged(true);
 			$sourcerec = $newrec;
@@ -145,12 +158,17 @@ class SourceControllerRoot extends BaseController {
 	function acceptChanges() {
 		global $GEDCOM;
 		
-		if (!userCanAccept($this->uname)) return;
+		if (!PGV_USER_CAN_ACCEPT) return;
 		require_once("includes/functions_import.php");
 		if (accept_changes($this->sid."_".$GEDCOM)) {
 			$this->show_changes="no";
 			$this->accept_success=true;
-			$indirec = find_record_in_file($this->sid);
+			$indirec = find_source_record($this->sid);
+			//-- check if we just deleted the record and redirect to index
+			if (empty($indirec)) {
+				header("Location: index.php?ctype=gedcom");
+				exit;
+			}
 			$this->source = new Source($indirec);
 		}
 	}
@@ -177,6 +195,7 @@ class SourceControllerRoot extends BaseController {
 	 */
 	function &getEditMenu() {
 		global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $GEDCOM, $pgv_lang, $pgv_changes;
+		global $SHOW_GEDCOM_RECORD;
 		if ($TEXT_DIRECTION=="rtl") $ff="_rtl";
 		else $ff="";
 		
@@ -187,18 +206,21 @@ class SourceControllerRoot extends BaseController {
 		
 		// edit source menu
 		$menu = new Menu($pgv_lang['edit_source']);
-		$menu->addOnclick('return edit_raw(\''.$this->sid.'\');');
+		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) 
+			$menu->addOnclick('return edit_raw(\''.$this->sid.'\');');
 		if (!empty($PGV_IMAGES["edit_sour"]["small"]))
 			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
 		$menu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}", "submenu{$ff}");
 
 		// edit source / edit_raw
-		$submenu = new Menu($pgv_lang['edit_raw']);
-		$submenu->addOnclick("return edit_raw('".$this->sid."');");
-		if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
-		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-		$menu->addSubmenu($submenu);
+		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) {
+			$submenu = new Menu($pgv_lang['edit_raw']);
+			$submenu->addOnclick("return edit_raw('".$this->sid."');");
+			if (!empty($PGV_IMAGES["edit_sour"]["small"]))
+				$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+			$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+			$menu->addSubmenu($submenu);
+		}
 		
 		// edit source / delete_source
 		$submenu = new Menu($pgv_lang['delete_source']);
@@ -228,17 +250,22 @@ class SourceControllerRoot extends BaseController {
 			{
 				$submenu = new Menu($pgv_lang['hide_changes'], 'source.php?sid='.$this->sid.'&amp;show_changes=no');
 				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 			}
 
-			if (userCanAccept($this->uname))
+			if (PGV_USER_CAN_ACCEPT)
 			{
 				// edit_source / accept_all
+				$submenu = new Menu($pgv_lang["undo_all"], "source.php?sid=".$this->sid."&amp;action=undo");
+				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
+				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+				$menu->addSubmenu($submenu);
 				$submenu = new Menu($pgv_lang['accept_all'], 'source.php?sid='.$this->sid.'&amp;action=accept');
 				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 			}
@@ -257,7 +284,7 @@ class SourceControllerRoot extends BaseController {
 		if ($TEXT_DIRECTION=="rtl") $ff="_rtl";
 		else $ff="";
 		
-		if (!$this->source->canDisplayDetails() || (!$SHOW_GEDCOM_RECORD && $ENABLE_CLIPPINGS_CART < getUserAccessLevel())) {
+		if (!$this->source->canDisplayDetails() || (!$SHOW_GEDCOM_RECORD && $ENABLE_CLIPPINGS_CART < PGV_USER_ACCESS_LEVEL)) {
 			$tempvar = false;
 			return $tempvar;
 		}
@@ -299,7 +326,7 @@ class SourceControllerRoot extends BaseController {
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 		}
-		if ($ENABLE_CLIPPINGS_CART >= getUserAccessLevel())
+		if ($ENABLE_CLIPPINGS_CART >= PGV_USER_ACCESS_LEVEL)
 		{
 				// other / add_to_cart
 				$submenu = new Menu($pgv_lang['add_to_cart'], 'clippings.php?action=add&amp;id='.$this->sid.'&amp;type=sour');

@@ -26,4 +26,14 @@ if( !defined( 'PHPGEDVIEW_DB_PREFIX' ) ) {
 	define( 'PHPGEDVIEW_DB_PREFIX', $prefix.'pgv_' );
 }
 
+//--load common functions
+require_once("includes/functions.php");
+require_once("includes/menu.php");
+//-- set the error handler
+$OLD_HANDLER = set_error_handler("pgv_error_handler");
+//-- load db specific functions
+require_once("includes/functions_db.php");
+require_once("includes/functions_name.php");
+require_once("includes/functions_date.php");
+$TBLPREFIX = PHPGEDVIEW_DB_PREFIX;
 ?>

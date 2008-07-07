@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: accesskeyHeaders.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: accesskeyHeaders.php,v 1.3 2008/07/07 18:01:13 lsces Exp $
  */
  ?>
 <?php

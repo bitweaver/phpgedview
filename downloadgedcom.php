@@ -4,7 +4,7 @@
  * Allow an admin user to download the entire gedcom	file.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others, all rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.10 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: downloadgedcom.php,v 1.11 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**
@@ -52,17 +52,16 @@ if (!isset ($convert))
 if (!isset ($zip))
 	$zip = "no";
 if (!isset ($privatize_export))
-	$privatize_export = "";
-//print $action."- action ".$zip."- zip";
+	$privatize_export = "no";
+
 if ($action == "download" && $zip == "yes") {
 	require "includes/pclzip.lib.php";
-	if (!defined('ADODB_DATE_VERSION')) require "includes/adodb-time.inc.php";
 
 	$temppath = $INDEX_DIRECTORY . "tmp/";
 	$fileName = $ged;
 	if($filetype =="gramps")
 		$fileName = $ged.".gramps";
-	$zipname = "dl" . adodb_date("YmdHis") . $fileName . ".zip";
+	$zipname = "dl" . date("YmdHis") . $fileName . ".zip";
 	$zipfile = $INDEX_DIRECTORY . $zipname;
 	$gedname = $temppath . $fileName;
 
@@ -76,12 +75,16 @@ if ($action == "download" && $zip == "yes") {
 		$removeTempDir = true;
 	}
 	$gedout = fopen(filename_decode($gedname), "w");
-	if($filetype == "gedcom")
-		print_gedcom($privatize_export, $privatize_export_level, $convert, $remove, $zip, $gedout);
-	else
-		print_gramps($privatize_export, $privatize_export_level, $convert, $remove, $zip, $gedout);
+	switch ($filetype) {
+	case 'gedcom':
+		print_gedcom($privatize_export, $privatize_export_level, $convert, $remove, $gedout);
+		break;
+	case 'gramps':
+		print_gramps($privatize_export, $privatize_export_level, $convert, $remove, $gedout);
+		break;
+	}
 	fclose($gedout);
-	$comment = "Created by Bitweaver PhpGedView " . $VERSION . " on " . adodb_date("r") . ".";
+	$comment = "Created by PhpGedView " . $VERSION . " " . $VERSION_RELEASE . " on " . date("r") . ".";
 	$archive = new PclZip(filename_decode($zipfile));
 	$v_list = $archive->create(filename_decode($gedname), PCLZIP_OPT_COMMENT, $comment, PCLZIP_OPT_REMOVE_PATH, filename_decode($temppath));
 	if ($v_list == 0)
@@ -98,17 +101,24 @@ if ($action == "download" && $zip == "yes") {
 
 if ($action == "download") {
 	header("Content-Type: text/plain; charset=$CHARACTER_SET");
-	if ($filetype == "gedcom") {
-		header("Content-Disposition: attachment; filename=$ged; size=" . filesize($gGedcom->getPath()));
-		print_gedcom($privatize_export, $privatize_export_level, $convert, $remove, $zip);
-	} else
-		if ($filetype == "gramps") {
-			$fileName = $ged . ".gramps";
-			header("Content-Disposition: attachment; filename=" . $fileName);
-			print_gramps($privatize_export, $privatize_export_level, $convert, $remove, $zip);
-		}
-} else {
-			print_header($pgv_lang["download_gedcom"]);
+	// We could open "php://compress.zlib" to create a .gz file or "php://compress.bzip2" to create a .bz2 file
+	$fp=fopen('php://output', 'w');
+	switch ($filetype) {
+	case 'gedcom':
+		header("Content-Disposition: attachment; filename={$ged}");
+		print_gedcom($privatize_export, $privatize_export_level, $convert, $remove, $fp);
+		break;
+	case 'gramps':
+		header("Content-Disposition: attachment; filename={$ged}.gramps");
+		print_gramps($privatize_export, $privatize_export_level, $convert, $remove, $fp);
+		break;
+	}
+	fclose($fp);
+	exit;
+}
+
+print_header($pgv_lang["download_gedcom"]);
+
 ?>
 	<div class="center">
 	<h2><?php print $pgv_lang["download_gedcom"]; ?></h2>
@@ -155,8 +165,7 @@ if ($action == "download") {
 	</form>
 	<?php
 
-			print $pgv_lang["download_note"] . "<br /><br /><br />\n";
-			print "</div>";
-			print_footer();
-		}
+print $pgv_lang["download_note"] . "<br /><br /><br />\n";
+print "</div>";
+print_footer();
 ?>

@@ -29,14 +29,15 @@ $theme_name = "Standard";		//-- the name of this theme
 $stylesheet = $THEME_DIR."style.css";	//-- CSS level 2 stylesheet to use
 $rtl_stylesheet = $THEME_DIR."style_rtl.css";           //-- CSS level 2 stylesheet to use
 $print_stylesheet = $THEME_DIR."print.css";	//-- CSS level 2 print stylesheet to use
-$toplinks = $THEME_DIR."toplinks.html";	//-- File to display the icons and links to different sections
-$headerfile = $THEME_DIR."header.html";	//-- Header information for the site
-$footerfile = $THEME_DIR."footer.html";	//-- Footer information for the site
-$print_footerfile = $THEME_DIR."print_footer.html";	//-- Print Preview Footer information for the site
-$print_headerfile = $THEME_DIR."print_header.html";	//-- Print Preview Header information for the site
+$toplinks = $THEME_DIR."toplinks.php";	//-- File to display the icons and links to different sections
+$headerfile = $THEME_DIR."header.php";	//-- Header information for the site
+$footerfile = $THEME_DIR."footer.php";	//-- Footer information for the site
+$print_footerfile = $THEME_DIR."print_footer.php";	//-- Print Preview Footer information for the site
+$print_headerfile = $THEME_DIR."print_header.php";	//-- Print Preview Header information for the site
 
 $PGV_USE_HELPIMG = true;		// set to true to use image for help questionmark, set to false to use $pgv_lang["qm"]
 $PGV_IMAGE_DIR = "images";		//-- directory to look for images
+$PGV_MENU_LOCATION = "top";
 
 //-- variables for image names
 //- PGV main icons
@@ -53,6 +54,11 @@ $PGV_IMAGES["repository"]["large"] = "repository.gif";
 $PGV_IMAGES["search"]["large"] = "search.gif";
 $PGV_IMAGES["sfamily"]["large"] = "sfamily.gif";
 $PGV_IMAGES["source"]["large"] = "source.gif";
+
+//- PGV main icons for optional modules
+$PGV_IMAGES["menu_gallery"]["large"] = "menu_gallery.gif";
+$PGV_IMAGES["menu_punbb"]["large"] = "menu_punbb.gif";
+$PGV_IMAGES["menu_research"]["large"] = "menu_research.gif";
 
 //- PGV small icons
 $PGV_IMAGES["admin"]["small"] = "small/admin.gif";
@@ -136,6 +142,12 @@ $PGV_IMAGES["udarrow"]["other"] = "udarrow.gif";
 $PGV_IMAGES["vline"]["other"] = "vline.gif";
 $PGV_IMAGES["zoomin"]["other"] = "zoomin.gif";
 $PGV_IMAGES["zoomout"]["other"] = "zoomout.gif";
+$PGV_IMAGES["stop"]["other"] = "stop.gif";
+// - lifespan chart arrows
+$PGV_IMAGES["lsltarrow"]["other"] = "lsltarrow.gif";
+$PGV_IMAGES["lsrtarrow"]["other"] = "lsrtarrow.gif";
+$PGV_IMAGES["lsdnarrow"]["other"] = "lsdnarrow.gif";
+$PGV_IMAGES["lsuparrow"]["other"] = "lsuparrow.gif";
 
 //- digits
 $PGV_IMAGES["0"]["digit"] = "0.jpg";
@@ -155,7 +167,8 @@ $bheight = 80;		// -- height of boxes on pedigree chart
 $baseyoffset = 10;	// -- position the entire pedigree tree relative to the top of the page
 $basexoffset = 10;	// -- position the entire pedigree tree relative to the left of the page
 $bxspacing = 0;		// -- horizontal spacing between boxes on the pedigree chart
-$byspacing = 2;		// -- vertical spacing between boxes on the pedigree chart
+$byspacing = 5;		// -- vertical spacing between boxes on the pedigree chart
+$brborder = 1;		// -- box right border thickness
 
 // -- global variables for the descendancy chart
 $Dbaseyoffset = 0;	// -- position the entire descendancy tree relative to the top of the page
@@ -168,6 +181,7 @@ $Dindent = 15;			// -- width to indent descendancy boxes
 $Darrowwidth = 15;		// -- additional width to include for the up arrows
 
 $CHARTS_CLOSE_HTML = true;		//-- should the charts, pedigree, descendacy, etc clost the HTML on the page
+$PGV_DXHTMLTAB_COLORS = "#d6e0ea,white";
 
 // Arrow symbol or icon for up-page links on Help pages
 $ImgSrc = $PGV_IMAGE_DIR."/uarrow3.gif";

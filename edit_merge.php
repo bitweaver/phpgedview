@@ -5,7 +5,7 @@
  * This page will allow you to merge 2 gedcom records
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_merge.php,v 1.4 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: edit_merge.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**
@@ -68,17 +68,23 @@ if ($action!="choose") {
 	}
 	else {
 		if (!isset($pgv_changes[$gid1."_".$GEDCOM])) $gedrec1 = find_gedcom_record($gid1);
-		else $gedrec1 = find_record_in_file($gid1);
-		if ($GEDCOM!=$ged2) $GEDCOM=$ged2;
+		else $gedrec1 = find_updated_record($gid1);
+		$GEDCOM=$ged2;
 		if (!isset($pgv_changes[$gid2."_".$ged2])) $gedrec2 = find_gedcom_record($gid2);
-		else $gedrec2 = find_record_in_file($gid2);
+		else $gedrec2 = find_updated_record($gid2);
 		$GEDCOM=$ged;
 
-		if (empty($gedrec1) || empty($gedrec2)) {
-			print "<span class=\"error\">".$pgv_lang["unable_to_find_record"]."</span>\n";
+		// Ensure line endings are the same, otherwise we can't match records
+		$gedrec1=preg_replace('/[\r\n]+/', "\n", $gedrec1);
+		$gedrec2=preg_replace('/[\r\n]+/', "\n", $gedrec2);
+
+		if (empty($gedrec1)) {
+			echo '<span class="error">', $pgv_lang['unable_to_find_record'], ':</span> ', $gid1, ', ', $ged;
 			$action="choose";
-		}
-		else {
+		} elseif (empty($gedrec2)) {
+			echo '<span class="error">', $pgv_lang['unable_to_find_record'], ':</span> ', $gid2, ', ', $ged2;
+			$action="choose";
+		} else {
 			$type1 = "";
 			$ct = preg_match("/0 @$gid1@ (.*)/", $gedrec1, $match);
 			if ($ct>0) $type1 = trim($match[1]);
@@ -93,7 +99,7 @@ if ($action!="choose") {
 				$facts1 = array();
 				$facts2 = array();
 				$prev_tags = array();
-				$ct = preg_match_all("/\n1 (\w+)(.*)/", $gedrec1, $match, PREG_SET_ORDER);
+				$ct = preg_match_all("/\n1 (\w+)/", $gedrec1, $match, PREG_SET_ORDER);
 				for($i=0; $i<$ct; $i++) {
 					$fact = trim($match[$i][1]);
 					if (isset($prev_tags[$fact])) $prev_tags[$fact]++;
@@ -102,8 +108,7 @@ if ($action!="choose") {
 					$facts1[] = array("fact"=>$fact, "subrec"=>trim($subrec));
 				}
 				$prev_tags = array();
-//				$ct = preg_match_all("/\n1 (_?[A-Z]{3,5})(.*)/", $gedrec2, $match, PREG_SET_ORDER);
-				$ct = preg_match_all("/\n1 (\w+)(.*)/", $gedrec2, $match, PREG_SET_ORDER);
+				$ct = preg_match_all("/\n1 (\w+)/", $gedrec2, $match, PREG_SET_ORDER);
 				for($i=0; $i<$ct; $i++) {
 					$fact = trim($match[$i][1]);
 					if (isset($prev_tags[$fact])) $prev_tags[$fact]++;
@@ -170,8 +175,62 @@ if ($action!="choose") {
 				else if ($action=="merge") {
 					$manual_save = true;
 					print "<h2>".$pgv_lang["merge_step3"]."</h2>\n";
-					print "Performing Record Merge<br />\n";
-					if ($GEDCOM==$ged2) delete_gedrec($gid2);
+					if ($GEDCOM==$ged2) {
+						$success = delete_gedrec($gid2);
+						if ($success) print "<br />".$pgv_lang["gedrec_deleted"]."<br />\n";
+						
+						//-- replace all the records that link to gid2
+						$sql = "SELECT i_id, i_gedcom FROM ".$TBLPREFIX."individuals WHERE i_file=".PGV_GED_ID." AND i_gedcom LIKE '%@$gid2@%'";
+						$res = dbquery($sql);
+						while($row = $res->fetchRow()) {
+							$record = $row[1];
+							$gid = $row[0];
+							if ($gid!=$gid2) {
+								if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
+								print $pgv_lang["updating_linked"]." $gid<br />\n";
+								$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
+								replace_gedrec($gid, $newrec);
+							}
+						}
+						$sql = "SELECT f_id, f_gedcom FROM ".$TBLPREFIX."families WHERE f_file=".PGV_GED_ID." AND f_gedcom LIKE '%@$gid2@%'";
+						$res = dbquery($sql);
+						while($row = $res->fetchRow()) {
+							$record = $row[1];
+							$gid = $row[0];
+							if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
+							print $pgv_lang["updating_linked"]." $gid<br />\n";
+							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
+							//-- prevent the merge from adding duplicate children to the family
+							$ct = preg_match_all("/1 CHIL @$gid1@/", $newrec, $matches);
+							if ($ct>1) {
+								$pos1 = strpos($newrec, "1 CHIL @$gid1@");
+								$pos2 = strpos($newrec, "\n1", $pos1+1);
+								if ($pos2===false) $pos2 = strlen($newrec);
+								$newrec = substr($newrec, 0, $pos1).substr($newrec, $pos2);
+							}
+							replace_gedrec($gid, $newrec);
+						}
+						$sql = "SELECT s_id, s_gedcom FROM ".$TBLPREFIX."sources WHERE s_file=".PGV_GED_ID." AND s_gedcom LIKE '%@$gid2@%'";
+						$res = dbquery($sql);
+						while($row = $res->fetchRow()) {
+							$record = $row[1];
+							$gid = $row[0];
+							if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
+							print $pgv_lang["updating_linked"]." $gid<br />\n";
+							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
+							replace_gedrec($gid, $newrec);
+						}
+						$sql = "SELECT o_id, o_gedcom FROM ".$TBLPREFIX."other WHERE o_file=".PGV_GED_ID." AND o_gedcom LIKE '%@$gid2@%'";
+						$res = dbquery($sql);
+						while($row = $res->fetchRow()) {
+							$record = $row[1];
+							$gid = $row[0];
+							if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
+							print $pgv_lang["updating_linked"]." $gid<br />\n";
+							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
+							replace_gedrec($gid, $newrec);
+						}
+					}
 					$newgedrec = "0 @$gid1@ $type1\r\n";
 					for($i=0; ($i<count($facts1) || $i<count($facts2)); $i++) {
 						if (isset($facts1[$i])) {
@@ -187,33 +246,10 @@ if ($action!="choose") {
 							}
 						}
 					}
-					//-- replace all the records that link to gid2
-					$records = preg_split("/\n0/", $fcontents);
-					foreach($records as $indexval => $record) {
-						$ct = preg_match("/ @(.+)@ (.*)/", $record, $match);
-						if ($ct>0) {
-							$gid = trim($match[1]);
-							$type = trim($match[2]);
-						}
-						if (strstr($record, "@$gid2@")!==false) {
-							print $pgv_lang["updating_linked"]." $gid<br />\n";
-							$newrec = "0".$record;
-							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $newrec);
-							if ($type=="FAM") {
-								//-- preven the merge from adding duplicate children to the family
-								$ct = preg_match_all("/1 CHIL @$gid1@/", $newrec, $matches);
-								if ($ct>1) {
-									$pos1 = strpos($newrec, "1 CHIL @$gid1@");
-									$pos2 = strpos($newrec, "\n", $pos1+1);
-									if ($pos2===false) $pos2 = strlen($newrec);
-									$newrec = substr($newrec, 0, $pos1).substr($newrec, $pos2);
-								}
-							}
-							replace_gedrec($gid, $newrec);
-						}
-					}
+					
 					replace_gedrec($gid1, $newgedrec);
-					write_file();
+					if ($SYNC_GEDCOM_FILE) write_file();
+					write_changes();
 					print "<br /><a href=\"edit_merge.php?action=choose\">".$pgv_lang["merge_more"]."</a><br />\n";
 					print "<br /><br /><br />\n";
 				}
@@ -255,25 +291,36 @@ if ($action=="choose") {
 	print "<td class=\"list_label\">&nbsp;";
 	print $pgv_lang["merge_to"];
 	print "&nbsp;</td><td>";
-	print "<input type=\"text\" name=\"gid1\" value=\"$gid1\" size=\"10\" /> ";
-	print "<select name=\"ged\">\n";
+	print "<input type=\"text\" id=\"gid1\" name=\"gid1\" value=\"$gid1\" size=\"10\" tabindex=\"1\"/> ";
+	echo '<script type="text/javascript">document.getElementById("gid1").focus();</script>';
+	print "<select name=\"ged\" tabindex=\"4\">\n";
+	foreach (get_all_gedcoms() as $ged_id=>$ged_name) {
+		print "<option value=\"$ged_name\"";
+		if (empty($ged) && $ged_id==PGV_GED_ID || !empty($ged) && $ged==$ged_name) print " selected=\"selected\"";
+		print ">".get_gedcom_setting($ged_id, 'title')."</option>\n";
+	}
 	print "</select>\n";
-	print "<a href=\"javascript:iopen_find(document.merge.gid1, document.merge.ged);\"> ".$pgv_lang["find_individual"]."</a> |";
-	print " <a href=\"javascript:fopen_find(document.merge.gid1, document.merge.ged);\"> ".$pgv_lang["find_familyid"]."</a> |";
-	print " <a href=\"javascript:sopen_find(document.merge.gid1, document.merge.ged);\"> ".$pgv_lang["find_sourceid"]."</a>";
+	print "<a href=\"javascript:iopen_find(document.merge.gid1, document.merge.ged);\" tabindex=\"6\"> ".$pgv_lang["find_individual"]."</a> |";
+	print " <a href=\"javascript:fopen_find(document.merge.gid1, document.merge.ged);\" tabindex=\"8\"> ".$pgv_lang["find_familyid"]."</a> |";
+	print " <a href=\"javascript:sopen_find(document.merge.gid1, document.merge.ged);\" tabindex=\"10\"> ".$pgv_lang["find_sourceid"]."</a>";
 	print_help_link("rootid_help", "qm");
 	print "</td></tr><tr><td class=\"list_label\">&nbsp;";
 	print $pgv_lang["merge_from"];
 	print "&nbsp;</td><td>";
-	print "<input type=\"text\" name=\"gid2\" value=\"$gid2\" size=\"10\" /> ";
-	print "<select name=\"ged2\">\n";
+	print "<input type=\"text\" name=\"gid2\" value=\"$gid2\" size=\"10\" tabindex=\"2\"/> ";
+	print "<select name=\"ged2\" tabindex=\"5\">\n";
+	foreach (get_all_gedcoms() as $ged_id=>$ged_name) {
+		print "<option value=\"$ged_name\"";
+		if (empty($ged2) && $ged_id==PGV_GED_ID || !empty($ged2) && $ged2==$ged_name) print " selected=\"selected\"";
+		print ">".get_gedcom_setting($ged_id, 'title')."</option>\n";
+	}
 	print "</select>\n";
-	print "<a href=\"javascript:iopen_find(document.merge.gid2, document.merge.ged2);\"> ".$pgv_lang["find_individual"]."</a> |";
-	print "<a href=\"javascript:fopen_find(document.merge.gid2, document.merge.ged2);\"> ".$pgv_lang["find_familyid"]."</a> |";
-	print "<a href=\"javascript:sopen_find(document.merge.gid2, document.merge.ged2);\"> ".$pgv_lang["find_sourceid"]."</a>";
+	print "<a href=\"javascript:iopen_find(document.merge.gid2, document.merge.ged2);\" tabindex=\"7\"> ".$pgv_lang["find_individual"]."</a> |";
+	print "<a href=\"javascript:fopen_find(document.merge.gid2, document.merge.ged2);\" tabindex=\"9\"> ".$pgv_lang["find_familyid"]."</a> |";
+	print "<a href=\"javascript:sopen_find(document.merge.gid2, document.merge.ged2);\" tabindex=\"11\"> ".$pgv_lang["find_sourceid"]."</a>";
 	print_help_link("rootid_help", "qm");
 	print "</td></tr><tr><td colspan=\"2\">";
-	print "<input type=\"submit\" value=\"".$pgv_lang["merge_records"]."\" />\n";
+	print "<input type=\"submit\" value=\"".$pgv_lang["merge_records"]."\"  tabindex=\"3\"/>\n";
 	print "</td></tr></table>";
 	print "</form>\n";
 }

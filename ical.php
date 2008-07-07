@@ -38,25 +38,36 @@ require_once 'includes/family_class.php';
 //Basic http auth needed for non browser authentication. If the user is not logged in and fails basic auth, nothing will be returned
 basicHTTPAuthenticateUser();
 
-$icalEvents = array();
+$icalEvents = array(); //array of all ical events
 
+$iCalCalendarType = "lr"; // default to living relatives
 
-$pid = strtoupper($_REQUEST["pid"]);
-//get indi
-$indi = Person::getInstance($pid);
-//FIXME
+if (!empty($_REQUEST["ict"])) $iCalCalendarType = $_REQUEST["ict"]; //iCalCalendarType
 
+if($iCalCalendarType == "lr") { //living relatives
+	$pid = strtoupper($_REQUEST["pid"]);
+	$indi = Person::getInstance($pid); //get indi
+	generateLivingRelativesIcal($indi);
+}
 
-//move up from indi to grandparents
-//and generate events for 2 level (all root's siblings, aunts, uncles and cousins in that branch
-generateChildDescendancyIcal($indi, 2);
-//get root's father and
-//$indi = Person::getInstance('I11');
-//get all descendants (nieces nephews and great-aunts/uncles etc
-//generateChildDescendancyIcal($indi, 4);
+//output the iCal
+outputIcal();
 
-generateIcal();
-
+/**
+ * Generate iCal events for all living relatives of an individual.
+ * This should include the root's siblings, aunts, uncles, cousins in-laws etc.
+ *
+ * @param string $person the root person
+ * @TODO currently only generates descendants
+ */
+function generateLivingRelativesIcal(&$person) {
+	//move up from indi to grandparents
+	//and generate events for 2 level (all root's siblings, aunts, uncles and cousins in that branch
+	generateChildDescendancyIcal($person, 2);
+	//get root's father and
+	//get all descendants (nieces nephews and great-aunts/uncles etc
+	//generateChildDescendancyIcal($person, 4);
+}
 
 /**
  * Generate iCal events for a child descendancy
@@ -116,7 +127,7 @@ function generateFamilyDescendancyIcal(&$person, &$family, $depth) {
 /**
  * Outputs the iCalendar
  */
-function generateIcal(){
+function outputIcal(){
 	global $icalEvents;
 
   	echo getIcalHeader();
@@ -139,14 +150,12 @@ function getIndiBDIcalEvent($indi){
 		return;
 	}
 	$birthDate = $indi->getBirthDate();
-	if($birthDate ==""){
+	if (!$birthDate->isOK()){
 		return;
 	}
-
 	$summary = $indi->getName() ."'s Birthday";
-	$changedDate = get_changed_date($birthDate);
 	$place = $indi->getBirthPlace();
-	$description = "Born on " . $changedDate . ($place==""?"" : "in " .$place) . "\n" . $indi->getAbsoluteLinkUrl();
+	$description = "Born on " . $birthDate->Display(false) . ($place==""?"" : "in " .$place) . "\n" . $indi->getAbsoluteLinkUrl();
   	$iCalRecord = getIcalRecord($birthDate, $summary, $description, $indi->getAbsoluteLinkUrl());
 
 
@@ -175,11 +184,11 @@ function getFamilyAnniversaryIcalEvent($family){
 	if($wife->isDead() || $husband->isDead() ){
 		return;
 	}
+	$anniversaryDate=new GedcomDate($anniversaryDate);
 
 	$summary = "Anniversary of " . $husband->getName() . " and " . $wife->getName();
-	$changedDate = get_changed_date($anniversaryDate);
 	$place = $family->getMarriagePlace() ;
-	$description = "Married on " . $changedDate . ($place==""?"" : "in " .$place) . "\n" . $family->getAbsoluteLinkUrl();
+	$description = "Married on " . $anniversaryDate->Display(false) . ($place==""?"" : "in " .$place) . "\n" . $family->getAbsoluteLinkUrl();
 	$iCalRecord = getIcalRecord($anniversaryDate, $summary, $description, $family->getAbsoluteLinkUrl());
 
   	return $iCalRecord;
@@ -217,30 +226,22 @@ function getIcalRecord($date, $summary, $description, $URL=""){
 
 /**
  * Converts a GEDCOM date to an iCalendar format date.
- * If the ADOdb Date Library is available (part of the PhpGedView distribution),
- * the start year on the event will be the year that the event took place, to allow
- * viewing of the event in past years, otherwise the year is set as one year in the past
  *
  * @param $gedDate the GEDCOM date
  * @REMOVEDparam $endDate an optional boolean flag indicating that is the end date for the event, and will return the following date
- * @return the iCalendar date in the format 18991230 (start year prior to 1970 depends on the availability of ADOdb as above)s
+ * @return the iCalendar date in the format 18991230
  * @TODO by the spec, an end date is not needed, but since most applications generate and end date, we should test iCal before the commented out DTEND support is removed is removed
  */
 function getIcalDate($gedDate, $endDate=false){
-	$pBD = parse_date($gedDate);
-	$olddates = true;
-	$test = @adodb_mktime(0,0,0,1,1,1960);
-	if ($test==-1) $olddates = false;
+	$date = new GedcomDate($gedDate);
+	$date = $date->MinDate();
+	$date = $date->convert_to_cal('gregorian');
 
-	if($olddates){
-		$times = adodb_mktime(0, 0, 0, $pBD[0]["mon"], ($endDate? $pBD[0]["day"] + 1 : $pBD[0]["day"]), $pBD[0]["year"]);
-		//$times = adodb_mktime(0, 0, 0, $pBD[0]["mon"], $pBD[0]["day"], $pBD[0]["year"]);
-	} else {
-		$times = mktime(0, 0, 0, $pBD[0]["mon"], ($endDate? $pBD[0]["day"] + 1 : $pBD[0]["day"]), date("Y")-1);
-		//$times = mktime(0, 0, 0, $pBD[0]["mon"],  $pBD[0]["day"], date("Y")-1);
-	}
-  	$iCalDate = date ( "Ymd",  $times);
-  	return $iCalDate;
+	$tmp = $date->Format('Y');
+	$tmp.=($date->m) ? $date->Format('m') : '00';
+	$tmp.=($date->d) ? $date->Format('d') : '00';
+
+	return $tmp;
 }
 
 /**

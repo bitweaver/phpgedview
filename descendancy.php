@@ -3,7 +3,7 @@
  * Parses gedcom file and displays a descendancy tree.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2006  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * This Page Is Valid XHTML 1.0 Transitional! > 21 August 2005
- *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: descendancy.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: descendancy.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
  */
 
 // -- include config file
 require_once("includes/controllers/descendancy_ctrl.php");
 
 // -- print html header information
-print_header($controller->name." ".$pgv_lang["descend_chart"]);?>
+print_header($controller->name." ".$pgv_lang["descend_chart"]);
 
+// LBox =====================================================================================
+if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+	include('modules/lightbox/lb_config.php');
+	include('modules/lightbox/functions/lb_call_js.php');
+}	
+// ==========================================================================================
 
+?>
 <table class="list_table <?php print $TEXT_DIRECTION?>"><tr><td width="<?php print $controller->cellwidth?>px" valign="top">
 <h2><?php print $pgv_lang["descend_chart"].":<br />".PrintReady($controller->name)."</h2>";
 //print "\n\t<h2>".$pgv_lang["descend_chart"].":<br />".$controller->name."</h2>";?>
@@ -145,6 +150,7 @@ if ($view!="preview") {
 if (is_null($controller->descPerson)) {
 	print "<span class=\"error\">".$pgv_lang["record_not_found"]."</span>";
 }
+$controller->generations -= 1; // [ 1757792 ] Charts : wrong generations count
 //-- list
 if ($controller->chart_style==0) {
 	echo "<ul style=\"list-style: none; display: block;\" id=\"descendancy_chart".($TEXT_DIRECTION=="rtl" ? "_rtl" : "")."\">";

@@ -4,7 +4,7 @@
  * Searches based on user query.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: search.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: search.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
  */
 // Include the search controller from now on refered to as $controller
 require_once ("includes/controllers/search_ctrl.php");
@@ -98,7 +98,7 @@ print_header($pgv_lang["search"]);
 				bplace = frm.birthplace.value;
 				ddate = frm.deathdate.value;
 				dplace = frm.deathplace.value;
-				sex = frm.gender.value;
+				gender = frm.gender.value;
 
 				if(name.length > 1)
 					message = false;
@@ -112,12 +112,14 @@ print_header($pgv_lang["search"]);
 					message = false;
 				if(message)
 				{
-					if(sex.length < 1)
+					<?php if ($SHOW_MULTISITE_SEARCH >= PGV_USER_ACCESS_LEVEL) { ?>
+					if(gender.length < 1)
 					{
 						alert("<?php print $pgv_lang["invalid_search_multisite_input"]?>");
 						return false;
 					}
 					alert("<?php print $pgv_lang["invalid_search_multisite_input_gender"]?>");
+					<?php } ?>
 					return false;
 				}
 			}
@@ -133,7 +135,8 @@ print_header($pgv_lang["search"]);
 //-->
 </script>
 
-<h2 class="center"><?php print $pgv_lang["search_gedcom"]; ?></h2>
+<h2 class="center"><?php print $controller->getPageTitle(); ?></h2>
+<?php $somethingPrinted = $controller->printResults(); ?>
 <!--	/*************************************************** Search Form Outer Table **************************************************/ -->
 <form method="post" name="searchform" onsubmit="return checknames(this);" action="search.php">
 <input type="hidden" name="action" value="<?php print $controller->action; ?>" />
@@ -153,7 +156,7 @@ print_header($pgv_lang["search"]);
 			<?php print $pgv_lang["enter_terms"]; ?>
 		</td>
 		<td class="list_value" style="padding: 5px;">
-			<input tabindex="1" type="text" name="query" value="<?php if (isset($controller->myquery)) print $controller->myquery; ?>" />
+			<input tabindex="1" id="firstfocus" type="text" name="query" value="<?php if (isset($controller->myquery)) print $controller->myquery; ?>" />
 		</td>
 		<td class="list_value" style="vertical-align: middle; text-align: center; padding: 5px;"  rowspan="4">
 			<input tabindex="2" type="submit" value="<?php print $pgv_lang["search"] ?>" />
@@ -191,7 +194,7 @@ print_header($pgv_lang["search"]);
 	<!-- Choice to Exclude non-genealogical data -->
 	<tr>
 		<td class="list_label" style="padding: 5px;">
-			<?php print $pgv_lang["search_tagfilter"]; ?>
+			<?php print_help_link("search_exclude_tags_help", "qm"); print $pgv_lang["search_tagfilter"]; ?>
 		</td>
 		<td class="list_value" style="padding: 5px;">
 			<input type="radio" name="tagfilter" value="on"
@@ -212,17 +215,72 @@ print_header($pgv_lang["search"]);
 	<!-- Choice to show related persons/families (associates) -->
 	<tr>
 		<td class="list_label" style="padding: 5px;">
-			<?php print $pgv_lang["search_asso_label"]; ?>
+			<?php print_help_link("search_include_ASSO_help", "qm"); print $pgv_lang["search_asso_label"]; ?>
 		</td>
 		<td class="list_value" style="padding: 5px;">
 			<input type="checkbox" name="showasso" value="on"
-				<?php	
+				<?php
 	if ($controller->showasso == "on") print " checked=\"checked\" "; ?> />
 				<?php print $pgv_lang["search_asso_text"]; ?>
 		</td>
 	</tr>
 			<?php
 
+}
+/**************************************************** Search and Replace Search Form ****************************************************/
+if ($controller->action == "replace")
+{
+	if (PGV_USER_CAN_EDIT) {
+?>
+				<td colspan="3" class="facts_label03" style="text-align: center;">
+					<?php print $pgv_lang["search_replace"]; print_help_link('search_replace_help', 'qm'); ?>
+				</td>
+	</tr>
+	<!-- // search terms -->
+	<tr>
+		<td class="list_label" style="padding: 5px;"><?php print $pgv_lang["enter_terms"]; ?></td>
+		<td class="list_value" style="padding: 5px;"><input tabindex="1" id="firstfocus" name="query" value="" type="text"/></td>
+			<td class="list_value" style="vertical-align: middle; text-align: center; padding: 5px;"  rowspan="3">
+			<input tabindex="2" type="submit" value="<?php print $pgv_lang["search"]; ?>" />
+		</td>
+	</tr>
+	<tr>
+		<td class="list_label" style="padding: 5px;"><?php print $pgv_lang["replace_with"]; ?></td>
+		<td class="list_value" style="padding: 5px;"><input tabindex="1" name="replace" value="" type="text"/></td>
+	</tr>
+	<!-- // Choice where to search -->
+	<tr>
+		<td class="list_label" style="padding: 5px;"><?php print $pgv_lang["search_inrecs"]; ?></td>
+		<td class="list_value" style="padding: 5px;">
+			<script type="text/javascript">
+			<!--
+				function checkAll(box) {
+					if (!box.checked) {
+						box.form.replaceNames.disabled = false;
+						box.form.replacePlaces.disabled = false;
+						box.form.replacePlacesWord.disabled = false;
+					}
+					else {
+						box.form.replaceNames.disabled = true;
+						box.form.replacePlaces.disabled = true;
+						box.form.replacePlacesWord.disabled = true;
+					}
+				}
+			//-->
+			</script>
+			<input checked="checked" onclick="checkAll(this);" value="yes" name="replaceAll" type="checkbox"/><?php print $pgv_lang["search_record"]; ?>
+			<br/>
+			<hr />
+			<input checked="checked" disabled="disabled" value="yes" name="replaceNames" type="checkbox"/><?php print $pgv_lang["search_indis"]; ?>
+			<br/>
+			<input checked="checked" disabled="disabled" value="yes" name="replacePlaces" type="checkbox"/><?php print $pgv_lang["search_place"]; ?>
+			<input checked="checked" disabled="disabled" value="yes" name="replacePlacesWord" type="checkbox"/><?php print $pgv_lang["search_place_word"]; ?>
+			<br/>
+
+		</td>
+	</tr>
+<?php
+}
 }
 
 /**************************************************** Soundex Search Form *************************************************************/
@@ -238,9 +296,9 @@ if ($controller->action == "soundex") {
 			<?php print $pgv_lang["firstname_search"]; ?>
 		</td>
 		<td class="list_value">
-			<input tabindex="3" type="text" name="firstname" value="<?php print $controller->myfirstname; ?>" />
+			<input tabindex="3" type="text" id="firstfocus" name="firstname" value="<?php print $controller->myfirstname; ?>" />
 		</td>
-		<td class="list_value" style="vertical-align: middle; text-align: center; padding: 5px;"  rowspan="7">
+		<td class="list_value" style="vertical-align: middle; text-align: center; padding: 5px;"  rowspan="6">
 			<input tabindex="7" type="submit" value="<?php print $pgv_lang["search"]; ?>" />
 		</td>
 	</tr>
@@ -282,8 +340,9 @@ if ($controller->action == "soundex") {
 			<?php print $pgv_lang["search_DM"]; ?>
 		</td>
 	</tr>
+
 	<!-- Individuals' names to print options (Names with hit, All names) -->
-	<tr>
+	<!-- <tr>
 		<td class="list_label">
 			<?php 	print $pgv_lang["search_prtnames"]; ?>
 		</td>
@@ -295,7 +354,7 @@ if ($controller->action == "soundex") {
 				<?php if ($controller->nameprt == "all") print " checked=\"checked\" "; ?> />
 				<?php print $pgv_lang["search_prtall"]; ?>
 		</td>
-	</tr>
+	</tr> -->
 	<tr>
 		<td class="list_label" style="padding: 5px;">
 			<?php print $pgv_lang["search_asso_label"]; ?>
@@ -433,8 +492,7 @@ if ($controller->action == "multisite") {
 // If the search is a general or soundex search then possibly display checkboxes for the gedcoms
 if ($controller->action == "general" || $controller->action == "soundex") {
 	// If more than one GEDCOM, switching is allowed AND DB mode is set, let the user select
-	$gedcoms = $gGedcom->getList();
-	if ((count($gedcoms) > 1) && ($ALLOW_CHANGE_GEDCOM)) {
+	if ((count($gGedcom) > 1) && ($ALLOW_CHANGE_GEDCOM)) {
 ?>
 	<tr>
 		<td class="list_label" style="padding: 5px;">
@@ -444,8 +502,7 @@ if ($controller->action == "general" || $controller->action == "soundex") {
 			<?php
 
 		$i = 0;
-		$gedcoms = $gGedcom->getList();
-		foreach ($gedcoms as $key => $gedarray) {
+		foreach ($gGedcom as $key => $gedarray) {
 			$str = preg_replace(array ("/\./", "/-/", "/ /"), array ("_", "_", "_"), $key);
 			$controller->inputFieldNames[] = "$str";
 			print "<input type=\"checkbox\" ";
@@ -462,6 +519,7 @@ if ($controller->action == "general" || $controller->action == "soundex") {
 	}
 }
 ?>
+<!--  not currently used
 	<tr>
 		<td class="list_label" style="padding: 5px;" >
 			<?php print $pgv_lang["results_per_page"]; ?>
@@ -476,6 +534,7 @@ if ($controller->action == "general" || $controller->action == "soundex") {
 			</select>
 		</td>
 	</tr>
+	-->
 	<tr>
 		<td class="list_label" style="padding: 5px;" >
 			<?php print $pgv_lang["other_searches"]; ?>
@@ -485,26 +544,53 @@ if ($controller->action == "general" || $controller->action == "soundex") {
 
 if ($controller->action == "general") {
 	print "<a href='?action=soundex'>".$pgv_lang["search_soundex"]."</a>";
-	if ($SHOW_MULTISITE_SEARCH >= getUserAccessLevel()) {
-		$sitelist = get_server_list();
-		if (count($sitelist) > 0) {
+	if(PGV_USER_CAN_EDIT) {
+		print " | <a href='?action=replace'>".$pgv_lang["search_replace"]."</a>";
+	}
+	if ($SHOW_MULTISITE_SEARCH >= PGV_USER_ACCESS_LEVEL) {
+		if (count($controller->Sites) > 0) {
+
+
 			print " | <a href='?action=multisite'>".$pgv_lang["multi_site_search"]."</a></td></tr>";
 		}
 	}
-} else
-	if ($controller->action == "soundex") {
-		print "<a href='?action=general'>".$pgv_lang["search_general"]."</a>";
-		if ($SHOW_MULTISITE_SEARCH >= getUserAccessLevel()) {
-			$sitelist = get_server_list();
-			if (count($sitelist) > 0) {
+}
+else if ($controller->action == "replace")
+{
+	print "<a href='?action=general'>".$pgv_lang["search_general"]."</a> | ";
+	print "<a href='?action=soundex'>".$pgv_lang["search_soundex"]."</a>";
+		if ($SHOW_MULTISITE_SEARCH >= PGV_USER_ACCESS_LEVEL) {
+			if (count($controller->Sites) > 0) {
+
 				print " | <a href='?action=multisite'>".$pgv_lang["multi_site_search"]."</a></td></tr>";
 			}
 		}
-	} else
-		if ($controller->action == "multisite") {
+}
+else
+	if ($controller->action == "soundex") {
+		print "<a href='?action=general'>".$pgv_lang["search_general"]."</a>";
+		if(PGV_USER_CAN_EDIT)
+		{
+			print " | <a href='?action=replace'>".$pgv_lang["search_replace"]."</a>";
+		}
+		if ($SHOW_MULTISITE_SEARCH >= PGV_USER_ACCESS_LEVEL) {
+			if (count($controller->Sites) > 0) {
+				print " | <a href='?action=multisite'>".$pgv_lang["multi_site_search"]."</a></td></tr>";
+			}
+		}
+	}
+	 else
+		if ($controller->action == "multisite")
+		{
+			if(PGV_USER_CAN_EDIT)
+			{
+				print "<a href='?action=replace'>".$pgv_lang["search_replace"]."</a> | ";
+			}
+
 			print "<a href='?action=general'>".$pgv_lang["search_general"]."</a> | ";
 			print "<a href='?action=soundex'>".$pgv_lang["search_soundex"]."</a></td></tr>";
 		}
+
 ?>
 		</td>
 	</tr>
@@ -512,7 +598,19 @@ if ($controller->action == "general") {
 </form>
 <br />
 <?php
-$controller->printResults();
+
+echo "<br /><br /><br />";
+// set the focus on the first field unless multisite or some search results have been printed
+if (($controller->action != "multisite") && !$somethingPrinted ) {
 ?>
-<br /><br /><br />
-<?php print_footer(); ?>
+	<script language="JavaScript" type="text/javascript">
+	<!--
+		document.getElementById('firstfocus').focus();
+	//-->
+	</script>
+<?php
+}
+//-- somewhere the session gedcom gets changed, so we will change it back
+$_SESSION['GEDCOM'] = $GEDCOM;
+print_footer();
+?>

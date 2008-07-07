@@ -3,7 +3,7 @@
  * Online UI for editing config.php site configuration variables
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2008  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,12 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see config.php
- * @version $Id: editconfig.php,v 1.11 2007/05/28 14:52:03 lsces Exp $
+ * @version $Id: editconfig.php,v 1.12 2008/07/07 18:01:13 lsces Exp $
  */
 
-// Initialization
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -45,8 +47,14 @@ if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
 if (empty($action)) $action="";
 if (!isset($COMMIT_COMMAND)) $COMMIT_COMMAND="";
 
+
 print_header($pgv_lang["configure_head"]);
-if ($action=="update" && !isset($security_user)) {
+//Prints warnings
+if (count($warnings)>0 || count($errors)>0) {
+	print_sanity_errors();
+	if (count($errors)>0) exit;
+}
+if ($action=="update" && (!isset($security_user)||$security_user!=$_POST['NEW_DBUSER'])) {
 	if (!isset($_POST)) $_POST = $HTTP_POST_VARS;
 	$boolarray = array();
 	$boolarray["yes"]="true";
@@ -58,7 +66,8 @@ if ($action=="update" && !isset($security_user)) {
 	$configtext = implode('', file("config.php"));
 	print $pgv_lang["config_file_read"];
 	print "<br />\n";
-	if (preg_match("'://'", $NEW_SERVER_URL)==0) $NEW_SERVER_URL = "http://".$NEW_SERVER_URL;
+	$NEW_SERVER_URL = trim($NEW_SERVER_URL);
+	if (!isFileExternal($NEW_SERVER_URL)) $NEW_SERVER_URL = "http://".$NEW_SERVER_URL;
 	if (preg_match("'/$'", $NEW_SERVER_URL)==0) $NEW_SERVER_URL .= "/";
 	$_POST["NEW_INDEX_DIRECTORY"] = preg_replace('/\\\/','/',$_POST["NEW_INDEX_DIRECTORY"]);
 	if (preg_match('/\$DBTYPE\s*=\s*".*";/', $configtext)>0) {
@@ -68,18 +77,23 @@ if ($action=="update" && !isset($security_user)) {
 		$configtext = preg_replace('/\$DBHOST/', "\$DBTYPE = \"".$_POST["NEW_DBTYPE"]."\";\r\n\$DBHOST", $configtext);
 	}
 	if ($CONFIG_VERSION<4) {
-		$configtext = preg_replace('/\PHPGEDVIEW_DB_PREFIX/', "\$DBPERSIST = false;\r\n\PHPGEDVIEW_DB_PREFIX", $configtext);
+		$configtext = preg_replace('/\$TBLPREFIX/', "\$DBPERSIST = false;\r\n\$TBLPREFIX", $configtext);
 		$configtext = preg_replace('/\$CONFIG_VERSION\s*=\s*".*";/', "\$CONFIG_VERSION = \"4.0\";", $configtext);
 	}
 	$configtext = preg_replace('/\$DBHOST\s*=\s*".*";/', "\$DBHOST = \"".$_POST["NEW_DBHOST"]."\";", $configtext);
 	$configtext = preg_replace('/\$DBUSER\s*=\s*".*";/', "\$DBUSER = \"".$_POST["NEW_DBUSER"]."\";", $configtext);
-	if (!empty($_POST["NEW_DBPASS"])) $configtext = preg_replace('/\$DBPASS\s*=\s*".*";/', "\$DBPASS = \"".$_POST["NEW_DBPASS"]."\";", $configtext);
+	if (!empty($_POST["NEW_DBPASS"])) {
+		$tempPW = str_replace(array("\\", "\'", "\"", "\$"), array("\\\\", "\\\"", "\\\$"), $_POST["NEW_DBPASS"]);		// add escape codes before storing PW
+		$configtext = preg_replace('/\$DBPASS\s*=\s*".*";/', "\$DBPASS = \"{$tempPW}\";", $configtext);
+	}
 	$configtext = preg_replace('/\$DBNAME\s*=\s*".*";/', "\$DBNAME = \"".$_POST["NEW_DBNAME"]."\";", $configtext);
 	$configtext = preg_replace('/\$DBPERSIST\s*=\s*.*;/', "\$DBPERSIST = ".$boolarray[$_POST["NEW_DBPERSIST"]].";", $configtext);
+	$configtext = preg_replace('/\$TBLPREFIX\s*=\s*".*";/', "\$TBLPREFIX = \"".$_POST["NEW_TBLPREFIX"]."\";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_CHANGE_GEDCOM\s*=\s*.*;/', "\$ALLOW_CHANGE_GEDCOM = ".$boolarray[$_POST["NEW_ALLOW_CHANGE_GEDCOM"]].";", $configtext);
 	$configtext = preg_replace('/\$USE_REGISTRATION_MODULE\s*=\s*.*;/', "\$USE_REGISTRATION_MODULE = ".$boolarray[$_POST["NEW_USE_REGISTRATION_MODULE"]].";", $configtext);
 	$configtext = preg_replace('/\$REQUIRE_ADMIN_AUTH_REGISTRATION\s*=\s*.*;/', "\$REQUIRE_ADMIN_AUTH_REGISTRATION = ".$boolarray[$_POST["NEW_REQUIRE_ADMIN_AUTH_REGISTRATION"]].";", $configtext);
 	$configtext = preg_replace('/\$PGV_SIMPLE_MAIL\s*=\s*.*;/', "\$PGV_SIMPLE_MAIL = ".$boolarray[$_POST["NEW_PGV_SIMPLE_MAIL"]].";", $configtext);
+	$configtext = preg_replace('/\$PGV_STORE_MESSAGES\s*=\s*.*;/', "\$PGV_STORE_MESSAGES = ".$boolarray[$_POST["NEW_PGV_STORE_MESSAGES"]].";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_USER_THEMES\s*=\s*.*;/', "\$ALLOW_USER_THEMES = ".$boolarray[$_POST["NEW_ALLOW_USER_THEMES"]].";", $configtext);
 	$configtext = preg_replace('/\$ALLOW_REMEMBER_ME\s*=\s*.*;/', "\$ALLOW_REMEMBER_ME = ".$boolarray[$_POST["NEW_ALLOW_REMEMBER_ME"]].";", $configtext);
 	$configtext = preg_replace('/\$INDEX_DIRECTORY\s*=\s*".*";/', "\$INDEX_DIRECTORY = \"".$_POST["NEW_INDEX_DIRECTORY"]."\";", $configtext);
@@ -90,6 +104,12 @@ if ($action=="update" && !isset($security_user)) {
 	$configtext = preg_replace('/\$MAX_VIEW_TIME\s*=\s*".*";/', "\$MAX_VIEW_TIME = \"".$_POST["NEW_MAX_VIEW_TIME"]."\";", $configtext);
 	$configtext = preg_replace('/\$SERVER_URL\s*=\s*".*";/', "\$SERVER_URL = \"".$_POST["NEW_SERVER_URL"]."\";", $configtext);
 	$configtext = preg_replace('/\$COMMIT_COMMAND\s*=\s*".*";/', "\$COMMIT_COMMAND = \"".$_POST["NEW_COMMIT_COMMAND"]."\";", $configtext);
+	if (preg_match('/\$DBTYPE\s*=\s*".*";/', $configtext)>0) {
+		$configtext = preg_replace('/\$LOGIN_URL\s*=\s*".*";/', "\$LOGIN_URL = \"".$_POST["NEW_LOGIN_URL"]."\";", $configtext);
+	}
+	else {
+		$configtext = preg_replace('/\$PGV_MEMORY_LIMIT/', "\$LOGIN_URL = \"".$_POST["NEW_LOGIN_URL"]."\";\r\n\$PGV_MEMORY_LIMIT", $configtext);
+	}
 	$configtext = preg_replace('/\$PGV_MEMORY_LIMIT\s*=\s*".*";/', "\$PGV_MEMORY_LIMIT = \"".$_POST["NEW_PGV_MEMORY_LIMIT"]."\";", $configtext);
 	$DBHOST = $_POST["NEW_DBHOST"];
 	$DBTYPE = $_POST["NEW_DBTYPE"];
@@ -101,7 +121,6 @@ if ($action=="update" && !isset($security_user)) {
 	if (check_db(true)) {
 		$configtext = preg_replace('/\$CONFIGURED\s*=\s*.*;/', "\$CONFIGURED = true;", $configtext);
 		$CONFIGURED = true;
-//		require_once("includes/functions_import.php");
 	}
 
 	// Save the languages the user has chosen to have active on the website
@@ -164,8 +183,8 @@ if ($action=="update" && !isset($security_user)) {
 					if ($end_found) fwrite($fp, $file_array[$x]);
 				}
 				fclose($fp);
-				$logline = AddToLog("Language settings file, lang_settings.php, updated by >".getUserName()."<");
-	 			if (!empty($COMMIT_COMMAND)) check_in($logline, $Filename, $INDEX_DIRECTORY);	
+				$logline = AddToLog("Language settings file, lang_settings.php, updated");
+				if (!empty($COMMIT_COMMAND)) check_in($logline, $Filename, $INDEX_DIRECTORY);	
 			}
 			else $error = "lang_config_write_error";
 		}
@@ -173,7 +192,7 @@ if ($action=="update" && !isset($security_user)) {
 	}
 
 	if (!empty($error)) {
-	    print "<span class=\"error\">" . $pgv_lang[$error] . "</span><br /><br />";
+		print "<span class=\"error\">" . $pgv_lang[$error] . "</span><br /><br />";
 	}
 
 	if (!isset($download)) {
@@ -188,8 +207,8 @@ if ($action=="update" && !isset($security_user)) {
 			else {
 				fwrite($fp, $configtext);
 				fclose($fp);
-				$logline = AddToLog("config.php updated by >".getUserName()."<");
-	 			if (!empty($COMMIT_COMMAND)) check_in($logline, "config.php", "");	
+				$logline = AddToLog("config.php updated");
+				if (!empty($COMMIT_COMMAND)) check_in($logline, "config.php", "");	
 				if ($CONFIGURED) print "<script language=\"JavaScript\" type=\"text/javascript\">\nwindow.location = 'editconfig.php';\n</script>\n";
 			}
 		}
@@ -236,7 +255,10 @@ if ($action=="update" && !isset($security_user)) {
 </script>
 <form method="post" name="configform" action="editconfig.php">
 <input type="hidden" name="action" value="update" />
+<?php if (isset($_POST['security_check'])) { ?><input type="hidden" name="security_check" value="<?php print $_POST['security_check']; ?>" /><?php }?>
+<?php if (isset($_POST['security_user'])) { ?><input type="hidden" name="security_user" value="<?php print $_POST['security_user']; ?>" /><?php }?>
 <?php
+	
 	print "<table class=\"facts_table\">";
 	print "<tr><td class=\"topbottombar\" colspan=\"2\">";
 	print "<span class=\"subheaders\">";
@@ -270,6 +292,10 @@ if ($action=="update" && !isset($security_user)) {
 		</td>
 	</tr>
 	<tr>
+		<td class="descriptionbox"><?php print_help_link("TBLPREFIX_help", "qm", "TBLPREFIX"); print $pgv_lang["TBLPREFIX"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_TBLPREFIX" value="<?php print $TBLPREFIX?>" size="40" tabindex="<?php $i++; print $i?>" onfocus="getHelp('TBLPREFIX_help');" /></td>
+	</tr>
+	<tr>
 		<td class="descriptionbox width20 wrap"><?php print_help_link("ALLOW_CHANGE_GEDCOM_help", "qm", "ALLOW_CHANGE_GEDCOM"); print $pgv_lang["ALLOW_CHANGE_GEDCOM"];?></td>
 		<td class="optionbox"><select name="NEW_ALLOW_CHANGE_GEDCOM" tabindex="<?php $i++; print $i?>" onfocus="getHelp('ALLOW_CHANGE_GEDCOM_help');">
 				<option value="yes" <?php if ($ALLOW_CHANGE_GEDCOM) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
@@ -281,6 +307,14 @@ if ($action=="update" && !isset($security_user)) {
 		<td class="descriptionbox wrap"><?php print_help_link("INDEX_DIRECTORY_help", "qm", "INDEX_DIRECTORY"); print $pgv_lang["INDEX_DIRECTORY"];?></td>
 		<td class="optionbox"><input type="text" size="50" name="NEW_INDEX_DIRECTORY" value="<?php print $INDEX_DIRECTORY?>" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('INDEX_DIRECTORY_help');" /></td>
 	</tr>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("PGV_STORE_MESSAGES_help", "qm", "PGV_STORE_MESSAGES"); print $pgv_lang["PGV_STORE_MESSAGES"];?></td>
+		<td class="optionbox"><select name="NEW_PGV_STORE_MESSAGES" tabindex="<?php $i++; print $i?>" onfocus="getHelp('PGV_STORE_MESSAGES_help');">
+				<option value="yes" <?php if ($PGV_STORE_MESSAGES) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+				<option value="no" <?php if (!$PGV_STORE_MESSAGES) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+			</select>
+		</td>
+	</tr>
 
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("USE_REGISTRATION_MODULE_help", "qm", "USE_REGISTRATION_MODULE"); print $pgv_lang["USE_REGISTRATION_MODULE"];?></td>
@@ -291,14 +325,14 @@ if ($action=="update" && !isset($security_user)) {
 		</td>
 	</tr>
 
- 	<tr>
- 		<td class="descriptionbox wrap"><?php print_help_link("REQUIRE_ADMIN_AUTH_REGISTRATION_help", "qm", "REQUIRE_ADMIN_AUTH_REGISTRATION"); print $pgv_lang["REQUIRE_ADMIN_AUTH_REGISTRATION"];?></td>
- 		<td class="optionbox"><select name="NEW_REQUIRE_ADMIN_AUTH_REGISTRATION" tabindex="<?php $i++; print $i?>" onfocus="getHelp('REQUIRE_ADMIN_AUTH_REGISTRATION_help');">
- 				<option value="yes" <?php if ($REQUIRE_ADMIN_AUTH_REGISTRATION) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
- 				<option value="no" <?php if (!$REQUIRE_ADMIN_AUTH_REGISTRATION) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("REQUIRE_ADMIN_AUTH_REGISTRATION_help", "qm", "REQUIRE_ADMIN_AUTH_REGISTRATION"); print $pgv_lang["REQUIRE_ADMIN_AUTH_REGISTRATION"];?></td>
+		<td class="optionbox"><select name="NEW_REQUIRE_ADMIN_AUTH_REGISTRATION" tabindex="<?php $i++; print $i?>" onfocus="getHelp('REQUIRE_ADMIN_AUTH_REGISTRATION_help');">
+				<option value="yes" <?php if ($REQUIRE_ADMIN_AUTH_REGISTRATION) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+				<option value="no" <?php if (!$REQUIRE_ADMIN_AUTH_REGISTRATION) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
 			</select>
- 		</td>
- 	</tr>
+		</td>
+	</tr>
 
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("PGV_SIMPLE_MAIL_help", "qm", "PGV_SIMPLE_MAIL"); print $pgv_lang["PGV_SIMPLE_MAIL"];?></td>
@@ -321,8 +355,8 @@ if ($action=="update" && !isset($security_user)) {
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("ALLOW_REMEMBER_ME_help", "qm", "ALLOW_REMEMBER_ME"); print $pgv_lang["ALLOW_REMEMBER_ME"];?></td>
 		<td class="optionbox"><select name="NEW_ALLOW_REMEMBER_ME" tabindex="<?php $i++; print $i?>" onfocus="getHelp('ALLOW_REMEMBER_ME_help');">
- 				<option value="yes" <?php if ($ALLOW_REMEMBER_ME) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
- 				<option value="no" <?php if (!$ALLOW_REMEMBER_ME) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
+				<option value="yes" <?php if ($ALLOW_REMEMBER_ME) print "selected=\"selected\""; ?>><?php print $pgv_lang["yes"];?></option>
+				<option value="no" <?php if (!$ALLOW_REMEMBER_ME) print "selected=\"selected\""; ?>><?php print $pgv_lang["no"];?></option>
 			</select>
 		</td>
 	</tr>
@@ -413,6 +447,11 @@ if ($action=="update" && !isset($security_user)) {
 		</td>
 	</tr>
 	<tr>
+		<td class="descriptionbox wrap"><?php print_help_link("LOGIN_URL_help", "qm", "LOGIN_URL"); print $pgv_lang["LOGIN_URL"];?></td>
+		<td class="optionbox"><input type="text" name="NEW_LOGIN_URL" value="<?php print $LOGIN_URL?>" dir="ltr" tabindex="<?php $i++; print $i?>" onfocus="getHelp('LOGIN_URL_help');" size="100" />
+		</td>
+	</tr>
+	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("PGV_SESSION_SAVE_PATH_help", "qm", "PGV_SESSION_SAVE_PATH"); print $pgv_lang["PGV_SESSION_SAVE_PATH"];?></td>
 		<td class="optionbox"><input type="text" dir="ltr" size="50" name="NEW_PGV_SESSION_SAVE_PATH" value="<?php print $PGV_SESSION_SAVE_PATH?>" tabindex="<?php $i++; print $i?>" onfocus="getHelp('PGV_SESSION_SAVE_PATH_help');" /></td>
 	</tr>
@@ -437,14 +476,14 @@ if ($action=="update" && !isset($security_user)) {
 	</tr>
 	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("COMMIT_COMMAND_help", "qm", "COMMIT_COMMAND"); print $pgv_lang['COMMIT_COMMAND'];?></td>
- 		<td class="optionbox"><select name="NEW_COMMIT_COMMAND" tabindex="<?php $i++; print $i?>" onfocus="getHelp('COMMIT_COMMAND_help');">
+		<td class="optionbox"><select name="NEW_COMMIT_COMMAND" tabindex="<?php $i++; print $i?>" onfocus="getHelp('COMMIT_COMMAND_help');">
 				<option value="" <?php if ($COMMIT_COMMAND=="") print "selected=\"selected\""; ?>><?php print $pgv_lang["none"];?></option>
 				<option value="cvs" <?php if ($COMMIT_COMMAND=="cvs") print "selected=\"selected\""; ?>>CVS</option>
 				<option value="svn" <?php if ($COMMIT_COMMAND=="svn") print "selected=\"selected\""; ?>>SVN</option>
 			</select>
 		</td>
- 	</tr>
- 	<tr>
+	</tr>
+	<tr>
 		<td class="descriptionbox wrap"><?php print_help_link("PGV_MEMORY_LIMIT_help", "qm", "PGV_MEMORY_LIMIT"); print $pgv_lang["PGV_MEMORY_LIMIT"];?></td>
 		<td class="optionbox"><input type="text" name="NEW_PGV_MEMORY_LIMIT" value="<?php print $PGV_MEMORY_LIMIT?>" tabindex="<?php $i++; print $i?>" onfocus="getHelp('PGV_MEMORY_LIMIT_help');" /></td>
 	</tr>
@@ -454,8 +493,6 @@ if ($action=="update" && !isset($security_user)) {
 		<input type="reset" tabindex="<?php $i++; print $i?>" value="<?php print $pgv_lang["reset"];?>" />
 		</td>
 	</tr>
-<?php
-?>
 </table>
 </form>
 <?php if (!$CONFIGURED) { ?>

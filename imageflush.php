@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: imageflush.php,v 1.3 2007/05/27 14:45:30 lsces Exp $
+ * $Id: imageflush.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
  *
  * @package PhpGedView
  * @subpackage Charts
@@ -57,20 +57,27 @@ function ImageFlushError($txt) {
 
 // get image_type
 $image_type = @$_GET['image_type'];
+if (empty($image_type)) $image_type = "png";
 $image_type = strtolower($image_type);
-if ($image_type=="jpg") $image_type="jpeg";
-if ($image_type=="") $image_type="png";
-//ImageFlushError($image_type);
+if ($image_type=="jpg") $image_type = "jpeg";
+// get name of SESSION variable containing an image file name
+$tempVarName = @$_GET["image_name"];
+if (empty($tempVarName)) $tempVarName = "graphFile";
 
-// read image_data from SESSION variable
-//session_start();
-$image_data = @$_SESSION['image_data'];
-$image_data = @unserialize($image_data);
-unset($_SESSION['image_data']);
-if (empty($image_data)) ImageFlushError("Error : \$_SESSION['image_data'] is empty");
+// read image_data from SESSION variable or from file pointed to by SESSION variable
+if (isset($_SESSION["image_data"])) {
+	$image_data = @$_SESSION['image_data'];
+	$image_data = @unserialize($image_data);
+	unset($_SESSION['image_data']);
+} else if (isset($_SESSION[$tempVarName])) {
+	$image_data = file_get_contents($_SESSION[$tempVarName]);
+	unlink($_SESSION[$tempVarName]);
+	unset($_SESSION[$tempVarName]);
+}
+if (empty($image_data)) ImageFlushError("Error: \$_SESSION['image_data'] or \$_SESSION['".$tempVarName."'] is empty");
 
 // send data to browser
-Header("Content-Type: images/$image_type");
+Header("Content-Type: image/$image_type");
 Header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 Header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
 Header('Pragma: no-cache');

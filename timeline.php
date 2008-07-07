@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: timeline.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: timeline.php,v 1.3 2008/07/07 18:01:11 lsces Exp $
  */
 
 require_once("includes/controllers/timeline_ctrl.php");
@@ -264,19 +264,19 @@ $controller->checkPrivacy();
 			case "M":
 				$seximage = $PGV_IMAGE_DIR."/".$PGV_IMAGES["sex"]["small"];
 				?>
-				<img src="<?php print $seximage; ?>" title="<?php print $pgv_lang["male"]; ?>" alt="<?php print $pgv_lang["male"]; ?>" vspace="0" hspace="0" class="sex_image" border="0" />
+				<img src="<?php print $seximage; ?>" title="<?php print $pgv_lang["male"]; ?>" alt="<?php print $pgv_lang["male"]; ?>" vspace="0" hspace="0" class="gender_image" border="0" />
 				<?php
 				break;
 			case "F":
 				$seximage = $PGV_IMAGE_DIR."/".$PGV_IMAGES["sexf"]["small"];
 				?>
-				<img src="<?php print $seximage; ?>" title="<?php print $pgv_lang["female"]; ?>" alt="<?php print $pgv_lang["female"]; ?>" vspace="0" hspace="0" class="sex_image" border="0" />
+				<img src="<?php print $seximage; ?>" title="<?php print $pgv_lang["female"]; ?>" alt="<?php print $pgv_lang["female"]; ?>" vspace="0" hspace="0" class="gender_image" border="0" />
 				<?php
 				break;
 			default:
 				$seximage = $PGV_IMAGE_DIR."/".$PGV_IMAGES["sexn"]["small"];
 				?>
-				<img src="<?php print $seximage; ?>" title="<?php print $pgv_lang["sex"]." ".$pgv_lang["unknown"]; ?>" alt="<?php print $pgv_lang["sex"]." ".$pgv_lang["unknown"]; ?>" vspace="0" hspace="0" class="sex_image" border="0" />
+				<img src="<?php print $seximage; ?>" title="<?php print $pgv_lang["sex"]." ".$pgv_lang["unknown"]; ?>" alt="<?php print $pgv_lang["sex"]." ".$pgv_lang["unknown"]; ?>" vspace="0" hspace="0" class="gender_image" border="0" />
 				<?php
 				break;
 			}
@@ -284,7 +284,7 @@ $controller->checkPrivacy();
  			<a href="individual.php?pid=<?php print $pid; ?>">&nbsp;<?php print PrintReady($indi->getName()); ?><br />
  			<?php $addname = $indi->getAddName(); if (strlen($addname) > 0) print PrintReady($addname); ?>
 			</a>
-			<input type="hidden" name="pids[<?php print $p; ?>]" value="<?php print $pid; ?>" />
+			<input type="hidden" name="pids[<?php print $p; ?>]" value="<?php print htmlentities($pid); ?>" />
 			<?php if (!$controller->isPrintPreview()) {
 				print "<br />";
 				print_help_link("remove_person_help", "qm");
@@ -305,7 +305,7 @@ $controller->checkPrivacy();
 		else {
 			print_privacy_error($CONTACT_EMAIL);
 			?>
-			<input type="hidden" name="pids[<?php print $p; ?>]" value="<?php print $pid; ?>" />
+			<input type="hidden" name="pids[<?php print $p; ?>]" value="<?php print htmlentities($pid); ?>" />
 			<?php if (!$controller->isPrintPreview()) {
 				print "<br />";
 				print_help_link("remove_person_help", "qm");
@@ -331,15 +331,19 @@ $controller->checkPrivacy();
 		</td>
 	<?php }
 	if ((count($controller->people)>0)&&(!$controller->isPrintPreview())) {
+		$scalemod = round($controller->scale*.2) + 1;
 		?>
 		<td class="list_value" style="padding: 5px">
-			<a href="<?php print $SCRIPT_NAME."?".$controller->pidlinks."scale=".($controller->scale+2); ?>"><?php print $pgv_lang["zoom_in"]; ?></a><br />
-			<a href="<?php print $SCRIPT_NAME."?".$controller->pidlinks."scale=".($controller->scale-2); ?>"><?php print $pgv_lang["zoom_out"]; ?></a>
+			<a href="<?php print $SCRIPT_NAME."?".$controller->pidlinks."scale=".($controller->scale+$scalemod); ?>"><img src="<?php print $PGV_IMAGE_DIR."/".$PGV_IMAGES['zoomin']['other']; ?>" title="<?php print $pgv_lang["zoom_in"]; ?>" border="0" /></a><br />
+			<a href="<?php print $SCRIPT_NAME."?".$controller->pidlinks."scale=".($controller->scale-$scalemod); ?>"><img src="<?php print $PGV_IMAGE_DIR."/".$PGV_IMAGES['zoomout']['other']; ?>" title="<?php print $pgv_lang["zoom_out"]; ?>" border="0" /></a><br />
+			<input type="button" value="<?php print $pgv_lang['clear_chart']; ?>" onclick="window.location = 'timeline.php?clear=1';" />
 		</td>
 	<?php } ?>
 	</tr>
 </table>
-<?php if (!$controller->isPrintPreview()) { ?></form><?php } ?>
+<?php if (!$controller->isPrintPreview()) { ?>
+<br /><a href="lifespan.php"><b><?php print $pgv_lang["switch_lifespan"]; ?></b></a>
+</form><?php } ?>
 <?php
 if (count($controller->people)>0) {
 	?>
@@ -354,8 +358,11 @@ if (count($controller->people)>0) {
 	<?php print $controller->baseyear."--"; ?>
 	</div>
 	<?php
+	//-- at a scale of 25 or higher, show every year
+	$mod = 25/$controller->scale;
+	if ($mod<1) $mod = 1;
 	for($i=$controller->baseyear+1; $i<$controller->topyear; $i++) {
-		if ($i % (25/$controller->scale)==0)  {
+		if ($i % $mod == 0)  {
 			print "\n\t\t<div id=\"scale$i\" style=\"font-family: Arial; position:absolute; ".($TEXT_DIRECTION =="ltr"?"left: $basexoffset":"right: $basexoffset")."px; top:".floor($baseyoffset+(($i-$controller->baseyear)*$controller->scale)-$controller->scale/2)."px; font-size: 7pt; text-align:".($TEXT_DIRECTION =="ltr"?"left":"right").";\">\n";
 			print $i."--";
 			print "</div>";
@@ -364,7 +371,7 @@ if (count($controller->people)>0) {
 	print "\n\t\t<div id=\"scale{$controller->topyear}\" style=\"font-family: Arial; position:absolute; ".($TEXT_DIRECTION =="ltr"?"left: $basexoffset":"right: $basexoffset")."px; top:".floor($baseyoffset+(($controller->topyear-$controller->baseyear)*$controller->scale))."px; font-size: 7pt; text-align:".($TEXT_DIRECTION =="ltr"?"left":"right").";\">\n";
 	print $controller->topyear."--";
 	print "</div>";
-	usort($controller->indifacts, "compare_facts");
+	sort_facts($controller->indifacts);
 	$factcount=0;
 	foreach($controller->indifacts as $indexval => $fact) {
 		$controller->print_time_fact($fact);

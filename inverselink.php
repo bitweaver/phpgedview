@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: inverselink.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: inverselink.php,v 1.6 2008/07/07 18:01:13 lsces Exp $
  */
 require("config.php");
 require("includes/functions_edit.php");
@@ -31,7 +31,7 @@ require($factsfile["english"]);
 
 //-- page parameters and checking
 $paramok = true;
-if (!isset($mediaid)) $mediaid = ""; 
+if (!isset($mediaid)) $mediaid = "";
 if (!isset($linkto)) {$linkto = ""; $paramok = false;}
 if (!isset($action)) $action = "choose";
 if ($linkto == "person") $toitems = $pgv_lang["to_person"];
@@ -83,7 +83,7 @@ if ($action == "choose" && $paramok) {
 	}
 	//-->
 	</script>
-	<script src="./js/phpgedview.js" language="JavaScript" type="text/javascript"></script>
+	<script src="phpgedview.js" language="JavaScript" type="text/javascript"></script>
 
 	<?php
 	print "<form name=\"link\" method=\"post\" action=\"inverselink.php\">\n";
@@ -99,7 +99,7 @@ if ($action == "choose" && $paramok) {
 	print "<tr><td class=\"descriptionbox width20 wrap\">".$pgv_lang["media_id"]."</td>";
 	if (!empty($mediaid)) {
 		//-- Get the title of this existing Media item
-		$sql = "SELECT * FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$mediaid."' AND m_gedfile = '".$gGedcom->mGEDCOMId."'";
+		$sql = "SELECT m_titl FROM ".PHPGEDVIEW_DB_PREFIX."media where m_media = '".$mediaid."' AND m_gedfile = '".$gGedcom->mGEDCOMId."'";
 		$tempsql = $gGedcom->mDb->query($sql);
 		$res =& $tempsql;
 		$row =& $res->fetchRow();
@@ -107,9 +107,9 @@ if ($action == "choose" && $paramok) {
 			print "<td class=\"optionbox wrap\"><b>".$mediaid."</b></td></tr>";
 		} else {
 			print "<td class=\"optionbox wrap\"><b>".PrintReady($row["m_titl"])."</b>&nbsp;&nbsp;&nbsp;";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 			print "(".$mediaid.")";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 			print "</td></tr>";
 		}
  	} else {
@@ -129,12 +129,12 @@ if ($action == "choose" && $paramok) {
 		} else {
 			print "<b>".PrintReady(get_person_name($linktoid))."</b>";
 			print "&nbsp;&nbsp;&nbsp;";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 			print "(".$linktoid.")";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 		}
 	}
-    
+
 	if ($linkto == "family") {
 		print $pgv_lang["enter_famid"]."</td>";
 		print "<td class=\"optionbox wrap\">";
@@ -144,12 +144,12 @@ if ($action == "choose" && $paramok) {
 		} else {
 			print "<b>".PrintReady(get_family_descriptor($linktoid))."</b>";
 			print "&nbsp;&nbsp;&nbsp;";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 			print "(".$linktoid.")";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 		}
 	}
-    
+
 	if ($linkto == "source") {
 		print $pgv_lang["source"]."</td>";
 		print "<td  class=\"optionbox wrap\">";
@@ -159,9 +159,9 @@ if ($action == "choose" && $paramok) {
 		} else {
 			print "<b>".PrintReady(get_source_descriptor($linktoid))."</b>";
 			print "&nbsp;&nbsp;&nbsp;";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 			print "(".$linktoid.")";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM();
 		}
 	}
 	print "</td></tr>";

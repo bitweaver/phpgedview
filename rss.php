@@ -1,6 +1,6 @@
 <?php
 /**
- * Outputs an RSS feed of information, mostly based on the information available
+ * Outputs an ATOM or RSS feed of information, mostly based on the information available
  * in the index page.
  *
  * phpGedView: Genealogy Viewer
@@ -20,10 +20,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: rss.php,v 1.6 2007/06/09 21:11:02 lsces Exp $
+ * $Id: rss.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
- * @TODO add Basic HTTP authentication to allow RSS agrigators to "log on"
+ * @TODO add Basic HTTP authentication to allow RSS aggregators to "log on"
  */
 
 if (isset($_SESSION["CLANGUAGE"])) $oldlang = $_SESSION["CLANGUAGE"];
@@ -35,257 +35,323 @@ if (!empty($lang)) {
 require("includes/feedcreator.class.php");
 require("includes/functions_rss.php");
 require("config.php");
-if (!empty($auth)){
+require("includes/index_cache.php");
+
+$feedCacheName = "fullFeed";
+
+/*if (!empty($auth)){
 	if($auth=="basic"){
 		basicHTTPAuthenticateUser();
 	}
-}
-if (empty($rssStyle)){
-	$rssStyle=$RSS_FORMAT;
-}
-
-require($factsfile["english"]);
-if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
-
-if (!isset($_SERVER['QUERY_STRING'])) $_SERVER['QUERY_STRING'] = "lang=".$LANGUAGE;
-
-$user=getUser($CONTACT_EMAIL);
-$author =$user["firstname"]." ".$user["lastname"];
-
-$rss = new UniversalFeedCreator();
-$rss->title = $gGedcom->mInfo['title'];
-
-
-//optional
-$rss->descriptionTruncSize = 500;
-$rss->descriptionHtmlSyndicated = true;
-$rss->cssStyleSheet="";
-//end optional
-
-$rss->link = $SERVER_URL;
-$syndURL = $SERVER_URL."rss.php?".$_SERVER['QUERY_STRING'];
-$syndURL = preg_replace("/&/", "&amp;", $syndURL);
-$rss->syndicationURL = $syndURL;
-
-$rssDesc = str_replace("#GEDCOM_TITLE#", $gGedcom->mInfo['title'], $pgv_lang["rss_descr"]);
-$rss->description = $rssDesc;
-
-$image = new FeedImage();
-$image->title = $pgv_lang["rss_logo_descr"];
-$image->url = $SERVER_URL."images/gedview.gif";
-$image->link = "http://www.phpgedview.net";
-$image->description = $pgv_lang["rss_logo_descr"];
-
-//optional
-$image->descriptionTruncSize = 500;
-$image->descriptionHtmlSyndicated = true;
-
-$rss->image = $image;
-
-if($ENABLE_RSS) {
-
-	if (empty($auth) || $auth != "basic"){
-		$username = getUserName();
-		if(empty($username)){ //not logged in.
-			$item = new FeedItem();
-			$item->title = $pgv_lang["login"];
-			$authURL= $syndURL . "&auth=basic";
-			$item->link = $authURL;
-			$authDesc = str_replace("#AUTH_URL#", $authURL, $pgv_lang["feed_login"]);
-			$item->description = $authDesc;
-			$item->descriptionHtmlSyndicated = true; //optional
-			$item->date = time();
-			$item->source = $SERVER_URL;
-			$item->author = $author;
-			$rss->addItem($item);
-		}
-	}
-
-	// determine if to show parts of feed based on their exsistance in the blocks on index.php
-	$printTodays = false;
-	$printUpcoming = false;
-	$printGedcomStats = false;
-	$printGedcomNews = false;
-	$printTop10Surnames = false;
-	$printRecentChanges = false;
-
-
-	if(!empty($module)){
-		if($module == "today"){
-			$printTodays = true;
-		} else if($module == "upcoming"){
-			$printUpcoming = true;
-		} else if($module == "gedcomStats"){
-			$printGedcomStats = true;
-		} else if($module == "gedcomNews"){
-			$printGedcomNews = true;
-		} else if($module == "top10Surnames"){
-			$printTop10Surnames = true;
-		} else if($module == "recentChanges"){
-			$printRecentChanges = true;
-		}
-
-	} else {
-		if (count($main)==0) {
-			$printGedcomStats = true;
-			$printGedcomNews = true;
-		} else {
-			foreach($main as $mname => $value){
-				$PGV_BLOCKS[$value[0]]['config'] = $value[1]; //set the config needed by functions_rss
-				if($value[0] == "print_todays_events"){
-					$printTodays = true;
-				} else if($value[0] == "print_upcoming_events"){
-					$printUpcoming = true;
-				} else if($value[0] == "print_gedcom_stats"){
-					$printGedcomStats = true;
-				} else if($value[0] == "print_block_name_top10"){
-					$printTop10Surnames = true;
-				} else if($value[0] == "print_recent_changes"){
-					$printRecentChanges = true;
-				}
-			}
-		}
-		$right = $blocks["right"];
-		if (count($right)==0) {
-			$printTodays = true;
-		} else {
-			foreach($right as $mname => $value){
-				$PGV_BLOCKS[$value[0]]['config'] = $value[1]; //set the config needed by functions_rss
-				if($value[0] == "print_todays_events"){
-					$printTodays = true;
-				} else if($value[0] == "print_upcoming_events"){
-					$printUpcoming = true;
-				} else if($value[0] == "print_gedcom_stats"){
-					$printGedcomStats = true;
-				} else if($value[0] == "print_block_name_top10"){
-					$printTop10Surnames = true;
-				} else if($value[0] == "print_recent_changes"){
-					$printRecentChanges = true;
-				}
-			}
-		}
-	}
-
-	if($printTodays){
-		$todaysEvents = getTodaysEvents();
-		if (! empty($todaysEvents[2])) {
-			$item = new FeedItem();
-			$item->title = $todaysEvents[0];
-			$item->link = $SERVER_URL. "calendar.php?action=today";
-			$item->description = $todaysEvents[2];
-
-			//optional
-			$item->descriptionTruncSize = 500;
-			$item->descriptionHtmlSyndicated = true;
-
-			$item->date = $todaysEvents[1];
-			$item->source = $SERVER_URL;
-			$item->author = $author;
-			$rss->addItem($item);
-		}
-	}
-
-	if($printUpcoming){
-		$upcomingEvent = getUpcomingEvents();
-		if (! empty($upcomingEvent[2])) {
-			$item = new FeedItem();
-			$item->title = $upcomingEvent[0];
-			$item->link = $SERVER_URL. "calendar.php?action=calendar";
-			$item->description = $upcomingEvent[2];
-
-			//optional
-			$item->descriptionTruncSize = 500;
-			$item->descriptionHtmlSyndicated = true;
-
-			$item->date = $upcomingEvent[1];
-			$item->source = $SERVER_URL;
-			$item->author = $author;
-
-			$rss->addItem($item);
-		}
-	}
-
-	if($printGedcomStats){
-		$gedcomStats = $gGedcom->getGedcomStats();
-		if (! empty($gedcomStats[2])) {
-			$item = new FeedItem();
-			$item->title = $gedcomStats[0];
-			$item->link = $SERVER_URL. "index.php?command=gedcom#gedcom_stats";
-			$item->description = $gedcomStats[2];
-
-			//optional
-			$item->descriptionTruncSize = 500;
-			$item->descriptionHtmlSyndicated = true;
-
-			if (! empty($gedcomStats[1])) {
-			$item->date = $gedcomStats[1];
-			}
-			$item->source = $SERVER_URL;
-			$item->author = $author;
-
-			$rss->addItem($item);
-		}
-	}
-
-	if($printTop10Surnames){
-		$top10 = getTop10Surnames();
-		if (! empty($top10[2])) {
-			$item = new FeedItem();
-			$item->title = $top10[0];
-			$item->link = $SERVER_URL. "indilist.php";
-			$item->description = $top10[2];
-
-			//optional
-			$item->descriptionTruncSize = 500;
-			$item->descriptionHtmlSyndicated = true;
-
-			if (! empty($top10[1])) {
-				$item->date = $top10[1];
-			}
-			$item->source = $SERVER_URL;
-			$item->author = $author;
-
-			$rss->addItem($item);
-		}
-	}
-
-	if($printRecentChanges){
-		$recentChanges= getRecentChanges();
-		if (! empty($recentChanges[2])) {
-			$item = new FeedItem();
-			$item->title = $recentChanges[0];
-			$item->link = $SERVER_URL. "indilist.php";
-			$item->description = $recentChanges[2];
-
-			//optional
-			$item->descriptionTruncSize = 500;
-			$item->descriptionHtmlSyndicated = true;
-
-			if (! empty($recentChanges[1])) {
-				$item->date = $recentChanges[1];
-			}
-			$item->source = $SERVER_URL;
-			$item->author = $author;
-
-			$rss->addItem($item);
-		}
-	}
-} else {
-	$item = new FeedItem();
-	$item->title = $pgv_lang["no_feed_title"];
-	$item->link = $SERVER_URL. "index.php";
-	$item->description = $pgv_lang["no_feed"];
-	$item->date = time();
-	$item->source = $SERVER_URL;
-	$item->author = $author;
-	$rss->addItem($item);
-}
+}*/
 
 // valid format strings are: RSS0.91, RSS1.0, RSS2.0, MBOX, OPML, ATOM, ATOM1.0, ATOM0.3, HTML, JS
-if (empty($rssStyle)) $rssStyle = "RSS1.0"; //default to RDF - rss 1.0
+if (empty($rssStyle)){
+	if (!empty($RSS_FORMAT)) $rssStyle = $RSS_FORMAT;
+	else $rssStyle = "ATOM";	// Unless configured otherwise, default to ATOM
+}
 
-$rss->outputFeed($rssStyle);
+if (!isset($_SERVER['QUERY_STRING'])){
+	$_SERVER['QUERY_STRING'] = "lang=".$LANGUAGE;
+}
 
+$printTodays = false;
+$printUpcoming = false;
+$printGedcomStats = false;
+$printGedcomNews = false;
+$printTop10Surnames = false;
+$printRecentChanges = false;
+$printRandomMedia = false;
+
+if(!empty($module)){
+	$feedCacheName = $module . "Feed";
+	if($module == "today"){
+		$printTodays = true;
+	} else if($module == "upcoming"){
+		$printUpcoming = true;
+	} else if($module == "gedcomStats"){
+		$printGedcomStats = true;
+	} else if($module == "gedcomNews"){
+		$printGedcomNews = true;
+	} else if($module == "top10Surnames"){
+		$printTop10Surnames = true;
+	} else if($module == "recentChanges"){
+		$printRecentChanges = true;
+	} else if($module == "randomMedia"){
+		$printRandomMedia = true;
+	}
+}
+
+// Build the array to control caching
+$cacheControl = array();
+$cacheControl[0] = $feedCacheName;
+$cacheControl[1] = array("cache"=>1);
+if (!empty($module) && $module=="randomMedia") $cacheControl[1]["cache"] = 0;
+
+if(!loadCachedBlock($cacheControl, $rssStyle)){
+	$author=getUserFullName($CONTACT_EMAIL);
+
+	$feed = new UniversalFeedCreator();
+	$feed->generator = "http://www.phpgedview.net v" . $VERSION . " " . $VERSION_RELEASE;
+	$feed->title = $gGedcom[$GEDCOM]["title"];
+	$feed->language = $lang_short_cut[$LANGUAGE]; //$lang_langcode[$LANGUAGE];
+	$feed->descriptionHtmlSyndicated = true;
+	//$feed->descriptionTruncSize = 500; // does not make sense to truncate HTML since it will result in unpredictable output
+	$feed->link = $SERVER_URL;
+	$syndURL = $SERVER_URL."rss.php?".$_SERVER['QUERY_STRING'];
+	$syndURL = preg_replace("/&/", "&amp;", $syndURL);
+	$feed->syndicationURL = $syndURL;
+
+	$feedDesc = str_replace("#GEDCOM_TITLE#", $gGedcom[$GEDCOM]["title"], $pgv_lang["rss_descr"]);
+	$feed->description = $feedDesc;
+	$feed->copyright = $author . " (c) " . date("Y");
+	$feed->category="genealogy";
+
+	$image = new FeedImage();
+	$image->title = $pgv_lang["rss_logo_descr"];
+	$image->url = $SERVER_URL."images/gedview.gif";
+	$image->link = "http://www.phpgedview.net";
+	$image->description = $pgv_lang["rss_logo_descr"];
+	$image->descriptionHtmlSyndicated = true;
+	//$feed->descriptionTruncSize = 500; // does not make sense to truncate HTML since it will result in unpredictable output
+	$feed->image = $image;
+
+
+
+	if($ENABLE_RSS) {
+		// basic auth is broken in all apps besides browsers, so I am disabling it for now.
+		/*if (empty($auth) || $auth != "basic"){
+			if(!PGV_USER_ID){ //not logged in.
+				$item = new FeedItem();
+				$item->title = $pgv_lang["login"];
+				$authURL= $syndURL . "&auth=basic";
+				$item->link = $authURL;
+				//$item->guid = $item->link;
+				$authDesc = str_replace("#AUTH_URL#", $authURL, $pgv_lang["feed_login"]);
+				$item->description = $authDesc;
+				$item->descriptionHtmlSyndicated = true; //optional
+				$item->date = time();
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$feed->addItem($item);
+			}
+		}*/
+
+		// determine if to show parts of feed based on their exsistance in the blocks on index.php
+		$blocks=  getBlocks($GEDCOM);
+		$main = $blocks["main"];
+
+		if(empty($module)) {
+			if (count($main)==0) {
+				$printGedcomStats = true;
+				$printGedcomNews = true;
+			} else {
+				foreach($main as $mname => $value){
+					$PGV_BLOCKS[$value[0]]['config'] = $value[1]; //set the config needed by functions_rss
+					if($value[0] == "print_todays_events"){
+						$printTodays = true;
+					} else if($value[0] == "print_upcoming_events"){
+						$printUpcoming = true;
+					} else if($value[0] == "print_gedcom_stats"){
+						$printGedcomStats = true;
+					} else if($value[0] == "print_gedcom_news"){
+						$printGedcomNews = true;
+					} else if($value[0] == "print_block_name_top10"){
+						$printTop10Surnames = true;
+					} else if($value[0] == "print_recent_changes"){
+						$printRecentChanges = true;
+					} else if($value[0] == "print_random_media"){
+						$printRandomMedia = true;
+					}
+				}
+			}
+			$right = $blocks["right"];
+			if (count($right)==0) {
+				$printTodays = true;
+			} else {
+				foreach($right as $mname => $value){
+					$PGV_BLOCKS[$value[0]]['config'] = $value[1]; //set the config needed by functions_rss
+					if($value[0] == "print_todays_events"){
+						$printTodays = true;
+					} else if($value[0] == "print_upcoming_events"){
+						$printUpcoming = true;
+					} else if($value[0] == "print_gedcom_stats"){
+						$printGedcomStats = true;
+					} else if($value[0] == "print_gedcom_news"){
+						$printGedcomNews = true;
+					} else if($value[0] == "print_block_name_top10"){
+						$printTop10Surnames = true;
+					} else if($value[0] == "print_recent_changes"){
+						$printRecentChanges = true;
+					} else if($value[0] == "print_random_media"){
+						$printRandomMedia = true;
+					}
+				}
+			}
+		}
+
+		if($printTodays){
+			$todaysEvents = getTodaysEvents();
+			if (! empty($todaysEvents[2])) {
+				$item = new FeedItem();
+				$item->title = $todaysEvents[0];
+				$item->link = $SERVER_URL. "calendar.php?action=today";
+				$item->description = $todaysEvents[2];
+				$item->descriptionHtmlSyndicated = true;
+				$item->date = $todaysEvents[1];
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$feed->addItem($item);
+			}
+		}
+
+		if($printUpcoming){
+			$upcomingEvent = getUpcomingEvents();
+			if (! empty($upcomingEvent[2])) {
+				$item = new FeedItem();
+				$item->title = $upcomingEvent[0];
+				$item->link = $SERVER_URL. "calendar.php?action=calendar";
+				$item->description = $upcomingEvent[2];
+				$item->descriptionHtmlSyndicated = true;
+				$item->date = $upcomingEvent[1];
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$feed->addItem($item);
+			}
+		}
+
+		if($printGedcomStats){
+			$gGedcomtats = getGedcomStats();
+			if (! empty($gGedcomtats[2])) {
+				$item = new FeedItem();
+				$item->title = $gGedcomtats[0];
+				$item->link = $SERVER_URL. "index.php?ctype=gedcom#gedcom_stats";
+				$item->description = $gGedcomtats[2];
+				$item->descriptionHtmlSyndicated = true;
+				if (! empty($gGedcomtats[1])) {
+					$item->date = $gGedcomtats[1];
+				}
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$feed->addItem($item);
+			}
+		}
+
+		if($printTop10Surnames){
+			$top10 = getTop10Surnames();
+			if (! empty($top10[2])) {
+				$item = new FeedItem();
+				$item->title = $top10[0];
+				$item->link = $SERVER_URL. "indilist.php";
+				$item->description = $top10[2];
+				$item->descriptionHtmlSyndicated = true;
+				if (! empty($top10[1])) {
+					$item->date = $top10[1];
+				}
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$feed->addItem($item);
+			}
+		}
+
+		if($printGedcomNews){
+			$gedcomNews = getGedcomNews();
+
+			$numElements = count($gedcomNews); //number of news items
+			for($i=0; $i < $numElements; $i++) {
+				$newsItem = $gedcomNews[$i];
+				if (! empty($newsItem[1])) {
+					$item = new FeedItem();
+					$item->title = $newsItem[0];
+					$item->link = $SERVER_URL . "index.php?ctype=gedcom#" . $newsItem[3];
+					$item->description = $newsItem[2];
+					$item->descriptionHtmlSyndicated = true;
+					$item->date = $newsItem[1];
+					$item->source = $SERVER_URL ;
+					$item->author = $author;
+					$item->authorURL = $feed->link;
+					$item->category="genealogy";
+					$feed->addItem($item);
+				}
+			}
+		}
+
+		if($printRecentChanges){
+			$recentChanges= getRecentChanges();
+			if (! empty($recentChanges[2])) {
+				$item = new FeedItem();
+				$item->title = $recentChanges[0];
+				$item->link = $SERVER_URL. "index.php?ctype=gedcom#recent_changes";
+				$item->description = $recentChanges[2];
+				$item->descriptionHtmlSyndicated = true;
+
+				if (! empty($recentChanges[1])) {
+					$item->date = $recentChanges[1];
+				}
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$feed->addItem($item);
+			}
+		}
+
+		if($printRandomMedia){
+			$randomMedia= getRandomMedia();
+			if (! empty($randomMedia[2])) {
+				$item = new FeedItem();
+				$item->title = $randomMedia[0];
+				$item->link = $SERVER_URL. "medialist.php";
+				$item->description = $randomMedia[2];
+				$item->descriptionHtmlSyndicated = true;
+
+				if (! empty($randomMedia[1])) {
+					$item->date = $randomMedia[1];
+				}
+				$item->source = $SERVER_URL;
+				$item->author = $author;
+				$item->authorURL = $feed->link;
+				$item->category = $pgv_lang["genealogy"];
+				$item->enclosure = new EnclosureItem();
+				$item->enclosure->url = $SERVER_URL . $randomMedia[3];
+				$item->enclosure->type = $randomMedia[4];
+				$item->enclosure->length = $randomMedia[5];
+				$item->enclosure->title = $randomMedia[6];
+
+				$feed->addItem($item);
+			}
+		}
+	} else {
+		$item = new FeedItem();
+		$item->title = $pgv_lang["no_feed_title"];
+		$item->link = $SERVER_URL. "index.php";
+		$item->description = $pgv_lang["no_feed"];
+		$item->date = time();
+		$item->source = $SERVER_URL;
+		$item->author = $author;
+		$item->authorURL = $feed->link;
+		$item->category = $pgv_lang["genealogy"];
+		$feed->addItem($item);
+	}
+
+	//$feed->outputFeed($rssStyle);
+
+	ob_start();
+	$feed->outputFeed($rssStyle);
+	$content = ob_get_contents();
+	saveCachedBlock($cacheControl, $rssStyle, $content);
+	ob_end_flush();
+}
  //-- preserve the old language by storing it back in the session
 $_SESSION['CLANGUAGE'] = $oldlang;
 

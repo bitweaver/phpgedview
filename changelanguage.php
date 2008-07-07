@@ -3,7 +3,7 @@
  * Display a diff between two language files to help in translating.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others, all rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: changelanguage.php,v 1.5 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: changelanguage.php,v 1.6 2008/07/07 18:01:11 lsces Exp $
  */
  
 require "config.php";
@@ -56,9 +56,6 @@ print "function showchanges() {\n";
 print "\twindow.location = '$PHP_SELF';\n";
 print "}\n";
 print "function helpPopup03(which) {\n";
-// print "alert(which);";
-// print "if ((!helpWin)||(helpWin.closed)){helpWin = window.open('editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value, '_blank' , 'left=50, top=30, width=600, height=500, resizable=1, scrollbars=1'); helpWin.focus();}\n";
-// print "else helpWin.location = 'editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value;\n";
 print "location.href = 'editlang_edit_settings.php?' + which + '&new_shortcut=' + document.new_lang_form.new_shortcut.value;\n";
 print "return false;\n";
 print "}\n";
@@ -67,6 +64,23 @@ print "</script>\n";
 
 // Create array with configured languages in gedcoms and users
 $configuredlanguages = array();
+
+// Read GEDCOMS configuration and collect language data
+foreach (get_all_gedcoms() as $ged_id => $ged_name) {
+	require get_gedcom_setting($ged_id, 'config');
+	if (!isset($configuredlanguages["gedcom"][$LANGUAGE][$ged_name])) {
+		$configuredlanguages["gedcom"][$LANGUAGE][$ged_name] = true;
+	}
+}
+// Restore the current settings
+require get_gedcom_setting(PGV_GED_ID, 'config');
+
+// Read user configuration and collect language data
+foreach (get_all_users() as $user_id=>$user_name) {
+	if (!isset($configuredlanguages["users"][get_user_setting($user_id, 'language')][$user_id])) {
+		$configuredlanguages["users"][get_user_setting($user_id, 'language')][$user_id] = true;
+	}
+}
 
 // Sort the Language table into localized language name order
 foreach ($pgv_language as $key => $value){

@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: hitcount.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: hitcount.php,v 1.3 2008/07/07 18:01:13 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -57,10 +57,10 @@ if($SHOW_COUNTER)
   }
 
   if(isset($pid) && find_person_record($pid)) { //individual counter
-  
+
   	// Capitalize ID to make sure we have a correct hitcount on the individual
   	$pid = strtoupper($pid);
-  	
+
   	//see if already viewed individual this session
     if(isset($_SESSION[$PGV_INDI_COUNTER_NAME][$pid]))
   	{
@@ -121,9 +121,12 @@ if($SHOW_COUNTER)
   }
 
   //replace the numbers with their images
-  for($i=0;$i<10;$i++)
-    $hits = str_replace("$i","<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$i]["digit"]."\" alt=\"pgv_counter\" />","$hits");
+	if (array_key_exists('0', $PGV_IMAGES))
+	  for($i=0;$i<10;$i++)
+  	  $hits = str_replace("$i","<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$i]["digit"]."\" alt=\"pgv_counter\" />","$hits");
+	else
+		$hits="<span class=\"hit-counter\">{$hits}</span>";
 
-    if ($TEXT_DIRECTION=="rtl") $hits = "&lrm;".$hits."&lrm;";
+	if ($TEXT_DIRECTION=="rtl") $hits = getLRM() . $hits . getLRM();
 }
 ?>

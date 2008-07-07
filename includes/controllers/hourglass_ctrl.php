@@ -3,7 +3,7 @@
  * Controller for the Hourglass Page
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	John Finlay and Others
+ * Copyright (C) 2002 to 2007	John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Page does not validate see line number 1109 -> 15 August 2005
- *
  * @package PhpGedView
  * @subpackage Charts
  * @version $Id$
  */
-// Initialization
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -37,11 +43,9 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require_once("config.php");
-require_once 'includes/controllers/basecontrol.php';
-require_once 'includes/person_class.php';
+require_once("includes/controllers/basecontrol.php");
+require_once("includes/person_class.php");
 require_once("includes/functions_charts.php");
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 $indifacts = array();			 // -- array to store the fact records in for sorting and displaying
 $globalfacts = array();
@@ -66,13 +70,7 @@ class HourglassControllerRoot extends BaseController {
 	var $show_changes = "yes";
 	var $action = "";
 	var $pid = "";
-	var $default_tab = 0;
-	var $hourPerson = null;
 
-	var $diffindi = null;
-	var $NAME_LINENUM = 1;
-	var $uname = "";
-	var $user = false;
 	var $accept_success = false;
 	var $visibility = "visible";
 	var $position = "relative";
@@ -82,13 +80,18 @@ class HourglassControllerRoot extends BaseController {
 	var $total_names = 0;
 	var $SEX_COUNT = 0;
 	var $sexarray = array();
-	var $show_full;
-	var $show_spouse;
+	var $show_full = 1;
+	var $show_spouse = 0;
 	var $generations;
 	var $dgenerations;
 	var $view;
 	var $box_width;
 	var $name;
+	//  the following are ajax variables  //
+	var $ARID;
+	var $arrwidth;
+	var $arrheight;
+	///////////////////////////////////////
 
 	/**
 	 * constructor
@@ -99,401 +102,518 @@ class HourglassControllerRoot extends BaseController {
 	/**
 	 * Initialization function
 	 */
-	function init() {
-	global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $bheight, $bwidth, $GEDCOM_DEFAULT_TAB, $pgv_changes, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
+	function init($rootid='', $show_full=1, $generations=3) {
+		global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $bheight, $bwidth, $bhalfheight, $GEDCOM_DEFAULT_TAB, $pgv_changes, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
+		global $PGV_IMAGES, $PGV_IMAGE_DIR, $TEXT_DIRECTION;
+
 
 		if (!empty($_REQUEST["action"])) $this->action = $_REQUEST["action"];
-	if (!empty($_REQUEST["pid"])) $this->pid = strtoupper($_REQUEST["pid"]);
+		if (!empty($_REQUEST["pid"])) $this->pid = strtoupper($_REQUEST["pid"]);
+		if (!empty($rootid)) $this->pid = $rootid;
 
-	//Checks query strings to see if they exist else assign a default value
-	if (isset($_REQUEST["show_full"])) $this->show_full = $_REQUEST["show_full"];
-	else $this->show_full = 1;
-	if (isset($_REQUEST["show_spouse"])) $this->show_spouse=$_REQUEST["show_spouse"];
-	else $this->show_spouse=0;
-	if (isset($_REQUEST["generations"])) $this->generations=$_REQUEST["generations"];
-	else $this->generations = 3;
-	if ($this->generations > $MAX_DESCENDANCY_GENERATIONS) $this->generations = $MAX_DESCENDANCY_GENERATIONS;
-	if (!isset($this->view)) $this->view="";
-	
-	// -- Sets the sizes of the boxes
-	if (isset($_REQUEST["box_width"])) $this->box_width=$_REQUEST["box_width"];
-	else $this->box_width=100;
-	if (empty($this->box_width)) $this->box_width = "100";
-	$this->box_width=max($this->box_width, 50);
-	$this->box_width=min($this->box_width, 300);
-	// If show details is unchecked it makes the boxes smaller
-	if (!$this->show_full) {
-		$bwidth *= $this->box_width / 150;
-	}
-	else {
-		$bwidth*=$this->box_width/100;
+		//-- flip the arrows for RTL languages
+		if ($TEXT_DIRECTION=="rtl") {
+			$temp = $PGV_IMAGES['larrow']['other'];
+			$PGV_IMAGES['larrow']['other'] = $PGV_IMAGES['rarrow']['other'];
+			$PGV_IMAGES['rarrow']['other'] = $temp;
+		}
+		//-- get the width and height of the arrow images for adjusting spacing
+		if (file_exists($PGV_IMAGE_DIR."/".$PGV_IMAGES['larrow']['other'])) {
+			$temp = getimagesize($PGV_IMAGE_DIR."/".$PGV_IMAGES['larrow']['other']);
+			$this->arrwidth = $temp[0];
+			$this->arrheight = $temp[1];
+		}
+
+		//Checks query strings to see if they exist else assign a default value
+		if (isset($_REQUEST["show_full"])) $this->show_full = $_REQUEST["show_full"];
+		else $this->show_full = $show_full;
+		if (isset($_REQUEST["show_spouse"])) $this->show_spouse=$_REQUEST["show_spouse"];
+		else $this->show_spouse=0;
+		if (isset($_REQUEST["generations"])) $this->generations=$_REQUEST["generations"];
+		else $this->generations = $generations;
+		if ($this->generations > $MAX_DESCENDANCY_GENERATIONS) $this->generations = $MAX_DESCENDANCY_GENERATIONS;
+		if (!isset($this->view)) $this->view="";
+
+		// -- Sets the sizes of the boxes
+		if (isset($_REQUEST["box_width"])) $this->box_width=$_REQUEST["box_width"];
+		else $this->box_width=100;
+		if (empty($this->box_width)) $this->box_width = "100";
+		$this->box_width=max($this->box_width, 50);
+		$this->box_width=min($this->box_width, 300);
+		// If show details is unchecked it makes the boxes smaller
+		if (!$this->show_full) $bwidth *= $this->box_width / 150;
+		else $bwidth*=$this->box_width/100;
+
+		if (!$this->show_full) $bheight = (int)($bheight / 2);
+		$bhalfheight = (int)($bheight / 2);
+
+		// -- root id
+		if (!isset($this->pid)) $this->pid="";
+		$this->pid=check_rootid($this->pid);
+		if ((DisplayDetailsByID($this->pid))||(showLivingNameByID($this->pid))) $this->name = get_person_name($this->pid);
+		else $this->name = $pgv_lang["private"];
+
+		$this->hourPerson = Person::getInstance($this->pid);
+
+		//Checks how many generations of descendency is for the person for formatting purposes
+		$this->dgenerations = $this->max_descendency_generations($this->pid, 0);
+		if ($this->dgenerations<1) $this->dgenerations=1;
+
+		if (!$this->isPrintPreview()) {
+			$this->visibility = "hidden";
+			$this->position = "absolute";
+			$this->display = "none";
+		}
+		//-- perform the desired action
+		switch($this->action) {
+			case "addfav":
+				$this->addFavorite();
+				break;
+			case "accept":
+				$this->acceptChanges();
+				break;
+			case "undo":
+				$this->hourPerson->undoChange();
+				break;
+		}
 	}
 
-	if (!$this->show_full) {
-		$bheight = $bheight / 2;
-	}
-	
-	
-	// -- root id
-	if (!isset($this->pid)) $this->pid="";
-	$this->pid=check_rootid($this->pid);
-	if ((DisplayDetailsByID($this->pid))||(showLivingNameByID($this->pid))) $this->name = get_person_name($this->pid);
-	else $this->name = $pgv_lang["private"];
-	
-	//-- check for the user
-	$this->uname = getUserName();
-	if (!empty($this->uname)) {
-		$this->user = getUser($this->uname);
-		if (!empty($this->user["default_tab"])) $this->default_tab = $this->user["default_tab"];
-	}
-	$this->hourPerson = Person::getInstance($this->pid);
+	/**
+	 * Prints pedigree of the person passed in. Which is the descendancy
+	 *
+	 * @param mixed $pid ID of person to print the pedigree for
+	 * @param mixed $count generation count, so it recursively calls itself
+	 * @access public
+	 * @return void
+	 */
+	function print_person_pedigree($pid, $count) {
+		global $SHOW_EMPTY_BOXES, $PGV_IMAGE_DIR, $PGV_IMAGES, $bhalfheight;
+		if ($count>=$this->generations) return;
+		$person = Person::getInstance($pid);
+		if (is_null($person)) return;
+		$families = $person->getChildFamilies();
+		//-- calculate how tall the lines should be
+		$lh = ($bhalfheight+3) * pow(2, ($this->generations-$count-1));
+		foreach($families as $famid => $family) {
+			print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"empty-cells: show;\">\n";
+			$parents = find_parents($famid);
+			$height="100%";
+			print "<tr>";
+			print "<td valign=\"bottom\"><img name=\"pvline\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."\" width=\"3\" height=\"$lh\" alt=\"\" /></td>";
+			print "<td><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"7\" height=\"3\" alt=\"\" /></td>";
+			print "<td>";
+			//-- print the father box
+			print_pedigree_person($parents["HUSB"]);
+			print "</td>";
+			$ARID = $parents["HUSB"];
+			print "<td id=\"td_".$ARID."\">";
 
-	//Checks how many generations of descendency is for the person for formatting purposes
-	$this->dgenerations = $this->max_descendency_generations($this->pid, 0);
+			//-- print an Ajax arrow on the last generation of the adult male
+			if ($count==$this->generations-1 && (count(find_family_ids($ARID))>0) && !is_null (find_family_ids($ARID))) {
+				print "<a href=\"#\" onclick=\"return ChangeDiv('td_".$ARID."','".$ARID."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."')\"><img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /></a> ";
+			}
+			//-- recursively get the father's family
+			$this->print_person_pedigree($parents["HUSB"], $count+1);
+			print "</td>";
+			print "</tr>\n<tr>\n";
+			print "<td valign=\"top\"><img name=\"pvline\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."\" width=\"3\" height=\"$lh\" alt=\"\" /></td>";
+			print "<td><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"7\" height=\"3\" alt=\"\" /></td>";
+			print "<td>";
+			//-- print the mother box
+			print_pedigree_person($parents["WIFE"]);
+			print "</td>";
+			$ARID = $parents["WIFE"];
+			print "<td id=\"td_".$ARID."\">";
 
 
-	//-- if the person is from another gedcom then forward to the correct site
-	/*
-	if ($this->indi->isRemote()) {
-		header('Location: '.preg_replace("/&amp;/", "&", $this->indi->getLinkUrl()));
-		exit;
-	}
-	*/
-	if (!$this->isPrintPreview()) {
-		$this->visibility = "hidden";
-		$this->position = "absolute";
-		$this->display = "none";
-	}
-	//-- perform the desired action
-	switch($this->action) {
-		case "addfav":
-			$this->addFavorite();
+			//-- print an ajax arrow on the last generation of the adult female
+			if ($count==$this->generations-1 && (count(find_family_ids($ARID))>0) && !is_null (find_family_ids($ARID))) {
+				print "<a href=\"#\" onclick=\"ChangeDiv('td_".$ARID."','".$ARID."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."'); return false;\"><img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /></a> ";
+			}
+
+			//-- recursively print the mother's family
+			$this->print_person_pedigree($parents["WIFE"], $count+1);
+			print "</td>";
+			print "</tr>";
+			print "</table>";
 			break;
-		case "accept":
-			$this->acceptChanges();
-			break;
-		case "undo":
-			$this->hourPerson->undoChange();
-			break;
+		}
 	}
 
-	}
+	/**
+	 * Prints descendency of passed in person
+	 *
+	 * @param mixed $pid ID of person to print descendency for
+	 * @param mixed $count count of generations to print
+	 * @access public
+	 * @return void
+	 */
+	function print_descendency($pid, $count, $showNav=true) {
+		global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $bheight, $bwidth, $bhalfheight;
+		
+		if ($count>$this->dgenerations) return 0;
+		$person = Person::getInstance($pid);
+		if (is_null($person)) return;
 
-/**
- * Prints pedigree of the person passed in. Which is the descendancy 
- * 
- * @param mixed $pid ID of person to print the pedigree for 
- * @param mixed $count generation count, so it recursively calls itself
- * @access public
- * @return void
- */
-function print_person_pedigree($pid, $count) {
-	global $SHOW_EMPTY_BOXES, $PGV_IMAGE_DIR, $PGV_IMAGES;
-	if ($count>=$this->generations) return;
-	$famids = find_family_ids($pid);
-	foreach($famids as $indexval => $famid) {
-		print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"empty-cells: show;\">\n";
-		$parents = find_parents($famid);
-		$height="100%";
+		$tablealign = "right";
+		$otablealign = "left";
+		if ($TEXT_DIRECTION=="rtl") {
+			$tablealign = "left";
+			$otablealign = "right";
+		}
+		//	print $this->dgenerations;
+		print "<!-- print_descendency for $pid -->";
+		//-- put a space between families on the last generation
+		if ($count==$this->dgenerations-1) print "<br />";
+
+		print "<table id=\"table_$pid\" align=\"".$tablealign."\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">";
 		print "<tr>";
-		if ($count<$this->generations-1) print "<td height=\"50%\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td>\n";
-		if ($count<$this->generations-1) print "<td rowspan=\"2\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"7\" height=\"3\" alt=\"\" /></td>\n";
-		print "<td rowspan=\"2\">\n";
-		print_pedigree_person($parents["HUSB"]);
-		print "</td>\n";
-		print "<td rowspan=\"2\">\n";
-		$this->print_person_pedigree($parents["HUSB"], $count+1);
-		print "</td>\n";
-		print "</tr>\n<tr>\n<td height=\"50%\"";
-		if ($count<$this->generations-1) print " style=\"background: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."');\" ";
-		print "><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td></tr>\n<tr>\n";
-		if ($count<$this->generations-1) print "<td height=\"50%\" style=\"background: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."');\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td>";
-		if ($count<$this->generations-1) print "<td rowspan=\"2\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"7\" height=\"3\" alt=\"\" /></td>\n";
-		print "<td rowspan=\"2\">\n";
-		print_pedigree_person($parents["WIFE"]);
-		print "</td>\n";
-		print "<td rowspan=\"2\">\n";
-		$this->print_person_pedigree($parents["WIFE"], $count+1);
-		print "</td>\n";
-		print "</tr>\n";
-		if ($count<$this->generations-1) print "<tr>\n<td height=\"50%\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td></tr>\n";
-		print "</table>\n";
-		break;
-	}
-}
+		print "<td align=\"$tablealign\" width=\"100%\">\n";
+		$numkids = 0;
+		$families = $person->getSpouseFamilies();
+		$famcount = count($families);
+		$famNum = 0;
+		$kidNum = 0;
+		$children = array();
+		if ($count < $this->dgenerations) {
+			//-- put all of the children in a common array
+			foreach($families as $famid => $family) {
+				$famNum ++;
+				$chs = $family->getChildren();
+				foreach($chs as $c=>$child) $children[] = $child;
+			}
 
-/**
- * Prints descendency of passed in person 
- * 
- * @param mixed $pid ID of person to print descendency for
- * @param mixed $count count of generations to print
- * @access public
- * @return void
- */
-function print_descendency($pid, $count) {
-	global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $bheight, $bwidth;
-		if ($count>=$this->dgenerations) return 0;
-	//	print $this->dgenerations;
-	print "\n<!-- print_descendency for $pid -->\n";
-	print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-	print "<tr>";
-	print "<td width=\"$bwidth\">\n";
-	$numkids = 0;
-	$famids = find_sfamily_ids($pid);
-	if (count($famids)>0) {
-		$firstkids = 0;
-		foreach($famids as $indexval => $famid) {
-			$famrec = find_family_record($famid);
-			$ct = preg_match_all("/1 CHIL @(.*)@/", $famrec, $match, PREG_SET_ORDER);
+			$ct = count($children);
 			if ($ct>0) {
-			print "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-			for($i=0; $i<$ct; $i++) {
-				$rowspan = 2;
-				if (($i>0)&&($i<$ct-1)) $rowspan=1;
-				$chil = trim($match[$i][1]);
-				print "<tr><td rowspan=\"$rowspan\" width=\"$bwidth\" style=\"padding-top: 2px;\">\n";
-				if ($count+1 < $this->dgenerations) {
+				print "<table style=\"position: relative; top: auto; text-align: $tablealign;\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">";
+				for($i=0; $i<$ct; $i++) {
+					if (($i>0)&&($i<$ct-1)) $rowspan=1;
+					/* @var $person2 Person */
+					$person2 = $children[$i];
+					$chil = $person2->getXref();
+					print "<tr>";
+					print "<td id=\"td_$chil\" class=\"$TEXT_DIRECTION\" align=\"$tablealign\">";
 					$kids = $this->print_descendency($chil, $count+1);
-					if ($i==0) $firstkids = $kids;
 					$numkids += $kids;
-				}
-				else {
-					print_pedigree_person($chil);
-//					$this->dgenerations = $this->max_descendency_generations($pid, 0);
-					$numkids++;
-				}
-				print "</td>\n";
-				$twidth = 7;
-				if ($ct==1) $twidth+=3;
-				print "<td rowspan=\"$rowspan\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"$twidth\" height=\"3\" alt=\"\" /></td>\n";
-				if ($ct>1) {
-					if ($i==0) {
-						print "<td height=\"50%\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td></tr>\n";
-						print "<tr><td height=\"50%\" style=\"background: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."');\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td>\n";
-					}
-					else if ($i==$ct-1) {
-						print "<td height=\"50%\" style=\"background: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."');\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td></tr>\n";
-						print "<tr><td height=\"50%\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td>\n";
-					}
-					else {
-						print "<td style=\"background: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."');\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td>\n";
-					}
-				}
-				print "</tr>\n";
-			}
-			print "</table>\n";
-			}
-		}
-		print "</td>\n";
-		print "<td width=\"$bwidth\">\n";
-	}
-	// NOTE: If statement OK
-	if ($numkids==0) {
-		$numkids = 1;
-		$tbwidth = $bwidth+16;
-		for($j=$count; $j<$this->dgenerations; $j++) {
-			print "<div style=\"width: ".($tbwidth)."px;\"><br /></div>\n</td>\n<td width=\"$bwidth\">\n";
-		}
-	}
-	//-- add offset divs to make things line up better
-	if ($this->show_spouse) {
-		foreach($famids as $indexval => $famid) {
-			$famrec = find_family_record($famid);
-			if (!empty($famrec)) {
-				$marrec = get_sub_record(1, "1 MARR", $famrec);
-				if (!empty($marrec)) {
-					print "<br />";
-				}
-				print "<div style=\"height: ".$bheight."px; width: ".$bwidth."px;\"><br /></div>\n";
-			}
-		}
-	}
-	print_pedigree_person($pid);
-	// NOTE: If statement OK
-	if ($this->show_spouse) {
-		foreach($famids as $indexval => $famid) {
-			$famrec = find_family_record($famid);
-			if (!empty($famrec)) {
-				$parents = find_parents_in_record($famrec);
-				$marrec = get_sub_record(1, "1 MARR", $famrec);
-				if (!empty($marrec)) {
-					print "<br />";
-					print_simple_fact($famrec, "1 MARR", $famid);
-				}
-				if ($parents["HUSB"]!=$pid) print_pedigree_person($parents["HUSB"]);
-				else print_pedigree_person($parents["WIFE"]);
-			}
-		}
-	}
-	// NOTE: If statement OK
-	if ($count==0) {
-		$indirec = find_person_record($pid);
-		// NOTE: If statement OK
-		if (displayDetails($indirec) || showLivingName($indirec)) {
-			// -- print left arrow for decendants so that we can move down the tree
-			//$famids = find_sfamily_ids($pid);
-			$person = Person::getInstance($pid);
-			$famids = $person->getSpouseFamilies();
-			//-- make sure there is more than 1 child in the family with parents
-			//$cfamids = find_family_ids($pid);
-			$cfamids = $person->getChildFamilies();
-			$num=0;
-			foreach($cfamids as $famid=>$family) {
-				if (!is_null($family)) {
-					$num += $family->getNumberOfChildren();
-				}
-			}
-			// NOTE: If statement OK
-			if ($famids||($num>1)) {
-				print "\n\t\t<div id=\"childarrow\" dir=\"";
-				if ($TEXT_DIRECTION=="rtl") print "rtl\" style=\"position:absolute; ";
-				else print "ltr\" style=\"position:absolute; ";
-				print "width:10px; height:10px; \">";
-				if ($this->view!="preview") {
-					print "<a href=\"javascript: ".$pgv_lang["show"]."\" onclick=\"togglechildrenbox(); return false;\" onmouseover=\"swap_image('larrow',3);\" onmouseout=\"swap_image('larrow',3);\">";
-					print "<img id=\"larrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow"]["other"]."\" border=\"0\" alt=\"\" />";
-					print "</a>";
-				}
-				print "\n\t\t<div id=\"childbox\" dir=\"";
-				if ($TEXT_DIRECTION=="rtl") print "rtl\" style=\"position:absolute; right: 20px; ";
-				else print "ltr\" style=\"position:absolute; left: 20px;";
-				print " width:".$bwidth."px; height:".$bheight."px; visibility: hidden;\">";
-				print "\n\t\t\t<table class=\"person_box\"><tr><td>";
-				foreach($famids as $famid=>$family) {
-					if (!is_null($family)) {
-						if($pid!=$family->getHusbId()) $spid=$family->getHusbId();
-						else $spid=$family->getWifeId();
-						if (!empty($spid)) {
-							print "\n\t\t\t\t<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-							if (displayDetailsById($spid) || showLivingNameById($spid)) {
-								$name = get_person_name($spid);
-								$name = rtrim($name);
-								if (hasRTLText($name))
-								     print "class=\"name2\">";
-				   				else print "class=\"name1\">";
-								print PrintReady($name);
-							}
-							else print $pgv_lang["private"];
-							print "<br /></span></a>";
-						}
+					print "</td>";
 
-						$children = $family->getChildren();
-						foreach($children as $id=>$child) {
-							$cid = $child->getXref();
-							print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$cid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-							if (displayDetailsById($cid) || showLivingNameById($cid)) {
-								$name = get_person_name($cid);
-								$name = rtrim($name);
-								if (hasRTLText($name))
-								     print "class=\"name2\">&lt; ";
-					   			else print "class=\"name1\">&lt; ";
-								print PrintReady($name);
+					//-- print the lines
+					$twidth = 7;
+					if ($ct==1) $twidth+=3;
+					if ($ct>1) {
+						if ($i==0) {
+							//-- adjust for the number of kids
+							$h = ($bhalfheight+3)*$numkids;
+							print "<td valign=\"bottom\"><img name=\"tvertline\" id=\"vline_$chil\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."\" width=\"3\" height=\"$h\" alt=\"\" /></td>";
+						} else if ($i==$ct-1) {
+							$h = ($bhalfheight+3)*$kids;
+							if ($count<$this->dgenerations-1) {
+								if ($this->show_spouse) $h-=15;
+								else $h += 15;
 							}
-							else print ">" . $pgv_lang["private"];
-							print "<br /></span></a>";
+							print "<td valign=\"top\"><img name=\"bvertline\" id=\"vline_$chil\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."\" width=\"3\" height=\"".$h."\" alt=\"\" /></td>";
+						} else {
+							print "<td style=\"background: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES["vline"]["other"]."');\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" width=\"3\" alt=\"\" /></td>";
+						}
+					}
+					print "</tr>";
+
+				}
+				print "</table>\n";
+					
+			}
+			print "</td>\n";
+			print "<td width=\"$bwidth\">";
+		}
+
+		// Print the descendency expansion arrow
+		if ($count==$this->dgenerations) {
+			$numkids = 1;
+			$tbwidth = $bwidth+16;
+			for($j=$count; $j<$this->dgenerations; $j++) {
+				print "<div style=\"width: ".($tbwidth)."px;\"><br /></div>\n</td>\n<td width=\"$bwidth\">";
+			}
+			$kcount = 0;
+			foreach($families as $famid=>$family) $kcount+=$family->getNumberOfChildren();
+			if ($kcount==0) {
+				print "<div style=\"width: ".($this->arrwidth)."px;\"><br /></div>\n</td>\n<td width=\"$bwidth\">";
+			} else {
+				print "<div style=\"width: ".($this->arrwidth)."px;\"><a href=\"$pid\" onclick=\"return ChangeDis('td_".$pid."','".$pid."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."')\"><img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["larrow"]["other"]."\" border=\"0\" alt=\"\" /></a></div>\n";
+				//-- move the arrow up to line up with the correct box
+				if ($this->show_spouse) {
+					foreach($families as $famid => $family) {
+						/* @var $family Family */
+						if (!is_null($family)) {
+							$spouse = $family->getSpouse($person);
+							if ($spouse!=null) {
+								print "<br /><br /><br />";
+							}
 						}
 					}
 				}
-				//-- print the siblings
+				print "</td>\n<td width=\"$bwidth\">";
+			}
+		}
+
+		print "<table id=\"table2_$pid\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td>";
+		print_pedigree_person($pid);
+		print "</td><td><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"7\" height=\"3\" alt=\"\" />";
+		
+		//----- Print the spouse
+		if ($this->show_spouse) {
+			foreach($families as $famid => $family) {
+				/* @var $family Family */
+				if (!is_null($family)) {
+					$spouse = $family->getSpouse($person);
+					if ($spouse!=null) {
+						print "</td></tr><tr><td align=\"$otablealign\">";
+						//-- shrink the box for the spouses
+						$tempw = $bwidth;
+						$temph = $bheight;
+						$bwidth -= 10;
+						$bheight -= 10;
+						print_pedigree_person($spouse->getXref());
+						$bwidth = $tempw;
+						$bheight = $temph;
+						$numkids += 0.95;
+						print "</td><td></td>";
+					}
+				}
+			}
+			//-- add offset divs to make things line up better
+			if ($count==$this->dgenerations) print "<tr><td colspan\"2\"><div style=\"height: ".($bhalfheight/2)."px; width: ".$bwidth."px;\"><br /></div>";
+		}
+		print "</td></tr></table>";
+
+		// For the root person, print a down arrow that allows changing the root of tree
+		if ($showNav && $count==1) {
+			// NOTE: If statement OK
+			if ($person->canDisplayName()) {
+				// -- print left arrow for decendants so that we can move down the tree
+				$famids = $person->getSpouseFamilies();
+				//-- make sure there is more than 1 child in the family with parents
+				$cfamids = $person->getChildFamilies();
+				$num=0;
 				foreach($cfamids as $famid=>$family) {
 					if (!is_null($family)) {
-						$parents = find_parents($famid);
-						if($parents) {
-							print "<span class=\"name1\"><br />".$pgv_lang["parents"]."<br /></span>";
-							if (!empty($parents["HUSB"])) {
-								$spid = $parents["HUSB"];
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-								if (displayDetailsById($spid) || showLivingNameById($spid)) {
-									$name = get_person_name($spid);
-									$name = rtrim($name);
-									if (hasRTLText($name))
-									     print "class=\"name2\">";
-					   				else print "class=\"name1\">";
-									print PrintReady($name);
-								}
-								else print $pgv_lang["private"];
+						$num += $family->getNumberOfChildren();
+					}
+				}
+				// NOTE: If statement OK
+				if ($num>0) {
+					print "\n\t\t<div class=\"center\" id=\"childarrow\" dir=\"".$TEXT_DIRECTION."\"";
+					print " style=\"position:absolute; width:".$bwidth."px; \">";
+					if ($this->view!="preview") {
+						print "<a href=\"javascript: ".$pgv_lang["show"]."\" onclick=\"togglechildrenbox(); return false;\" onmouseover=\"swap_image('larrow',3);\" onmouseout=\"swap_image('larrow',3);\">";
+						print "<img id=\"larrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow"]["other"]."\" border=\"0\" alt=\"\" />";
+						print "</a><br />";
+							
+					}
+					print "\n\t\t<div id=\"childbox\" dir=\"".$TEXT_DIRECTION."\" style=\"width:".$bwidth."px; height:".$bheight."px; visibility: hidden;\">";
+					print "\n\t\t\t<table class=\"person_box\"><tr><td>";
+
+					foreach($famids as $famid=>$family) {
+						if (!is_null($family)) {
+							$spouse = $family->getSpouse($person);
+							if (!empty($spouse)) {
+								$spid = $spouse->getXref();
+								print "\n\t\t\t\t<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
+								$name = $spouse->getName();
+								$name = rtrim($name);
+								if (hasRTLText($name))
+								print "class=\"name2\">";
+								else print "class=\"name1\">";
+								print PrintReady($name);
 								print "<br /></span></a>";
+
 							}
-							if (!empty($parents["WIFE"])) {
-								$spid = $parents["WIFE"];
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-								if (displayDetailsById($spid) || showLivingNameById($spid)) {
-									$name = get_person_name($spid);
-									$name = rtrim($name);
-									if (hasRTLText($name))
-									     print "class=\"name2\">";
-					   				else print "class=\"name1\">";
-									print PrintReady($name);
-								}
-								else print $pgv_lang["private"];
+
+							$children = $family->getChildren();
+							foreach($children as $id=>$child) {
+								$cid = $child->getXref();
+								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$cid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
+								$name = $child->getName();
+								$name = rtrim($name);
+								if (hasRTLText($name))
+								print "class=\"name2\">&lt; ";
+								else print "class=\"name1\">&lt; ";
+								print PrintReady($name);
+									
 								print "<br /></span></a>";
+									
 							}
 						}
-						$children = $family->getChildren();
-						$num = $family->getNumberOfChildren();
-						if ($num>1) print "<span class=\"name1\"><br />".$pgv_lang["siblings"]."<br /></span>";
-						foreach($children as $id=>$child) {
-							$cid = $child->getXref();
-							if ($cid!=$pid) {
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$cid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-								if (displayDetailsById($cid) || showLivingNameById($cid)) {
-									$name = get_person_name($cid);
+					}
+					//-- do we need to print this arrow?
+					print "<img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /> ";
+
+					//-- print the siblings
+					foreach($cfamids as $famid=>$family) {
+						if (!is_null($family)) {
+							if(!is_null($family->getHusband()) || !is_null($family->getWife())) {
+								print "<span class=\"name1\"><br />".$pgv_lang["parents"]."<br /></span>";
+								$husb = $family->getHusband();
+								if (!empty($husb)) {
+									$spid = $husb->getXref();
+									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
+									$name = $husb->getName();
+									$name = rtrim($name);
+									if (hasRTLText($name))
+									print "class=\"name2\">";
+									else print "class=\"name1\">";
+									print PrintReady($name);
+									print "<br /></span></a>";
+								}
+								$husb = $family->getWife();
+								if (!empty($husb)) {
+									$spid = $husb->getXref();
+									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
+									$name = $husb->getName();
+									$name = rtrim($name);
+									if (hasRTLText($name))
+									print "class=\"name2\">";
+									else print "class=\"name1\">";
+									print PrintReady($name);
+									print "<br /></span></a>";
+								}
+							}
+							$children = $family->getChildren();
+							$num = $family->getNumberOfChildren();
+							if ($num>1) print "<span class=\"name1\"><br />".$pgv_lang["siblings"]."<br /></span>";
+							foreach($children as $id=>$child) {
+								$cid = $child->getXref();
+								if ($cid!=$pid) {
+									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$cid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
+									$name = $child->getName();
 									$name = rtrim($name);
 									if (hasRTLText($name))
 									print "class=\"name2\"> ";
-					   				else print "class=\"name1\"> ";
+									else print "class=\"name1\"> ";
 									print PrintReady($name);
+									print "<br /></span></a>";
+
 								}
-								else print ">". $pgv_lang["private"];
-								print "<br /></span></a>";
 							}
 						}
 					}
+					print "\n\t\t\t</td></tr></table>";
+					print "\n\t\t</div>";
+					print "\n\t\t</div>";
 				}
-				print "\n\t\t\t</td></tr></table>";
-				print "\n\t\t</div>";
-				print "\n\t\t</div>";
 			}
 		}
+		print "</td></tr>";
+		print "</table>";
+		return $numkids;
 	}
-	print "</td></tr>\n";
-	print "</table>\n";
-	return $numkids;
-}
 
-/**
- * Calculates number of generations a person has
- * 
- * @param mixed $pid ID of person to see how far down the descendency goes
- * @param mixed $depth Pass in 0 and it calculates how far down descendency goes
- * @access public
- * @return maxdc Amount of generations the descendency actually goes
- */
-function max_descendency_generations($pid, $depth) {
-	//print "\n<br />".$pid."=".$depth;
-	if ($depth >= $this->generations) return $depth;
-	//$famids = find_sfamily_ids($pid);
-	$person = Person::getInstance($pid);
-	if (is_null($person)) return $depth;
-	$famids = $person->getSpouseFamilies();
-	//print " famcount=".count($famids);
-//	$famids = $this->hour->getSpouseFamilies();
-	$maxdc = $depth;
-	//foreach($famids as $indexval => $famid) {
-		//$famrec = find_family_record($famid);
-	foreach($famids as $famid => $family){
-		//print "famid=".$famid." ";
-		$ct = preg_match_all("/1 CHIL @(.*)@/", $family->gedrec, $match, PREG_SET_ORDER);
-		for($i=0; $i<$ct; $i++) {
-			$chil = trim($match[$i][1]);
-			$dc = $this->max_descendency_generations($chil, $depth+1);
-			//print " dc=".$dc;
-			if ($dc >= $this->generations) return $dc;
-			if ($dc > $maxdc) $maxdc = $dc;
+	/**
+	 * Calculates number of generations a person has
+	 *
+	 * @param mixed $pid ID of person to see how far down the descendency goes
+	 * @param mixed $depth Pass in 0 and it calculates how far down descendency goes
+	 * @access public
+	 * @return maxdc Amount of generations the descendency actually goes
+	 */
+	function max_descendency_generations($pid, $depth) {
+		if ($depth > $this->generations) return $depth;
+		$person = Person::getInstance($pid);
+		if (is_null($person)) return $depth;
+		$famids = $person->getSpouseFamilies();
+		if ($person->getNumberOfChildren()==0) return $depth-1;
+		$maxdc = $depth;
+		foreach($famids as $famid => $family){
+			$ct = preg_match_all("/1 CHIL @(.*)@/", $family->gedrec, $match, PREG_SET_ORDER);
+			for($i=0; $i<$ct; $i++) {
+				$chil = trim($match[$i][1]);
+				$dc = $this->max_descendency_generations($chil, $depth+1);
+				if ($dc >= $this->generations) return $dc;
+				if ($dc > $maxdc) $maxdc = $dc;
+			}
+		}
+
+		$maxdc++;
+		if ($maxdc==1) $maxdc++;
+		return $maxdc;
+	}
+
+	/**
+	 * setup all of the javascript that is needed for the hourglass chart
+	 *
+	 */
+	function setupJavascript() {
+		global $bhalfheight;
+		?>
+<script language="JavaScript" type="text/javascript">
+<!--
+	var pastefield;
+	function paste_id(value) {
+		pastefield.value=value;
+	}
+	
+	// <!--Hourglass control..... Ajax arrows at the end of chart-->
+ 	function ChangeDiv(div_id, ARID, full, spouse, width) {
+ 		var divelement = document.getElementById(div_id);
+ 		var oXmlHttp = createXMLHttp();	
+ 		oXmlHttp.open("get", "hourglass_ajax.php?show_full="+full+"&pid="+ ARID + "&generations=1&box_width="+width+"&show_spouse="+spouse, true);
+ 		oXmlHttp.onreadystatechange=function()
+ 		{
+  			if (oXmlHttp.readyState==4)
+   			{	
+    			divelement.innerHTML = oXmlHttp.responseText;
+    			sizeLines();
+    		}
+   		};
+  		oXmlHttp.send(null);	
+  		return false;
+	}
+	
+	// <!--Hourglass control..... Ajax arrows at the end of descendants chart-->
+	function ChangeDis(div_id, ARID, full, spouse, width) {
+ 		var divelement = document.getElementById(div_id);
+ 		var oXmlHttp = createXMLHttp();	
+ 		oXmlHttp.open("get", "hourglass_ajax.php?type=desc&show_full="+full+"&pid="+ ARID + "&generations=1&box_width="+width+"&show_spouse="+spouse, true);
+ 		oXmlHttp.onreadystatechange=function()
+ 		{
+  			if (oXmlHttp.readyState==4)
+   			{	
+    				divelement.innerHTML = oXmlHttp.responseText;
+    				sizeLines();
+    		}
+   		};
+  		oXmlHttp.send(null);	
+  		return false;
+	}
+	
+	function sizeLines() {
+		var vlines;
+		vlines = document.getElementsByName("tvertline");
+		for(i=0; i < vlines.length; i++) {
+			var pid = vlines[i].id.substr(vlines[i].id.indexOf("_")+1);
+			var hline = document.getElementById("table_"+pid);
+			var hline2 = document.getElementById("table2_"+pid);
+			var newHeight = Math.abs(hline.offsetHeight - (hline2.offsetTop + <?php print $bhalfheight+2 ?>));
+			vlines[i].style.height=newHeight+'px';
+		}
+		
+		vlines = document.getElementsByName("bvertline");
+		for(i=0; i < vlines.length; i++) {
+			var pid = vlines[i].id.substr(vlines[i].id.indexOf("_")+1);
+			var hline = document.getElementById("table_"+pid);
+			var hline2 = document.getElementById("table2_"+pid);
+			vlines[i].style.height=(hline.offsetTop+hline2.offsetTop + <?php print $bhalfheight+2 ?>)+'px';
+		}
+		
+		vlines = document.getElementsByName("pvline");
+		//alert(vlines[0].parentNode.parentNode.parentNode);
+		for(i=0; i < vlines.length; i++) {
+			//vlines[i].parentNode.style.height="50%";
+			vlines[i].style.height=(vlines[i].parentNode.offsetHeight/2)+'px';
 		}
 	}
-	if ($maxdc==0) $maxdc++;
-	return $maxdc;
+//-->
+</script>
+<?php
 }
 
 }
@@ -512,5 +632,5 @@ else
 }
 
 $controller = new HourglassController();
-$controller->init();
+
 ?>

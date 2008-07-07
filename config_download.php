@@ -3,7 +3,7 @@
  * Download config files that could not be saved.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: config_download.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: config_download.php,v 1.5 2008/07/07 18:01:10 lsces Exp $
  * @package PhpGedView
  * @subpackage Admin
  */

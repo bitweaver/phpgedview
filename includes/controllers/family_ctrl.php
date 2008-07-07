@@ -26,7 +26,14 @@
  * @version $Id$
  */
 
-// Initialization
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access an include file directly.";
+	exit;
+}
+
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -42,16 +49,11 @@ require_once 'includes/functions_print_facts.php';
 require_once 'includes/controllers/basecontrol.php';
 require_once 'includes/functions_charts.php';
 require_once 'includes/family_class.php';
-require_once $factsfile['english'];
-if (file_exists($factsfile[$LANGUAGE]))
-{
-	require_once $factsfile[$LANGUAGE];
-}
+require_once 'includes/menu.php';
 
 class FamilyRoot extends BaseController
 {
 	var $user = null;
-	var $uname = '';
 	var $showLivingHusb = true;
 	var $showLivingWife = true;
 	var $parents = '';
@@ -90,6 +92,9 @@ class FamilyRoot extends BaseController
 		$bwidth = $Dbwidth;
 		$pbwidth = $bwidth + 12;
 		$pbheight = $bheight + 14;
+		
+		//-- keep the time of this access to help with concurrent edits
+		$_SESSION['last_access_time'] = time();
 
 		if (!isset($_REQUEST['action']))
 		{
@@ -123,10 +128,12 @@ class FamilyRoot extends BaseController
 			if ($ct>0) {
 				$servid = trim($match[1]);
 				$remoteid = trim($match[2]);
+				include_once('includes/serviceclient_class.php');
 				$service = ServiceClient::getInstance($servid);
-				$newrec= $service->mergeGedcomRecord($remoteid, "0 @".$this->famid."@ FAM\r\n1 RFN ".$this->famid, false);
-				
-				$this->famrec = $newrec;
+				if (!is_null($service)) {
+					$newrec= $service->mergeGedcomRecord($remoteid, "0 @".$this->famid."@ FAM\r\n1 RFN ".$this->famid, false);
+					$this->famrec = $newrec;
+				}
 			}
 		}
 		
@@ -135,10 +142,10 @@ class FamilyRoot extends BaseController
 		$this->display = displayDetailsByID($this->famid, 'FAM');
 		$this->family = new Family($this->famrec);
 
-		$this->uname = getUserName();
 		//-- if the user can edit and there are changes then get the new changes
-		if ($this->show_changes=="yes" && userCanEdit($this->uname) && isset($pgv_changes[$this->famid."_".$GEDCOM])) {
-			$newrec = find_record_in_file($this->famid);
+		if ($this->show_changes=="yes" && PGV_USER_CAN_EDIT && isset($pgv_changes[$this->famid."_".$GEDCOM])) {
+			$newrec = find_updated_record($this->famid);
+			if (empty($newrec)) $newrec = find_family_record($this->famid);
 			$this->difffam = new Family($newrec);
 			$this->difffam->setChanged(true);
 			$this->famrec = $newrec;
@@ -153,32 +160,25 @@ class FamilyRoot extends BaseController
 			$this->showLivingWife = showLivingNameByID($this->parents['WIFE']);
 		}
 
-		if (!empty($this->uname))
-		{
-			$this->user = getUser($this->uname);
-
-			//-- add favorites action
-			if (($_REQUEST['action'] == 'addfav') && (!empty($_REQUEST['gid'])))
-			{
-				$_REQUEST['gid'] = strtoupper($_REQUEST['gid']);
-				$indirec = find_gedcom_record($_REQUEST['gid']);
-				if ($indirec)
-				{
-					$favorite = array(
-						'username' => $this->uname,
-						'gid' => $_REQUEST['gid'],
-						'type' => 'FAM',
-						'file' => $GEDCOM,
-						'url' => '',
-						'note' => '',
-						'title' => ''
-					);
-					addFavorite($favorite);
-				}
+		//-- add favorites action
+		if ($_REQUEST['action']=='addfav' && !empty($_REQUEST['gid']) && PGV_USER_NAME) {
+			$_REQUEST['gid'] = strtoupper($_REQUEST['gid']);
+			$indirec = find_gedcom_record($_REQUEST['gid']);
+			if ($indirec) {
+				$favorite = array(
+					'username' => PGV_USER_NAME,
+					'gid' => $_REQUEST['gid'],
+					'type' => 'FAM',
+					'file' => $GEDCOM,
+					'url' => '',
+					'note' => '',
+					'title' => ''
+				);
+				addFavorite($favorite);
 			}
 		}
 
-		if (userCanAccept($this->uname))
+		if (PGV_USER_CAN_ACCEPT)
 		{
 			if ($_REQUEST['action'] == 'accept')
 			{
@@ -188,6 +188,12 @@ class FamilyRoot extends BaseController
 					$this->show_changes = 'no';
 					$this->accept_success = true;
 					unset($famlist[$_REQUEST['famid']]);
+					//-- check if we just deleted the record and redirect to index
+					$famrec = find_family_record($_REQUEST['famid']);
+					if (empty($famrec)) {
+						header("Location: index.php?ctype=gedcom");
+						exit;
+					}
 					$this->parents = find_parents($_REQUEST['famid']);
 				}
 			}
@@ -209,7 +215,7 @@ class FamilyRoot extends BaseController
 
 		if ($this->showLivingHusb == false && $this->showLivingWife == false)
 		{
-			print_header("{$pgv_lang['private']} {$pgv_lang['family_info']}");
+			print_header($pgv_lang['private']." ".$pgv_lang['family_info']);
 			print_privacy_error($CONTACT_EMAIL);
 			print_footer();
 			exit;
@@ -302,28 +308,50 @@ class FamilyRoot extends BaseController
 		else $ff="";
 
 		// charts menu
-		$menu = new Menu($pgv_lang['charts'], 'timeline.php?pids[0]='.$this->parents['HUSB'].'&amp;pids[1]='.$this->parents['WIFE']);
+		$menu = new Menu($pgv_lang['charts'], 'timeline.php?pids[0]='.$this->getHusband().'&amp;pids[1]='.$this->getWife());
 		if (!empty($PGV_IMAGES["timeline"]["small"]))
 			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
 		$menu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}", "submenu{$ff}");
-		// charts / parents_timeline
-		$submenu = new Menu($pgv_lang['parents_timeline'], 'timeline.php?pids[0]='.$this->parents['HUSB'].'&amp;pids[1]='.$this->parents['WIFE']);
-		if (!empty($PGV_IMAGES["timeline"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
-		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-		$menu->addSubmenu($submenu);
-		// charts / children_timeline
-		$submenu = new Menu($pgv_lang['children_timeline'], 'timeline.php?'.$this->getChildrenUrlTimeline());
-		if (!empty($PGV_IMAGES["timeline"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
-		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-		$menu->addSubmenu($submenu);
-		// charts / family_timeline
-		$submenu = new Menu($pgv_lang['family_timeline'], 'timeline.php?pids[0]='.$this->getHusband().'&amp;pids[1]='.$this->getWife().'&amp;'.$this->getChildrenUrlTimeline(2));
-		if (!empty($PGV_IMAGES["timeline"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
-		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-		$menu->addSubmenu($submenu);
+		// Build a sortable list of submenu items and then sort it in localized name order
+		$menuList = array();
+		$menuList["parentTimeLine"] = $pgv_lang['parents_timeline'];
+		$menuList["childTimeLine"] = $pgv_lang['children_timeline'];
+		$menuList["familyTimeLine"] = $pgv_lang['family_timeline'];
+		asort($menuList);
+
+		// Produce the submenus in localized name order
+		
+		foreach($menuList as $menuType => $menuName) {
+			switch ($menuType) {
+			case "parentTimeLine":
+				// charts / parents_timeline
+				$submenu = new Menu($pgv_lang['parents_timeline'], 'timeline.php?pids[0]='.$this->getHusband().'&amp;pids[1]='.$this->getWife());
+				if (!empty($PGV_IMAGES["timeline"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
+				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+				$menu->addSubmenu($submenu);
+				break;
+
+			case "childTimeLine":
+				// charts / children_timeline
+				$submenu = new Menu($pgv_lang['children_timeline'], 'timeline.php?'.$this->getChildrenUrlTimeline());
+				if (!empty($PGV_IMAGES["timeline"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
+				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+				$menu->addSubmenu($submenu);
+				break;
+
+			case "familyTimeLine":
+				// charts / family_timeline
+				$submenu = new Menu($pgv_lang['family_timeline'], 'timeline.php?pids[0]='.$this->getHusband().'&amp;pids[1]='.$this->getWife().'&amp;'.$this->getChildrenUrlTimeline(2));
+				if (!empty($PGV_IMAGES["timeline"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['timeline']['small']}");
+				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+				$menu->addSubmenu($submenu);
+				break;
+
+			}
+		}
 
 		return $menu;
 	}
@@ -360,12 +388,14 @@ class FamilyRoot extends BaseController
 	 */
 	function &getEditMenu() {
 		global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $GEDCOM, $pgv_lang, $pgv_changes;
+		global $SHOW_GEDCOM_RECORD;
 		if ($TEXT_DIRECTION=="rtl") $ff="_rtl";
 		else $ff="";
 
 		// edit_fam menu
 		$menu = new Menu($pgv_lang['edit_fam']);
-		$menu->addOnclick('return edit_raw(\''.$this->getFamilyID().'\');');
+		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) 
+			$menu->addOnclick('return edit_raw(\''.$this->getFamilyID().'\');');
 		if (!empty($PGV_IMAGES["edit_fam"]["small"]))
 			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
 		$menu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}", "submenu{$ff}");
@@ -379,12 +409,14 @@ class FamilyRoot extends BaseController
 		$menu->addSubmenu($submenu);
 
 		// edit_fam / edit_raw
-		$submenu = new Menu($pgv_lang['edit_raw']);
-		$submenu->addOnclick("return edit_raw('".$this->getFamilyID()."');");
-		if (!empty($PGV_IMAGES["edit_fam"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
-		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-		$menu->addSubmenu($submenu);
+		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) {
+			$submenu = new Menu($pgv_lang['edit_raw']);
+			$submenu->addOnclick("return edit_raw('".$this->getFamilyID()."');");
+			if (!empty($PGV_IMAGES["edit_fam"]["small"]))
+				$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
+			$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+			$menu->addSubmenu($submenu);
+		}
 
 		// edit_fam / members
 		$submenu = new Menu($pgv_lang['change_family_members']);
@@ -403,12 +435,14 @@ class FamilyRoot extends BaseController
 		$menu->addSubmenu($submenu);
 
 		// edit_fam / reorder_children
-		$submenu = new Menu($pgv_lang['reorder_children']);
-		$submenu->addOnclick("return reorder_children('".$this->getFamilyID()."');");
-		if (!empty($PGV_IMAGES["edit_fam"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
-		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-		$menu->addSubmenu($submenu);
+		if ($this->family->getNumberOfChildren() > 1) {
+			$submenu = new Menu($pgv_lang['reorder_children']);
+			$submenu->addOnclick("return reorder_children('".$this->getFamilyID()."');");
+			if (!empty($PGV_IMAGES["edit_fam"]["small"]))
+				$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
+			$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+			$menu->addSubmenu($submenu);
+		}
 
 		if (isset($pgv_changes[$this->getFamilyID().'_'.$GEDCOM]))
 		{
@@ -435,16 +469,9 @@ class FamilyRoot extends BaseController
 				$menu->addSubmenu($submenu);
 			}
 
-			if (userCanAccept(getUserName()))
+			if (PGV_USER_CAN_ACCEPT)
 			{
 				// edit_fam / accept_all
-				/*$submenu = new Menu($pgv_lang['accept_all']);
-				$submenu->addOnclick("window.open('edit_changes.php','_blank','width=600,height=500,resizable=1,scrollbars=1'); return false;");
-				if (!empty($PGV_IMAGES["edit_fam"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
-				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
-				$menu->addSubmenu($submenu);
-				*/
 				$submenu = new Menu($pgv_lang["undo_all"], "family.php?famid=".$this->famid."&amp;action=undo");
 				if (!empty($PGV_IMAGES["edit_fam"]["small"]))
 					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
@@ -477,7 +504,7 @@ class FamilyRoot extends BaseController
 		if ($SHOW_GEDCOM_RECORD)
 		{
 			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['gedcom']['small']}");
-			if ($_REQUEST['show_changes'] == 'yes'  && $gGedcom->isEditable())
+			if ($_REQUEST['show_changes'] == 'yes'  && PGV_USER_CAN_EDIT)
 			{
 				$menu->addLink("javascript:show_gedcom_record('new');");
 			}
@@ -496,7 +523,7 @@ class FamilyRoot extends BaseController
 		{
 				// other / view_gedcom
 				$submenu = new Menu($pgv_lang['view_gedcom']);
-				if ($_REQUEST['show_changes'] == 'yes'  && $gGedcom->isEditable())
+				if ($_REQUEST['show_changes'] == 'yes'  && PGV_USER_CAN_EDIT)
 				{
 					$submenu->addLink("javascript:show_gedcom_record('new');");
 				}
@@ -508,7 +535,7 @@ class FamilyRoot extends BaseController
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 		}
-		if ($ENABLE_CLIPPINGS_CART >= getUserAccessLevel())
+		if ($ENABLE_CLIPPINGS_CART >= PGV_USER_ACCESS_LEVEL)
 		{
 				// other / add_to_cart
 				$submenu = new Menu($pgv_lang['add_to_cart'], 'clippings.php?action=add&amp;id='.$this->getFamilyID().'&amp;type=fam');
@@ -517,7 +544,7 @@ class FamilyRoot extends BaseController
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 		}
-		if ($this->display && !empty($this->uname))
+		if ($this->display && PGV_USER_ID)
 		{
 				// other / add_to_my_favorites
 				$submenu = new Menu($pgv_lang['add_to_my_favorites'], 'family.php?action=addfav&amp;famid='.$this->getFamilyID().'&amp;gid='.$this->getFamilyID());

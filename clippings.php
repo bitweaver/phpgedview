@@ -8,7 +8,7 @@
  * XHTML Validated 12 Feb 2006
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2006  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: clippings.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: clippings.php,v 1.5 2008/07/07 18:01:11 lsces Exp $
  */
 
 /**
@@ -63,7 +63,7 @@ if ($action=='add') {
 			<tr><td class="optionbox"><input type="radio" name="others" value="members" /><?php print $pgv_lang["parents_and_child"]?></tr></td>
 			<tr><td class="optionbox"><input type="radio" name="others" value="descendants" /><?php print $pgv_lang["parents_desc"]?></tr></td>
 			<tr><td class="topbottombar"><input type="submit" value="<?php print $pgv_lang["continue"]?>" /></tr></td>
-			
+
 		</table>
 		</form>
 	<?php }
@@ -111,10 +111,10 @@ if($ct==0) {
 		require $helptextfile["english"];
 		if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
 		print_text("help_clippings.php");
-		
+
 		?>
 		<script language="JavaScript" type="text/javascript">
-		<!-- 
+		<!--
 		var pastefield;
 		function paste_id(value)
 		{
@@ -126,7 +126,7 @@ if($ct==0) {
 		<table>
 		<tr>
 			<td colspan="2" class="topbottombar" style="text-align:center; ">
-				<?php print $pgv_lang["add_individual_by_id"]; 
+				<?php print $pgv_lang["add_individual_by_id"];
 				 print_help_link("add_by_id_help", "qm");?>
 			</td>
 		</tr>
@@ -140,14 +140,14 @@ if($ct==0) {
 				<?php print_findfamily_link('pid',''); ?>
 				<?php print_findsource_link('pid',''); ?>
 				<input type="submit" value="<?php print $pgv_lang["add"];?>"/>
-				
+
 			</td>
 		</tr>
 		</table>
 		</form>
 		<?php
 	}
-	
+
 	// -- end new lines
 	print "\r\n\t\t<br /><br />".$pgv_lang["cart_is_empty"]."<br /><br />";
 }
@@ -161,9 +161,9 @@ else {
 		<tr>
 		<td class="descriptionbox wrap"><?php print $pgv_lang["choose_file_type"] ?></td>
 		<td class="optionbox">
-		&lrm;<input type="radio" name="filetype" checked="checked"  value="gedcom" /> GEDCOM <?php print_help_link("def_gedcom_help", "qm"); ?>&lrm;
+		<?php print getLRM();?><input type="radio" name="filetype" checked="checked"  value="gedcom" /> GEDCOM <?php print_help_link("def_gedcom_help", "qm"); ?><?php print getLRM();?>
 		<br/>
-		&lrm;<input type="radio" name="filetype" value="gramps" /> Gramps XML <?php print_help_link("def_gramps_help", "qm"); ?>&lrm;
+		<?php print getLRM();?><input type="radio" name="filetype" value="gramps" /> Gramps XML <?php print_help_link("def_gramps_help", "qm"); ?><?php print getLRM();?>
 		</td></tr>
 		</td></tr>
 
@@ -187,13 +187,13 @@ else {
 		<?php print_help_link("clip_download_help", "qm"); ?>
 		</tr></td>
 		</form>
-		
+
 		</td></tr>
 		</table>
 		<br/>
-		
+
 		<script language="JavaScript" type="text/javascript">
-		<!-- 
+		<!--
 		var pastefield;
 		function paste_id(value)
 		{
@@ -205,7 +205,7 @@ else {
 		<table>
 		<tr>
 			<td colspan="2" class="topbottombar" style="text-align:center; ">
-				<?php print $pgv_lang["add_individual_by_id"]; 
+				<?php print $pgv_lang["add_individual_by_id"];
 				 print_help_link("add_by_id_help", "qm");?>
 			</td>
 		</tr>
@@ -219,13 +219,13 @@ else {
 				<?php print_findfamily_link('pid',''); ?>
 				<?php print_findsource_link('pid',''); ?>
 				<input type="submit" value="<?php print $pgv_lang["add"];?>"/>
-				
+
 			</td>
 		</tr>
 		</table>
 		</form>
 
-		
+
 	<?php } ?>
 	<br /><a href="clippings.php?action=empty"><?php print $pgv_lang["empty_cart"]."  "; ?></a>
 	<?php print_help_link("empty_cart_help", "qm"); ?>
@@ -249,7 +249,7 @@ else {
 			if ($tag=='FAM' ) $icon = "sfamily";
 			if ($tag=='SOUR') $icon = "source";
 			if ($tag=='REPO') $icon = "repository";
-			if ($tag=='NOTE') $icon = "note";
+			if ($tag=='NOTE') $icon = "notes";
 			if ($tag=='OBJE') $icon = "media";
 			?>
 			<tr><td class="list_value"><img src="<?php echo $PGV_IMAGE_DIR."/".$PGV_IMAGES[$icon]["small"];?>" border="0" alt="<?php echo $tag;?>" title="<?php echo $tag;?>" /></td>
@@ -259,9 +259,9 @@ else {
 			$id_ok = true;
 			if(displayDetailsByID($clipping['id'],$tag)){
 				if ($tag=='INDI'){
-					  if ($id_ok) 
-					  	$dName = get_sortable_name($clipping['id']); 
-					  else 
+					  if ($id_ok)
+					  	$dName = get_sortable_name($clipping['id']);
+					  else
 					  	$dName = $pgv_lang["person_private"];
 				  	$names = preg_split("/,/", $dName);
 					$dName = check_NN($names);
@@ -273,9 +273,9 @@ else {
 					$dName = check_NN($names);
 				    print "<a href=\"family.php?famid=".$clipping['id']."\">".PrintReady($dName)."</a>";
 				}
-				if ($tag=='SOUR') 
+				if ($tag=='SOUR')
 					print "<a href=\"source.php?sid=".$clipping['id']."\">".PrintReady(get_source_descriptor($clipping['id']))."</a>";
-				if ($tag=='REPO') 
+				if ($tag=='REPO')
 					print "<a href=\"repo.php?rid=".$clipping['id']."\">".PrintReady(get_repo_descriptor($clipping['id']))."</a>";
 				if ($tag=="OBJE") {
 				  	print "<a href=\"mediaviewer.php?mid=".$clipping['id']."\">".PrintReady(get_media_descriptor($clipping['id']))."</a>";

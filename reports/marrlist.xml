@@ -1,56 +1,84 @@
-<PGVReport access="PGV_PUBLIC" icon="sfamily">
+<PGVReport access="PRIV_PUBLIC" icon="sfamily">
 	<!-- $Id$ -->
 	<PGVRTitle><PGVRvar var="pgv_lang[marr_report]" /></PGVRTitle>
-	<PGVRDescription>Prints a list of familys matching specific marr criteria</PGVRDescription>
+	<PGVRDescription>Prints a list of families matching specific name and/or marriage criteria</PGVRDescription>
+	<PGVRInput name="name" lookup="NAME" type="text"><PGVRvar var="pgv_lang[name]" /></PGVRInput>
 	<PGVRInput name="marrplace" lookup="PLAC" type="text"><PGVRvar var="pgv_lang[marrplace]" /> </PGVRInput>
 	<PGVRInput name="marrdate1" lookup="DATE" type="text"><PGVRvar var="pgv_lang[marrdate1]" /></PGVRInput>
 	<PGVRInput name="marrdate2" lookup="DATE" type="text"><PGVRvar var="pgv_lang[marrdate2]" /></PGVRInput>
 	<PGVRInput name="sortby" type="select" options="NAME,MARR"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
 	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="16" style="b" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="spouse" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="label" font="LucidaSansUnicode" size="10" style="b" />
-	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
+	<PGVRStyle name="header" font="dejavusans" size="16" style="b" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="spouse" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="label" font="dejavusans" size="8" style="" />
+	<PGVRDoc pageSize="$pageSize" orientation="L" margin="24">
 		<PGVRHeader>
 			<PGVRCell width="0" height="20" align="center" style="header"><PGVRvar var="pgv_lang[marr_report]" /></PGVRCell>
-			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /></PGVRCell>
-			<PGVRTextBox width="60" height="12" border="1">
-				<PGVRText style="label"> </PGVRText>
-			</PGVRTextBox>
+			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /> - <PGVRNow /></PGVRCell>
 			<PGVRTextBox width="200" height="12" border="1">
 				<PGVRText style="label"><PGVRvar var="pgv_lang[name]" /></PGVRText>
 			</PGVRTextBox>
-			<PGVRTextBox width="150" height="12" border="1">
-				<PGVRText style="label"><PGVRvar var="pgv_lang[date]" /></PGVRText>
+			<PGVRTextBox width="100" height="12" border="1">
+				<PGVRText style="label"><PGVRvar var="factarray[DATE]" /></PGVRText>
 			</PGVRTextBox>
-			<PGVRTextBox width="0" height="12" border="1" newline="1">
+			<PGVRTextBox width="225" height="12" border="1">
 				<PGVRText style="label"><PGVRvar var="factarray[PLAC]" /></PGVRText>
 			</PGVRTextBox>
+			<PGVRTextBox width="225" height="12" border="1" newline="1">
+				<PGVRText style="label"><PGVRvar var="factarray[SOUR]" /></PGVRText>
+			</PGVRTextBox>      
 		</PGVRHeader>
 		<PGVRBody>
+			<PGVRSetVar name="printedFamilies" value="0" />
 			<PGVRList list="family" filter1="MARR:PLAC CONTAINS $marrplace" filter2="MARR:DATE GTE $marrdate1" filter3="MARR:DATE LTE $marrdate2" sortby="$sortby">
-				<PGVRTextBox width="60" height="12" border="0">
-					<PGVRText style="text"><PGVRGedcomValue tag="@id" /></PGVRText>
-				</PGVRTextBox>
-				<PGVRTextBox width="200" height="12" border="0">
-					<PGVRText style="text"><PGVRGetPersonName id="MARR:@HUSB" /></PGVRText>
-					<PGVRText style="spouse"><br />   <PGVRGetPersonName id="MARR:@WIFE" /></PGVRText>
-				</PGVRTextBox>
-				<PGVRTextBox width="150" height="12" border="0">
-					<PGVRText style="text"><PGVRGedcomValue tag="MARR:DATE" /></PGVRText>
-				</PGVRTextBox>
-				<PGVRTextBox width="0" height="12" border="0" newline="1">
-					<PGVRText style="text"><PGVRGedcomValue tag="MARR:PLAC" /></PGVRText>
-				</PGVRTextBox>
+			<!-- filter4 should be: filter4="NAME CONTAINS $name", but the family name doesn't exist as a field in the database,
+					so we can't use that.  -->
+				<PGVRSetVar name="skipFamily" value="no" />
+				<PGVRif condition="$name!=''">
+					<PGVRSetVar name="skipFamily" value="yes" />
+					<PGVRGedcom id="@HUSB">
+						<PGVRif condition="stristr(@NAME,$name)!==false">
+							<PGVRSetVar name="skipFamily" value="no" />
+						</PGVRif>
+					</PGVRGedcom>
+					<PGVRGedcom id="@WIFE">
+						<PGVRif condition="stristr(@NAME,$name)!==false">
+							<PGVRSetVar name="skipFamily" value="no" />
+						</PGVRif>
+					</PGVRGedcom>
+				</PGVRif>
+				<PGVRif condition="$skipFamily=='no'">
+					<PGVRSetVar name="printedFamilies" value="$printedFamilies+1" />
+					<PGVRTextBox width="200" height="12" border="0">
+						<PGVRText style="text"><PGVRGetPersonName id="@HUSB" /></PGVRText>
+						<PGVRText style="spouse"><br />   <PGVRGetPersonName id="@WIFE" /></PGVRText>
+						<PGVRText style="text"> - (<PGVRGedcomValue tag="@id" />)</PGVRText>
+					</PGVRTextBox>
+					<PGVRTextBox width="100" height="12" border="0">
+						<PGVRText style="text"><PGVRGedcomValue tag="MARR:DATE" /></PGVRText>
+					</PGVRTextBox>
+					<PGVRTextBox width="220" height="12" border="0">
+						<PGVRText style="text"><PGVRGedcomValue tag="MARR:PLAC" /></PGVRText>
+					</PGVRTextBox>
+					<PGVRTextBox width="5" height="12" border="0">
+						<PGVRText style="text"> </PGVRText>
+					</PGVRTextBox>
+        			<PGVRTextBox width="220" height="12" border="0">        
+						<PGVRText style="text"><PGVRGedcomValue tag="MARR:@SOUR" /></PGVRText>
+						<PGVRGedcom id="MARR:@SOUR">
+							<PGVRText style="text"><PGVRGedcomValue tag="TITL" /></PGVRText>
+						</PGVRGedcom>
+					</PGVRTextBox>
+					<PGVRTextBox width="5" height="12" border="0" newline="1">
+						<PGVRText style="text"> </PGVRText>
+					</PGVRTextBox>
+				</PGVRif>
 			</PGVRList>
-			<PGVRCell width="0" height="12" border="0" align="right" style="label">
-				<br /><PGVRvar var="pgv_lang[total_fams]" />: <PGVRListTotal />
+			<PGVRCell width="0" height="24" border="0" align="right" style="label">
+				<PGVRvar var="pgv_lang[total_fams]" />: <PGVRvar var="printedFamilies" />
 			</PGVRCell>
 		</PGVRBody>
-		<PGVRFooter>
-			<PGVRCell width="0" height="10"><PGVRNow /></PGVRCell>
-		</PGVRFooter>
 	</PGVRDoc>
 </PGVReport>

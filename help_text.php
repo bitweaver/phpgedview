@@ -3,7 +3,7 @@
  * Shows helptext to the users
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,12 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.5 2007/05/28 11:25:04 lsces Exp $
+ * @version $Id: help_text.php,v 1.6 2008/07/07 18:01:11 lsces Exp $
  */
 
-// Initialization
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -39,19 +41,17 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require "config.php";
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
-require $helptextfile["english"];
-if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
-if (file_exists('modules/research_assistant/languages/ra_lang.en.php')) require 'modules/research_assistant/languages/ra_lang.en.php';
+
+loadLangFile("pgv_help, pgv_admin, pgv_editor, ra_lang, gm_lang, gm_help, sm_lang, sm_help");	// Load language keys
 
 if (!isset($help)) $help = "";
 
-require ("help_text_vars.php");
+require ("includes/help_text_vars.php");
 print_simple_header($pgv_lang["help_header"]);
 print "<a name=\"top\"></a><span class=\"helpheader\">".$pgv_lang["help_header"]."</span><br /><br />\n<div class=\"helptext\">\n";
 $actione = "";
 if (isset($action)) $actione = $action;
+if (($help == "help_useradmin.php")&& ($actione == "edituser")) $help = "edit_useradmin_help";
 if (($help == "help_login_register.php")&& ($actione == "pwlost")) $help = "help_login_lost_pw.php";
 if ($help == "help_contents_help") {
 	global $gBitUser;

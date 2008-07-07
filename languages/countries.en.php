@@ -39,10 +39,12 @@
  * @subpackage Languages
  * @version $Id$
  */
-if (preg_match("/lang\...\.php$/", $_SERVER["SCRIPT_NAME"])>0) {
-		print "You cannot access a language file directly.";
-		exit;
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
+	print "You cannot access a language file directly.";
+	exit;
 }
+
 $countries["ABW"]="Aruba";
 $countries["ACA"]="Acadia";
 $countries["AFG"]="Afghanistan";
@@ -124,12 +126,12 @@ $countries["ETH"]="Ethiopia";
 $countries["FIN"]="Finland";
 $countries["FJI"]="Fiji";
 $countries["FLD"]="Flanders";
-$countries["FLK"]="Falkland Islands (Malvinas)";
+$countries["FLK"]="Falkland Islands";
 $countries["FRA"]="France";
 $countries["FRO"]="Faeroe Islands";
-$countries["FSM"]="Micronesia (Federated States of)";
+$countries["FSM"]="Micronesia";
 $countries["GAB"]="Gabon";
-$countries["GBR"]="United Kingdom (of Great Britain and Northern Ireland)";
+$countries["GBR"]="United Kingdom";
 $countries["GEO"]="Georgia";
 $countries["GHA"]="Ghana";
 $countries["GIB"]="Gibraltar";
@@ -155,7 +157,7 @@ $countries["IDN"]="Indonesia";
 $countries["IND"]="India";
 $countries["IOT"]="British Indian Ocean Territory";
 $countries["IRL"]="Ireland";
-$countries["IRN"]="Iran (Islamic Republic of)";
+$countries["IRN"]="Iran";
 $countries["IRQ"]="Iraq";
 $countries["ISL"]="Iceland";
 $countries["ISR"]="Israel";
@@ -169,15 +171,15 @@ $countries["KGZ"]="Kyrgyzstan";
 $countries["KHM"]="Cambodia";
 $countries["KIR"]="Kiribati";
 $countries["KNA"]="Saint Kitts and Nevis";
-$countries["KOR"]="Korea (Republic of)";
+$countries["KOR"]="Korea";
 $countries["KWT"]="Kuwait";
-$countries["LAO"]="Lao People's Democratic Republic";
+$countries["LAO"]="Laos";
 $countries["LBN"]="Lebanon";
 $countries["LBR"]="Liberia";
-$countries["LBY"]="Libyan Arab Jamahiriya";
+$countries["LBY"]="Libya";
 $countries["LCA"]="Saint Lucia";
 $countries["LIE"]="Liechtenstein";
-$countries["LKA"]="Sri Lanka (Ceylon)";
+$countries["LKA"]="Sri Lanka";
 $countries["LSO"]="Lesotho";
 $countries["LTU"]="Lithuania";
 $countries["LUX"]="Luxembourg";
@@ -185,19 +187,19 @@ $countries["LVA"]="Latvia";
 $countries["MAC"]="Macau";
 $countries["MAR"]="Morocco";
 $countries["MCO"]="Monaco";
-$countries["MDA"]="Moldova (Republic of)";
+$countries["MDA"]="Moldova";
 $countries["MDG"]="Madagascar";
 $countries["MDV"]="Maldives";
 $countries["MEX"]="Mexico";
 $countries["MHL"]="Marshall Islands";
-$countries["MKD"]="Macedonia (The former Yugoslav Republic of)";
+$countries["MKD"]="Macedonia";
 $countries["MLI"]="Mali";
 $countries["MLT"]="Malta";
-$countries["MMR"]="Myanmar (Burma)";
+$countries["MMR"]="Myanmar";
 $countries["MNG"]="Mongolia";
 $countries["MNP"]="Northern Mariana Islands";
 $countries["MNT"]="Montenegro";
-$countries["MOZ"]="Moçambique";
+$countries["MOZ"]="Mozambique";
 $countries["MRT"]="Mauritania";
 $countries["MSR"]="Montserrat";
 $countries["MTQ"]="Martinique";
@@ -225,11 +227,11 @@ $countries["PAN"]="Panama";
 $countries["PCN"]="Pitcairn";
 $countries["PER"]="Peru";
 $countries["PHL"]="Philippines";
-$countries["PLW"]="Palau (Belau)";
+$countries["PLW"]="Palau";
 $countries["PNG"]="Papua New Guinea";
 $countries["POL"]="Poland";
 $countries["PRI"]="Puerto Rico";
-$countries["PRK"]="North Korea (Democratic People's Republic of Korea)";
+$countries["PRK"]="North Korea";
 $countries["PRT"]="Portugal";
 $countries["PRY"]="Paraguay";
 $countries["PSE"]="Occupied Palestinian Territory";
@@ -239,7 +241,7 @@ $countries["REU"]="Réunion";
 $countries["ROM"]="Romania";
 $countries["RUS"]="Russia";
 $countries["RWA"]="Rwanda";
-$countries["SAU"]="Saudi Arabia (Kingdom of)";
+$countries["SAU"]="Saudi Arabia";
 $countries["SCG"]="Serbia and Montenegro";
 $countries["SCT"]="Scotland";
 $countries["SDN"]="Sudan";
@@ -258,7 +260,7 @@ $countries["SMR"]="San Marino";
 $countries["SOM"]="Somalia";
 $countries["SPM"]="Saint Pierre and Miquelon";
 $countries["STP"]="São Tomé and Príncipe";
-$countries["SUN"]="U.S.S.R. (Soviet Union)";
+$countries["SUN"]="USSR";
 $countries["SUR"]="Suriname";
 $countries["SVK"]="Slovakia";
 $countries["SVN"]="Slovenia";
@@ -281,14 +283,14 @@ $countries["TUN"]="Tunisia";
 $countries["TUR"]="Turkey";
 $countries["TUV"]="Tuvalu";
 $countries["TWN"]="Taiwan";
-$countries["TZA"]="Tanzania (United Republic of)";
+$countries["TZA"]="Tanzania";
 $countries["UGA"]="Uganda";
 $countries["UKR"]="Ukraine";
 $countries["UMI"]="US Minor Outlying Islands";
 $countries["URY"]="Uruguay";
 $countries["USA"]="USA";
 $countries["UZB"]="Uzbekistan";
-$countries["VAT"]="Vatican City (Holy See)";
+$countries["VAT"]="Vatican City";
 $countries["VCT"]="Saint Vincent and the Grenadines";
 $countries["VEN"]="Venezuela";
 $countries["VGB"]="British Virgin Islands";
@@ -305,5 +307,41 @@ $countries["ZAF"]="South Africa";
 $countries["ZAR"]="Zaire";
 $countries["ZMB"]="Zambia";
 $countries["ZWE"]="Zimbabwe";
+$countries["???"]="Unknown";
+
+/*
+ * The following table lists alternate names for various Chapman codes.
+ * It will be used when country names have to be converted to Chapman codes.
+ * You do not have to list all the possibilities in all page languages.  This
+ * will be done automatically by the country-to-Chapman conversion routine.
+ *
+ * Because the list, and its contents, are specific to each language, the 
+ * Translator Tool won't let you work on the list directly.  The list will
+ * have to be updated and amended manually.
+ *
+ * Suppose Chapman code "XYZ" represents the same country, and that country 
+ * had the names "Name1", "Name2", "Name3" in its history.  It is now known
+ * as "Current name".  You can list the various names like this:
+ *
+ * $countries["XYZ"]="Current name";
+ * $altCountryName["XYZ"]="Name1; Name2; Name3";
+ *
+ * The Chapman-to-country conversion will always use the $countries list of
+ * the current page language, no matter what the original country name was.
+ * 
+ */
+$altCountryNames["COD"]="Zaire";
+$altCountryNames["DEU"]="East Germany; West Germany; GDR; FRG";
+$altCountryNames["FLK"]="Malvinas";
+$altCountryNames["GBR"]="Great Britain";
+$altCountryNames["LKA"]="Ceylon";
+$altCountryNames["MAC"]="Macao";
+$altCountryNames["MMR"]="Burma";
+$altCountryNames["NLD"]="Holland";
+$altCountryNames["PLW"]="Belau";
+$altCountryNames["SUN"]="Soviet Union";
+$altCountryNames["TLS"]="East Timor";
+$altCountryNames["VAT"]="Holy See";
+$altCountryNames["WSM"]="Western Samoa";
 
 ?>

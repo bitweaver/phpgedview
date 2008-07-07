@@ -34,12 +34,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.9 2008/06/25 22:21:15 spiderr Exp $
+ * $Id: indilist.php,v 1.10 2008/07/07 18:01:12 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
 
-// Initialization
+/**
+ * Initialization
+ */ 
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -143,6 +145,7 @@ if (count($indialpha) > 0) {
 
 $gBitSmarty->assign( "surname_sublist", $surname_sublist );
 //-- escaped letter for regular expressions
+if ( !isset($alpha) ) $alpha = '';
 $expalpha = $alpha;
 if ($expalpha=="(" || $expalpha=="[" || $expalpha=="?" || $expalpha=="/" || $expalpha=="*" 
 	|| $expalpha=="+" || $expalpha==')') $expalpha = "\\".$expalpha;
@@ -311,16 +314,16 @@ else {
 			if (!isset($value["name"])) break;
 			$person = Person::getInstance($value["gid"]);
 
+			$names["$key"]['name'] = $person->getName();
 			$names["$key"]['sex'] = $person->sex;
 			$names["$key"]['url'] = "individual.php?ged=".$GEDCOM."&amp;pid=".$value["gid"]."#content";
-			$names["$key"]['birthdate'] = $person->getSortableBirthDate();
+			$names["$key"]['birthdate'] = $person->getBirthDate()->Display();
 			$names["$key"]['birthplace'] = $person->getBirthPlace();
-			$names["$key"]['deathdate'] = $person->getSortableDeathDate();
-			$names["$key"]['dateurl'] = $person->getDateUrl($person->getBirthDate());
+			$names["$key"]['deathdate'] = $person->getDeathDate()->Display();
+			$names["$key"]['dateurl'] = $person->getBirthDate()->Display();
 			$names["$key"]['placeurl'] = $person->getPlaceUrl($names["$key"]['birthplace']);
 			$names["$key"]['noc'] = $person->getNumberOfChildren();
 		}
-
 		$gBitSmarty->assign_by_ref( "names", $names );
 	}
 }
@@ -339,5 +342,5 @@ if (isset($alpha)) {
 }
 else if (!isset($doctitle)) $doctitle = "Full Individual List";
 $gBitSmarty->assign( "pagetitle", $doctitle );
-$gBitSystem->display( 'bitpackage:phpgedview/indilist.tpl', tra( 'Individual selection list' ) , array( 'display_mode' => 'list' ));
+$gBitSystem->display( 'bitpackage:phpgedview/indilist.tpl', tra( 'Individual selection list' ) );
 ?>

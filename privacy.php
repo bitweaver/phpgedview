@@ -35,18 +35,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: privacy.php,v 1.2 2006/10/01 22:44:00 lsces Exp $
+ * $Id: privacy.php,v 1.3 2008/07/07 18:01:12 lsces Exp $
  * @package PhpGedView
  * @subpackage Privacy
  */
-if (preg_match("/\Wprivacy\.php$/", $_SERVER["SCRIPT_NAME"])>0) {
-	print "Now, why would you want to do that.  You're not hacking are you?";
+if (stristr($_SERVER["SCRIPT_NAME"], "/".basename(__FILE__))!==false) {
+	print "Naughty, Naughty, Naughty!";
 	exit;
 }
-if (preg_match("/_priv\.php$/", $_SERVER["SCRIPT_NAME"])>0) {
-	print "Now, why would you want to do that.  You're not hacking are you?";
-	exit;
-}
+
+global $PRIV_HIDE, $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE;
 
 /**
  * Privacy file version number
@@ -57,38 +55,6 @@ if (preg_match("/_priv\.php$/", $_SERVER["SCRIPT_NAME"])>0) {
  * @global string $PRIVACY_VERSION
  */
 $PRIVACY_VERSION = "3.2";
-
-/**
- * Hide option from all users
- *
- * Global constant privacy level to hide the item to all users including the admin
- * @global integer $PRIV_HIDE
- */
-$PRIV_HIDE = -1;
-/**
- * Accessible by public
- *
- * Global constant privacy level that allows non-authenticated public visitors to view the marked
- * information.
- * @global integer $PRIV_PUBLIC
- */
-$PRIV_PUBLIC = 2;
-/**
- * accessible only by authenticated users
- *
- * Global constant privacy level that only allows authenticated users to access the marked 
- * information.
- * @global integer $PRIV_USER
- */
-$PRIV_USER = 1;
-/**
- * accessible only by admin users - Only works with <var>$global_facts</var>
- *
- * Global constant privacy level that only allows admin users to access the marked 
- * information.
- * @global integer $PRIV_NONE
- */
-$PRIV_NONE = 0;
 
 /**
  * Set the access level for dead people

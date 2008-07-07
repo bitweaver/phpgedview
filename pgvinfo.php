@@ -5,7 +5,7 @@
  * Provides links for administrators to get to other administrative areas of the site
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
-	$Id: pgvinfo.php,v 1.3 2006/10/28 21:02:08 lsces Exp $
+	$Id: pgvinfo.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
  */
 
 /**
@@ -43,6 +43,7 @@ exit;
 
 require  $confighelpfile["english"];
 if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
+if (isset($_REQUEST['action'])) $action = $_REQUEST['action'];
 
 if (!isset($action)) $action = "";
 

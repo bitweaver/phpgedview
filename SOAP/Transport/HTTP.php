@@ -15,6 +15,7 @@
  * @package    SOAP
  * @author     Shane Caraveo <Shane@Caraveo.com>
  * @copyright  2003-2005 The PHP Group
+ * @version $Id $
  * @license    http://www.php.net/license/2_02.txt  PHP License 2.02
  * @link       http://pear.php.net/package/SOAP
  */
@@ -514,7 +515,8 @@ class SOAP_Transport_HTTP extends SOAP_Base
         }
         if ($this->timeout > 0) {
             // some builds of PHP do not support this, silence the warning
-            @socket_set_timeout($fp, $this->timeout);
+            $temp = @socket_set_timeout($fp, $this->timeout);
+            if (!$temp) print "Unable to set timeout";
         }
         if (!fputs($fp, $this->outgoing_payload, strlen($this->outgoing_payload))) {
             return $this->_raiseSoapFault("Error POSTing Data to $host");
@@ -523,14 +525,14 @@ class SOAP_Transport_HTTP extends SOAP_Base
         // get reponse
         // XXX time consumer
         do {
-            $data = fread($fp, 4096);
+            $data = fread($fp, 8096);
             $_tmp_status = socket_get_status($fp);
-            if ($_tmp_status['timed_out']) {
+            if ($_tmp_status['timed_out'] && !empty($data)) {
                 return $this->_raiseSoapFault("Timed out read from $host");
             } else {
                 $this->incoming_payload .= $data;
             }
-        } while (!$_tmp_status['eof']);
+        } while (!$_tmp_status['eof'] && !feof($fp) && !$_tmp_status['timed_out']);
 
         fclose($fp);
 

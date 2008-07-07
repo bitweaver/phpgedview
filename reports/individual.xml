@@ -1,4 +1,4 @@
-<PGVReport access="PGV_PUBLIC" icon="indis">
+<PGVReport access="PRIV_PUBLIC" icon="indis">
 	<!-- $Id$ -->
 	<PGVRTitle><PGVRvar var="pgv_lang[individual_report]" /></PGVRTitle>
 	<PGVRDescription>Prints an individual record report</PGVRDescription>
@@ -7,14 +7,14 @@
 	<PGVRInput name="notes" type="checkbox" default="1"><PGVRvar var="pgv_lang[show_notes]" /></PGVRInput>
 	<PGVRInput name="photos" type="checkbox" default="0"><PGVRvar var="pgv_lang[show_photos]" /></PGVRInput>
 	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="18" style="" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="label1" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="name" font="LucidaSansUnicode" size="10" style="" />
-	<PGVRStyle name="name1" font="LucidaSansUnicode" size="14" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="footnote" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="footnotenum" font="LucidaSansUnicode" size="6" style="" />
+	<PGVRStyle name="header" font="dejavusans" size="18" style="" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="label1" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="name" font="dejavusans" size="10" style="" />
+	<PGVRStyle name="name1" font="dejavusans" size="14" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="footnote" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="footnotenum" font="dejavusans" size="6" style="" />
 	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
 		<PGVRSetVar name="ignore" value="CHAN,NAME,SEX,SOUR,NOTE,OBJE,FAMC,FAMS,TITL,CHIL,HUSB,WIFE,_UID" />
 		<!-- set the default widths -->
@@ -22,7 +22,7 @@
 		<PGVRSetVar name="width1" value="0" />
 		<PGVRSetVar name="width2" value="0" />
 		<PGVRSetVar name="dwidth" value="200" />
-		<PGVRSetVar name="pwidth" value="510" />
+		<PGVRSetVar name="pwidth" value="505" />
 		<!-- change the widths for pictures -->
 		<PGVRif condition="$photos==1">
 			<PGVRSetVar name="width" value="470" />
@@ -64,7 +64,7 @@
 				</PGVRif>
 
 				<!-- print the person's facts -->
-				<PGVRTextBox border="1" left="24" width="$width" height="16" top="70" newline="1" fill="#DDDDDD">
+				<PGVRTextBox border="1" width="$width" height="16" newline="1" fill="#DDDDDD">
 					<PGVRText style="label1"><PGVRvar var="pgv_lang[personal_facts]" />   </PGVRText>
 				</PGVRTextBox>
 				<PGVRFacts ignore="$ignore" families="1">
@@ -94,7 +94,7 @@
 									<PGVRText style="pagenum">  <PGVRvar var="pgv_lang[husband]" /></PGVRText>
 								</PGVRif>
 								<PGVRif condition="@SEX=='F'">
-									<PGVRText style="pagenum">  <PGVRvar var="pgv_lang[wife]" /></PGVRText>
+									<PGVRText style="pagenum"> <PGVRvar var="pgv_lang[wife]" /></PGVRText>
 								</PGVRif>
 								<PGVRText style="text"> <PGVRGetPersonName id="" /></PGVRText>
 							</PGVRGedcom>
@@ -103,7 +103,9 @@
 					<!-- facts without descriptions -->
 					<PGVRif condition="@desc==''">
 						<PGVRTextBox border="1" width="$width2" height="16" newline="1">
-							<PGVRText style="pagenum"><PGVRvar var="factarray[PLAC]" />   </PGVRText>
+							<PGVRif condition="@PLAC!=''">
+								<PGVRText style="pagenum"><PGVRvar var="factarray[PLAC]" />   </PGVRText>
+							</PGVRif>
 							<PGVRText style="text"><PGVRGedcomValue tag="@fact:PLAC" /></PGVRText>
 							<PGVRText style="text"><PGVRGedcomValue tag="@fact:TEMP" /></PGVRText>
 							<PGVRGedcom id="@_PGVS">
@@ -111,7 +113,7 @@
 									<PGVRText style="pagenum">  <PGVRvar var="pgv_lang[husband]" /></PGVRText>
 								</PGVRif>
 								<PGVRif condition="@SEX=='F'">
-									<PGVRText style="pagenum">  <PGVRvar var="pgv_lang[wife]" /></PGVRText>
+									<PGVRText style="pagenum"> <PGVRvar var="pgv_lang[wife]" /></PGVRText>
 								</PGVRif>
 								<PGVRText style="text"> <PGVRGetPersonName id="" /></PGVRText>
 							</PGVRGedcom>
@@ -239,7 +241,7 @@
 								</PGVRTextBox>
 							</PGVRPageHeader>
 							<PGVRTextBox border="0" width="15" height="16" newline="1" />
-							<PGVRTextBox border="1" width="$widt1" height="16" newline="1" fill="#DDDDDD">
+							<PGVRTextBox border="1" width="$width" height="16" newline="1" fill="#DDDDDD">
 								<PGVRText style="label1"><PGVRvar var="pgv_lang[family_with]" /> <PGVRvar var="pgv_lang[husband]" /></PGVRText>
 							</PGVRTextBox>
 							<PGVRSetVar name="spid" value="@HUSB" />
@@ -312,7 +314,7 @@
 						<PGVRText style="label1"><br /><PGVRvar var="pgv_lang[sources]" /><br /><br /></PGVRText>
 					</PGVRTextBox>
 				</PGVRPageHeader>
-				<PGVRTextBox border="0" width="$width" height="20">
+				<PGVRTextBox border="0" width="$width" height="20" newline="1">
 					<PGVRText style="label1"><br /><PGVRvar var="pgv_lang[sources]" /><br /><br /></PGVRText>
 					<PGVRFootnoteTexts />
 				</PGVRTextBox>

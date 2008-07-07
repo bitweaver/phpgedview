@@ -28,6 +28,9 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
+/**
+ * Initialization
+ */
 require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/person_class.php');
 
@@ -37,6 +40,7 @@ require_once(PHPGEDVIEW_PKG_PATH.'includes/person_class.php');
 class PedigreeControllerRoot extends BaseController {
 	var $log2;
 	var $show_famlink = true;
+	var $rootid;
 	var $rootPerson;
 	var $show_full;
 	var $talloffset;
@@ -64,34 +68,32 @@ class PedigreeControllerRoot extends BaseController {
 	/**
 	 * Initialization function
 	 */
-	function init( $gGedcom ) {
-		global $gBitSystem;
-		
-		$bwidth = 225;		// -- width of boxes on pedigree chart
-		$bheight = 80;		// -- height of boxes on pedigree chart
-		$baseyoffset = 10;	// -- position the entire pedigree tree relative to the top of the page
-		$basexoffset = 10;	// -- position the entire pedigree tree relative to the left of the page
-		$bxspacing = 0;		// -- horizontal spacing between boxes on the pedigree chart
-		$byspacing = 2;		// -- vertical spacing between boxes on the pedigree chart
+	function init() {
+		global $PEDIGREE_FULL_DETAILS, $PEDIGREE_LAYOUT, $MAX_PEDIGREE_GENERATIONS;
+		global $DEFAULT_PEDIGREE_GENERATIONS, $SHOW_EMPTY_BOXES;
+		global $bwidth, $bheight, $baseyoffset, $basexoffset, $byspacing, $bxspacing;
+		global $TEXT_DIRECTION, $BROWSER_TYPE, $show_full, $talloffset;
 		
 		$this->log2 = log(2);
 		if ($this->isPrintPreview()) {
 			$this->show_famlink = false;
 		}
 		
-		if (!isset($_REQUEST['show_full'])) $this->show_full = $gBitSystem->getConfig('pgv_pedigree_full_details', 1);
+		if (!isset($_REQUEST['show_full'])) $this->show_full=$PEDIGREE_FULL_DETAILS;
 		else $this->show_full = $_REQUEST['show_full'];
 		if ($this->show_full=="") $this->show_full = 0;
+		$show_full = $this->show_full;
 		
-		if (!isset($_REQUEST['talloffset'])) $this->talloffset = (int)$gBitSystem->getConfig('pgv_pedigree_layout', 0);
+		if (!isset($_REQUEST['talloffset'])) $this->talloffset = (int)$PEDIGREE_LAYOUT;
 		else $this->talloffset = $_REQUEST['talloffset'];
 		if ($this->talloffset=="") $this->talloffset = 0;
+		$talloffset = $this->talloffset;
 		
-		if (empty($_REQUEST['PEDIGREE_GENERATIONS'])) $this->PEDIGREE_GENERATIONS = 4; //$gBitSystem->getConfig('pgv_default_pedigree_generations', 4);
+		if (empty($_REQUEST['PEDIGREE_GENERATIONS'])) $this->PEDIGREE_GENERATIONS=$DEFAULT_PEDIGREE_GENERATIONS;
 		else $this->PEDIGREE_GENERATIONS=$_REQUEST['PEDIGREE_GENERATIONS'];
 		
-		if ($this->PEDIGREE_GENERATIONS > $gBitSystem->getConfig('pgv_max_pedigree_generations', 10) ) {
-			$this->PEDIGREE_GENERATIONS = $gBitSystem->getConfig('pgv_max_pedigree_generations', 10);
+		if ($this->PEDIGREE_GENERATIONS > $MAX_PEDIGREE_GENERATIONS) {
+			$this->PEDIGREE_GENERATIONS = $MAX_PEDIGREE_GENERATIONS;
 			$this->max_generation = TRUE;
 		}
 		
@@ -101,14 +103,20 @@ class PedigreeControllerRoot extends BaseController {
 		}
 		$this->OLD_PGENS = $this->PEDIGREE_GENERATIONS;
 		
-		$this->rootPerson = $gGedcom->mRootPerson;
-
+		if (!isset($_REQUEST['rootid'])) $this->rootid="";
+		else $this->rootid = $_REQUEST['rootid'];
+		$this->rootid = clean_input($this->rootid);
+		$this->rootid = check_rootid($this->rootid);
+		
+		$this->rootPerson = Person::getInstance($this->rootid);
+		if (is_null($this->rootPerson)) $this->rootPerson = new Person('');
+				
 		//-- adjustments for hide details
-//		if ($this->show_full==false) {
-//			$bheight=30;
-//			$bwidth-=30;
-//			$baseyoffset+=30;
-//		}
+		if ($this->show_full==false) {
+			$bheight=30;
+			$bwidth-=30;
+			$baseyoffset+=30;
+		}
 		//-- adjustments for portrait mode
 		if ($this->talloffset==0) {
 			$bxspacing+=12;
@@ -119,14 +127,13 @@ class PedigreeControllerRoot extends BaseController {
 		if ($this->isPrintPreview()) {
 			$baseyoffset -= 20;
 		}
-
+		
 		$this->pbwidth = $bwidth+6;
 		$this->pbheight = $bheight+5;
-		$this->treeid = $gGedcom->pedigreeArray();
-
-		$this->PEDIGREE_GENERATIONS = $gGedcom->PedigreeGenerations;
+		
+		$this->treeid = pedigree_array($this->rootid);
 		$this->treesize = pow(2, (int)($this->PEDIGREE_GENERATIONS))-1;
-
+		
 		if (($this->PEDIGREE_GENERATIONS < 5)&&($this->show_full==false)) {
 			$baseyoffset+=($this->PEDIGREE_GENERATIONS*$this->pbheight/2)+50;
 			if ($this->isPrintPreview()) $baseyoffset-=120;
@@ -136,7 +143,7 @@ class PedigreeControllerRoot extends BaseController {
 			$baseyoffset+=$this->pbheight*1.6;
 		}
 		if (($this->max_generation == TRUE)||($this->min_generation == TRUE)) $baseyoffset+=20;
-
+		
 		// -- this next section will create and position the DIV layers for the pedigree tree
 		$this->curgen = 1;			// -- variable to track which generation the algorithm is currently working on
 		$this->yoffset=0;				// -- used to offset the position of each box as it is generated
@@ -161,14 +168,14 @@ class PedigreeControllerRoot extends BaseController {
 			$this->yoffset = $baseyoffset+($boxpos * ($boxspacing * $genoffset))+(($boxspacing/2)*$genoffset)+($boxspacing * $genoffset);
 			if ($this->talloffset==0) {
 				//-- compact the tree
-				if ( $this->curgen < $this->PEDIGREE_GENERATIONS ) {
+				if ($this->curgen<$this->PEDIGREE_GENERATIONS) {
 					$parent = floor(($i-1)/2);
 					if ($i%2 == 0) $this->yoffset=$this->yoffset - (($boxspacing/2) * ($this->curgen-1));
 					else $this->yoffset=$this->yoffset + (($boxspacing/2) * ($this->curgen-1));
 		
 					$pgen = $this->curgen;
 					while($parent>0) {
-						if ($parent%2 == 0) $this->yoffset = $this->yoffset - (($boxspacing/2) * $pgen);
+						if ($parent%2 == 0) $this->yoffset=$this->yoffset - (($boxspacing/2) * $pgen);
 						else $this->yoffset=$this->yoffset + (($boxspacing/2) * $pgen);
 						$pgen++;
 						if ($pgen>3) {
@@ -199,17 +206,17 @@ class PedigreeControllerRoot extends BaseController {
 			if ($this->curgen == 1 && $this->talloffset) $this->xoffset += 10;
 			$this->offsetarray[$i]["x"]=$this->xoffset;
 			$this->offsetarray[$i]["y"]=$this->yoffset;
-			$this->offsetarray[$i]["g"]= $this->PEDIGREE_GENERATIONS-$this->curgen;
 		}
+		
 		//-- collapse the tree if boxes are missing
-		if ($gBitSystem->getConfig('pgv_show_empty_boxes', 'y') == 'n') {
+		if (!$SHOW_EMPTY_BOXES) {
 			if ($this->PEDIGREE_GENERATIONS>1) $this->collapse_tree(0, 1, 0);
 		}
 		
 		//-- calculate the smallest yoffset and adjust the tree to that offset
 		$minyoffset = 0;
 		for($i=0; $i<count($this->treeid); $i++) {
-			if ( $gBitSystem->getConfig('pgv_show_empty_boxes', 'y') == 'y' || !empty($treeid[$i])) {
+			if ($SHOW_EMPTY_BOXES || !empty($treeid[$i])) {
 				if (!empty($offsetarray[$i])) {
 					if (($minyoffset==0)||($minyoffset>$this->offsetarray[$i]["y"]))  $minyoffset = $this->offsetarray[$i]["y"];
 				}
@@ -309,4 +316,5 @@ else
 }
 
 $controller = new PedigreeController();
+$controller->init();
 ?>

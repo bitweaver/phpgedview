@@ -3,7 +3,7 @@
  * Displays a fan chart
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2006  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * This Page Is Valid XHTML 1.0 Transitional! > 23 August 2005
- *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: fanchart.php,v 1.3 2006/10/02 22:47:24 lsces Exp $
+ * @version $Id: fanchart.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
  */
-// Initialization
+
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -141,7 +142,7 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 	print "\r\n-->";
 	if (!file_exists($fontfile)) {
 		if (!empty($fontfile)) print "<span class=\"error\">".$pgv_lang["fontfile_error"]." : $fontfile</span>";
-		$fontfile="./fonts/LucidaSansRegular.ttf";
+		$fontfile="./includes/fonts/DejaVuSans.ttf";
 	}
 	print "\r\n<!-- trace start\r\n font-family\t=\t$fontfile\r\n-->";
 	if ($fontfile{0}!='/') $fontfile = dirname(__FILE__) . "/" . $fontfile;
@@ -230,7 +231,7 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 			$pid=$treeid[$sosa];
 			if (!empty($pid)) {
 				$indirec=find_person_record($pid);
-				if (!$indirec) $indirec = find_record_in_file($pid);
+				if (!$indirec) $indirec = find_updated_record($pid);
 
 				if ($sosa%2) $bg=$bgcolorF;
 				else $bg=$bgcolorM;
@@ -248,7 +249,8 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 					$name = get_person_name($pid);
 					$addname = get_add_person_name($pid);
 				}
-				$text = ltr_string($name) . "\r\n" . ltr_string($addname). "\r\n";
+				$text = ltr_string($name) . "\r\n";
+				if (!empty($addname)) $text .= ltr_string($addname). "\r\n";
 				if (displayDetailsByID($pid)) {
 					$birthrec = get_sub_record(1, "1 BIRT", $indirec);
 					$ct = preg_match("/2 DATE.*(\d\d\d\d)/", $birthrec, $match);
@@ -332,7 +334,9 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 				print "</a>\n";
 				print "<br /><a href=\"pedigree.php?rootid=$pid\" >".$pgv_lang["index_header"]."</a>\n";
 				print "<br /><a href=\"descendancy.php?pid=$pid\" >".$pgv_lang["descend_chart"]."</a>\n";
-				if ($reltome)  print "<br /><a href=\"relationship.php?pid1=".$tuser["gedcomid"][$GEDCOM]."&amp;pid2=".$pid."&amp;ged=$GEDCOM\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["relationship_to_me"]."</a>\n";
+				if (PGV_USER_GEDCOM_ID) {
+					print "<br /><a href=\"relationship.php?pid1=".PGV_USER_GEDCOM_ID."&amp;pid2=".$pid."&amp;ged=$GEDCOM\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["relationship_to_me"]."</a>\n";
+				}
 				print "<br /><a href=\"ancestry.php?rootid=$pid\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["ancestry_chart"]."</a>\n";
 				print "<br /><a href=\"compact.php?rootid=$pid\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["compact_chart"]."</a>\n";
 				print "<br /><a href=\"fanchart.php?rootid=$pid&amp;PEDIGREE_GENERATIONS=$PEDIGREE_GENERATIONS&amp;fan_width=$fan_width&amp;fan_style=$fan_style\" onmouseover=\"clear_family_box_timeout('".$pid.".".$count."');\" onmouseout=\"family_box_timeout('".$pid.".".$count."');\">".$pgv_lang["fan_chart"]."</a>\n";
@@ -428,7 +432,8 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 
 	// step 2. call imageflush.php to read this session variable and display image
 	// note: arg "image_name=" is to avoid image miscaching
-	$image_name=time();
+	$image_name= "V".time();
+	unset($_SESSION[$image_name]);		// statisticsplot.php uses this to hold a file name to send to browser
 	$image_title=preg_replace("~<.*>~", "", $name) . " " . $pgv_lang["fan_chart"];
 	echo "\r\n<p align=\"center\" >";
 	echo "<img src=\"imageflush.php?image_type=png&amp;image_name=$image_name\" width=\"$fanw\" height=\"$fanh\" border=\"0\" alt=\"$image_title\" title=\"$image_title\" usemap=\"#fanmap\" />";
@@ -437,9 +442,11 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 }
 
 // -- args
-if (!isset($fan_style)) $fan_style = 0;
+if (isset($_REQUEST['fan_style'])) $fan_style = $_REQUEST['fan_style'];
+if (empty($fan_style)) $fan_style = 0;
 if ($fan_style==0) $fan_style = 3;
-if ((!isset($PEDIGREE_GENERATIONS)) || ($PEDIGREE_GENERATIONS == "")) $PEDIGREE_GENERATIONS = $DEFAULT_PEDIGREE_GENERATIONS;
+if (empty($_REQUEST['PEDIGREE_GENERATIONS'])) $PEDIGREE_GENERATIONS = $DEFAULT_PEDIGREE_GENERATIONS;
+else $PEDIGREE_GENERATIONS = $_REQUEST['PEDIGREE_GENERATIONS'];
 
 if ($PEDIGREE_GENERATIONS > $MAX_PEDIGREE_GENERATIONS) {
 	$PEDIGREE_GENERATIONS = $MAX_PEDIGREE_GENERATIONS;
@@ -453,12 +460,14 @@ if ($PEDIGREE_GENERATIONS < $MIN_FANCHART_GENERATIONS) {
 }
 $OLD_PGENS = $PEDIGREE_GENERATIONS;
 
-if (!isset($rootid)) $rootid = "";
+$rootid = "";
+if (!empty($_REQUEST['rootid'])) $rootid = $_REQUEST['rootid'];
 $rootid = clean_input($rootid);
 $rootid = check_rootid($rootid);
 
 // -- size of the chart
-if (!isset($fan_width)) $fan_width = "100";
+$fan_width = "100";
+if (!empty($_REQUEST['fan_width'])) $fan_width = $_REQUEST['fan_width'];
 $fan_width=max($fan_width, 50);
 $fan_width=min($fan_width, 300);
 
@@ -474,8 +483,8 @@ else {
 print_header(PrintReady($name) . " " . $pgv_lang["fan_chart"]);
 if (strlen($name)<30) $cellwidth="420";
 else $cellwidth=(strlen($name)*14);
-print "\n\t<table class=\"list_table $TEXT_DIRECTION\"><tr><td width=\"${cellwidth}px\" valign=\"top\">\n\t\t";
-if ($view == "preview") print "<h2>" . str_replace("#PEDIGREE_GENERATIONS#", convert_number($PEDIGREE_GENERATIONS), $pgv_lang["gen_fan_chart"]) . ":";
+print "\n\t<table class=\"list_table $TEXT_DIRECTION\"><tr><td width=\"".$cellwidth."px\" valign=\"top\">\n\t\t";
+if ($view == "preview") print "<h2>" . str_replace("#PEDIGREE_GENERATIONS#", $PEDIGREE_GENERATIONS, $pgv_lang["gen_fan_chart"]) . ":";
 else print "<h2>" . $pgv_lang["fan_chart"] . ":";
 print "<br />".PrintReady($name);
 if ($addname != "") print "<br />" . PrintReady($addname);
@@ -493,7 +502,7 @@ if ($view != "preview") {
 	//-->
 	</script>
 	<?php
-	if (isset($max_generation) == true) print "<span class=\"error\">" . str_replace("#PEDIGREE_GENERATIONS#", convert_number($PEDIGREE_GENERATIONS), $pgv_lang["max_generation"]) . "</span>";
+	if (isset($max_generation) == true) print "<span class=\"error\">" . str_replace("#PEDIGREE_GENERATIONS#", $PEDIGREE_GENERATIONS, $pgv_lang["max_generation"]) . "</span>";
 	if (isset($min_generation) == true) print "<span class=\"error\">" . $pgv_lang["min_generation"] . "</span>";
 	print "\n\t</td><td><form name=\"people\" method=\"get\" action=\"?\">";
 	print "\n\t\t<table class=\"list_table $TEXT_DIRECTION\">\n\t\t<tr>";

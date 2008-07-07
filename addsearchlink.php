@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: addsearchlink.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: addsearchlink.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
  */
 
 require ("config.php");
@@ -35,6 +35,10 @@ if (!$gGedcom->isEditable()) {
 	print_simple_footer();
 	exit;
 }
+
+if (isset($_REQUEST['pid'])) $pid = $_REQUEST['pid'];
+if (isset($_REQUEST['server'])) $server = $_REQUEST['server'];
+if (isset($_REQUEST['indiName'])) $indiName = $_REQUEST['indiName']; 
 
 //To use addsearchlink you should have come from a multisearch result link
 if(isset($pid) && isset($server) && isset($indiName))

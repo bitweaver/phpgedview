@@ -23,9 +23,12 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: print.css,v 1.6.2.5 2006/03/23 21:48:26 kosherjava Exp $
+ * @version $Id: print.css 612 2006-11-19 23:26:14Z kosherjava $
  */
 
+#backprint {
+	display:none;
+}
 /*-- pedigree chart specific stylesheets --*/
 #pedigree_chart {
 	position: absolute;
@@ -64,4 +67,20 @@
 }
 
 #header, #footer, .noprint {display:none !important;}
-form {display: none;}
+form, button, input {display: none;} /* buttons and input are used out of forms in sortable tables*/
+
+.lifespan_outer {
+	position: relative; 
+	width: auto;
+	height: auto; 
+	overflow: visible; 
+	border: none;
+}
+
+.lifespan_people {
+	position: absolute; 
+	width: auto; 
+	left: -10px; 
+	top: -60px; 
+	z-index:1;
+}

@@ -1,4 +1,4 @@
-<PGVReport access="PGV_PUBLIC" icon="cfamily">
+<PGVReport access="PRIV_PUBLIC" icon="cfamily">
 <!-- $Id$ -->
 	<PGVRTitle><PGVRvar var="pgv_lang[relatives_report_ext]" /></PGVRTitle>
 	<PGVRDescription>Prints a list of individuals related to a specific person</PGVRDescription>
@@ -6,13 +6,13 @@
 	<PGVRInput name="relatives" type="select" options="child-family,spouse-family,direct-ancestors,ancestors,descendants,all"><PGVRvar var="pgv_lang[choose_relatives]" /></PGVRInput>
 	<PGVRInput name="sortby" type="select" options="none,BIRT,DEAT,NAME"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
 	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="14" style="b" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="10" style="" />
-	<PGVRStyle name="bold" font="LucidaSansUnicode" size="10" style="b" />
-	<PGVRStyle name="mini" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="minibold" font="LucidaSansUnicode" size="8" style="b" />
-	<PGVRStyle name="label" font="LucidaSansUnicode" size="10" style="b" />
+	<PGVRStyle name="header" font="dejavusans" size="14" style="b" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="10" style="" />
+	<PGVRStyle name="bold" font="dejavusans" size="10" style="b" />
+	<PGVRStyle name="mini" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="minibold" font="dejavusans" size="8" style="b" />
+	<PGVRStyle name="label" font="dejavusans" size="10" style="b" />
 	<PGVRDoc pageSize="$pageSize" orientation="L" margin="24">
         <PGVRSetVar name="height1" value="10" />
         <PGVRSetVar name="height2" value="10" />

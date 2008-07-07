@@ -5,7 +5,7 @@
  * Set the root person using the $pid variable
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,43 +25,44 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: hourglass.php,v 1.2 2006/10/01 22:44:01 lsces Exp $
+ * @version $Id: hourglass.php,v 1.3 2008/07/07 18:01:13 lsces Exp $
  */
 require_once("includes/controllers/hourglass_ctrl.php");
+if (isset($_REQUEST['show_full'])) $show_full = $_REQUEST['show_full'];
+$controller->init();
 
 // -- print html header information
-print_header(PrintReady($controller->name)." ".$pgv_lang["hourglass_chart"]);?>
-<!-- // NOTE: Start table header -->
-<table width="100%" class="list_table <?php print $TEXT_DIRECTION?>"><tr><td valign="top">
-<?php if ($controller->view!="preview") print "\n\t<h2>".$pgv_lang["hourglass_chart"].":<br />".PrintReady($controller->name)."</h2>";
-else print "\n\t<h2 style=\"text-align: center\">".$pgv_lang["hourglass_chart"].":<br />".PrintReady($controller->name)."</h2>";
-?>
+print_header(PrintReady($controller->name)." ".$pgv_lang["hourglass_chart"]);
+if ($controller->view=="preview") {
+	print "<h2 style=\"text-align: center\">".$pgv_lang["hourglass_chart"].":&nbsp;&nbsp;&nbsp;".PrintReady($controller->name)."</h2>";
+} else { 
+	print "<!-- // NOTE: Start table header -->";
+	print "<table><tr><td valign=\"top\">";
+	print "<h2>".$pgv_lang["hourglass_chart"].":<br />".PrintReady($controller->name)."</h2>";
+}
+	
+$controller->setupJavascript();
 
-<script language="JavaScript" type="text/javascript">
-<!--
-	var pastefield;
-	function paste_id(value) {
-		pastefield.value=value;
-	}
-//-->
-</script>
+// LBox =====================================================================================
+if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+	include('modules/lightbox/lb_config.php');
+	include('modules/lightbox/functions/lb_call_js.php');
+}	
+// ==========================================================================================
 
-<?php
 $gencount=0;
 if ($view!="preview") {
 ?>
 <!--	// NOTE: Start form and table -->
-	</td><td><form method="get" name="people" action="?">
+	</td><td width="50px">&nbsp;</td><td><form method="get" name="people" action="?">
 	<input type="hidden" name="show_full" value="<?php print $controller->show_full ?>" />
-	<table class="list_table <?php print $TEXT_DIRECTION ?>"><tr>
+	<table><tr>
 	
 		<!-- // NOTE: Root ID -->
-
 	<td class="descriptionbox">
 	<?php print_help_link("desc_rootid_help", "qm");	
 	print $pgv_lang["root_person"] . "</td>";?>
 	<td class="optionbox">
-	
 	<input class="pedigree_form" type="text" name="pid" id="pid" size="3" value="<?php print $controller->pid ?>"	/>
 	<?php print_findindi_link("pid","");?>
 	</td>
@@ -91,13 +92,14 @@ if ($view!="preview") {
 	<select name="generations">
 	<?php
 	for ($i=2; $i<=$MAX_DESCENDANCY_GENERATIONS; $i++) {
-	print "<option value=\"".$i."\"" ;
-	if ($i == $controller->generations) print "selected=\"selected\" ";
+		print "<option value=\"".$i."\"" ;
+		if ($i == $controller->generations) print "selected=\"selected\" ";
 		print ">".$i."</option>";
 	}
 	?>
 	</select>
 	</td>
+
 	<!-- // NOTE: Show spouses -->
 	<td class="descriptionbox">
 	<?php print_help_link("show_spouse_help", "qm");
@@ -114,29 +116,39 @@ if ($view!="preview") {
 	<?php print_help_link("box_width_help", "qm");
 	print $pgv_lang["box_width"]?>
 	</td>
-<td class="optionbox"><input type="text" size="3" name="box_width" value="<?php print $controller->box_width ?>" />
+	<td class="optionbox"><input type="text" size="3" name="box_width" value="<?php print $controller->box_width;?>" />
 	<b>%</b>
-	</td><td class="descriptionbox">&nbsp;</td><td class="optionbox">&nbsp;</td></tr>
+	</td>
+	
+	<!-- // NOTE: Empty field -->
+	<td class="descriptionbox">&nbsp;</td><td class="optionbox">&nbsp;</td></tr>
 	
 	<!-- // NOTE: End table and form -->
 	</table></form>
-<?php } ?>
-	<!-- // NOTE: Close table header -->
-</td></tr></table>
 
+	<!-- // NOTE: Close table header -->
+	</td></tr></table>
+<?php } ?>
+<div id="hourglass_chart<?php if ($TEXT_DIRECTION=="rtl") print "_rtl"; ?>" <?php if ($controller->isPrintPreview()) print " style=\"top: 1px;\""; else print "style=\"width:98%; direction:".$TEXT_DIRECTION."; z-index:1;\""; ?> >
 <table cellspacing="0" cellpadding="0" border="0"><tr>
 <!-- // descendancy -->
 <td valign="middle">
 <?php
-$controller->print_descendency($controller->pid, 0);?>
+$controller->print_descendency($controller->pid, 1);?>
 </td>
 <!-- // pedigree -->
 <td valign="middle">
 <?php
-$controller->print_person_pedigree($controller->pid, 0);?>
+$controller->print_person_pedigree($controller->pid, 1);?>
 </td>
 </tr></table>
+</div>
 <br /><br />
+<script type="text/javascript">
+<!--
+sizeLines();
+//-->
+</script>
 <?php
 print_footer();
 ?>

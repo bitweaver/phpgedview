@@ -19,12 +19,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: gedrecord.php,v 1.3 2006/10/04 12:07:54 lsces Exp $
+ * @version $Id: gedrecord.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
 
-// Initialization
+/**
+ * Initialization
+ */
 require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
@@ -38,6 +40,10 @@ $gGedcom = new BitGEDCOM();
 require("config.php");
 require_once("includes/gedcomrecord.php");
 header("Content-Type: text/html; charset=$CHARACTER_SET");
+
+if (isset($_REQUEST['pid'])) $pid = $_REQUEST['pid'];
+if (!isset($pid)) $pid = "";
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html  xmlns="http://www.w3.org/1999/xhtml">
@@ -47,12 +53,9 @@ header("Content-Type: text/html; charset=$CHARACTER_SET");
 	</head>
 	<body><?php
 
-if (!isset($pid)) $pid = "";
 $pid = clean_input($pid);
 
-$username = GetUserName();
-
-if ((!$SHOW_GEDCOM_RECORD) && (!UserCanAccept($username))) {
+if (!$SHOW_GEDCOM_RECORD && !PGV_USER_CAN_ACCEPT) {
 	print "<span class=\"error\">".$pgv_lang["ged_noshow"]."</span>\n";
 	print "</body></html>";
 	exit;
@@ -67,9 +70,10 @@ if (is_null($obj) || !$obj->canDisplayDetails()) {
 }
 if (!isset($fromfile)) $indirec = $obj->getGedcomRecord();
 else  {
-	$indirec = find_record_in_file($pid);
+	$indirec = find_updated_record($pid);
 	$indirec = privatize_gedcom($indirec);
 }
+$indirec = preg_replace("/@(\w*)@/", "@<a href=\"gedrecord.php?pid=$1\">$1</a>@", $indirec);
 print "<pre>$indirec</pre>";
 print "</body></html>";
 

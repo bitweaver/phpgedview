@@ -3,7 +3,7 @@
  * Search in help files 
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,12 @@
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
  * @package PhpGedView
- * @version $Id: searchhelp.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: searchhelp.php,v 1.3 2008/07/07 18:01:10 lsces Exp $
  */
 
 require "config.php";
 
-print_simple_header("Search help");
+print_simple_header($pgv_lang["hs_title"]);
 
 // On first entry, initially check the boxes
 if (!isset($action)) {
@@ -37,15 +37,33 @@ if (!isset($action)) {
 }
 
 // If no admin, always search in user help
-if (!UserGedcomAdmin(GetUserName())) $searchuser = "yes";
+if (!PGV_USER_GEDCOM_ADMIN) {
+	$searchuser = "yes";
+}
 
 // Initialize variables
 if (!isset($searchtext)) $searchtext = "";
 if (!isset($searchuser)) $searchuser = "no";
 if (!isset($searchconfig)) $searchconfig = "no";
+if (!isset($searchmodules)) $searchmodules = "no";
 $found = 0;
+
+?>
+<script type="text/javascript">
+<!--
+function checkfrm(frm) {
+	if (frm.searchtext.value.length<2) {
+		alert("<?php print $pgv_lang["search_more_chars"]?>");
+		frm.searchtext.focus();
+		return false;
+	}
+	return true;
+}
+//-->
+</script>
+<?php
 // Print the form for input
-print "<form name=\"entersearch\" action=\"$SCRIPT_NAME\" method=\"post\" >";
+print "<form name=\"entersearch\" action=\"$SCRIPT_NAME\" method=\"post\" onsubmit=\"return checkfrm(this);\">";
 print "<input name=\"action\" type=\"hidden\" value=\"search\" />";
 print "<table class=\"facts_table $TEXT_DIRECTION\">";
 print "<tr><td colspan=\"2\" class=\"topbottombar\">";
@@ -74,20 +92,23 @@ if ($searchhow == "sentence") print " checked=\"checked\"";
 print " />".$pgv_lang["hs_searchsentence"]."<br />";
 print "</td></tr>";
 
-print "<tr><td ";
-if (UserIsAdmin(GetUserName())) print "rowspan=\"2\" ";
-print "class=\"descriptionbox width20 wrap vmiddle\">";
+print "<tr><td rowspan=\"2\" class=\"descriptionbox width20 wrap vmiddle\">";
 print_help_link("hs_searchin_advice", "qm", "hs_searchin");
 print $pgv_lang["hs_searchin"]."</td>";
-// Show choice where to search only to admins
-if (UserIsAdmin(GetUserName())) {
-	print "<td class=\"optionbox\"><input type=\"checkbox\" name=\"searchuser\" dir=\"ltr\" value=\"yes\"";
-	if ($searchuser == "yes") print " checked=\"checked\"";
-	print " />".$pgv_lang["hs_searchuser"]."<br />";
+print "<td class=\"optionbox\">";
+print "<input type=\"checkbox\" name=\"searchuser\" dir=\"ltr\" value=\"yes\"";
+if ($searchuser == "yes") print " checked=\"checked\"";
+print " />".$pgv_lang["hs_searchuser"]."<br />";
+print "<input type=\"checkbox\" name=\"searchmodules\" dir=\"ltr\" value=\"yes\"";
+if ($searchmodules == "yes") print " checked=\"checked\"";
+print " />".$pgv_lang["hs_searchmodules"]."<br />";
+// Show "administrator help" choice only to admins
+if (PGV_USER_GEDCOM_ADMIN) {
 	print "<input type=\"checkbox\" name=\"searchconfig\" dir=\"ltr\" value=\"yes\"";
 	if ($searchconfig == "yes") print " checked=\"checked\"";
-	print " />".$pgv_lang["hs_searchconfig"]."</td></tr><tr>";
+	print " />".$pgv_lang["hs_searchconfig"];
 }
+print "</td></tr><tr>";
 print "<td class=\"optionbox\"><input type=\"radio\" name=\"searchintext\" dir=\"ltr\" value=\"true\"";
 if ($searchintext == "true") print " checked=\"checked\"";
 print " />".$pgv_lang["hs_intruehelp"]."<br />";
@@ -103,39 +124,27 @@ print "<input type=\"button\" value=\"".$pgv_lang["hs_close"]."\" onclick='self.
 print "</td></tr>";
 
 // Perform the search
-if ((!empty($searchtext)) && (($searchuser == "yes") || ($searchconfig == "yes")))  {
+if ((!empty($searchtext)) && strlen($searchtext)>1)  {
 
+	// Determine the language files to be searched
+	$langFiles = "pgv_lang, ";
+	if (PGV_USER_GEDCOM_ADMIN) $langFiles .= "pgv_admin, ";
+	if (PGV_USER_CAN_EDIT) $langFiles .= "pgv_editor, ";
+	if ($searchuser == "yes") $langFiles .= "pgv_help, ";
+	if ($searchconfig == "yes") $langFiles .= "pgv_confighelp, ";
+	if ($searchmodules == "yes") $langFiles .= "ra_lang, ra_help, gm_lang, gm_help, sm_lang, sm_help, ";
+	if (substr($langFiles, -2)==", ") $langFiles = substr($langFiles, 0, -2);
+	
 	$helpvarnames = array();
 	unset($pgv_lang);
 	
-	// Load the factarray: Help text requires it
-	if (!isset($factarray)) {
-		require  $factsfile["english"];
-		if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
-	}
-	
-	// Load the user help if chosen
-	if ($searchuser == "yes") {
-		require  $helptextfile["english"];
-		if (file_exists( $helptextfile[$LANGUAGE])) require  $helptextfile[$LANGUAGE];
-	}
-
-	// Load the config help if chosen
-	if ($searchconfig == "yes") {
-		require  $confighelpfile["english"];
-		if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
-	}
+	loadLangFile($langFiles);
 
 	// Find all helpvars, so we know what vars to check after the lang.xx file has been reloaded
 	foreach ($pgv_lang as $text => $value) {
 		if ($searchintext == "all") $helpvarnames[] = $text;
-		else if ((substr($text, -5) == "_help") || (substr($text, -4) == ".php")) $helpvarnames[] = $text;
+		else if ((substr($text, -5) == "_help" && $value{0}!="_") || (substr($text, -4) == ".php")) $helpvarnames[] = $text;
 	}
-
-	// Reload lang.xx file
-	loadLanguage($LANGUAGE, true);
-	require $confighelpfile["english"];
-	if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
 
 	// Split the search criteria if all or any is chosen. Otherwise, just fill the array with the sentence
 	$criteria = array();
@@ -174,6 +183,8 @@ if ((!empty($searchtext)) && (($searchuser == "yes") || ($searchconfig == "yes")
 		(($searchhow == "sentence") && ($cfound >= 1))) {
 			print "<tr><td colspan=\"2\" class=\"descriptionbox wrap $TEXT_DIRECTION\">".$helptxt."</td></tr>";
 			$found++;
+			//-- if there is more than 100 the user should refine their search
+			if ($found>100) break;
 		}
 	}
 }

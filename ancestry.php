@@ -5,7 +5,7 @@
  * ($rootid=1, father=2, mother=3 ...)
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2006  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,21 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: ancestry.php,v 1.3 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: ancestry.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
  */
 
 require_once("includes/controllers/ancestry_ctrl.php");
 
 // -- print html header information
 print_header($controller->name . " " . $pgv_lang["ancestry_chart"]);
+
+// LBox =====================================================================================
+if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+	include('modules/lightbox/lb_config.php');
+	include('modules/lightbox/functions/lb_call_js.php');
+}	
+// ==========================================================================================
+
 print "\n\t<table class=\"list_table $TEXT_DIRECTION\"><tr><td width=\"".$controller->cellwidth."px\" valign=\"top\">\n\t\t";
 if ($view == "preview") print "<h2>" . str_replace("#PEDIGREE_GENERATIONS#", $PEDIGREE_GENERATIONS, $pgv_lang["gen_ancestry_chart"]) . ":";
 else print "<h2>" . $pgv_lang["ancestry_chart"] . ":";
@@ -62,7 +70,7 @@ if ($view != "preview") {
 	print_help_link("rootid_help", "qm");
 	print $pgv_lang["root_person"]?></td>
 	<td class="optionbox vmiddle">
-	<input class="pedigree_form" type="text" name="rootid" id="rootid" size="3" value="<?php print $controller->rootid ?>" />
+	<input class="pedigree_form" type="text" name="rootid" id="rootid" size="3" value="<?php print htmlentities($controller->rootid) ?>" />
 	<?php print_findindi_link("rootid",""); ?>
 	</td>
 
@@ -71,7 +79,7 @@ if ($view != "preview") {
 	<?php
 	print_help_link("box_width_help", "qm");
 	print $pgv_lang["box_width"]?></td>
-	<td class="optionbox vmiddle"><input type="text" size="3" name="box_width" value="<?php print $box_width ?>" /> <b>%</b>
+	<td class="optionbox vmiddle"><input type="text" size="3" name="box_width" value="<?php print htmlentities($box_width) ?>" /> <b>%</b>
 	</td>
 
 	<!-- // NOTE: chart style -->
@@ -141,7 +149,7 @@ if ($view != "preview") {
 	<!-- // NOTE: show full -->
 	
 	<td class="descriptionbox">
-		<?php
+	<?php
 	print_help_link("show_full_help", "qm");
 	print $pgv_lang["show_details"]; ?>
 	</td>
@@ -163,7 +171,7 @@ if ($view != "preview") {
 if ($controller->chart_style==0) {
 	$pidarr=array();
 	print "<ul style=\"list-style: none; display: block;\" id=\"ancestry_chart".($TEXT_DIRECTION=="rtl" ? "_rtl" : "") ."\">\r\n";
-	$controller->print_child_ascendancy($controller->rootid, 1, $OLD_PGENS);
+	$controller->print_child_ascendancy($controller->rootid, 1, $OLD_PGENS-1);
 	print "</ul>";
 	print "<br />";
 }
@@ -179,19 +187,17 @@ if ($controller->chart_style==1) {
 	<br />
 END;
 	// process the tree
-	$treeid = pedigree_array($controller->rootid);
-	$treesize = pow(2, (int)($PEDIGREE_GENERATIONS))-1;
-	for ($i = 0; $i < $treesize; $i++) {
-		$pid = $treeid[$i];
+	$treeid = ancestry_array($controller->rootid, $PEDIGREE_GENERATIONS-1);
+	foreach ($treeid as $i=>$pid) {
 		if ($pid) {
 			$person = Person::getInstance($pid);
 			if (!is_null($person)) {
 				$famids = $person->getChildFamilies();
 				foreach($famids as $famid=>$family) {
 					$parents = find_parents_in_record($family->getGedcomRecord());
-					if ($parents) print_sosa_family($famid, $pid, $i + 1);
+					if ($parents) print_sosa_family($famid, $pid, $i);
 					// 	show empty family only if it is the first and only one
-					else if ($i == 0) print_sosa_family("", $pid, $i + 1);
+					else if ($i == 1) print_sosa_family("", $pid, $i);
 				}
 			}
 		}
@@ -200,7 +206,7 @@ END;
 //-- Individual list
 if ($controller->chart_style==2) {
 	require_once("includes/functions_print_lists.php");
-	$treeid = ancestry_array($controller->rootid);
+	$treeid = ancestry_array($controller->rootid, $PEDIGREE_GENERATIONS);
 	echo "<div class=\"center\">";
 	print_indi_table($treeid, $pgv_lang["ancestry_chart"]." : ".PrintReady($controller->name), "sosa");
 	echo "</div>";
@@ -208,12 +214,12 @@ if ($controller->chart_style==2) {
 //-- Family list
 if ($controller->chart_style==3) {
 	require_once("includes/functions_print_lists.php");
-	$treeid = ancestry_array($controller->rootid);
+	$treeid = ancestry_array($controller->rootid, $PEDIGREE_GENERATIONS-1);
 	$famlist = array();
 	foreach ($treeid as $p=>$pid) {
-	  $person = Person::getInstance($pid);
+		$person = Person::getInstance($pid);
 		if (is_null($person)) continue;
-	  foreach ($person->getChildFamilyIds() as $f=>$famc) $famlist[] = $famc;
+		foreach ($person->getChildFamilyIds() as $f=>$famc) $famlist[] = $famc;
 	}
 	echo "<div class=\"center\">";
 	print_fam_table(array_unique($famlist), $pgv_lang["ancestry_chart"]." : ".PrintReady($controller->name));

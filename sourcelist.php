@@ -3,7 +3,7 @@
  * Parses gedcom file and displays a list of the sources in the file.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2007  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: sourcelist.php,v 1.6 2008/06/25 22:21:16 spiderr Exp $
+ * @version $Id: sourcelist.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -36,6 +36,7 @@ $gGedcom = new BitGEDCOM();
 
 $addsourcelist = get_source_add_title_list();  //-- array of additional source titlesadd
 $sourcelist = get_source_list();               //-- array of regular source titles
+
 	$n = 0;
 	foreach($sourcelist as $key => $value) {
 		if (!isset($value["name"])) break;
@@ -49,12 +50,16 @@ $sourcelist = get_source_list();               //-- array of regular source titl
 
 //uasort($sourcelist, "itemsort");
 //uasort($addsourcelist, "itemsort");
-asort($sourcelist);
-asort($addsourcelist);
+$ca = count($addsourcelist);
+$cs = count($sourcelist);
+$ctot = $ca + $cs;
+
+print "<div class=\"center\">";
+print "<h2>".$pgv_lang["source_list"]."</h2>\n\t";
 
 $gBitSmarty->assign_by_ref( "sourcelist", array_merge($sourcelist, $addsourcelist) );
 
 $gBitSmarty->assign( "total", $n );
 $gBitSmarty->assign( "pagetitle", tra("Source reference list") );
-$gBitSystem->display( 'bitpackage:phpgedview/sourcelist.tpl', tra( 'Source reference list' ) , array( 'display_mode' => 'list' ));
+$gBitSystem->display( 'bitpackage:phpgedview/sourcelist.tpl', tra( 'Source reference list' ) );
 ?>

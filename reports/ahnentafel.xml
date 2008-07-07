@@ -1,4 +1,4 @@
-<PGVReport access="PGV_PUBLIC" icon="ancestry" language="english">
+<PGVReport access="PRIV_PUBLIC" icon="ancestry" language="english">
 	<!-- $Id$ -->
 	<PGVRTitle><PGVRvar var="pgv_lang[ahnentafel_report]" /></PGVRTitle>
 	<PGVRDescription>Prints an Ahnentafel report for the selected individual</PGVRDescription>
@@ -7,14 +7,14 @@
 	<PGVRInput name="sources" type="checkbox" default="1"><PGVRvar var="pgv_lang[show_sources]" /></PGVRInput>
 	<PGVRInput name="notes" type="checkbox" default="1"><PGVRvar var="pgv_lang[show_notes]" /></PGVRInput>
 	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="14" style="b" />
-	<PGVRStyle name="subheader" font="LucidaSansUnicode" size="12" style="b" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="10" style="" />
-	<PGVRStyle name="name" font="LucidaSansUnicode" size="10" style="b" />
-	<PGVRStyle name="note" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="footnote" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="footnotenum" font="LucidaSansUnicode" size="6" style="" />
+	<PGVRStyle name="header" font="dejavusans" size="14" style="b" />
+	<PGVRStyle name="subheader" font="dejavusans" size="12" style="b" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="10" style="" />
+	<PGVRStyle name="name" font="dejavusans" size="10" style="b" />
+	<PGVRStyle name="note" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="footnote" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="footnotenum" font="dejavusans" size="6" style="" />
 	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
 		<PGVRHeader>
 		</PGVRHeader>
@@ -73,8 +73,8 @@
 					<PGVRTextBox width="25" height="20" border="0">
 						<PGVRText style="text"><PGVRvar var="num" />.</PGVRText>
 					</PGVRTextBox>
-					<PGVRTextBox width="500" height="12" border="0" newline="1">
-						<PGVRText style="name"><PGVRGetPersonName id="" /></PGVRText>
+					<PGVRTextBox width="0" height="12" border="0" newline="1">
+						<PGVRText style="name"><PGVRGetPersonName id="" /> </PGVRText>
 						<PGVRGedcom id="BIRT">
 							<PGVRText style="text"><PGVRvar var="printPronoun" />
 								<PGVRif condition="$gender=='m'">
@@ -270,6 +270,7 @@
 			</PGVRRelatives>
 			<!-- if the sources were on, print the source citations as footnotes -->
 			<PGVRif condition="$sources==1">
+				<PGVRNewPage></PGVRNewPage>
 				<PGVRTextBox border="0" width="$width" height="20">
 					<PGVRText style="subheader"><br /><PGVRvar var="pgv_lang[sources]" /><br /><br /></PGVRText>
 					<PGVRFootnoteTexts />

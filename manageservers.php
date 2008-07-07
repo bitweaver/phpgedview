@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: manageservers.php,v 1.4 2007/05/28 14:52:03 lsces Exp $
+ * @version $Id: manageservers.php,v 1.5 2008/07/07 18:01:11 lsces Exp $
  * @author rbennett
  */
 
@@ -67,14 +67,16 @@ function add_banned_ip($ip) {
 	$bannedtext .= "\$banned[] = \"".$ip."\";\n";
 	$bannedtext .= "\n"."?>";
 
-	$fp = fopen($INDEX_DIRECTORY."banned.php", "wb");
+	$fp = @fopen($INDEX_DIRECTORY."banned.php", "wb");
 	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
+		global $whichFile;
+		$whichFile = $INDEX_DIRECTORY."banned.php";
+		print "<span class=\"error\">".print_text("gedcom_config_write_error",0,1)."<br /></span>\n";
 	}
 	else {
 		fwrite($fp, $bannedtext);
 		fclose($fp);
-		$logline = AddToLog("banned.php updated by >".getUserName()."<");
+		$logline = AddToLog("banned.php updated");
  		if (!empty($COMMIT_COMMAND)) check_in($logline, "banned.php", $INDEX_DIRECTORY);	
 	}
 }
@@ -101,14 +103,16 @@ function add_search_engine_ip($ip) {
 	$searchtext .= "\$search_engines[] = \"".$ip."\";\n";
 	$searchtext .= "\n"."?>";
 
-	$fp = fopen($INDEX_DIRECTORY."search_engines.php", "wb");
+	$fp = @fopen($INDEX_DIRECTORY."search_engines.php", "wb");
 	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
+		global $whichFile;
+		$whichFile = $INDEX_DIRECTORY."search_engines.php";
+		print "<span class=\"error\">".print_text("gedcom_config_write_error",0,1)."<br /></span>\n";
 	}
 	else {
 		fwrite($fp, $searchtext);
 		fclose($fp);
-		$logline = AddToLog("search_engines.php updated by >".getUserName()."<");
+		$logline = AddToLog("search_engines.php updated");
  		if (!empty($COMMIT_COMMAND)) check_in($logline, "search_engines.php", $INDEX_DIRECTORY);	
 	}
 }
@@ -137,14 +141,16 @@ function delete_banned_ip($ip) {
 	
 	$bannedtext .= "\n"."?>";
 
-	$fp = fopen($INDEX_DIRECTORY."banned.php", "wb");
+	$fp = @fopen($INDEX_DIRECTORY."banned.php", "wb");
 	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
+		global $whichFile;
+		$whichFile = $INDEX_DIRECTORY."banned.php";
+		print "<span class=\"error\">".print_text("gedcom_config_write_error",0,1)."<br /></span>\n";
 	}
 	else {
 		fwrite($fp, $bannedtext);
 		fclose($fp);
-		$logline = AddToLog("banned.php updated by >".getUserName()."<");
+		$logline = AddToLog("banned.php updated");
  		if (!empty($COMMIT_COMMAND)) check_in($logline, "banned.php", $INDEX_DIRECTORY);	
 	}
 }
@@ -173,14 +179,16 @@ function delete_search_engine_ip($ip) {
 	
 	$searchtext .= "\n"."?>";
 
-	$fp = fopen($INDEX_DIRECTORY."search_engines.php", "wb");
+	$fp = @fopen($INDEX_DIRECTORY."search_engines.php", "wb");
 	if (!$fp) {
-		print "<span class=\"error\">".$pgv_lang["gedcom_config_write_error"]."<br /></span>\n";
+		global $whichFile;
+		$whichFile = $INDEX_DIRECTORY."search_engines.php";
+		print "<span class=\"error\">".print_text("gedcom_config_write_error",0,1)."<br /></span>\n";
 	}
 	else {
 		fwrite($fp, $searchtext);
 		fclose($fp);
-		$logline = AddToLog("search_engines.php updated by >".getUserName()."<");
+		$logline = AddToLog("search_engines.php updated");
  		if (!empty($COMMIT_COMMAND)) check_in($logline, "search_engines.php", $INDEX_DIRECTORY);	
 	}
 }
@@ -192,7 +200,7 @@ print_header( tra("Administration") );
 if ( !$gBitUser->isAdmin() ) {
 	print $pgv_lang["access_denied"];
 	//-- display messages as to why the editing access was denied
-	if (!userGedcomAdmin(getUserName())) print "<br />".$pgv_lang["user_cannot_edit"];
+	if (!PGV_USER_GEDCOM_ADMIN) print "<br />".$pgv_lang["user_cannot_edit"];
 	print "<br /><br /><div class=\"center\"><a href=\"javascript: ".$pgv_lang["close_window"]."\" onclick=\"window.close();\">".$pgv_lang["close_window"]."</a></div>\n";
 	print_simple_footer();
 	exit;

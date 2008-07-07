@@ -1,13 +1,16 @@
 =======================================================
     PhpGedView
 
-    Version 4.0
-    Copyright 2005 John Finlay and others
+    Version 4.1
+    Copyright (c) 2005 to 2008 John Finlay and others
 
     This and other information can be found online at
     http://www.PhpGedView.net
 
-    # $Id: readme.txt,v 1.2 2006/10/01 22:44:01 lsces Exp $
+    The installation instructions can also be found in the wiki at:
+	http://wiki.phpgedview.net/en/index.php?title=Installation_Guide
+
+    # $Id: readme.txt,v 1.3 2008/07/07 18:01:11 lsces Exp $
 =======================================================
 
 CONTENTS
@@ -35,7 +38,7 @@ CONTENTS
 LICENSE
 
 PhpGedView: Genealogy Viewer
-Copyright (C) 2002 to 2004  John Finlay and Others
+Copyright (C) 2002 to 2007  John Finlay and Others
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -74,9 +77,23 @@ project.
 -------------------------------------------------------
 SYSTEM REQUIREMENTS
 
-PhpGedView requires a web server with at least PHP v4.3 and around 20MB of
+PhpGedView requires a web server with at least PHP v4.3.5 and around 20MB of
 web space.  The default installations of PHP on most servers should provide
 you with all of the PHP functionality you should need.
+
+Database
+    You will need at least 1 database and a username and password to access it. 
+    PhpGedView primarily supports MySQL, but has also been tested and shown to 
+    work with Postgresql, SQLite, and SQL-Server. The versions required for 
+    each of these databases is outlined below: 
+    MySQL 3.23+ 
+    PostgresQL 8.0+ 
+    SQLite available through PDO-SQLite which is included in PHP 5 
+    MS SQL-Server 2003+ 
+
+Web space
+    At least 20MB of web space on the web server. You will need more than this 
+    if you intend to store multimedia linked to individuals. 
 
 To use the reporting engine, PHP needs to be compiled with XML support.  
 This is compiled into PHP by default unless it is specifically disabled.  
@@ -102,51 +119,59 @@ http://www.phpgedview.net/faq.php for more information about large GEDCOMs.
 -------------------------------------------------------
 QUICK INSTALLATION
 
+These instructions can also be found in the wiki at:
+http://wiki.phpgedview.net/en/index.php?title=Installation_Guide
+
 Follow the instructions in this section to install PhpGedView if you are
 already familiar with the program or are familiar with installing other PHP 
 web applications.
 
  1.  Upload the files to your web server.
- 2.  Set Write permissions on config.php and the "index" directory.  For 
+ 2.  Copy config.dist to config.php
+ 3.  Set Write permissions on config.php and the "index" directory.  For 
      optimal security, you should move the "index" directory to a location 
      where it is not accessible from the Internet.
- 3.  Point your browser to the directory where you uploaded your PhpGedView 
+ 4.  Point your browser to the directory where you uploaded your PhpGedView 
      files (for example, http://www.yourserver.com/PhpGedView/).
- 4.  Enter your configuration settings.  If you moved the index directory, 
+ 5.  Enter your configuration settings.  If you moved the index directory, 
      be sure to specify the correct location to it on this page.  Save the 
      configuration parameters.
- 5.  Enter the default administrator user.
- 6.  Login as this user and upload your GEDCOM file.
- 7.  Save the GEDCOM configuration settings.
- 8.  Import the GEDCOM.
+ 6.  Enter the default administrator user.
+ 7.  Login as this user and upload your GEDCOM file.
+ 8.  Save the GEDCOM configuration settings.
+ 9.  Import the GEDCOM.
 
 Optional Steps
- 9.  If you want to use the language editing features you will need to set 
+10.  If you want to use the language editing features you will need to set 
      Write permissions for all of the files in the ./languages folder.
-10.  If you want to upload media files using the Upload Media section of 
+11.  If you want to upload media files using the Upload Media section of 
      the Admin menu then you need to set Write permissions for your ./media 
      and ./media/thumbs directories.
-11.  If you want to edit your GEDCOM file online, the GEDCOM file must have
+12.  If you want to edit your GEDCOM file online, the GEDCOM file must have
      Write permissions set for the PHP user.
-12.  If you want to use the Backup feature of the Upgrade utility in 
+13.  If you want to use the Backup feature of the Upgrade utility in 
      PhpGedView you will need to either set Write permission on the 
      PhpGedView folder itself or create a folder named "backup" with Write 
      permissions.  Write permissions for the PhpGedView folder can be 
      removed as soon as the backup folder is in place and has the 
      appropriate permissions.
-13.  For security you should set the permissions back to Read-only when you 
+14.  For security you should set the permissions back to Read-only when you 
      are done editing or uploading files.
 
 -------------------------------------------------------
 INSTALLATION
+
+These instructions can also be found in the wiki at:
+http://wiki.phpgedview.net/en/index.php?title=Installation_Guide
 
 Follow these instructions if you are not familiar with PhpGedView or 
 installing PHP applications.
 
 *A.  Upload Program Files:
 To install PhpGedView, unzip the compressed package and upload the files to 
-a directory on your web server.  If you have limited space on your server, 
-you can save space in the following ways:
+a directory on your web server.  Rename the config.dist file to config.php.
+
+If you have limited space on your server, you can save space in the following ways:
 1.  Delete the themes from the themes folder that you do not plan to use.
 2.  Delete some of the language files that you do not want.  English files 
     are named configure_help.en.php, countries.en.php, facts.en.php, 
@@ -157,7 +182,7 @@ you can save space in the following ways:
     before the files for the selected language are loaded.  This ensures 
     that all language variables are defined, and that the English version 
     will be used when a given variable is missing in the new language.
-3.  Do not upload the "places" folder.  This folder contains maps for some
+3.  Do not upload the entire "places" folder.  This folder contains maps for some
     countries.  It also contains text files containing state, county, and 
     place names.  Its purpose is to allow you to enter place names by 
     picking them from lists.    
@@ -202,12 +227,18 @@ configuration options can be found online by clicking on the question mark
 
 PhpGedView has support for importing your GEDCOMs into a PEAR:DB supported 
 database like MySQL or PostgreSQL.  Currently, MySQL is the only fully tested 
-database.  Using a database requires that an existing user, password, and database already
-exist.
+database.  Using a database requires that an existing user, password, and 
+database already exist.
 
 You may reconfigure PhpGedView at any time by going to PhpGedView/admin.php 
 and logging in as an administrator user and clicking on the "Configuration" 
 link.
+
+If you are having any problems setting up PhpGedView then you should run the 
+sanity_check file. To do this you should type sanity_check.php into your URL 
+(for example, http://www.yourserver.com/PhpGedView/sanity_check.php). If you are 
+not able to view that page then you most likely don't have either the sanity_check 
+file or you do not have PHP installed properly.
 
 *D.  Create Admin User
 After you click the Save button, you will be asked to create an 
@@ -274,15 +305,22 @@ information.
 Pages generated by PhpGedView can be large and use up a lot of bandwidth.
 Compression of the data between the server and browser using GZip 
 compression can compress the bandwidth by up to 90% (usually 80% - 90% for 
-PhpGedView that were tested) If your web server is Apache, configuring this 
-is very easy.  Add the following 2 lines to your php.ini file:
+PhpGedView that were tested).  Add the following 2 lines to your php.ini file:
+    zlib.output_compression On
+    zlib.output_compression_level 5
+
+If you have no access to the php.ini file and you are using Apache, create a 
+blank file named .htaccess (including the dot) and add the following lines to 
+that file  (or add them to an existing .htaccess file and upload the file to 
+your PhpGedView directory.
     php_flag zlib.output_compression On
     php_value zlib.output_compression_level 5
 
-If you have no access to the php.ini file, create a blank file named 
-.htaccess (including the dot) and add the lines to that file (or add them 
-to an existing .htaccess file and upload the file to your PhpGedView 
-directory.
+Some hosts do not allow adding this through .htaccess files, but they may 
+allow you to create a partial php.ini file in your phpGedView directory. To
+this file you would add the same two lines from the php.ini file above:
+    zlib.output_compression On
+    zlib.output_compression_level 5
 
 Note: If your host is using mod_gzip or an other compression method, using 
 this technique can cause problems.  Compression will have no effect on 
@@ -294,30 +332,36 @@ If you need help or support visit  http://www.PhpGedView.net/support.php
 -------------------------------------------------------
 UPGRADING
 
-Use the following steps to upgrade to v4.0.  These steps assume that you 
+UPGRADING 4.1 to 4.1.x
+
+1. To upgrade from 4.1 to 4.1.1 or any other 4.1.x version, simply replace 
+   the files on the server with the new files.
+2. Some of the internal structures have changed, so you should also delete
+   your cache files.  This can be done from the "Customize Welcome Page" link
+   or by manually deleting the files from the "index" directory. 
+
+
+UPGRADING 4.0.x to 4.1.x
+
+Use the following steps to upgrade to v4.1.  These steps assume that you 
 are familiar with PhpGedView and have successfully installed it before.
 
-Version 4.0 no longer includes support for index files.  If you do not have 
+Version 4.x no longer includes support for index files.  If you do not have 
 PHP 5 with built-in SQLite support or a database account then you should not 
-upgrade to PhpGedView 4.0.  Maintenance releases will continue for the 3.3.x 
+upgrade to PhpGedView 4.x.  Maintenance releases will continue for the 3.3.x 
 version.
 
 **Note to SQLite users: Unfortunately SQLite does not support the ALTER TABLE
   SQL command.  This means that we must first drop the tables and recrate
   them.  It is highly reccomended that you run the backup before upgrading.
 
-1.  Upload the new 4.0 files to your server replacing the old files with the 
+1.  Upload the new 4.1 files to your server replacing the old files with the 
 	new files.  Do not replace the config.php file or the index directory.
-2.  Go to upgrade33-40.php in your browser.
-3.  In order to create the data required for the new version, you will
+2.  In order to create the data required for the new version, you will
     have to re-import your GEDCOM. Please see the section on UPDATING
     GEDCOMS below.
-4.  You can now use your upgraded site.  One change with this version splits
-    user's full names into first and last name fields.  If you have users
-    who only entered a single name then their first and last name will be the
-    same and it will appear doubled on some screens.  You may want to review 
-    your user list and check your user's names.
-5.  If you are using a customized theme you will need to update your theme
+3.  You can now use your upgraded site.
+4.  If you are using a customized theme you will need to update your theme
     with new stylesheets and variables.  An excellent tool that can help 
     you to merge themes is the WinMerge project 
     http://winmerge.sourceforge.net/
@@ -553,12 +597,13 @@ Following is a more detailed description of each table:
   	d_month                # The 3 letter abbreviation for month of year
   	d_mon                  # Integer 1-12 for the month of year
   	d_year                 # The year for this date
-  	d_datestamp            # A date stamp of the form YYYYMMDD used for simple 
-  	                       # comparisons
+  	d_datestamp            # This column is no longer used and will be deleted in 4.2
   	d_fact                 # The fact that this date was associated with
   	d_gid                  # The gedcom XREF ID where this fact and date were found
   	d_file                 # The gedcom file id where this fact was found
   	d_type                 # Used if this date uses an alternate calendar type
+		d_julianday1           # The julian day number for this day (or start of this month/year)
+		d_julianday2           # The julian day number for this day (or end of this month/year)
 
   pgv_blocks:
     b_id INT(11)           # Record ID
@@ -608,11 +653,30 @@ Following is a more detailed description of each table:
                            #   a state or province, and a state or province
                            #   would have a country as parent.
     p_file INT             # ID number of the GEDCOM file the record is from
+    p_std_soundex 	       # Standard soundex code for searching by place.
+    		VARCHAR(255)   #
+    p_dm_soundex       	   # Daitch-Mokotoff soundex code for searching by
+    		VARCHAR(255)   #   place.
 
   pgv_placelinks:
     pl_p_id INT(11)        # Unique identifier
     pl_gid VARCHAR(30)     # Family or individual ID referencing this place
     pl_file INT            # ID number of the GEDCOM file the record is from
+    
+  pgv_soundex:
+  	sx_i_id	VARCHAR(255)   # Unique identifier (Individuals table)
+  	sx_n_id	VARCHAR(255)   # Unique identifier (Names table)
+  	sx_file	INT			   # Unique identifier (GEDCOM file)
+    sx_fn_std_soundex      # Standard first name soundex code. Used for
+            VARCHAR(255)   #   soundex searching.
+   	sx_fn_dm_soundex       # Soundex code for international first names.
+   			VARCHAR(255)   #   This uses the Daitch-Mokotoff soundex method,
+   						   #   which is better suited for them.
+    sx_ln_std_soundex 	   # Standard last name soundex code. Used for
+    		VARCHAR(255)   #   soundex searching.
+    sx_ln_dm_soundex 	   # Soundex code for international last names. This
+    		VARCHAR(255)   #   uses the Daitch-Mokotoff soundex method, which 
+    					   #   is better suited for them.
 
   pgv_users:
     u_username VARCHAR(30) # User name
@@ -805,7 +869,7 @@ PhpGedView.  PhpGedView's Translator Tools section has a utility program
 for removing these BOMs.
 
 You should obtain a flag file from http://w3f.com/gifs/index.html and size 
-it to match the other flags in the image/flags directory.
+it to match the other flags in the images/flags directory.
 
 To help maintain languages, a language change log is provided in the 
 languages directory.  This change log is named LANG_CHANGELOG.txt.  All 
@@ -826,9 +890,9 @@ requests that they begin with an "_" underscore.
 
 When PhpGedView comes across a tag that is not defined it will display an 
 error message.  You can disable these error messages by setting 
-$HIDE_GEDCOM_ERRORS=true; in the config.php file.  PhpGedView can also be 
+$HIDE_GEDCOM_ERRORS=true; in the gedcom configuration settings.  PhpGedView can also be 
 customized to work with these codes by adding them to the facts array in a 
-new language file named facts.en.extra.php.  If you add it to the English 
+new language file named extra.en.php.  If you add it to the English 
 facts file you should also add it to the other facts language files you are 
 using on your site if you want other languages to translate the tag 
 correctly.
@@ -840,7 +904,7 @@ for the ABBR GEDCOM tag.
 
 As an example, if you use a genealogy program that generates the tag 
 "_ZZZZ" you can customize PhpGedView to accept this code by adding the 
-following lines to the facts.en.extra.php file:
+following lines to the extra.en.php file:
     <?php
     $factarray["_ZZZZ"] = "Tag Label goes here";
     ?>
@@ -850,7 +914,7 @@ LANGUAGE EXTENSION FILES
 
 Language extension files are custom PHP files that you can use to make your 
 own language specific extensions to PhpGedView.  To add a language file 
-extension, create a new PHP file called lang.xx.extra.php replacing the 
+extension, create a new PHP file called extra.xx.php replacing the 
 "xx" with the code for the language you want to extend.  These files are 
 not automatically included with the package so that when you upgrade, your 
 extensions are not overwritten.
@@ -871,7 +935,8 @@ settings.
 
 If, for example, you wanted to change the GEDCOM title when you changed the
 language, you could change the title for each language by adding the 
-following line to your lang.xx.extra.php:
+following line to your extra.xx.php:
+	global $GEDCOMS;
     $GEDCOMS["surname.ged"]["title"] = "Title in Chinese";
 
 In this file you could also change the text on the buttons:
@@ -879,8 +944,9 @@ In this file you could also change the text on the buttons:
 
 With this file you could also change the GEDCOM that is displayed when the 
 language is selected.  Suppose you had a GEDCOM that was in German and one 
-that was in English.  In the lang.de.extra.php file you could add the 
+that was in English.  In the extra.de.php file you could add the 
 following lines:
+	global $GEDCOM;
     if ($GEDCOM=="english.ged") {
       header("Location: $SCRIPT_NAME?$QUERY_STRING&ged=german.ged");
       exit;
@@ -897,6 +963,12 @@ Thus I0001 in english.ged should refer to the same I0001 in german.ged.
 
 -------------------------------------------------------
 MIGRATING FROM DATABASE TO INDEX MODE AND VICE VERSA
+
+Older of versions of PhpGedView supported and internal "index" mode format
+which allowed it to run without a database.  Since version 4.0, index mode
+has no longer been supported.  If you are running an older version of PGV
+in index mode then these instructions can help you to upgrade to a new version
+of PGV which only supports databases.
 
 Basically it's possible to switch a PhpGedView installation from Index to 
 DATABASE mode or vice-versa without losing any settings.  The following 

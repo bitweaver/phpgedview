@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: statistics.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: statistics.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -54,51 +54,47 @@ global $match1,$match2;
 		$indirec= find_person_record($key);
 		if (dateplace($indirec,"1 BIRT")!==false)
 			{$birthdate= $match1[1]; $birthplace=$match2[1];}
-//--	print ("geboorte:".$birthdate."--".$birthplace."<br>");
+//--	print ("geboorte:".$birthdate."--".$birthplace."<br/>");
 		if (dateplace($indirec,"1 DEAT")!==false)
 			{$deathdate= $match1[1]; $deathplace=$match2[1];}
-//-- print ("overleden:".$deathdate."--".$deathplace."<br>");
+//-- print ("overleden:".$deathdate."--".$deathplace."<br/>");
 		if (stringinfo($indirec,"1 SEX") !==false)
 			{	$sex= 0;
 				if ($match1[1] == "M") {$sex= 1; $nrman++;}
 				if ($match1[1] == "F") {$sex= 2; $nrvrouw++;}
 			}
- //--print ("sexe=".$match1[1].":".$sex."<br>");
+ //--print ("sexe=".$match1[1].":".$sex."<br/>");
 
 //-- get the marriage date of (the first) marriage.
 
 		$ybirth= -1; $mbirth= -1;
 		$ydeath= -1; $mdeath= -1;
-		if ($birthdate !== "")
-		{
-			$dates= parse_date($birthdate);
-// the parse_date function is in function.php
-$ik=0; $mrk= "  :  ";
-//-- print "gegevens b/m=" . $key . $mrk . $birthdate . $mrk . $dates[$ik]["day"] . $mrk . $dates[$ik]["mon"] . $mrk . $dates[$ik]["year"] . $mrk . $dates[$ik]["ext"] ;
-			if ($dates[0]["ext"] == "")
-			{	$ybirth= $dates[0]["year"];
-				$mbirth= $dates[0]["mon"];
-//--print "gevonden jaar en maand" . $birthdate . ":" .$ybirth . ":" . $mbirth . ":<br>";
+		if ($birthdate !== "") {
+			$dates = new GedcomDate($birthdate);
+			if ($dates->qual1 == "") {
+				$date  =$dates->MinDate();
+				$date  =$date->convert_to_cal('gregorian');
+				$ybirth=$date->y;
+				$mbirth=$date->m;
 			}
 		}
 
 		if ($deathdate !== "")
 		{
-			$dates= parse_date($deathdate);
-// the parse_date function is in function.php
-$ik=0; $mrk= "  :  ";
-//-- print "====" . $mrk . $deathdate . $mrk . $dates[$ik]["day"] . $mrk . $dates[$ik]["mon"] . $mrk . $dates[$ik]["year"] . $mrk . $dates[$ik]["ext"] . "<br>" ;
-			if ($dates[0]["ext"] == "")
-			{	$ydeath= $dates[0]["year"];
-				$mdeath= $dates[0]["mon"];
+			$dates = new GedcomDate($deathdate);
+			if ($dates->qual1 == "") {
+				$date  =$dates->MinDate();
+				$date  =$date->convert_to_cal('gregorian');
+				$ydeath=$date->y;
+				$mdeath=$date->m;
 			}
 		}
-//-- else {print "==== no deathdate<br>";}
+//-- else {print "==== no deathdate<br/>";}
 
 		$families= find_sfamily_ids($key); //-- get the number of marriages of this person.
 //--print "families:";
 //--if (isset($families)) { print_r($families);}
-//--print ":einde<br>";
+//--print ":einde<br/>";
 		$persgeg[$i]["key"]= $key;
 		$key2ind[$key]= $i;
 		$persgeg[$i]["ybirth"]= $ybirth;
@@ -142,7 +138,7 @@ $families= array();
 		$famgeg[$kb]["ymarr1"]= $marryear;
 		$famgeg[$kb]["mmarr1"]= $marrmonth;
 //-- if ($ctc > 0)
-//-- {print " keuze=:" . $kb . ":". $marrkey . " : " . $marryear . " : " . $marrmonth . "<br>";}
+//-- {print " keuze=:" . $kb . ":". $marrkey . " : " . $marryear . " : " . $marrmonth . "<br/>";}
 	}
 	for($i=0; $i<$nrfam; $i++)
 	{
@@ -163,7 +159,7 @@ $families= array();
 			{	$birthyear= $by; $birthmonth= $bm; $childkey= $key; $sex1= $sex; $first= false;}
 			if (($birthyear < 0) or (($by < $birthyear) and ($by > 0)))
 			{	$birthyear= $by; $birthmonth= $bm; $childkey= $key; $sex1= $sex; $first= false;}
-//--{print " loop gevonden:" . $key . " : " . $sex . " : " . $by . " : " . $bm . "<br>";}
+//--{print " loop gevonden:" . $key . " : " . $sex . " : " . $by . " : " . $bm . "<br/>";}
 		}
 		$famgeg[$i]["sex1"]= $sex1;
 		$famgeg[$i]["ybirth1"]= $birthyear;
@@ -171,7 +167,7 @@ $families= array();
 		$persgeg[$k]["ybirth1"]= $birthyear;
 		$persgeg[$k]["mbirth1"]= $birthmonth;
 //--if ($ctc > 0)
-//--{print " gevonden:" . $childkey . " : " . $sex1 . " : " . $birthyear . " : " . $birthmonth . "<br>";}
+//--{print " gevonden:" . $childkey . " : " . $sex1 . " : " . $birthyear . " : " . $birthmonth . "<br/>";}
 	}
 }
 
@@ -198,43 +194,38 @@ $dates= array();
 		$marriagedate=""; $ymarr= -1; $mmarr= -1;
 		$divorcedate= ""; $ydiv= -1; $mdiv= -1;
 		$indirec= find_family_record($key);
-//--	print("famrec:" . $key . ":" . $indirec . "<BR>");
+//--	print("famrec:" . $key . ":" . $indirec . "<br/>");
 		if (dateplace($indirec,"1 MARR")!==false)
 			{$marriagedate= $match1[1]; $marriageplace=$match2[1]; $sex=1;}
 		else
 		if (dateplace($indirec,"1 MARS")!==false)
 			{$marriagedate= $match1[1]; $marriageplace=$match2[1]; $sex=0;}
-//--	 print ("gehuwd:".$marriagedate."--".$marriageplace."<br>");
+//--	 print ("gehuwd:".$marriagedate."--".$marriageplace."<br/>");
 		if (dateplace($indirec,"1 DIV")!==false)
 			{$divorcedate= $match1[1]; $divorceplace=$match2[1];}
 		if ($marriagedate !== "")
 		{
-			$dates= parse_date($marriagedate);
-// the parse_date function is in function.php
-$ik=0; $mrk= "  :  ";
-//-- print "marriage, nr, key=" .$i . $mrk . $key . $mrk . $marriagedate . $mrk . $dates[$ik]["day"] . $mrk . $dates[$ik]["mon"] . $mrk . $dates[$ik]["year"] . $mrk . $dates[$ik]["ext"] ;
-//--	==== beware that every about 1850 means that the value will be set to unidentified == -1 ======
-			if ($dates[0]["ext"] == "")
-			{	$ymarr= $dates[0]["year"];
-				$mmarr= $dates[0]["mon"];
+			$dates = new GedcomDate($marriagedate);
+			if ($dates->qual1 == "") {
+				$date =$dates->MinDate();
+				$date =$date->convert_to_cal('gregorian');
+				$ymarr=$date->y;
+				$mmarr=$date->m;
 			}
 		}
 		if ($divorcedate !== "")
 		{
-			$dates= parse_date($divorcedate);
-// the parse_date function is in function.php
-$ik=0; $mrk= "  :  ";
-//-- print "===divorce=" . $mrk . $divorcedate . $mrk . $dates[$ik]["day"] . $mrk . $dates[$ik]["mon"] . $mrk . $dates[$ik]["year"] . $mrk . $dates[$ik]["ext"] ;
-//		$ydiv= substr($divorcedate,6,4);
-//		$mdiv= substr($divorcedate,3,2);
-			if ($dates[0]["ext"] == "")
-			{	$ydiv= $dates[0]["year"];
-				$mdiv= $dates[0]["mon"];
+			$dates = new GedcomDate($divorcedate);
+			if ($dates->qual1 == "") {
+				$date=$dates->MinDate();
+				$date=$date->convert_to_cal('gregorian');
+				$ydiv=$date->y;
+				$mdiv=$date->m;
 			}
 
 		}
 		$parents= find_parents($key);
-//--print ("parents zijn:".$parents["HUSB"].":".$parents["WIFE"]."<BR>");
+//--print ("parents zijn:".$parents["HUSB"].":".$parents["WIFE"]."<br/>");
 		$xfather= $parents["HUSB"]; $xmother= $parents["WIFE"];
 
 //--	check if divorcedate exists otherwise get deadthdate from husband or wife
@@ -243,7 +234,7 @@ $ik=0; $mrk= "  :  ";
 			$ydeathf= ""; $ydeathm= "";
 			if ($xfather !== "") {$indf= $key2ind[$xfather]; $ydeathf= $persgeg[$indf]["ydeath"];}
 			if ($xmother !== "") {$indm= $key2ind[$xmother]; $ydeathm= $persgeg[$indm]["ydeath"];}
-//--print(" keys en index father mother=" . $indf . ":" . $xfather . ":" . $indm . ":" . $xmother . "<BR>");
+//--print(" keys en index father mother=" . $indf . ":" . $xfather . ":" . $indm . ":" . $xmother . "<br/>");
 			if (($ydeathf !== "") and ($ydeathm !== ""))
 			{	if ($ydeathf > $ydeathm)
 				{	$ydiv= $ydeathf; $mdiv= $persgeg[$indf]["mdeath"];}
@@ -253,7 +244,7 @@ $ik=0; $mrk= "  :  ";
 		};
 		$childs= preg_match_all("/1\s*CHIL\s*@(.*)@/",$indirec,$match1,PREG_SET_ORDER);
 //-- print "===kinderen:" . "Aantal=" . $childs . "=nrs=";
-//--	for($k=0; $k<$childs; $k++) {print $match1[$k][0] . " : ";} print "<BR>";
+//--	for($k=0; $k<$childs; $k++) {print $match1[$k][0] . " : ";} print "<br/>";
 $children= array();
 		for($k=0; $k<$childs; $k++)
 		{	$children[$k]= $match1[$k][1]; //--
@@ -271,7 +262,7 @@ $children= array();
 		$famgeg1[$i]["arfamc"]= $children;
 		$famgeg[$i]["male"]= $xfather;
 		$famgeg[$i]["female"]= $xmother;
-	//-- print "==ouders==:" . $xfather . ":" . $xmother . "==gehuwd==" . $ymarr . "-" . $mmarr . "<BR>";
+	//-- print "==ouders==:" . $xfather . ":" . $xmother . "==gehuwd==" . $ymarr . "-" . $mmarr . "<br/>";
 	}
 }
 
@@ -279,7 +270,7 @@ function stringinfo($indirec,$lookfor)
 //look for a starting string in the gedcom record of a person
 //then take the stripped comment
 {
-//-- print "start stringinfo<br>";
+//-- print "start stringinfo<br/>";
 global $match1,$match2;
 	$birthrec = get_sub_record(1, $lookfor, $indirec);
 	$match1[1]="";
@@ -288,7 +279,7 @@ global $match1,$match2;
 		{
 			$dct = preg_match("/".$lookfor." (.*)/", $birthrec, $match1);
 			if ($dct < 1) {$match1[1]="";}
-//--print("stringinfo:".$dct.":".$lookfor.":".$birthrec.":".$match1[1].":<BR>");
+//--print("stringinfo:".$dct.":".$lookfor.":".$birthrec.":".$match1[1].":<br/>");
 			$match1[1]= trim($match1[1]);
 			return true;
 		}
@@ -300,7 +291,7 @@ function dateplace($indirec,$lookfor)
 //--look for a starting string in the gedcom record of a person or family
 //--then find the DATE and PLACE variables
 {
-//-- print "start dateplace<br>";
+//-- print "start dateplace<br/>";
 global $match1,$match2;
 
 	$birthrec = get_sub_record(1, $lookfor, $indirec);
@@ -308,14 +299,14 @@ global $match1,$match2;
 //-- You need to get the subrecord in order not to mistaken by another key with same subkeys.
 	$match1[1]="";
 	$match2[1]="";
-//-- print "dataplace:" . $lookfor . "<BR>" . $birthrec . "<br>" . $indirec . "<br>";
+//-- print "dataplace:" . $lookfor . "<br/>" . $birthrec . "<br/>" . $indirec . "<br/>";
 	if ($birthrec!== "")
 		{
 			$dct = preg_match("/2 DATE (.*)/", $birthrec, $match1);
-//-- if ($dct > 0) {print("birthrec + date" . $birthrec . ":::" . $match1[1] . "<BR>");};
+//-- if ($dct > 0) {print("birthrec + date" . $birthrec . ":::" . $match1[1] . "<br/>");};
 //--			if ($dct>0) $match1[1]= get_number_date($match1[1]);
 //--			$pct = preg_match("/2 PLAC (.*)/", $birthrec, $match2);
-//--			if ($pct>0) print " -- ".$match2[1]."<br>";
+//--			if ($pct>0) print " -- ".$match2[1]."<br/>";
 			if ($dct > 0) {$match1[1]= trim($match1[1]);} else {$match1[1]="";}
 //--			if ($pct > 0) {$match2[1]= trim($match2[1]);} else {$match2[1]="";}
 			return true;
@@ -325,7 +316,7 @@ global $match1,$match2;
 
 function put_plot_data()
 {
-	global $GEDCOM, $INDEX_DIRECTORY;
+	global $GEDCOM, $gGedcom, $INDEX_DIRECTORY;
 global $nrfam, $famgeg, $nrpers, $persgeg,$key2ind,$nrman,$nrvrouw;
 global $pgv_lang;
 
@@ -348,8 +339,8 @@ global $pgv_lang;
 	fwrite($FP, serialize($key2ind));
 	fwrite($FP, '}');
 	fclose($FP);
-	$logline = AddToLog($GEDCOM."_statistiek.php updated by >".getUserName()."<");
- 	if (!empty($COMMIT_COMMAND)) check_in($logline, $GEDCOM."_statistiek.php", $INDEX_DIRECTORY);	
+	$logline = AddToLog($GEDCOM."_statistiek.php updated");
+ 	if (!empty($COMMIT_COMMAND)) check_in($logline, $GEDCOM."_statistiek.php", $INDEX_DIRECTORY);
 }
 
 //--	========= start of main program =========
@@ -386,9 +377,9 @@ global $match1,$match2;
 	if (($GDcheck == 0) or ($JPcheck == 0))
 	{
 		if ($GDcheck == 0)
-			{print $pgv_lang["stplGDno"] . "<BR>";}
+			{print $pgv_lang["stplGDno"] . "<br/>";}
 		if ($JPcheck == 0)
-			{print $pgv_lang["stpljpgraphno"] . "<BR>";}
+			{print $pgv_lang["stpljpgraphno"] . "<br/>";}
 		exit;
 	}
 
@@ -409,59 +400,52 @@ global $match1,$match2;
 		put_plot_data();
 	}
 	print "\t<left><h3>".$pgv_lang["statistics"]."</h3>\t";
-	print ($pgv_lang["statnnames"].$nrpers."<BR>");
-	print ($pgv_lang["statnfam"].$nrfam."<BR>");
-	print ($pgv_lang["statnmale"].$nrman."<BR>");
-	print ($pgv_lang["statnfemale"].$nrvrouw."<BR>");
+	print ($pgv_lang["statnnames"].$nrpers."<br/>");
+	print ($pgv_lang["statnfam"].$nrfam."<br/>");
+	print ($pgv_lang["statnmale"].$nrman."<br/>");
+	print ($pgv_lang["statnfemale"].$nrvrouw."<br/>");
 	$_SESSION[$GEDCOM . "nrpers"]= $nrpers;
 	$_SESSION[$GEDCOM . "nrfam"]= $nrfam;
 	$_SESSION[$GEDCOM . "nrman"]= $nrman;
 	$_SESSION[$GEDCOM . "nrvrouw"]= $nrvrouw;
 
 {
-	?>
-	<script type="text/javascript">
-	<!--
-	var pasteto;
-	function open_find(textbox)
-	{
-		pasteto = textbox;
-//--<?php print "textbox".textbox."<br>"; ?>
-		findwin = window.open('statistiekplot.php', '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
-	}
-	function paste_id(value)
-	{
-		pasteto.value=value;
-	}
-	//-->
-	</script>
-
-<?php
 if (!isset($plottype)) $plottype=0;
+if (isset($_SESSION[$GEDCOM."statTicks"])) {
+	$xasGrLeeftijden = $_SESSION[$GEDCOM."statTicks"]["xasGrLeeftijden"];
+	$xasGrMaanden = $_SESSION[$GEDCOM."statTicks"]["xasGrMaanden"];
+	$xasGrAantallen = $_SESSION[$GEDCOM."statTicks"]["xasGrAantallen"];
+	$zasGrPeriode = $_SESSION[$GEDCOM."statTicks"]["zasGrPeriode"];
+} else {
+	$xasGrLeeftijden = "1,5,10,20,30,40,50,60,70,80,90,100";
+	$xasGrMaanden = "-24,-12,0,8,12,18,24,48";
+	$xasGrAantallen = "1,2,3,4,5,6,7,8,9,10";
+	$zasGrPeriode = "1700,1750,1800,1850,1900,1950,2000";
+}
 
 ?>
-	<h3><?php print $pgv_lang["statvars"]; ?> <?php print_help_link("stat_help","qm"); ?> </h3>
+	<h3><?php print_help_link("stat_help","qm"); ?> <?php print $pgv_lang["statvars"]; ?></h3>
 	<form method="post" name="form" action="statisticsplot.php?action=newform">
 	<input type="hidden" name="action" value="update">
 
 	<table class="facts_table">
 	<tr>
-	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statlxa"]; ?> </td>
+	<td class="descriptionbox width20 wrap"><?php print_help_link("stat_help_x","qm"); ?> <?php print $pgv_lang["statlxa"]; ?> </td>
 	<td class="optionbox"> <select name="x-as">
 		<option value= "11" selected="selected"><?php print $pgv_lang["stat_11_mb"]; ?>
 		<option value= "12"> <?php print $pgv_lang["stat_12_md"]; ?>
 		<option value= "13"> <?php print $pgv_lang["stat_13_mm"]; ?>
 		<option value= "14"> <?php print $pgv_lang["stat_14_mb1"]; ?>
 		<option value= "15"> <?php print $pgv_lang["stat_15_mm1"]; ?>
-		<option value= "16"> <?php print $pgv_lang["stat_16_mmb"] . "<i>" . $pgv_lang["stat_gmx"] ."</i>"; ?>
-		<option value= "17"> <?php print $pgv_lang["stat_17_arb"] . "<i>" . $pgv_lang["stat_gax"] ."</i>"; ?>
-		<option value= "18"> <?php print $pgv_lang["stat_18_ard"] . "<i>" . $pgv_lang["stat_gax"] ."</i>";  ?>
-		<option value= "19"> <?php print $pgv_lang["stat_19_arm"] . "<i>" . $pgv_lang["stat_gax"] ."</i>";  ?>
-		<option value= "20"> <?php print $pgv_lang["stat_20_arm1"] . "<i>" . $pgv_lang["stat_gax"] ."</i>";  ?>
-		<option value= "21"> <?php print $pgv_lang["stat_21_nok"] . "<i>" . $pgv_lang["stat_gnx"] ."</i>";  ?>
+		<option value= "16"> <?php print $pgv_lang["stat_16_mmb"]; ?>
+		<option value= "17"> <?php print $pgv_lang["stat_17_arb"]; ?>
+		<option value= "18"> <?php print $pgv_lang["stat_18_ard"]; ?>
+		<option value= "19"> <?php print $pgv_lang["stat_19_arm"]; ?>
+		<option value= "20"> <?php print $pgv_lang["stat_20_arm1"]; ?>
+		<option value= "21"> <?php print $pgv_lang["stat_21_nok"]; ?>
 	</select>
 	<tr>
-	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statlya"]; ?>  </td>
+	<td class="descriptionbox width20 wrap"><?php print_help_link("stat_help_y","qm"); ?> <?php print $pgv_lang["statlya"]; ?>  </td>
 	<td class="optionbox"> <select name="y-as">
 		<option value= "201" selected="selected"> <?php print $pgv_lang["stat_201_num"]; ?>
 		<option value= "202"> <?php print $pgv_lang["stat_202_perc"]; ?>
@@ -469,7 +453,7 @@ if (!isset($plottype)) $plottype=0;
 	</td>
 	</tr>
 	<tr>
-	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statlza"]; ?>  </td>
+	<td class="descriptionbox width20 wrap"><?php print_help_link("stat_help_z","qm"); ?> <?php print $pgv_lang["statlza"]; ?>  </td>
 	<td class="optionbox"> <select name="z-as">
 		<option value= "300"> <?php print $pgv_lang["stat_300_none"]; ?>
 		<option value= "301"> <?php print $pgv_lang["stat_301_mf"]; ?>
@@ -478,60 +462,50 @@ if (!isset($plottype)) $plottype=0;
 	</td>
 	</tr>
 	</table>
-<br>
+<br/>
 
-<?php
-print "<h3>" . $pgv_lang["statmess1"] . "</h3>";
-/*
-#	<tr>
-#	<td> <?php print $pgv_lang["statrfpx"]; ?> </td>
-#	<td> <input type="text" name="grenzen-jaren" value="1700,1800,1850,1900,1950,1980,2000"
-#			size="60" onfocus="getHelp('periode_help');">
-#	</td>
-#	</tr>
-*/
-?>
+<h3><?php print $pgv_lang["statmess1"]; ?></h3>
 
 	<table class="facts_table">
 	<tr>
-	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_xgl"]; ?> </td>
-	<td class="optionbox"> <input type="text" name="xas-grenzen-leeftijden" value="1,5,10,20,30,40,50,60,70,80,90"
-			size="60" onfocus="getHelp('periode_help');">
+	<td class="descriptionbox width20 wrap"><?php print_help_link("stat_help_gwx","qm"); ?> <?php print $pgv_lang["statar_xgl"]; ?> </td>
+	<td class="optionbox"> <input type="text" name="xas-grenzen-leeftijden" value="<?php print $xasGrLeeftijden; ?>"
+			size="60">
 	</td>
 	</tr>
 	<tr>
 	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_xgm"]; ?> </td>
-	<td class="optionbox"> <input type="text" name="xas-grenzen-maanden" value="-24,-12,0,8,12,18,24,48"
-			size="60" onfocus="getHelp('periode_help');">
+	<td class="optionbox"> <input type="text" name="xas-grenzen-maanden" value="<?php print $xasGrMaanden; ?>"
+			size="60">
 	</td>
 	</tr>
 	<tr>
 	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_xga"]; ?> </td>
-	<td class="optionbox"> <input type="text" name="xas-grenzen-aantallen" value="1,2,3,4,5,6,7,8,9,10"
-			size="60" onfocus="getHelp('periode_help');">
+	<td class="optionbox"> <input type="text" name="xas-grenzen-aantallen" value="<?php print $xasGrAantallen; ?>"
+			size="60">
 	</td>
 	</tr>
 	<tr>
-	<td class="descriptionbox width20 wrap"> <?php print $pgv_lang["statar_zgp"]; ?> </td>
-	<td class="optionbox"> <input type="text" name="zas-grenzen-periode" value="1800,1850,1900,1950,1980"
-			size="60" onfocus="getHelp('periode_help');">
+	<td class="descriptionbox width20 wrap"><?php print_help_link("stat_help_gwz","qm"); ?> <?php print $pgv_lang["statar_zgp"]; ?> </td>
+	<td class="optionbox"> <input type="text" name="zas-grenzen-periode" value="<?php print $zasGrPeriode; ?>"
+			size="60">
 	</td>
 	</tr>
 	</table>
 
 </td></tr></table></center>
-<br>
+<br/>
 <input type="submit" value="<?php print $pgv_lang["statsubmit"]; ?> " onclick="closeHelp();">
-<input type="reset"  value=" <?php print $pgv_lang["statreset"]; ?> "><br>
+<input type="reset"  value=" <?php print $pgv_lang["statreset"]; ?> "><br/>
 </form>
 <?php
 }
 
-//--print "plottype=".$plottype."<br>";
+//--print "plottype=".$plottype."<br/>";
 $_SESSION["plottype"]=$plottype;
 
 
-print "<br>";
+print "<br/>";
 print_footer();
 
 ?>

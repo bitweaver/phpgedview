@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadbackup.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: downloadbackup.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**

@@ -196,7 +196,7 @@ else
 		} else
 			if ($check == "cancel_upload") {
 				if ($exists) {
-					unset ($GEDCOMS[$GEDFILENAME]);
+					unset ($gGedcom[$GEDFILENAME]);
 					store_gedcoms();
 					if ($action == "add_new_form")
 						@ unlink($INDEX_DIRECTORY.$GEDFILENAME);
@@ -221,14 +221,14 @@ if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]
 	require_once ("includes/functions_tools.php");
 
 	$filechanged = false;
-	if (file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
+	if (file_is_writeable($gGedcom[$GEDFILENAME]["path"]) && (file_exists($gGedcom[$GEDFILENAME]["path"]))) {
 		$l_headcleanup = false;
 		$l_macfilecleanup = false;
 		$l_lineendingscleanup = false;
 		$l_placecleanup = false;
 		$l_datecleanup = false;
 		$l_isansi = false;
-		$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "rb");
+		$fp = fopen($gGedcom[$GEDFILENAME]["path"], "rb");
 		$fw = fopen($INDEX_DIRECTORY."/".$GEDFILENAME.".bak", "wb");
 		//-- read the gedcom and test it in 8KB chunks
 		while (!feof($fp)) {
@@ -285,7 +285,7 @@ if ($cleanup_needed == "cleanup_needed" && $continue == $pgv_lang["del_proceed"]
 		}
 		fclose($fp);
 		fclose($fw);
-		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak",$GEDCOMS[$GEDFILENAME]["path"]);
+		copy($INDEX_DIRECTORY."/".$GEDFILENAME.".bak",$gGedcom[$GEDFILENAME]["path"]);
 		$cleanup_needed = false;
 		$import = "true";
 	} else {
@@ -363,7 +363,7 @@ if ($action == "add_form") {
 				<td class="descriptionbox width20 wrap">
 				<?php print_help_link("gedcom_path_help", "qm","gedcom_path");?>
 				<?php print $pgv_lang["gedcom_file"]; ?></td>
-				<td class="optionbox"><input type="text" name="GEDFILENAME" value="<?php if (isset($GEDFILENAME) && strlen($GEDFILENAME) > 4) print $GEDCOMS[$GEDFILENAME]["path"]; ?>"
+				<td class="optionbox"><input type="text" name="GEDFILENAME" value="<?php if (isset($GEDFILENAME) && strlen($GEDFILENAME) > 4) print $gGedcom[$GEDFILENAME]["path"]; ?>"
 				size="60" dir ="ltr" tabindex="<?php $i++; print $i?>"	<?php if ((!$no_upload && isset($GEDFILENAME)) && (empty($error))) print "disabled "; ?> />
 				</td>
 			</tr>
@@ -576,7 +576,7 @@ if ($verify == "validate_form") {
 		$l_placecleanup = false;
 		$l_datecleanup = false;
 		$l_isansi = false;
-		$fp = fopen($GEDCOMS[$GEDFILENAME]["path"], "r");
+		$fp = fopen($gGedcom[$GEDFILENAME]["path"], "r");
 		//-- read the gedcom and test it in 8KB chunks
 		while (!feof($fp)) {
 			$fcontents = fread($fp, 1024 * 8);
@@ -604,7 +604,7 @@ if ($verify == "validate_form") {
 		} else {
 			$cleanup_needed = true;
 			print "<input type=\"hidden\" name=\"cleanup_needed\" value=\"cleanup_needed\">";
-			if (!file_is_writeable($GEDCOMS[$GEDFILENAME]["path"]) && (file_exists($GEDCOMS[$GEDFILENAME]["path"]))) {
+			if (!file_is_writeable($gGedcom[$GEDFILENAME]["path"]) && (file_exists($gGedcom[$GEDFILENAME]["path"]))) {
 				print "<span class=\"error\">".str_replace("#GEDCOM#", $GEDCOM, $pgv_lang["error_header_write"])."</span>\n";
 				print "</td></tr>";
 			}
@@ -875,14 +875,14 @@ if ($startimport == "true") {
 
 	if (!isset ($stage))
 		$stage = 0;
-	if ((empty ($ged)) || (!isset ($GEDCOMS[$ged])))
+	if ((empty ($ged)) || (!isset ($gGedcom[$ged])))
 		$ged = $GEDCOM;
 
 	$temp = $THEME_DIR;
-	$GEDCOM_FILE = $GEDCOMS[$ged]["path"];
+	$GEDCOM_FILE = $gGedcom[$ged]["path"];
 	$FILE = $ged;
 	$TITLE = $gGedcom->getTitle();
-	require ($GEDCOMS[$ged]["config"]);
+	require ($gGedcom[$ged]["config"]);
 	if ($LANGUAGE <> $_SESSION["CLANGUAGE"])
 		$LANGUAGE = $_SESSION["CLANGUAGE"];
 

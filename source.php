@@ -4,7 +4,7 @@
  * reference this source.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005 PGV Development Team
+ * Copyright (C) 2002 to 2007 PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: source.php,v 1.4 2007/05/27 14:45:30 lsces Exp $
+ * @version $Id: source.php,v 1.5 2008/07/07 18:01:11 lsces Exp $
  */
 
 /**
@@ -52,7 +52,7 @@ $linkToID = $controller->sid;	// -- Tell addmedia.php what to link to
 		var recwin = window.open("gedrecord.php?pid=<?php print $controller->sid ?>", "_blank", "top=0,left=0,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");
 	}
 	function showchanges() {
-		window.location = '<?php print $SCRIPT_NAME."?".$QUERY_STRING."&show_changes=yes"; ?>';
+		window.location = '<?php print $SCRIPT_NAME.normalize_query_string($QUERY_STRING."&show_changes=yes"); ?>';
 	}
 //-->
 </script>
@@ -62,7 +62,7 @@ $linkToID = $controller->sid;	// -- Tell addmedia.php what to link to
 <?php
 	if ($controller->accept_success) print "<b>".$pgv_lang["accept_successful"]."</b><br />";
 ?>
-			<span class="name_head"><?php print PrintReady($controller->source->getTitle()); if ($SHOW_ID_NUMBERS) print " &lrm;(".$controller->sid.")&lrm;"; ?></span><br />
+			<span class="name_head"><?php print PrintReady($controller->source->getTitle()); if ($SHOW_ID_NUMBERS) print " " . getLRM() . "(".$controller->sid.")" . getLRM(); ?></span><br />
 		</td>
 		<td valign="top" class="noprint">
 		<?php if (!$controller->isPrintPreview()) {
@@ -109,27 +109,27 @@ foreach($sourcefacts as $indexval => $fact) {
 	$fact = trim($fact);
 	if (!empty($fact)) {
 		if ($fact=="NOTE") {
-			print_main_notes($factrec, 1, $sid, $linenum);
+			print_main_notes($factrec, 1, $controller->sid, $linenum);
 		}
 		else {
-			print_fact($factrec, $sid, $linenum);
+			print_fact($factrec, $controller->sid, $linenum);
 		}
 	}
 }
 // Print media
-print_main_media($sid);
+print_main_media($controller->sid);
 
 //-- new fact link
 if ((!$controller->isPrintPreview())&&($controller->userCanEdit())) {
-	print_add_new_fact($sid, $sourcefacts, "SOUR");
+	print_add_new_fact($controller->sid, $sourcefacts, "SOUR");
 		// -- new media
 	print "<tr><td class=\"descriptionbox\">";
 	print_help_link("add_media_help", "qm", "add_media_lbl");
 	print $pgv_lang["add_media_lbl"] . "</td>";
 	print "<td class=\"optionbox\">";
-	print "<a href=\"javascript: ".$pgv_lang["add_media_lbl"]."\" onclick=\"window.open('addmedia.php?action=showmediaform&amp;linktoid=$sid', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1'); return false;\">".$pgv_lang["add_media"]."</a>";
+	print "<a href=\"javascript: ".$pgv_lang["add_media_lbl"]."\" onclick=\"window.open('addmedia.php?action=showmediaform&amp;linktoid=$controller->sid', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1'); return false;\">".$pgv_lang["add_media"]."</a>";
 	print "<br />\n";
-	print '<a href="javascript:;" onclick="window.open(\'inverselink.php?linktoid='.$sid.'&amp;linkto=source\', \'_blank\', \'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1\'); return false;">'.$pgv_lang["link_to_existing_media"].'</a>';
+	print '<a href="javascript:;" onclick="window.open(\'inverselink.php?linktoid='.$controller->sid.'&amp;linkto=source\', \'_blank\', \'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1\'); return false;">'.$pgv_lang["link_to_existing_media"].'</a>';
 	print "</td></tr>\n";
 
 }
@@ -140,7 +140,7 @@ if ((!$controller->isPrintPreview())&&($controller->userCanEdit())) {
 		<tr class="center"><td colspan="2">
 <?php
 //Print the tasks table
-if (file_exists("modules/research_assistant/research_assistant.php") && ($SHOW_RESEARCH_ASSISTANT>=getUserAccessLevel())) {
+if (file_exists("modules/research_assistant/research_assistant.php") && ($SHOW_RESEARCH_ASSISTANT>=PGV_USER_ACCESS_LEVEL)) {
  include_once('modules/research_assistant/research_assistant.php');
  $mod = new ra_functions();
 	$mod->Init();
@@ -157,8 +157,8 @@ $myfamlist = $controller->source->getSourceFams();
 $ci=count($myindilist);
 $cf=count($myfamlist);
 
-if ($ci>0) print_indi_table($myindilist, $pgv_lang["individuals"]." @ ".$controller->source->getTitle());
-if ($cf>0) print_fam_table($myfamlist, $pgv_lang["families"]." @ ".$controller->source->getTitle());
+if ($ci>0) print_indi_table($myindilist, $controller->source->getTitle());
+if ($cf>0) print_fam_table($myfamlist, $controller->source->getTitle());
 
 ?>
 	<br />

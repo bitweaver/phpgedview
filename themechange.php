@@ -22,28 +22,27 @@
  * @author John Finlay
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: themechange.php,v 1.2 2006/10/01 22:44:02 lsces Exp $
+ * @version $Id: themechange.php,v 1.3 2008/07/07 18:01:12 lsces Exp $
  */
 
 require("config.php");
 
-	if (!empty($_POST["mytheme"]) || !empty($_GET["mytheme"])) {
-		if (isset($_POST["mytheme"])) $theme_dir = $_POST["mytheme"];
-		else if (isset($_GET["mytheme"])) $theme_dir = $_GET["mytheme"];
-		$_SESSION["theme_dir"] = "$theme_dir";
-	}
-	$uname = getUserName();
-	if ($uname) {
-		$olduser = getUser($uname);
-		if ($olduser["editaccount"]) {
-			$newuser = array();
-			$newuser = $olduser;
-			//deleteUser($uname, "changed");
-			$newuser["theme"] = $theme_dir;
-			updateUser($uname, $newuser, "changed");
-			$user = $newuser;
+// Change the theme for this session
+if (!empty($_POST["mytheme"]) || !empty($_GET["mytheme"])) {
+	if (isset($_POST["mytheme"])) {
+		$theme_dir = $_POST["mytheme"];
+	}	else {
+		if (isset($_GET["mytheme"])) {
+			$theme_dir = $_GET["mytheme"];
 		}
 	}
+	$_SESSION["theme_dir"] = "$theme_dir";
+}
+
+// Make the change permanent, if allowed
+if (get_user_setting(PGV_USER_ID, 'editaccount')=='Y') {
+	set_user_setting(PGV_USER_ID, 'theme', $theme_dir);
+}
 	
 //where do we return ?
 if (isset($_POST["frompage"])) $frompage = $_POST["frompage"];

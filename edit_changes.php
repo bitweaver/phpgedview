@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_changes.php,v 1.5 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: edit_changes.php,v 1.6 2008/07/07 18:01:13 lsces Exp $
  */
 
 /**
@@ -47,6 +47,10 @@ if (!userCanAccept(getUserName())) {
 	exit;
 }
 
+if (isset($_REQUEST['action'])) $action = $_REQUEST['action'];
+if (isset($_REQUEST['cid'])) $cid = $_REQUEST['cid'];
+if (isset($_REQUEST['index'])) $index = $_REQUEST['index'];
+if (isset($_REQUEST['ged'])) $ged = $_REQUEST['ged'];
 if (empty($action)) $action="";
 
 print_simple_header($pgv_lang["review_changes"]);
@@ -57,8 +61,8 @@ print_simple_header($pgv_lang["review_changes"]);
 		var recwin = window.open("gedrecord.php?fromfile=1&pid="+xref, "_blank", "top=50,left=50,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");
 	}
 	function showchanges() {
-	   window.location = '<?php print $SCRIPT_NAME; ?>';
-   }
+		window.location = '<?php print $SCRIPT_NAME; ?>';
+	}
 
 	function show_diff(diffurl) {
 		window.opener.location = diffurl;
@@ -130,65 +134,76 @@ else {
 	$output = "<br /><table class=\"list_table\">";
 	$output .= "<tr><td class=\"list_value $TEXT_DIRECTION\">";
 	$changedgedcoms = array();
-	foreach($pgv_changes as $cid=>$changes) {
-		for($i=0; $i<count($changes); $i++) {
-			$change = $changes[$i];
+	foreach ($pgv_changes as $cid=>$changes) {
+		foreach ($changes as $i=>$change) {
 			if ($i==0) {
 				$changedgedcoms[$change["gedcom"]] = true;
-				if ($GEDCOM != $change["gedcom"]) {
-					$GEDCOM = $change["gedcom"];
-				}
-				$gedrec = $change["undo"];
-				$ct = preg_match("/0 @(.*)@(.*)/", $gedrec, $match);
-				if ($ct>0) $type = trim($match[2]);
-				else $type = "INDI";
-				if ($type=="INDI") {
-					if ($change['type']=='delete') $names = get_indi_names(find_person_record($change['gid'])); 
-					else $names = get_indi_names($gedrec);
-					$output .= "<b>".PrintReady(check_NN($names[0][0]))."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
-				}
-				else if ($type=="FAM") $output .= "<b>".PrintReady(get_family_descriptor($change["gid"]))."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
-				else if ($type=="SOUR") {
-					$name = get_gedcom_value("ABBR", 1, $gedrec);
-					if (empty($name)) $name = get_gedcom_value("TITL", 1, $gedrec);
-					$output .= "<b>".PrintReady($name)."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
-				}
-				else if ($type=="OBJE") {
+				$GEDCOM=$change["gedcom"];
+				$gedrec=find_gedcom_record($change['gid']);
+				if (empty($gedrec))
+					$gedrec=$change['undo'];
+				if (preg_match("/0\s*@\w+@\s*(\w+)/", $gedrec, $match))
+					$type=$match[1];
+				else
+					$type="INDI";
+				switch ($type) {
+				case 'INDI':
+					$names = get_indi_names($gedrec);
+					$output .= "<b>".PrintReady(check_NN($names[0][0]))."</b> " . getLRM() . "(".$change["gid"].")" . getLRM()  . "<br />";
+					$output .= "<a href=\"javascript:;\" onclick=\"return show_diff('individual.php?pid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
+					break;
+				case 'FAM':
+					$output.= "<b>".PrintReady(get_family_descriptor($change["gid"]))."</b> " . getLRM() . "(" . $change["gid"]. ")" . getLRM() . "<br />";
+					$output.= "<a href=\"javascript:;\" onclick=\"return show_diff('family.php?famid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
+					break;
+				case 'SOUR':
+					$name=get_gedcom_value("ABBR", 1, $gedrec);
+					if (empty($name))
+						$name=get_gedcom_value("TITL", 1, $gedrec);
+					$output.="<b>".PrintReady($name)."</b> " . getLRM() . "(".$change["gid"].")" . getLRM()  . "<br />";
+					$output.="<a href=\"javascript:;\" onclick=\"return show_diff('source.php?sid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
+					break;
+				case 'OBJE':
 					$name = get_gedcom_value("TITL", 1, $gedrec);
 					if (empty($name)) $name = get_gedcom_value("TITL", 2, $gedrec);
-					$output .= "<b>".PrintReady($name)."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
+					$output.="<b>".PrintReady($name)."</b> " . getLRM() . "(".$change["gid"].")" . getLRM()  . "<br />";
+					$output.="<a href=\"javascript:;\" onclick=\"return show_diff('mediaviewer.php?mid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
+					break;
+				default:
+					$output.="<b>".$factarray[$type]."</b> " . getLRM() . "(".$change["gid"].")" . getLRM() ."<br />";
+					break;
 				}
-				else $output .= "<b>".$factarray[$type]."</b> &lrm;(".$change["gid"].")&lrm;<br />\n";
-				if ($type=="INDI") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('individual.php?pid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
-				if ($type=="FAM") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('family.php?famid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
-				if ($type=="SOUR") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('source.php?sid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
-				if ($type=="OBJE") $output .= "<a href=\"javascript:;\" onclick=\"return show_diff('mediaviewer.php?mid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | \n";
-				$output .= "<a href=\"javascript:show_gedcom_record('".$change["gid"]."');\">".$pgv_lang["view_gedcom"]."</a> | ";
-				$output .= "<a href=\"javascript:;\" onclick=\"return edit_raw('".$change["gid"]."');\">".$pgv_lang["edit_raw"]."</a><br />";
-				$output .= "<div class=\"indent\">\n";
-				$output .= $pgv_lang["changes_occurred"]."<br />\n";
-				$output .= "<table class=\"list_table\">\n";
-				$output .= "<tr><td class=\"list_label\">".$pgv_lang["undo"]."</td>";
-				$output .= "<td class=\"list_label\">".$pgv_lang["accept"]."</td>";
-				$output .= "<td class=\"list_label\">".$pgv_lang["type"]."</td><td class=\"list_label\">".$pgv_lang["username"]."</td><td class=\"list_label\">".$pgv_lang["date"]."</td><td class=\"list_label\">GEDCOM</td></tr>\n";
+				$output.="<a href=\"javascript:show_gedcom_record('".$change["gid"]."');\">".$pgv_lang["view_gedcom"]."</a> | ";
+				$output.="<a href=\"javascript:;\" onclick=\"return edit_raw('".$change["gid"]."');\">".$pgv_lang["edit_raw"]."</a><br />";
+				$output.="<div class=\"indent\">\n";
+				$output.=$pgv_lang["changes_occurred"]."<br />\n";
+				$output.="<table class=\"list_table\">\n<tr>";
+				$output.="<td class=\"list_label\">".$pgv_lang["accept"]."</td>";
+				$output.="<td class=\"list_label\">".$pgv_lang["type"]."</td>";
+				$output.="<td class=\"list_label\">".$pgv_lang["username"]."</td>";
+				$output.="<td class=\"list_label\">".$pgv_lang["date"]."</td>";
+				$output.="<td class=\"list_label\">GEDCOM</td>";
+				$output.="<td class=\"list_label\">".$pgv_lang["undo"]."</td>";
+				$output.="</tr>\n";
 			}
 			if ($i==count($changes)-1) {
-				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"edit_changes.php?action=undo&amp;cid=$cid&amp;index=$i\">".$pgv_lang["undo"]."</a></td>";
 				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"edit_changes.php?action=accept&amp;cid=$cid\">".$pgv_lang["accept"]."</a></td>\n";
-			}
-			else {
-				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><br /></td>";
-				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><br /></td>";
+			} else {
+				$output .= "<td class=\"list_value $TEXT_DIRECTION\">&nbsp;</td>";
 			}
 			$output .= "<td class=\"list_value $TEXT_DIRECTION\"><b>".$pgv_lang[$change["type"]]."</b></td>\n";
 			$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"javascript:;\" onclick=\"return reply('".$change["user"]."','".$pgv_lang["review_changes"]."')\" alt=\"".$pgv_lang["message"]."\">";
-			$cuser = getUser($change["user"]);
-			if ($cuser) {
-				$output .= PrintReady($cuser["firstname"]." ".$cuser["lastname"]);
+			if ($user_id=get_user_id($change["user"])) {
+				$output.=PrintReady(getUserFullName($user_id));
 			}
  			$output .= PrintReady("&nbsp;(".$change["user"].")")."</a></td>\n";
- 			$output .= "<td class=\"list_value $TEXT_DIRECTION\">".get_changed_date(date("j M Y",$change["time"]))." ".date($TIME_FORMAT, $change["time"])."</td>\n";
+ 			$output .= "<td class=\"list_value $TEXT_DIRECTION\">".format_timestamp($change["time"])."</td>\n";
 			$output .= "<td class=\"list_value $TEXT_DIRECTION\">".$change["gedcom"]."</td>\n";
+			if ($i==count($changes)-1) {
+				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"edit_changes.php?action=undo&amp;cid=$cid&amp;index=$i\">".$pgv_lang["undo"]."</a></td>";
+			} else {
+				$output .= "<td class=\"list_value $TEXT_DIRECTION\">&nbsp;</td>";
+			}
 			$output .= "</tr>\n";
 			if ($i==count($changes)-1) {
 				$output .= "</table>\n";
@@ -203,26 +218,32 @@ else {
 	// Row 1 column 1: title "Accept all"
 	$output2 .= "<tr><td class=\"list_label\">".$pgv_lang["accept_all"]."</td>";
 	// Row 1 column 2: separator
-	$output2 .= "<td class=\"list_label width10\">&nbsp;</td>";
+	$output2 .= "<td class=\"list_label width25\">&nbsp;</td>";
 	// Row 1 column 3: title "Undo all"
 	$output2 .= "<td class=\"list_label\">".$pgv_lang["undo_all"]."</td></tr>";
-	
+
 	// Row 2 column 1: action "Accept all"
 	$output2 .= "<tr><td class=\"list_value\">";
+	$count = 0;
 	foreach($changedgedcoms as $ged=>$value) {
-		$output2 .= "<a href=\"edit_changes.php?action=acceptall&amp;ged=$ged\">$ged - ".$pgv_lang["accept_all"]."</a><br />\n";
+		if ($count!=0) $output2.="<br /><br />";
+		$output2 .= "<a href=\"edit_changes.php?action=acceptall&amp;ged=$ged\">$ged - ".$pgv_lang["accept_all"]."</a>\n";
+		$count ++;
 	}
 	$output2 .= "</td>";
 	// Row 2 column 2: separator
-	$output2 .= "<td class=\"list_value width10\">&nbsp;</td>";
+	$output2 .= "<td class=\"list_value width25\">&nbsp;</td>";
 	// Row 2 column 3: action "Undo all"
 	$output2 .= "<td class=\"list_value\">";
+	$count = 0;
 	foreach($changedgedcoms as $ged=>$value) {
-		$output2 .= "<a href=\"edit_changes.php?action=undoall&amp;ged=$ged\" onclick=\"return confirm('".$pgv_lang["undo_all_confirm"]."');\">$ged - ".$pgv_lang["undo_all"]."</a><br />\n";
+		if ($count!=0) $output2.="<br /><br />";
+		$output2 .= "<a href=\"edit_changes.php?action=undoall&amp;ged=$ged\" onclick=\"return confirm('".$pgv_lang["undo_all_confirm"]."');\">$ged - ".$pgv_lang["undo_all"]."</a>\n";
+		$count ++;
 	}
 	$output2 .= "</td></tr>";
 	$output2 .= "</table>";
-	
+
 	print "<center>";
 	print $pgv_lang["accept_gedcom"]."<br />";
 	print $output2;
@@ -230,7 +251,7 @@ else {
 	print $output2;
 	print "</center>";
 }
-	
+
 
 print "<br /><br />\n</div>\n";
 print "<center><a href=\"javascript:;\" onclick=\"if (window.opener.showchanges) window.opener.showchanges(); window.close();\">".$pgv_lang["close_window"]."</a><br /></center>\n";

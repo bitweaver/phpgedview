@@ -5,7 +5,7 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: style_rtl.css,v 1.1.2.2 2005/10/31 10:29:59 opus27 Exp $
+ * @version $Id: style_rtl.css 2778 2008-03-28 13:40:36Z canajun2eh $
  */
 body {
 	direction: rtl;
@@ -16,4 +16,10 @@ body {
 }
 .door dd {
 	float: right;
+}
+
+.icon, .adminicon {
+	border: none;
+	padding-left: 5pt;
+	padding-right: 0pt;
 }

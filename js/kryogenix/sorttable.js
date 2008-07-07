@@ -8,7 +8,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: sorttable.js,v 1.1 2007/05/27 14:41:36 lsces Exp $
+ * @version $Id: sorttable.js,v 1.2 2008/07/07 17:57:07 lsces Exp $
  */
 
 addEvent(window, "load", sortables_init);
@@ -38,6 +38,7 @@ function ts_makeSortable(table) {
 	for (var i=0;i<firstRow.cells.length;i++) {
 		var cell = firstRow.cells[i];
 		var txt = ts_getInnerText(cell);
+		if (cell.className.match(/\bsorttable_nosort\b/)) continue // PGV: skip this col
 		if (cell.getElementsByTagName("img") && cell.nodeName.toLowerCase()=="th") txt = cell.innerHTML; // PGV: allow icon as text
 		if (txt=="") continue; // PGV: do not process empty cols
 		cell.innerHTML = '<a href="javascript:;" class="sortheader" '+
@@ -80,29 +81,20 @@ function ts_resortTable(lnk,clid) {
 	var table = getParent(td,'TABLE');
 
 	// PGV : confirm action for big table
-	if (table.rows.length > 300
+	if (table.rows.length > 500
 	&& !confirm("Sorting this big table may take a long time\r\nContinue ?")) {
 		lnk.style.cursor='pointer';
 		return;
 	}
 	lnk.style.cursor='wait';
-	// Work out a type for the column
 	if (table.rows.length <= 1) return;
-	var itm = ts_getInnerText(table.rows[1].cells[column]);
-	sortfn = ts_sort_caseinsensitive;
-	if (itm.match(/^\d\d[\/-]\d\d[\/-]\d\d\d\d$/)) sortfn = ts_sort_date;
-	if (itm.match(/^\d\d[\/-]\d\d[\/-]\d\d$/)) sortfn = ts_sort_date;
-	if (itm.match(/^[£$]/)) sortfn = ts_sort_currency;
-	if (itm.match(/^[A-Z][\d\.]+$/)) sortfn = ts_sort_currency; // PGV: GEDCOM ID
-	if (itm.match(/^[\d\.]+[A-Z]$/)) sortfn = ts_sort_currency; // PGV: GEDCOM ID
-	if (itm.match(/^[\d\.]+$/)) sortfn = ts_sort_numeric;
 	SORT_COLUMN_INDEX = column;
 	var firstRow = new Array();
 	var newRows = new Array();
 	for (i=0;i<table.rows[0].length;i++) { firstRow[i] = table.rows[0][i]; }
 	for (j=1;j<table.rows.length;j++) { newRows[j-1] = table.rows[j]; }
 
-	newRows.sort(sortfn);
+	newRows.sort(ts_pgv_sort);
 
 	if (span.getAttribute("sortdir") == 'down') {
 		ARROW = '&nbsp;&uarr;';
@@ -142,89 +134,23 @@ function getParent(el, pTagName) {
 	else
 		return getParent(el.parentNode, pTagName);
 }
-function ts_sort_date(a,b) {
-	// y2k notes: two digit years less than 50 are treated as 20XX, greater than 50 are treated as 19XX
+
+function ts_pgv_sort(a,b) {
+	akey = a.cells[SORT_COLUMN_INDEX].getElementsByTagName('a');
+	bkey = b.cells[SORT_COLUMN_INDEX].getElementsByTagName('a');
+	if (akey.length && akey[0].name && bkey.length && bkey[0].name) {
+		// use "name" value as numeric sortkey, if exists
+		aa = parseInt(akey[0].name);
+		bb = parseInt(bkey[0].name);
+		if (aa==bb) return a.rowIndex-b.rowIndex; // equal values sort by their original sequence
+		if (aa<bb) return -1;
+		if (aa>bb) return 1;
+	}
 	aa = ts_getInnerText(a.cells[SORT_COLUMN_INDEX]);
 	bb = ts_getInnerText(b.cells[SORT_COLUMN_INDEX]);
-	if (aa.length == 10) {
-		dt1 = aa.substr(6,4)+aa.substr(3,2)+aa.substr(0,2);
-	} else {
-		yr = aa.substr(6,2);
-		if (parseInt(yr) < 50) { yr = '20'+yr; } else { yr = '19'+yr; }
-		dt1 = yr+aa.substr(3,2)+aa.substr(0,2);
-	}
-	if (bb.length == 10) {
-		dt2 = bb.substr(6,4)+bb.substr(3,2)+bb.substr(0,2);
-	} else {
-		yr = bb.substr(6,2);
-		if (parseInt(yr) < 50) { yr = '20'+yr; } else { yr = '19'+yr; }
-		dt2 = yr+bb.substr(3,2)+bb.substr(0,2);
-	}
-	if (dt1==dt2) return 0;
-	if (dt1<dt2) return -1;
-	return 1;
+	if (aa==bb) return a.rowIndex-b.rowIndex; // equal values sort by their original sequence
+	return _lc_sort(aa,bb); // locale.js
 }
-
-function ts_sort_currency(a,b) {
-	aa = ts_getInnerText(a.cells[SORT_COLUMN_INDEX]).replace(/[^0-9.]/g,'');
-	bb = ts_getInnerText(b.cells[SORT_COLUMN_INDEX]).replace(/[^0-9.]/g,'');
-	//return parseFloat(aa) - parseFloat(bb);
-	aa = parseFloat(aa);
-	if (isNaN(aa)) aa = 0;
-	bb = parseFloat(bb);
-	if (isNaN(bb)) bb = 0;
-	if (aa<bb) return -1;
-	if (aa>bb) return 1;
-	// PGV: when aa==bb keep previous order (=row index)
-	if (a.rowIndex<b.rowIndex) return -1
-	if (a.rowIndex>b.rowIndex) return 1
-	return 0;
-}
-
-function ts_sort_numeric(a,b) {
-	aa = parseFloat(ts_getInnerText(a.cells[SORT_COLUMN_INDEX]));
-	if (isNaN(aa)) aa = 0;
-	bb = parseFloat(ts_getInnerText(b.cells[SORT_COLUMN_INDEX]));
-	if (isNaN(bb)) bb = 0;
-	//return aa-bb;
-	if (aa<bb) return -1;
-	if (aa>bb) return 1;
-	// PGV: when aa==bb keep previous order (=row index)
-	if (a.rowIndex<b.rowIndex) return -1
-	if (a.rowIndex>b.rowIndex) return 1
-	return 0;
-}
-
-function ts_sort_caseinsensitive(a,b) {
-	aa = ts_getInnerText(a.cells[SORT_COLUMN_INDEX]).toLowerCase();
-	bb = ts_getInnerText(b.cells[SORT_COLUMN_INDEX]).toLowerCase();
-
-	// PGV: get "title" sortkey if exists
-	akey = a.cells[SORT_COLUMN_INDEX].getElementsByTagName("a");
-	if (akey.length && akey[0].title) aa = akey[0].title;
-	bkey = b.cells[SORT_COLUMN_INDEX].getElementsByTagName("a");
-	if (bkey.length && bkey[0].title) bb = bkey[0].title;
-
-	// PGV: clean UTF8 special chars before sorting
-	aa = strclean(aa);
-	bb = strclean(bb);
-
-	// PGV: when aa==bb keep previous order (=row index)
-	if (aa<bb) return -1;
-	if (aa>bb) return 1;
-	if (a.rowIndex<b.rowIndex) return -1
-	if (a.rowIndex>b.rowIndex) return 1
-	return 0;
-}
-
-function ts_sort_default(a,b) {
-	aa = ts_getInnerText(a.cells[SORT_COLUMN_INDEX]);
-	bb = ts_getInnerText(b.cells[SORT_COLUMN_INDEX]);
-	if (aa==bb) return 0;
-	if (aa<bb) return -1;
-	return 1;
-}
-
 
 function addEvent(elm, evType, fn, useCapture)
 // addEvent and removeEvent

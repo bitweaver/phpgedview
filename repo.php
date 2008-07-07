@@ -4,7 +4,7 @@
  * Also shows how many sources reference this repository.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,19 +22,20 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repo.php,v 1.3 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: repo.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
  */
 
 require("config.php");
 require_once 'includes/functions_print_facts.php';
 require_once("includes/functions_print_lists.php");
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
-if ($SHOW_SOURCES<getUserAccessLevel(getUserName())) {
+if ($SHOW_SOURCES<PGV_USER_ACCESS_LEVEL) {
 	header("Location: index.php");
 	exit;
 }
+
+//-- keep the time of this access to help with concurrent edits
+$_SESSION['last_access_time'] = time();
 
 if (empty($action)) $action="";
 if (empty($show_changes)) $show_changes = "yes";
@@ -44,7 +45,7 @@ $rid = clean_input($rid);
 global $PGV_IMAGES;
 
 $accept_success=false;
-if (userCanAccept(getUserName())) {
+if (PGV_USER_CAN_ACCEPT) {
 	if ($action=="accept") {
 		require_once("includes/functions_import.php");
 		if (accept_changes($rid."_".$GEDCOM)) {
@@ -75,39 +76,41 @@ print_header("$name - $rid - ".$pgv_lang["repo_info"]);
 		var recwin = window.open("gedrecord.php?pid=<?php print $rid ?>", "_blank", "top=50,left=50,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");
 	}
 	function showchanges() {
-		window.location = '<?php print $SCRIPT_NAME."?".$QUERY_STRING."&show_changes=yes"; ?>';
+		window.location = '<?php print $SCRIPT_NAME.normalize_query_string($QUERY_STRING."&show_changes=yes"); ?>';
 	}
 //-->
 </script>
-<table width="100%"><tr><td>
+<table class="list_table"><tr><td>
 <?php
 if ($accept_success) print "<b>".$pgv_lang["accept_successful"]."</b><br />";
 print "\n\t<span class=\"name_head\">".PrintReady($name);
 
-if ($SHOW_ID_NUMBERS) print " &lrm;($rid)&lrm;";
+if ($SHOW_ID_NUMBERS) print " " . getLRM() . "($rid)" . getLRM();
 print "</span><br />";
-if ($gGedcom->isEditable()) {
+if (PGV_USER_CAN_EDIT) {
 	if ($view!="preview") {
 		if (isset($pgv_changes[$rid."_".$GEDCOM])) {
 			if (!isset($show_changes)) {
 				print "<a href=\"repo.php?rid=$rid&amp;show_changes=yes\">".$pgv_lang["show_changes"]."</a>"."  ";
 			}
 			else {
-				if (userCanAccept(getUserName())) print "<a href=\"repo.php?rid=$rid&amp;action=accept\">".$pgv_lang["accept_all"]."</a> | ";
+				if (PGV_USER_CAN_ACCEPT) print "<a href=\"repo.php?rid=$rid&amp;action=accept\">".$pgv_lang["accept_all"]."</a> | ";
 				print "<a href=\"repo.php?rid=$rid\">".$pgv_lang["hide_changes"]."</a>"."  ";
 			}
 			print_help_link("show_changes_help", "qm");
 			print "<br />";
 		}
-		print "<a href=\"javascript:;\" onclick=\"return edit_raw('$rid');\">".$pgv_lang["edit_raw"]."</a>";
-		print_help_link("edit_raw_gedcom_help", "qm");
-		print " | ";
+		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) {
+			print "<a href=\"javascript:;\" onclick=\"return edit_raw('$rid');\">".$pgv_lang["edit_raw"]."</a>";
+			print_help_link("edit_raw_gedcom_help", "qm");
+			print " | ";
+		}
 		print "<a href=\"javascript:;\" onclick=\"return deleterepository('$rid');\">".$pgv_lang["delete_repo"]."</a>";
 		print_help_link("delete_repo_help", "qm");
 		print "<br />\n";
 	}
 	if (isset($show_changes)) {
-		$newrepo = trim(find_record_in_file($rid));
+		$newrepo = trim(find_updated_record($rid));
 	}
 }
 print "<br />";
@@ -214,11 +217,11 @@ foreach($repofacts as $indexval => $fact) {
 	}
 }
 //-- new fact link
-if (($view!="preview") &&($gGedcom->isEditable())) {
+if (($view!="preview") && PGV_USER_CAN_EDIT) {
 	print_add_new_fact($rid, $repofacts, "REPO");
 }
 print "</table>\n\n";
-print "\n\t\t<br /><br /><span class=\"label\">".$pgv_lang["other_repo_records"]."</span>";
+//print "\n\t\t<br /><br /><span class=\"label\">".$pgv_lang["other_repo_records"]."</span>";
 flush();
 
 $query = "REPO @$rid@";
@@ -229,48 +232,26 @@ $mysourcelist = search_sources($query);
 uasort($mysourcelist, "itemsort");
 $cs=count($mysourcelist);
 
-if ($cs>0) {
-	print_help_link("repos_listbox_help", "qm");
-	print "\n\t<table class=\"list_table $TEXT_DIRECTION\">\n\t\t<tr><td class=\"list_label\"";
-	if($cs>12)	print " colspan=\"2\"";
-	print "><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["source"]["small"]."\" border=\"0\" title=\"".$pgv_lang["titles_found"]."\" alt=\"".$pgv_lang["titles_found"]."\" />&nbsp;&nbsp;";
-	print $pgv_lang["titles_found"];
-	print "</td></tr><tr><td class=\"$TEXT_DIRECTION list_value_wrap\"><ul>";
-	if (count($mysourcelist)>0) {
-		$i=1;
-		// -- print the array
-		foreach ($mysourcelist as $key => $value) {
-			print_list_source($key, $value);
-			if ($i==ceil($cs/2) && $cs>12) print "</ul></td><td class=\"list_value_wrap\"><ul>\n";
-			$i++;
-		}
-	}
+print_sour_table($mysourcelist, PrintReady($name));  //@@@@@
 
-	print "\n\t\t</ul></td>\n\t\t";
+print "<br /><br /></td><td valign=\"top\" class=\"noprint\">";
 
-	print "</tr><tr>";
-	print "</tr>\n\t</table>";
-}
-else print "&nbsp;&nbsp;&nbsp;<span class=\"warning\"><i>".$pgv_lang["no_results"]."</span>";
-
-print "<br /><br /></td><td valign=\"top\">";
-
-if ($view!="preview") {
+if ($view!="preview" &&(empty($SEARCH_SPIDER))) {
 	print "\n\t<table cellspacing=\"10\" align=\"right\"><tr>";
 	if ($SHOW_GEDCOM_RECORD) {
 		print "\n\t\t<td align=\"center\" valign=\"top\"><span class=\"link\"><a href=\"javascript:show_gedcom_record();\"><img class=\"icon\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["gedcom"]["small"]."\" border=\"0\" alt=\"\" /><br />".$pgv_lang["view_gedcom"]."</a>";
 		print_help_link("show_repo_gedcom_help", "qm");
 		print "</span></td>";
 	}
-	if($SHOW_GEDCOM_RECORD && ($ENABLE_CLIPPINGS_CART>=getUserAccessLevel())){
+	if ($SHOW_GEDCOM_RECORD && $ENABLE_CLIPPINGS_CART>=PGV_USER_ACCESS_LEVEL){
 		print "</tr>\n\t\t<tr>";
 	}
-	if ($ENABLE_CLIPPINGS_CART>=getUserAccessLevel()) {
+	if ($ENABLE_CLIPPINGS_CART>=PGV_USER_ACCESS_LEVEL) {
 		print "<td align=\"center\" valign=\"top\"><span class=\"link\"><a href=\"clippings.php?action=add&amp;id=$rid&amp;type=repository\"><img class=\"icon\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["clippings"]["small"]."\" border=\"0\" alt=\"\" /><br />".$pgv_lang["add_to_cart"]."</a>";
 		print_help_link("add_repository_clip_help", "qm");
 		print "</span></td>";
 	}
-	if(!$SHOW_GEDCOM_RECORD && ($ENABLE_CLIPPINGS_CART<getUserAccessLevel())){
+	if(!$SHOW_GEDCOM_RECORD && ($ENABLE_CLIPPINGS_CART<PGV_USER_ACCESS_LEVEL)){
 		print "<td>&nbsp;</td>";
 	}
 	print "</tr></table>";

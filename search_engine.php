@@ -6,7 +6,7 @@
  * back to here.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  * Author: Mike Elliott (coloredpixels)
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,16 +29,14 @@
  * @version $Id$
  */
 global $SEARCH_SPIDER, $CHARACTER_SET;
-global $ALLOW_CHANGE_GEDCOM, $DEFAULT_GEDCOM;
+global $gGedcom, $ALLOW_CHANGE_GEDCOM, $DEFAULT_GEDCOM;
 
 require "config.php";
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
-require $helptextfile["english"];
-if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
+
+loadLangFile("pgv_help");
 
 if (!isset($help)) $help = "";
-require ("help_text_vars.php");
+require ("includes/help_text_vars.php");
 
 header("Content-Type: text/html; charset=$CHARACTER_SET");
 
@@ -46,11 +44,11 @@ print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http:/
 print "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n\t";
 print "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=$CHARACTER_SET\" />\n\t";
 
-print "<link rel=\"stylesheet\" href=\"$stylesheet\" type=\"text/css\" media=\"all\"></link>\n\t";
+print "<link rel=\"stylesheet\" href=\"$stylesheet\" type=\"text/css\" media=\"all\" />";
 if ((!empty($rtl_stylesheet))&&($TEXT_DIRECTION=="rtl")) 
-	print "<link rel=\"stylesheet\" href=\"$rtl_stylesheet\" type=\"text/css\" media=\"all\"></link>\n\t";
+	print "<link rel=\"stylesheet\" href=\"$rtl_stylesheet\" type=\"text/css\" media=\"all\" />";
 print "<meta name=\"robots\" content=\"noindex,follow\" />\n\t";
-print "<meta name=\"generator\" content=\"Bitweaver PhpGedView v$VERSION - http://www.bitweaver.org\" />\n";
+print "<meta name=\"generator\" content=\"PhpGedView v$VERSION - http://www.phpgedview.net\" />\n";
 print "<title>".$pgv_lang['label_search_engine_detected']."</title>\n";
 print "</head>\n<body>";
 
@@ -72,9 +70,8 @@ $link = "indilist.php?ged=$GEDCOM";
 print "<a href=\"".$link."\"><b>".$pgv_lang["individuals"]."</b></a><br />";
 
 //-- gedcom list
-$gedcoms = $gGedcom->getList();
-if ($ALLOW_CHANGE_GEDCOM && count($gedcoms)>1) {
-	foreach($gedcoms as $ged=>$gedarray) {
+if ($ALLOW_CHANGE_GEDCOM && count($gGedcom)>1) {
+	foreach($gGedcom as $ged=>$gedarray) {
 		$name = $pgv_lang["individual_list"]." - ".PrintReady($gedarray["title"]);
 		print "<a href=\"indilist.php?ged=".$ged."\"><b>".$name."</b></a><br />";
 	}

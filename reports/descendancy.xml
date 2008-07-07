@@ -1,20 +1,20 @@
-<PGVReport access="PGV_PUBLIC" icon="descend">
+<PGVReport access="PRIV_PUBLIC" icon="descend">
 	<PGVRTitle><PGVRvar var="pgv_lang[descend_report]" /></PGVRTitle>
 	<PGVRDescription>Prints a descendant chart in portrait mode</PGVRDescription>
 	<PGVRInput name="pid" lookup="INDI" type="text" default=""><PGVRvar var="pgv_lang[enter_pid]" />:</PGVRInput>
 	<PGVRInput name="maxgen" type="select" options="3,4,5,6,7,8,9,*"><PGVRvar var="pgv_lang[generations]" /></PGVRInput>
 	<PGVRInput name="sources" type="checkbox" default="1"><PGVRvar var="pgv_lang[show_sources]" /></PGVRInput>
 	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="18" style="" />
-	<PGVRStyle name="subheader" font="LucidaSansUnicode" size="12" style="b" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="label1" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="label2" font="LucidaSansUnicode" size="10" style="" />
-	<PGVRStyle name="name" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="name1" font="LucidaSansUnicode" size="14" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="footnote" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="footnotenum" font="LucidaSansUnicode" size="6" style="" />
+	<PGVRStyle name="header" font="dejavusans" size="18" style="" />
+	<PGVRStyle name="subheader" font="dejavusans" size="12" style="b" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="label1" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="label2" font="dejavusans" size="10" style="" />
+	<PGVRStyle name="name" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="name1" font="dejavusans" size="14" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="footnote" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="footnotenum" font="dejavusans" size="6" style="" />
 	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
 		<PGVRHeader>
 			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /></PGVRCell>
@@ -448,6 +448,7 @@ i								</PGVRTextBox>
 				</PGVRif>
 			</PGVRRelatives>
 			<PGVRif condition="$sources==1">
+				<PGVRNewPage></PGVRNewPage>
 				<PGVRTextBox border="0" width="$width" height="20">
 					<PGVRText style="subheader"><br /><PGVRvar var="pgv_lang[sources]" /><br /><br /></PGVRText>
 					<PGVRFootnoteTexts />

@@ -1,4 +1,4 @@
-<PGVReport access="PGV_PUBLIC" icon="sfamily">
+<PGVReport access="PRIV_PUBLIC" icon="sfamily">
 	<!-- $Id$ -->
 	<PGVRTitle><PGVRvar var="pgv_lang[family_group_report]" /></PGVRTitle>
 	<PGVRDescription>Prints a PAF style family group record</PGVRDescription>
@@ -10,13 +10,14 @@
 	<PGVRInput name="blanks" type="checkbox" default="0"><PGVRvar var="pgv_lang[show_basic]" /></PGVRInput>
 	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
 	<!-- stylesheets for this report -->
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="18" style="" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="label1" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="name" font="LucidaSansUnicode" size="12" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="9" style="" />
-	<PGVRStyle name="footnote" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="footnotenum" font="LucidaSansUnicode" size="6" style="" />
+
+	<PGVRStyle name="header" font="dejavusans" size="18" style="" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="label1" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="name" font="dejavusans" size="12" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="9" style="" />
+	<PGVRStyle name="footnote" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="footnotenum" font="dejavusans" size="6" style="" />
 	<!-- start of main report document -->
 	<PGVRDoc pageSize="$pageSize" orientation="P" margin="24">
 		<!-- if the option to show blanks is selected then ignore the MARR, BIRT etc facts that are printed with the blanks -->
@@ -619,7 +620,7 @@
 						<PGVRText style="name"><PGVRvar var="pgv_lang[family]" /> <PGVRGetPersonName id="$husbid" /> + <PGVRGetPersonName id="$wifeid" /></PGVRText>
 					</PGVRTextBox>
 				</PGVRPageHeader>
-				<PGVRTextBox border="0" width="$width" height="20">
+				<PGVRTextBox border="0" width="$width" height="20" newline="1">
 					<PGVRText style="label1"><br /><PGVRvar var="pgv_lang[sources]" /><br /><br /></PGVRText>
 					<PGVRFootnoteTexts />
 				</PGVRTextBox>

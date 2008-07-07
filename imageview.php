@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: imageview.php,v 1.6 2008/06/25 22:21:15 spiderr Exp $
+ * @version $Id: imageview.php,v 1.7 2008/07/07 18:01:12 lsces Exp $
  * @package PhpGedView
  * @subpackage Media
  */
@@ -50,5 +50,5 @@ $gBitSystem->mDisplayOnlyContent = true;
 $gBitSmarty->assign( "imgwidth", $imgwidth );
 $gBitSmarty->assign( "imgheight", $imgheight );
 $gBitSmarty->assign( "filename", $filename );
-$gBitSystem->display( 'bitpackage:phpgedview/imageview.tpl', tra( 'Image popup' ) , array( 'display_mode' => 'display' ));
+$gBitSystem->display( 'bitpackage:phpgedview/imageview.tpl', tra( 'Image popup' ) );
 ?>

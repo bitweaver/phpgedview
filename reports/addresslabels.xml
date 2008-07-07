@@ -1,12 +1,12 @@
-<PGVReport access="PGV_USER" icon="place">
+<PGVReport access="PRIV_USER" icon="place">
 	<!-- $Id$ -->
 	<PGVRTitle><PGVRvar var="pgv_lang[address_labels]" /></PGVRTitle>
 	<PGVRDescription>Prints address labels</PGVRDescription>
-	<PGVRStyle name="header" font="LucidaSansUnicode" size="16" style="b" />
-	<PGVRStyle name="pagenum" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="text" font="LucidaSansUnicode" size="8" style="" />
-	<PGVRStyle name="label" font="LucidaSansUnicode" size="8" style="b" />
-	<PGVRStyle name="idstyle" font="LucidaSansUnicode" size="6" style="" />
+	<PGVRStyle name="header" font="dejavusans" size="16" style="b" />
+	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="text" font="dejavusans" size="8" style="" />
+	<PGVRStyle name="label" font="dejavusans" size="8" style="b" />
+	<PGVRStyle name="idstyle" font="dejavusans" size="6" style="" />
 	<PGVRInput name="address" type="text"><PGVRvar var="pgv_lang[filter_address]" /> </PGVRInput>
 	<PGVRInput name="sortby" type="select" options="NAME,ID"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
 	<PGVRInput name="email_in" type="select" options="all,noemail,onlyemail"><PGVRvar var="pgv_lang[include]"/> </PGVRInput>
@@ -19,11 +19,20 @@
 		</PGVRHeader>
 		<PGVRBody>
 			<PGVRSetVar name="email" value="" />
+			<PGVRSetVar name="addrfilter" value="ADDR CONTAINS ." />
+			<PGVRSetVar name="addrfilter2" value="" />
+			<PGVRif condition="$address != ''">
+				<PGVRSetVar name="addrfilter2" value="ADDR SUBCONTAINS $address" />
+			</PGVRif>
 			<PGVRif condition="$email_in=='noemail'">
 				<PGVRSetVar name="email" value="EMAIL EQUALS ''" />
 			</PGVRif>
 			<PGVRif condition="$email_in=='onlyemail'">
 				<PGVRSetVar name="email" value="EMAIL CONTAINS ." />
+				<PGVRif condition="$address==''">
+					<PGVRSetVar name="addrfilter" value="EMAIL CONTAINS ." />
+					<PGVRSetVar name="email" value="" />
+				</PGVRif>
 			</PGVRif>
 			<PGVRSetVar name="newline" value="0" />
 			<PGVRSetVar name="count" value="1" />
@@ -43,10 +52,10 @@
 			</PGVRif>
 			<PGVRSetVar name="X" value="$Xstart" />
 			<PGVRSetVar name="Y" value="$Ystart" />
-			<PGVRList list="individual" filter1="ADDR CONTAINS ." filter2="ADDR SUBCONTAINS $address" filter3="$email" sortby="$sortby">
+			<PGVRList list="individual" filter1="$addrfilter" filter2="$addrfilter2" filter3="$email" sortby="$sortby">
 				<PGVRTextBox top="$Y" left="$X" width="$width" height="$height" border="0" newline="$newline" pagecheck="false">
 					<PGVRText style="label"><PGVRGetPersonName id="" /></PGVRText>
-					<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR" /></PGVRText>
+					<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR" /><PGVRGedcomValue tag="RESI:ADDR" /></PGVRText>
 					<PGVRif condition="@ADDR:ADR1 != ''">
 						<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR:ADR1" /></PGVRText>
 					</PGVRif>

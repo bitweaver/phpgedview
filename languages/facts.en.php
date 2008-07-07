@@ -3,7 +3,7 @@
  * English Language file for PhpGedView.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2008  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@
  * @package PhpGedView
  * @version $Id$
  */
-if (preg_match("/facts\...\.php$/", $_SERVER["SCRIPT_NAME"])>0) {
+
+if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	print "You cannot access a language file directly.";
 	exit;
 }
+
 // -- Define a fact array to map GEDCOM tags with their English values
 $factarray["ABBR"]	= "Abbreviation";
 $factarray["ADDR"]	= "Address";
@@ -131,7 +133,7 @@ $factarray["RETI"]	= "Retirement";
 $factarray["RFN"]	= "Record File Number";
 $factarray["RIN"]	= "Record ID Number";
 $factarray["ROLE"]	= "Role";
-$factarray["SEX"]	= "Sex";
+$factarray["SEX"]	= "Gender";
 $factarray["SLGC"]	= "LDS Child Sealing";
 $factarray["SLGS"]	= "LDS Spouse Sealing";
 $factarray["SOUR"]	= "Source";
@@ -154,6 +156,37 @@ $factarray["EMAIL"]	= "Email Address";
 $factarray["_TODO"]	= "To Do Item";
 $factarray["_UID"]	= "Universal Identifier";
 $factarray["_PRIM"]	= "Highlighted Image";
+$factarray["_DBID"] = "Linked database ID";
+
+// These facts are used in specific contexts
+$factarray["STAT:DATE"] = "Status Change Date";
+
+//These facts are compounds for the view probabilities page
+$factarray["FAMC:HUSB:SURN"] = "Father's Surname";
+$factarray["FAMC:WIFE:SURN"] = "Mother's Surname";
+$factarray["FAMC:HUSB:BIRT:PLAC"] = "Father's Birthplace";
+$factarray["FAMC:WIFE:BIRT:PLAC"] = "Mother's Birthplace";
+$factarray["FAMC:MARR:PLAC"] = "Parents' Marriage Place";
+$factarray["FAMC:HUSB:OCCU"] = "Father's Occupation";
+$factarray[":BIRT:PLAC"] = "Birthplace";
+$factarray["FAMS:MARR:PLAC"] = "Marriage Place";
+$factarray["FAMS:SPOUSE:DEAT:PLAC"] = "Spouse's Death Place";
+$factarray["FAMC:HUSB:GIVN"] = "Father's Given Name";
+$factarray["FAMS:SPOUSE:BIRT:PLAC"] = "Spouse's Birth Place";
+$factarray["FAMC:WIFE:GIVN"] = "Mother's Given Name";
+$factarray["FAMC:HUSB:FAMC:HUSB:GIVN"] = "Paternal Grandfather's Given Name";
+$factarray["FAMC:WIFE:FAMC:WIFE:GIVN"] = "Maternal Grandmother's Given Name";
+$factarray["FAMC:WIFE:FAMC:HUSB:GIVN"] = "Maternal Grandfather's Given Name"; 
+$factarray["FAMC:HUSB:FAMC:WIFE:GIVN"] = "Paternal Grandmother's Given Name";
+$factarray["FAMS:CHIL:BIRT:PLAC"] = "Child's Birth Place";
+
+// These facts are all colon delimited
+$factarray["BIRT:PLAC"] = "Birth Place";
+$factarray["DEAT:PLAC"] = "Death Place";
+$factarray["CHR:PLAC"] = "Christening Place";
+$factarray["BAPM:PLAC"] = "Baptism Place";
+$factarray["BURI:PLAC"] = "Burial Place";
+$factarray["MARR:PLAC"] = "Marriage Place";
 
 // These facts are specific to GEDCOM exports from Family Tree Maker
 $factarray["_MDCL"]	= "Medical";
@@ -193,6 +226,7 @@ $factarray["ROMN"] = "Romanized";
 // PAF related facts
 $factarray["_NAME"] = "Mailing Name";
 $factarray["URL"] = "Web URL";
+$factarray["_URL"] = "Web URL";
 $factarray["_HEB"] = "Hebrew";
 $factarray["_SCBK"] = "Scrapbook";
 $factarray["_TYPE"] = "Media Type";
@@ -227,8 +261,9 @@ $factarray["_NLIV"]	= "Not living";
 $factarray["_NMAR"]	= "Never married";
 $factarray["_PRMN"]	= "Permanent Number";
 $factarray["_WEIG"]	= "Weight";
-$factarray["_YART"]	= "Yartzeit";
+$factarray["_YART"]	= "Yahrzeit";
 $factarray["_MARNM"] = "Married Name";
+$factarray["_MARNM_SURN"] = "Married Surname";
 $factarray["_STAT"]	= "Marriage Status";
 $factarray["COMM"]	= "Comment";
 
@@ -251,6 +286,10 @@ $factarray["_BIRT_GCHI"] = "Birth of a grandchild";
 $factarray["_MARR_GCHI"] = "Marriage of a grandchild";
 $factarray["_DEAT_GCHI"] = "Death of a grandchild";
 
+$factarray["_BIRT_GGCH"] = "Birth of a great-grandchild";
+$factarray["_MARR_GGCH"] = "Marriage of a great-grandchild";
+$factarray["_DEAT_GGCH"] = "Death of a great-grandchild";
+
 $factarray["_MARR_FATH"] = "Marriage of father";
 $factarray["_DEAT_FATH"] = "Death of father";
 
@@ -265,7 +304,13 @@ $factarray["_BIRT_HSIB"] = "Birth of a half-sibling";
 $factarray["_MARR_HSIB"] = "Marriage of a half-sibling";
 $factarray["_DEAT_HSIB"] = "Death of a half-sibling";
 
+$factarray["_BIRT_NEPH"] = "Birth of a nephew or niece";
+$factarray["_MARR_NEPH"] = "Marriage of a nephew or niece";
+$factarray["_DEAT_NEPH"] = "Death of a nephew or niece";
+
 $factarray["_DEAT_GPAR"] = "Death of a grand-parent";
+
+$factarray["_DEAT_GGPA"] = "Death of a great-grand-parent";
 
 $factarray["_BIRT_FSIB"] = "Birth of a father's sibling";
 $factarray["_MARR_FSIB"] = "Marriage of a father's sibling";
@@ -279,11 +324,33 @@ $factarray["_BIRT_COUS"] = "Birth of a first cousin";
 $factarray["_MARR_COUS"] = "Marriage of a first cousin";
 $factarray["_DEAT_COUS"] = "Death of a first cousin";
 
+$factarray["_FAMC_EMIG"] = "Emigration of parents";
+$factarray["_FAMC_RESI"] = "Residence of parents";
+
 //-- PGV Only facts
 $factarray["_THUM"]	= "Use this image as the thumbnail?";
-$factarray["_PGVU"]	= "Last changed by";
+$factarray["_PGVU"]	= "by"; // last changed by
 $factarray["SERV"] = "Remote Server";
 $factarray["_GEDF"] = "GEDCOM File";
 
-if (file_exists( "languages/facts.en.extra.php")) require  "languages/facts.en.extra.php";
+/*-- Fact abbreviations for use in Chart boxes.  
+ *		Use these abbreviations in cases where the standard method of using the first
+ *		letter of the spelled-out name results in an undesirable abbreviation or where
+ *		you want to produce a different result (eg: "x" instead of "M" for "Married").
+ *
+ *		You can abbreviate any Fact label this way.  The list of abbreviations is
+ *		open-ended.
+ *
+ *		These abbreviations are user-customizable. Just put them into file "extra.xx.php".
+ *		The length of these abbreviations is not restricted to 1 letter.
+ */
+ 
+/*-- The following lines have been commented out.  They should serve as examples. 
+ 
+$factAbbrev["BIRT"]		= "B";
+$factAbbrev["MARR"]		= "M";
+$factAbbrev["DEAT"]		= "D";
+
+ */
+
 ?>

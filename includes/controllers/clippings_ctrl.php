@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: clippings_ctrl.php,v 1.2 2007/05/28 14:39:38 lsces Exp $
+ * @version $Id: clippings_ctrl.php,v 1.3 2008/07/07 17:57:40 lsces Exp $
  */
 /**
 * Main controller class for the Clippings page.
@@ -36,6 +36,7 @@ require_once ("includes/GrampsExport.php");
 require_once ("includes/person_class.php");
 require_once ("includes/functions.php");
 require_once ("includes/controllers/basecontrol.php");
+require_once ("includes/pclzip.lib.php");
 
 function same_group($a, $b) {
 		if ($a['type'] == $b['type'])
@@ -81,13 +82,13 @@ class ClippingsControllerRoot extends BaseController {
 	//----------------beginning of function definitions for ClippingsControllerRoot
 	function init() {
 		global $action, $PRIV_HIDE, $PRIV_PUBLIC, $ENABLE_CLIPPINGS_CART, $SCRIPT_NAME, $remove, $pgv_lang, $SERVER_URL, $CONTACT_EMAIL, $HOME_SITE_TEXT, $HOME_SITE_URL, $MEDIA_DIRECTORY, $others, $cart, $item, $type, $GEDCOM, $id, $filetype, $convert, $IncludeMedia, $Zip;
-		global $CHARACTER_SET, $dom, $VERSION;
+		global $VERSION, $VERSION_RELEASE, $CHARACTER_SET,$dom;
 
 		if (!isset ($ENABLE_CLIPPINGS_CART))
 			$ENABLE_CLIPPINGS_CART = $PRIV_HIDE;
 		if ($ENABLE_CLIPPINGS_CART === true)
 			$ENABLE_CLIPPING_CART = $PRIV_PUBLIC;
-		if ($ENABLE_CLIPPINGS_CART < getUserAccessLevel()) {
+		if ($ENABLE_CLIPPINGS_CART < PGV_USER_ACCESS_LEVEL) {
 			header("Location: index.php");
 			exit;
 		}
@@ -159,7 +160,7 @@ class ClippingsControllerRoot extends BaseController {
 							$this->add_family_members($id);
 						} else
 							if ($others == "descendants") {
-								add_family_descendancy($id);
+								$this->add_family_descendancy($id);
 							}
 				} else
 					if ($type == 'indi') {
@@ -232,7 +233,7 @@ class ClippingsControllerRoot extends BaseController {
 							$media = array ();
 							$mediacount = 0;
 							$ct = count($cart);
-							$filetext = "0 HEAD\r\n1 SOUR PhpGedView\r\n2 NAME Bitweaver PhpGedView Online Genealogy\r\n2 VERS $VERSION\r\n1 DEST DISKETTE\r\n1 DATE " . date("j M Y") . "\r\n2 TIME " . date("H:i:s") . "\r\n";
+							$filetext = "0 HEAD\r\n1 SOUR PhpGedView\r\n2 NAME PhpGedView Online Genealogy\r\n2 VERS $VERSION $VERSION_RELEASE\r\n1 DEST DISKETTE\r\n1 DATE " . date("j M Y") . "\r\n2 TIME " . date("H:i:s") . "\r\n";
 							$filetext .= "1 GEDC\r\n2 VERS 5.5\r\n2 FORM LINEAGE-LINKED\r\n1 CHAR $CHARACTER_SET\r\n";
 							$head = find_gedcom_record("HEAD");
 							$placeform = trim(get_sub_record(1, "1 PLAC", $head));
@@ -269,10 +270,11 @@ class ClippingsControllerRoot extends BaseController {
 										}
 										$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
 										for ($k = 0; $k < $ft; $k++) {
-											$filename = extract_filename(trim($match[$k][1]));
-											$media[$mediacount] = $MEDIA_DIRECTORY.$filename;
-											$filename = substr($match[$k][1], strrpos($match[$k][1], "\\"));
-											$mediacount++;
+											$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
+											if (file_exists($filename)) {
+												$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
+												$mediacount++;
+											}
 											$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
 										}
 										$filetext .= trim($record) . "\r\n";
@@ -309,10 +311,12 @@ class ClippingsControllerRoot extends BaseController {
 
 											$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
 											for ($k = 0; $k < $ft; $k++) {
-												$filename = extract_filename($match[$k][1]);
-												$media[$mediacount] = $MEDIA_DIRECTORY.$filename;
-												$mediacount++;
-												$record = preg_replace("@(\d FILE )" . addslashes($match[$k][1]) . "@", "$1" . $filename, $record);
+												$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
+												if (file_exists($filename)) {
+													$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
+													$mediacount++;
+												}
+												$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
 											}
 
 											$filetext .= trim($record) . "\r\n";
@@ -329,10 +333,11 @@ class ClippingsControllerRoot extends BaseController {
 											} else {
 												$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
 												for ($k = 0; $k < $ft; $k++) {
-													$filename = extract_filename(trim($match[$k][1]));
-													$media[$mediacount] = $MEDIA_DIRECTORY.$filename;
-													$filename = substr($match[$k][1], strrpos($match[$k][1], "\\"));
-													$mediacount++;
+													$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
+													if (file_exists($filename)) {
+														$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
+														$mediacount++;
+													}
 													$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
 												}
 												$filetext .= trim($record) . "\r\n";
@@ -344,9 +349,8 @@ class ClippingsControllerRoot extends BaseController {
 								$this->media_list = $media;	
 							}
 							$filetext .= "0 @SPGV1@ SOUR\r\n";
-							$tuser = getUser($CONTACT_EMAIL);
-							if ($tuser) {
-								$filetext .= "1 AUTH " . $tuser["firstname"] . " " . $tuser["lastname"] . "\r\n";
+							if ($user_id=get_user_id($CONTACT_EMAIL)) {
+								$filetext .= "1 AUTH " . getUserFullName($user_id) . "\r\n";
 							}
 							$filetext .= "1 TITL " . $HOME_SITE_TEXT . "\r\n";
 							$filetext .= "1 ABBR " . $HOME_SITE_TEXT . "\r\n";
@@ -403,8 +407,7 @@ class ClippingsControllerRoot extends BaseController {
  */	
 function zip_cart()
 {
-	global $filetype,$INDEX_DIRECTORY,$pgv_lang,$VERSION,$IncludeMedia;
-		require "includes/pclzip.lib.php";
+	global $filetype,$INDEX_DIRECTORY,$pgv_lang,$VERSION,$VERSION_RELEASE,$IncludeMedia;
 		switch ($filetype) {
 	case 'gedcom':
 		{
@@ -418,8 +421,7 @@ function zip_cart()
 			break;
 		}
 	}
-	$tempFileName = $INDEX_DIRECTORY.$tempFileName;
-	$fp = fopen($tempFileName, "wb");
+	$fp = fopen($INDEX_DIRECTORY.$tempFileName, "wb");
 	if($fp)
 	{
 		flock($fp,LOCK_EX);
@@ -428,16 +430,11 @@ function zip_cart()
 		fclose($fp);
 		$zipName = "clippings".rand(0, 1500).".zip";
 		$fname = $INDEX_DIRECTORY.$zipName;
-		$comment = "Created by Bitweaver PhpGedView ".$VERSION." on ".date("d M Y").".";
+		$comment = "Created by PhpGedView ".$VERSION." ".$VERSION_RELEASE." on ".date("d M Y").".";
 		$archive = new PclZip($fname);
-		$this->media_list[]= $tempFileName;
-		$c = count($this->media_list);
-		//-- remove ../ from file paths when creating zip
-        $ct = preg_match("~((\.\./)+)~", $INDEX_DIRECTORY, $match);
-        $rmpath = "";
-        if ($ct>0) $rmpath = $match[1];
-        $v_list = $archive->create($this->media_list, PCLZIP_OPT_COMMENT, $comment, PCLZIP_OPT_REMOVE_PATH, $rmpath);
-//		$v_list = $archive->create($this->media_list, PCLZIP_OPT_COMMENT, $comment);
+		// add the ged/gramps file to the root of the zip file (strip off the index_directory)
+		$this->media_list[]= array (PCLZIP_ATT_FILE_NAME => $INDEX_DIRECTORY.$tempFileName, PCLZIP_ATT_FILE_NEW_FULL_NAME => $tempFileName);
+		$v_list = $archive->create($this->media_list, PCLZIP_OPT_COMMENT, $comment);
 		if ($v_list == 0) print "Error : ".$archive->errorInfo(true)."</td></tr>";
 		else {
 			$openedFile = fopen($fname,"rb");
@@ -445,7 +442,7 @@ function zip_cart()
 			fclose($openedFile);
 			unlink($fname);
 		}
-		unlink($tempFileName);
+		unlink($INDEX_DIRECTORY.$tempFileName);
 	}
 	else
 	{
@@ -461,10 +458,7 @@ function download_clipping(){
 		
 	if ($IncludeMedia == "yes" || $Zip == "yes")
 	{
-//		print $IncludeMedia;
-//		print $Zip;
-		
-		header("Content-Type: application/zip");			
+		header("Content-Type: application/zip");
 		header("Content-Disposition: attachment; filename=clipping.zip");
 		$this->zip_cart();
 	}
@@ -535,7 +529,7 @@ function download_clipping(){
 			//-- look in the gedcom record for any linked SOUR, NOTE, or OBJE and also add them to the
 			//- clippings cart
 			$gedrec = find_gedcom_record($clipping['id']);
-			if ($SHOW_SOURCES >= getUserAccessLevel(getUserName())) {
+			if ($SHOW_SOURCES >= PGV_USER_ACCESS_LEVEL) {
 				$st = preg_match_all("/\d SOUR @(.*)@/", $gedrec, $match, PREG_SET_ORDER);
 				for ($i = 0; $i < $st; $i++) {
 					// add SOUR

@@ -3,7 +3,7 @@
  * Compact pedigree tree
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2006	John Finlay and Others
+ * Copyright (C) 2002 to 2008	John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,11 +41,14 @@ require("config.php");
 require_once("includes/functions_charts.php");
 
 // -- args
-if (!isset($rootid)) $rootid = "";
+$rootid = "";
+if (!empty($_REQUEST['rootid'])) $rootid = $_REQUEST['rootid'];
 $rootid = clean_input($rootid);
 $rootid = check_rootid($rootid);
-if (!isset($showids)) $showids = 0;
-if (!isset($showthumbs)) $showthumbs = 0;
+$showids = 0;
+if (!empty($_REQUEST['showids'])) $showids = $_REQUEST['showids'];
+$showthumbs = 0;
+if (!empty($_REQUEST['showthumbs'])) $showthumbs = $_REQUEST['showthumbs'];
 
 $person = Person::getInstance($rootid);
 
@@ -59,6 +62,14 @@ else {
 }
 // -- print html header information
 print_header(PrintReady($name) . " " . $pgv_lang["compact_chart"]);
+
+// LBox =====================================================================================
+if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+	include('modules/lightbox/lb_config.php');
+	include('modules/lightbox/functions/lb_call_js.php');
+}	
+// ==========================================================================================
+
 if (strlen($name)<30) $cellwidth="420";
 else $cellwidth=(strlen($name)*14);
 print "\n\t<table class=\"list_table $TEXT_DIRECTION\"><tr><td width=\"${cellwidth}px\" valign=\"top\">\n\t\t";
@@ -129,7 +140,7 @@ if ($view != "preview") {
 print "</td></tr></table>";
 
 // process the tree
-$treeid = ancestry_array($rootid,4);
+$treeid = ancestry_array($rootid, 5);
 print "<br />";
 print "<table width='100%' border='0' cellpadding='0' cellspacing='0'>";
 
@@ -324,19 +335,12 @@ function print_td_person($n) {
 	}
 
 	if ($pid) {
-		$indirec=find_person_record($pid);
-		if (!$indirec) $indirec = find_updated_record($pid);
-
-		if ((!displayDetailsByID($pid))&&(!showLivingNameByID($pid))) {
-			$name = $pgv_lang["private"];
-			$addname = "";
-		}
-		else {
-			$name = get_person_name($pid);
-			$addname = get_add_person_name($pid);
-		}
+		$indi=Person::getInstance($pid);
+		$name=$indi->getName();
+		$addname=$indi->getAddName();
+		
 		if (($showthumbs) && $MULTI_MEDIA && $SHOW_HIGHLIGHT_IMAGES && showFact("OBJE", $pid)) {
-			$object = find_highlighted_object($pid, $indirec);
+			$object = find_highlighted_object($pid, $indi->gedrec);
 			if (!empty($object["thumb"])) {
 				$size = findImageSize($object["thumb"]);
 				$class = "pedigree_image_portrait";
@@ -346,12 +350,24 @@ function print_td_person($n) {
 				$imgsize = findImageSize($object["file"]);
 				$imgwidth = $imgsize[0]+50;
 				$imgheight = $imgsize[1]+150;
-				$text .= "<a href=\"javascript:;\" onclick=\"return openImage('".rawurlencode($object["file"])."',$imgwidth, $imgheight);\">";
-				$text .= "<img id=\"box-$pid\" src=\"".$object["thumb"]."\"vspace=\"0\" hspace=\"0\" class=\"$class\" alt =\"\" title=\"\" ";
+//LBox --------  change for Lightbox Album --------------------------------------------
+				if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+					$text .= "<a href=\"" . $object["file"] . "\" rel=\"clearbox[general]\" title=\"" . $object["mid"] . "\">" . "\n";
+					//$text .= " ><a href=\"mediaviewer.php?mid=".$object["mid"]."\">";
+				}else{
+// ---------------------------------------------------------------------------------------------
+					$text .= "<a href=\"javascript:;\" onclick=\"return openImage('".rawurlencode($object["file"])."',$imgwidth, $imgheight);\">";
+//LBox --------  change for Lightbox Album --------------------------------------------
+				}
+// ---------------------------------------------------------------------------------------------
+				$birth_date=$indi->getBirthDate();
+				$death_date=$indi->getDeathDate();
+				$text .= "<img id=\"box-$pid\" src=\"".$object["thumb"]."\"vspace=\"0\" hspace=\"0\" class=\"$class\" alt =\"\" title=\"".$name.' '.$birth_date->Display(false).' - '.$death_date->Display(false).'" ';
 				if ($imgsize) $text .= " /></a>\n";
 				else $text .= " />\n";
 			}
 		}
+
 		$text .= "<a class=\"name1\" href=\"individual.php?pid=$pid\" title=\"$title\"> ";
 		$text .= PrintReady($name);
 		if ($addname) $text .= "<br />" . PrintReady($addname);
@@ -363,18 +379,17 @@ function print_td_person($n) {
   		   $text .= "(".$pid.")</span>";
 		}
 		$text .= "<br />";
-		if (displayDetailsByID($pid)) {
-			$text .= "<span class='details1'>";
-			$birthrec = get_sub_record(1, "1 BIRT", $indirec);
-			$ct = preg_match("/2 DATE.*(\d\d\d\d)/", $birthrec, $bmatch);
-			if ($ct>0) $text .= trim($bmatch[1]);
-			$deathrec = get_sub_record(1, "1 DEAT", $indirec);
-			$ct = preg_match("/2 DATE.*(\d\d\d\d)/", $deathrec, $dmatch);
-			if ($ct>0) {
-				$text .= "-".trim($dmatch[1]);
-				$text .= "<br />".get_age($indirec, substr(get_sub_record(2, "2 DATE", $deathrec),7));
-			} else $text .= "-<br />";
-			$text .= "</span>";
+		if ($indi->canDisplayDetails()) {
+			$text.="<span class='details1'>";
+			$birth=$indi->getBirthDate();
+			$death=$indi->getDeathDate();
+			$text.=$birth->date1->Format('Y');
+			$text.='-';
+			$text.=$death->date1->Format('Y');
+			$age=GedcomDate::GetAgeYears($birth, $death);
+			if ($age)
+				$text.=" <span class=\"age\">({$age})</span>";
+			$text.="</span>";
 		}
 	}
 	$text = unhtmlentities($text);
@@ -383,8 +398,11 @@ function print_td_person($n) {
 	// -- box color
 	$isF="";
 	if ($n==1) {
-		if (strpos($indirec, "1 SEX F")!==false) $isF="F";
-	} else if ($n%2) $isF="F";
+		if ($indi->getSex()=='F')
+			$isF="F";
+	} else
+		if ($n%2)
+			$isF="F";
 	// -- box size
 	if ($n==1) print "<td";
 	else print "<td width='15%'";

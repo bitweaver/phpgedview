@@ -5,7 +5,7 @@
  * Processes PGV XML Reports and generates a report
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportengine.php,v 1.6 2008/06/25 22:21:16 spiderr Exp $
+ * @version $Id: reportengine.php,v 1.7 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**
@@ -59,17 +59,19 @@ function get_tag_values($tag) {
 	return $vals;
 }
 
-if (!isset($_REQUEST['action'])) $action = "choose";
-else $action = $_REQUEST['action'];
-if (!isset($_REQUEST['report'])) $report = "";
-else $report = $_REQUEST['report'];
+if (isset($_REQUEST['action'])) $action = $_REQUEST['action'];
+if (isset($_REQUEST['report'])) $report = $_REQUEST['report'];
+if (isset($_REQUEST['output'])) $output = $_REQUEST['output'];
+if (isset($_REQUEST['vars'])) $vars = $_REQUEST['vars'];
+if (isset($_REQUEST['varnames'])) $varnames = $_REQUEST['varnames'];
+if (isset($_REQUEST['type'])) $type = $_REQUEST['type'];
+
+if (empty($action)) $action = "choose";
+if (!isset($report)) $report = "";
 if (!isset($output)) $output = "PDF";
-if (!isset($_REQUEST['vars'])) $vars = array();
-else $vars = $_REQUEST['vars'];
-if (!isset($_REQUEST['varnames'])) $varnames = array();
-else $varnames = $_REQUEST['varnames'];
-if (!isset($_REQUEST['$type'])) $type = array();
-else $type = $_REQUEST['type'];
+if (!isset($vars)) $vars = array();
+if (!isset($varnames)) $varnames = array();
+if (!isset($type)) $type = array();
 
 //-- setup the arrays
 $newvars = array();
@@ -100,22 +102,46 @@ foreach($varnames as $indexval => $name) {
 	}
 }
 
-if ($report == "" && $action!="run" ) {
-	$reports = get_report_list();
-}
+$reports = get_report_list();
 if (!empty($report)) {
 	$r = basename($report);
-	//	if (!isset($reports[$r]["access"])) $action = "choose";
-	//	else if ($reports[$r]["access"]<getUserAccessLevel(getUserName())) $action = "choose";
+	if (!isset($reports[$r]["access"])) $action = "choose";
+	else if ($reports[$r]["access"]<PGV_USER_ACCESS_LEVEL) $action = "choose";
 }
 
 //-- choose a report to run
+if ($action=="choose") {
+	$reports = get_report_list(true);
+	print_header($pgv_lang["choose_report"]);
+
+	print "<br /><br />\n";
+	print "<form name=\"choosereport\" method=\"get\" action=\"reportengine.php\">\n";
+	print "<input type=\"hidden\" name=\"action\" value=\"setup\" />\n";
+	print "<input type=\"hidden\" name=\"output\" value=\"$output\" />\n";
+	print "<table class=\"facts_table width40 center $TEXT_DIRECTION\">";
+	print "<tr><td class=\"topbottombar\" colspan=\"2\">".$pgv_lang["choose_report"]."</td></tr>";
+	print "<tr><td class=\"descriptionbox wrap width33 vmiddle\">".$pgv_lang["select_report"]."</td>";
+	print "<td class=\"optionbox\">";
+	print "<select name=\"report\">\n";
+	foreach($reports as $file=>$report) {
+		if ($report["access"]>=PGV_USER_ACCESS_LEVEL)
+			print "<option value=\"".$report["file"]."\">".$report["title"][$LANGUAGE]."</option>\n";
+	}
+	print "</select></td></tr>\n";
+	print "<tr><td class=\"topbottombar\" colspan=\"2\"><input type=\"submit\" value=\"".$pgv_lang["click_here"]."\" /></td></tr>";
+	print "</table>";
+	print "</form>\n";
+	print "<br /><br />\n";
+
+	print_footer();
+}
+
 //-- setup report to run
-if ($action=="setup") {
+else if ($action=="setup") {
+	print_header($pgv_lang["enter_report_values"]);
 	//-- make sure the report exists
-	if (!file_exists(PHPGEDVIEW_PKG_PATH.$report)) {
-		$gBitSmarty->assign('errors', 'The specified report cannot be found' );
-		$action = 'choose';
+	if (!file_exists($report)) {
+		print "<span class=\"error\">".$pgv_lang["file_not_found"]."</span> ".$report."\n";
 	}
 	else {
 		require_once("includes/reportheader.php");
@@ -130,7 +156,7 @@ if ($action=="setup") {
 		xml_set_character_data_handler($xml_parser, "characterData");
 
 		//-- open the file
-		if (!($fp = fopen(PHPGEDVIEW_PKG_PATH.$report, "r"))) {
+		if (!($fp = fopen($report, "r"))) {
 		   die("could not open XML input");
 		}
 		//-- read the file and parse it 4kb at a time
@@ -141,43 +167,157 @@ if ($action=="setup") {
 		}
 		xml_parser_free($xml_parser);
 
+		?>
+<script type="text/javascript">
+<!--
+var pastefield;
+function paste_id(value) {
+	pastefield.value=value;
+}
+//-->
+</script>
+		<?php
+		init_calendar_popup();
+		print "<form name=\"setupreport\" method=\"get\" target=\"_blank\" action=\"reportengine.php\">\n";
+		print "<input type=\"hidden\" name=\"action\" value=\"run\" />\n";
+		print "<input type=\"hidden\" name=\"report\" value=\"$report\" />\n";
+		print "<input type=\"hidden\" name=\"download\" value=\"\" />\n";
+		//print "<input type=\"hidden\" name=\"output\" value=\"PDF\" />\n";
+				
+		print "<table class=\"facts_table width50 center $TEXT_DIRECTION\">";
+		print "<tr><td class=\"topbottombar\" colspan=\"2\">".$pgv_lang["enter_report_values"]."</td></tr>";
+		print "<tr><td class=\"descriptionbox width30 wrap\">".$pgv_lang["selected_report"]."</td><td class=\"optionbox\">".$report_array["title"]."</td></tr>\n";
+
+		$doctitle = trim($report_array["title"]);
+		$firstrun = 0;
+		if (!isset($report_array["inputs"])) $report_array["inputs"] = array();
 		foreach($report_array["inputs"] as $indexval => $input) {
-			if (!isset($input["type"])) $report_array["inputs"][$indexval]["type"] = "text";
-			if ($input["type"]=="select") {
-				$report_array["inputs"][$indexval]['select'] = preg_split("/[, ]+/", $input["options"]);
-			}
-			if (isset($input["lookup"])) {
-				if ($input["lookup"]=="INDI") {
-					if (isset($_REQUEST['pid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['pid']);
-					else $report_array["inputs"][$indexval]["default"] = check_rootid($input["default"]);
+			if ((($input["name"] == "sources") && ($SHOW_SOURCES>=PGV_USER_ACCESS_LEVEL)) || ($input["name"] != "sources")) {
+				if (($input["name"] != "photos") || ($MULTI_MEDIA)) {
+					// url forced default value ?
+					if (isset($_REQUEST[$input["name"]])) {
+						$input["default"]=$_REQUEST[$input["name"]];
+						// update doc title for bookmarking
+						$doctitle .= " ";
+						if (strpos($input["name"],"date2")) $doctitle .= "-";
+						$doctitle .= $input["default"];
+						if (strpos($input["name"],"date1")) $doctitle .= "-";
+					}
+					print "<tr><td class=\"descriptionbox wrap\">\n";
+					print "<input type=\"hidden\" name=\"varnames[]\" value=\"".$input["name"]."\" />\n";
+					print $input["value"]."</td><td class=\"optionbox\">";
+					if (!isset($input["type"])) $input["type"] = "text";
+					if (!isset($input["default"])) $input["default"] = "";
+					if (isset($input["lookup"])) {
+						if ($input["lookup"]=="INDI") {
+							if (!empty($pid)) $input["default"] = clean_input($pid);
+							else $input["default"] = check_rootid($input["default"]);
+						}
+						if ($input["lookup"]=="FAM") {
+							if (!empty($famid)) $input["default"] = clean_input($famid);
+						}
+						if ($input["lookup"]=="SOUR") {
+							if (!empty($sid)) $input["default"] = clean_input($sid);
+						}
+					}
+					if ($input["type"]=="text") {
+						print "<input type=\"text\" name=\"vars[".$input["name"]."]\" id=\"".$input["name"]."\" ";
+						print "value=\"".$input["default"]."\" ";
+						print " style=\"direction: ltr;\" ";
+						print "/>";
+					}
+					if ($firstrun == 0) {
+						?>
+						<script language="JavaScript" type="text/javascript">
+						<!--
+							document.getElementById('<?php print $input["name"]; ?>').focus();
+						//-->
+						</script>
+						<?php
+						$firstrun++;
+					}
+					if ($input["type"]=="checkbox") {
+						print "<input type=\"checkbox\" name=\"vars[".$input["name"]."]\" id=\"".$input["name"]."\" value=\"1\"";
+						if ($input["default"]=="1") print "checked=\"checked\"";
+						print " />";
+					}
+					if ($input["type"]=="select") {
+						print "<select name=\"vars[".$input["name"]."]\" id=\"".$input["name"]."_var\">\n";
+						$options = preg_split("/[, ]+/", $input["options"]);
+						foreach($options as $indexval => $option) {
+							print "\t<option value=\"$option\" ";
+							if ($option==$input["default"]) print "selected=\"selected\"";
+							print ">";
+							if (isset($pgv_lang[$option])) print $pgv_lang[$option];
+							else if (isset($factarray[$option])) print $factarray[$option];
+							else print $option;
+							print "</option>\n";
+						}
+						print "</select>\n";
+					}		
+					if (isset($input["lookup"])) {
+						print "<input type=\"hidden\" name=\"type[".$input["name"]."]\" value=\"".$input["lookup"]."\" />";
+						if ($input["lookup"]=="FAM") print_findfamily_link("famid");
+						if ($input["lookup"]=="INDI") print_findindi_link("pid","");
+						if ($input["lookup"]=="PLAC") print_findplace_link($input["name"]);
+						if ($input["lookup"]=="DATE") {
+							$text = $pgv_lang["select_date"];
+							if (isset($PGV_IMAGES["calendar"]["button"])) $Link = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["calendar"]["button"]."\" name=\"a_".$input["name"]."\" id=\"a_".$input["name"]."\" alt=\"".$text."\" title=\"".$text."\" border=\"0\" align=\"middle\" />";
+							else $Link = $text;
+
+							?>
+							<a href="javascript: <?php print $input["name"]; ?>" onclick="cal_toggleDate('div_<?php print $input["name"]; ?>', '<?php print $input["name"]; ?>'); return false;">
+							<?php print $Link;?>
+							</a>
+							<div id="div_<?php print $input["name"]; ?>" style="position:absolute;visibility:hidden;background-color:white;layer-background-color:white;"></div>
+							<?php
+						}
+					}
+					print "</td></tr>\n";
 				}
-				if ($input["lookup"]=="FAM") {
-					if (isset($_REQUEST['famid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['famid']);
-				}
-				if ($input["lookup"]=="SOUR") {
-					if (isset($_REQUEST['sid'])) $report_array["inputs"][$indexval]["default"] = clean_input($_REQUEST['sid']);
-				}
-				if ($input["lookup"]=="DATE") {
-					$report_array["calendar"] = true;
-					if (!isset($input["default"]) || $input["default"] == "" ) $report_array["inputs"][$indexval]["default"] = "2007-06-01";
-				}
-				else 
-				  if (!isset($input["default"])) $report_array["inputs"][$indexval]["default"] = "";
 			}
 		}
-
-		$report_array['name'] = strtoupper(basename($report));
-		$gBitSmarty->assign( "pagetitle", tra( 'Report options selection' ) );
-		$gBitSmarty->assign( "report", $report );
-		$gBitSmarty->assign_by_ref( "report_array", $report_array );
-		$gBitSystem->display( 'bitpackage:phpgedview/report_setup.tpl', tra( 'Report options selection' ) , array( 'display_mode' => 'display' ));
+		?>
+		<tr><td class="descriptionbox width30 wrap"></td>
+		<td class="optionbox">
+		<table><tr>
+		<td><img src="images/media/pdf.gif" alt="PDF" title="PDF" /></td>
+		<td><img src="images/media/html.gif" alt="HTML" title="HTML" /></td>
+		<?php if (file_exists("includes/reportlatex.php")) { ?> 
+		<td><img src="images/media/tex.gif" alt="LaTEX" title="LaTEX" /></td>
+		<?php } ?>
+		</tr><tr>
+		<td><center><input type="radio" name="output" value="PDF" checked="checked" /></center></td>
+		<td><center><input type="radio" name="output" value="HTML" <?php if ($output=="HTML") echo " checked=\"checked\"";?> /></center></td>
+		<?php if (file_exists("includes/reportlatex.php")) { ?> 
+		<td><center><input type="radio" name="output" value="TEX" <?php if ($output=="TEX") echo " checked=\"checked\"";?> /></center></td>
+		<?php } ?>
+		</tr></table>
+		</td></tr>
+		<?php
+		print "<tr><td class=\"topbottombar\" colspan=\"2\">";
+		print " <input type=\"submit\" value=\"".$pgv_lang["download_report"]."\" onclick=\"document.setupreport.elements['download'].value='1';\"/>";
+		print " <input type=\"submit\" value=\"".$pgv_lang["cancel"]."\" onclick=\"document.setupreport.elements['action'].value='setup';\"/>";
+		print "</td></tr>\n";
+		print "</table>\n";
+		print "</form>\n";
+		print "<br /><br />\n";
+		?>
+		<script language="JavaScript" type="text/javascript">
+		<!--
+			document.title = '<?php print $doctitle; ?>';
+		//-->
+		</script>
+		<?php
 	}
+	print_footer();
 }
 //-- run the report
 else if ($action=="run") {
 	//-- load the report generator
 	if ($output=="HTML") require("includes/reporthtml.php");
-	else if ($output=="PDF") require("includes/reportpdf.php");
+	else if ($output=="TEX") require("includes/reportlatex.php");
+	else require("includes/reportpdf.php");
 
 	//-- start the sax parser
 	$xml_parser = xml_parser_create();
@@ -189,7 +329,7 @@ else if ($action=="run") {
 	xml_set_character_data_handler($xml_parser, "characterData");
 
 	//-- open the file
-	if (!($fp = fopen(PHPGEDVIEW_PKG_PATH.$report, "r"))) {
+	if (!($fp = fopen($report, "r"))) {
 	   die("could not open XML input");
 	}
 	//-- read the file and parse it 4kb at a time
@@ -202,11 +342,4 @@ else if ($action=="run") {
 
 }
 
-if ($action=="choose" ) {
-	$reports = get_report_list(true);
-
-	$gBitSmarty->assign( "pagetitle", tra( 'Report selection' ) );
-	$gBitSmarty->assign_by_ref( "reports", $reports );
-	$gBitSystem->display( 'bitpackage:phpgedview/report_menu.tpl', tra( 'Report selection' ) , array( 'display_mode' => 'display' ));
-}
 ?>

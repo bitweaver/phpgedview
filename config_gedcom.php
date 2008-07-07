@@ -1,14 +1,14 @@
 <?php
 /**
- * Default Gedcom configuration file
+ * Default GEDCOM configuration file
  *
- * The variables in this file are the Gedcom configuration variables, this file defines the default
+ * The variables in this file are the GEDCOM configuration variables, this file defines the default
  * settings. Site administrators may edit these settings online through the editconfig_gedcom.php
- * file.  Once edited, a new file specific to the gedcom is stored in the $INDEX_DIRECTORY
- * names gedcom.ged_conf.php.
+ * file.  Once edited, a new file named gedcom.ged_conf.php that is specific to the GEDCOM is stored 
+ * in the $INDEX_DIRECTORY.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007  PGV Development Teacm
+ * Copyright (C) 2002 to 2008  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,17 +27,15 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig_gedcom.php
- * @version $Id: config_gedcom.php,v 1.6 2007/05/28 14:52:39 lsces Exp $
+ * @version $Id: config_gedcom.php,v 1.7 2008/07/07 18:01:12 lsces Exp $
  */
 
-if (preg_match("/\Wconfig_gedcom\.php/", $_SERVER["SCRIPT_NAME"])>0) {
+if (stristr($_SERVER["SCRIPT_NAME"], "/".basename(__FILE__))!==false) {
 	print "Naughty, Naughty, Naughty!";
 	exit;
 }
-if (preg_match("/_conf\.php/", $_SERVER["SCRIPT_NAME"])>0) {
-	print "Naughty, Naughty, Naughty!";
-	exit;
-}
+
+global $PRIV_HIDE, $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE;
 
 //-- assign the default language.  User can override this setting if $ENABLE_MULTI_LANGUAGE = true
 $LANGUAGE = "english";
@@ -68,27 +66,32 @@ $SOURCE_ID_PREFIX = "S";					// -- This is the prefix prepend to newly generated
 $REPO_ID_PREFIX = "R";					// -- This is the prefix prepend to newly generated repository records
 $FAM_ID_PREFIX = "F";					// -- This is the prefix prepend to newly generated family records
 $MEDIA_ID_PREFIX = "M";					// -- This is the prefix prepend to newly generated media records
-$PEDIGREE_FULL_DETAILS = true;			// -- Show the birth and death details of an individual on the pedigree tree
+$PEDIGREE_FULL_DETAILS = true;			// -- Show the birth and death details of an individual on charts
+$PEDIGREE_SHOW_GENDER = true;			// -- Show the gender of an individual by means of an icon on charts
 $PEDIGREE_LAYOUT = true;					// -- Set to true for Landscape mode, false for portrait mode
 $SHOW_EMPTY_BOXES = true;				// -- Show empty boxes on charts if the person is unknown
 $ZOOM_BOXES = "click";				// -- When should pedigree boxes zoom.  Values are "disabled", "mouseover", "click"
-$LINK_ICONS = "mouseover";				// -- When should pedigree box extra links show up.  Values are "disabled", "mouseover", "click"
+$LINK_ICONS = "click";				// -- When should pedigree box extra links show up.  Values are "disabled", "mouseover", "click"
 $ABBREVIATE_CHART_LABELS = false;		//-- should chart labels like "Birth" be abbreviated as "B"
 $SHOW_PARENTS_AGE = true;				// -- show age of parents on charts next to the birth date
 
 $HIDE_LIVE_PEOPLE   = true;				// -- a false value will show details of people who are still alive
+$CHECK_CHILD_DATES  = true;             // -- When checking if a person is alive, check the children's birth dates in addition to the person's
 $REQUIRE_AUTHENTICATION = false;		// -- set this to try to force all visitors to login before they can view anything on the site
 $WELCOME_TEXT_AUTH_MODE = "1";			// -- Sets which predefined of custom welcome message will be displayed on the welcome page in authentication mode
 $WELCOME_TEXT_AUTH_MODE_4 = "";			// -- Customized welcome text to display on login screen if that option is chosen
 $WELCOME_TEXT_CUST_HEAD = false;		// -- Use standard PGV header to display with custom welcome text
-$CHECK_CHILD_DATES  = true;             // -- When checking if a person is alive, check the children's birth dates in addition to the person's
+$SHOW_REGISTER_CAUTION  = true;         // -- Show text about following site rules on Login-Register page
 $SHOW_GEDCOM_RECORD = true;				// -- a true value will provide a link on detail pages that will
 										// --allow people to view the actual lines from the gedcom file
 $ALLOW_EDIT_GEDCOM = true;				//-- allow users with canEdit privileges to edit the gedcom
 $SYNC_GEDCOM_FILE = true;				//-- synchronize the gedcom file with online edits.  when set to false no changes will be written to the gedcom file
 $POSTAL_CODE = true;              //-- allow users to choose where to print the postal code. True is after the city name, false is before the city name
-$ALPHA_INDEX_LISTS = true;				// -- for very long individual and family lists, set this to true to split the list into
-										// -- pages by the first letter of their last name.
+$SUBLIST_TRIGGER_I = "200";				// -- Number of names required before Individual lists start sub-listing by first name
+										// -- Set to zero to disable sub-lists
+$SUBLIST_TRIGGER_F = "200";				// -- Number of names required before Family lists start sub-listing by first name
+										// -- Set to zero to disable sub-lists
+$SURNAME_LIST_STYLE = "style2";			// -- Surname list style.  "style2"=sortable table, "style3"=list of names in varying font sizes
 
 $NAME_FROM_GEDCOM = false;				// -- By default phpGedView uses the name stored in the indexes to get a person's name
 										// -- With some gedcom formats the sortable name stored in the indexes does not get
@@ -96,8 +99,9 @@ $NAME_FROM_GEDCOM = false;				// -- By default phpGedView uses the name stored i
 										// -- However, retrieving the name from the gedcom will slow the program down.
 $SHOW_MARRIED_NAMES = false;			// -- Option to show the married name for females in the indilist
 
-$SHOW_ID_NUMBERS = true;				// -- Show gedcom id numbers on charts next to individual names
+$SHOW_ID_NUMBERS = true;				// -- Show gedcom id numbers on charts next to  names
 $SHOW_LAST_CHANGE = true;				// -- Show gedcom record last change on lists
+$SHOW_EST_LIST_DATES = false;  // -- Show estimated birth/death dates on individual lists
 $SHOW_PEDIGREE_PLACES = "9";			// -- What level to show the birth and death places next to the birth and death dates on the pedigree and descendency charts.
 
 $MULTI_MEDIA = true;            		// -- if you have no multi-media files, set this to false
@@ -109,6 +113,16 @@ $USE_THUMBS_MAIN = false;				// -- for the main image on the individual page, wh
 $THUMBNAIL_WIDTH = "100";				// -- the width to use when automatically generating thumbnails
 $AUTO_GENERATE_THUMBS = true;			// -- whether PGV should try to automatically generate thumbnails
 $USE_MEDIA_VIEWER = true;				// -- If set to true, when a user clicks on an image they will be taken to the mediaviewer.php page.  If set to false a new window will open at imageview.php
+$USE_MEDIA_FIREWALL = false;			// -- If set to true, enables the media firewall to serve images from the protected image directory
+$MEDIA_FIREWALL_ROOTDIR = "";			// -- Dir that contains the protected image directory.  If empty, will use index dir
+if (!$MEDIA_FIREWALL_ROOTDIR) $MEDIA_FIREWALL_ROOTDIR = $INDEX_DIRECTORY;
+$MEDIA_FIREWALL_THUMBS = false;		// -- When an image is in the protected image directory, should the thumbnail be protected as well?
+$SHOW_NO_WATERMARK = $PRIV_USER;		// -- access level for viewing non-watermarked images.  PRIV_HIDE, PRIV_PUBLIC, PRIV_USER, PRIV_NONE
+$WATERMARK_THUMB = false;				// -- whether to watermark thumbnails too
+$SAVE_WATERMARK_THUMB = false;		// -- whether to save copies of watermarked thumbnails
+$SAVE_WATERMARK_IMAGE = false;		// -- whether to save copies of watermarked main images
+$SHOW_MEDIA_FILENAME = false;			// -- show Media File Name in Media Viewer
+$SHOW_MEDIA_DOWNLOAD = false;			// -- show Media Download link in Media Viewer
 
 $HIDE_GEDCOM_ERRORS = false;			//-- a true value will disable error messages for undefined GEDCOM codes.  See the
 										//-- non-standard gedcom codes section of the readme file for more information.
@@ -127,14 +141,14 @@ $HOME_SITE_URL   = "http://www.phpgedview.net";     // -- url for your home page
 $HOME_SITE_TEXT  = "About PhpGedView";                     // -- name of your site
 $SHOW_FACT_ICONS = true;					//-- Show Fact icons on Indi page
 $FAVICON = "images/favicon.ico";                          // -- change to point to your favicon, either relative or absolute
-$THEME_DIR = "themes/bitweaver/";					// -- directory where display theme files are kept
+$THEME_DIR = "themes/standard/";					// -- directory where display theme files are kept
 if (substr ($THEME_DIR, -1) != "/") $THEME_DIR = $THEME_DIR . "/";
 $ALLOW_THEME_DROPDOWN = false; 					//-- allows the themes to display theme change dropdown
 $SECURITY_CHECK_GEDCOM_DOWNLOADABLE = true;	//-- check for downloadability of GEDCOM
 
 $SHOW_STATS = false;					//-- Show execution stats at the bottom of the page
 $SHOW_COUNTER = false;        //-- Show hit counters on portal and individual pages
-$SHOW_SPIDER_TAGLINE = true;         //-- On pages generated for search engines, name the engine as the last line
+$SHOW_SPIDER_TAGLINE = false;         //-- On pages generated for search engines, name the engine as the last line
 $DAYS_TO_SHOW_LIMIT = "30";			//-- Maximum number of days in Upcoming Events block
 $COMMON_NAMES_THRESHOLD	= "40";		//-- The minimum number of times a surname must appear before it is shown on the most common surnames list
 $COMMON_NAMES_ADD	= "";			//-- a comma seperated list of surnames the admin can add to the common surnames list
@@ -161,13 +175,16 @@ $QUICK_REQUIRED_FACTS	= "BIRT,DEAT";	//-- comma delimited list of facts that wil
 $QUICK_ADD_FAMFACTS		= "MARR,DIV,SLGS";		//-- comma delimited list of facts that can be added on the quick update form for families
 $QUICK_REQUIRED_FAMFACTS	= "MARR";	//-- comma delimited list of facts that will be required by on the quick update for families
 $SEARCHLOG_CREATE   = "none";	//-- save searches executed by users
-$CHANGELOG_CREATE   = "none";	//-- log changes applied by users
+$CHANGELOG_CREATE   = "monthly";	//-- log changes applied by users
 $SHOW_LDS_AT_GLANCE	= false;	//-- Show status of LDS ordinances in chart boxes
 $UNDERLINE_NAME_QUOTES	= false;	//-- convert double quotes in names to underlines
-$SPLIT_PLACES	= false;	//-- split PLAC tag into subtags (town, county, state...) in edit mode
-$SHOW_RELATIVES_EVENTS = "_DEAT_SPOU,_BIRT_CHIL,_DEAT_CHIL,_BIRT_GCHI,_DEAT_GCHI,_DEAT_FATH,_DEAT_MOTH,_BIRT_SIBL,_DEAT_SIBL,_BIRT_HSIB,_DEAT_HSIB,_DEAT_GPAR,_BIRT_FSIB,_DEAT_FSIB,_BIRT_MSIB,_DEAT_MSIB"; //-- show birth and death of relatives on individual page
+$SPLIT_PLACES	= true;	//-- split PLAC tag into subtags (town, county, state...) in edit mode
+$SHOW_RELATIVES_EVENTS = "_BIRT_CHIL,_BIRT_COUS,_BIRT_FSIB,_BIRT_GCHI,_BIRT_HSIB,_BIRT_MSIB,_BIRT_NEPH,_BIRT_SIBL,_DEAT_CHIL,_DEAT_COUS,_DEAT_FATH,_DEAT_FSIB,_DEAT_GCHI,_DEAT_GPAR,_DEAT_HSIB,_DEAT_MOTH,_DEAT_MSIB,_DEAT_NEPH,_DEAT_SIBL,_DEAT_SPOU,_MARR_CHIL,_MARR_COUS,_MARR_FATH,_MARR_FSIB,_MARR_GCHI,_MARR_HSIB,_MARR_MOTH,_MARR_MSIB,_MARR_NEPH,_MARR_SIBL"; //-- show events of relatives on individual page
 $EXPAND_RELATIVES_EVENTS = false;
 $EXPAND_SOURCES = false;
+$EXPAND_NOTES = false;
+$SHOW_LEVEL2_NOTES = true;			// -- Show level 2 Notes & Sources on Notes & Sources tabs
+$SHOW_AGE_DIFF = false;				// -- show age diff between spouses and between children on close relatives tab
 $EDIT_AUTOCLOSE = false; //-- autoclose edit window when update successful
 $SOUR_FACTS_UNIQUE = "AUTH,ABBR,TITL,PUBL,TEXT";
 $SOUR_FACTS_ADD = "NOTE,OBJE,REPO";
@@ -176,7 +193,7 @@ $REPO_FACTS_UNIQUE = "NAME,ADDR";
 $REPO_FACTS_ADD = "PHON,EMAIL,FAX,WWW,NOTE";
 $REPO_FACTS_QUICK = "";
 $INDI_FACTS_UNIQUE = "";
-$INDI_FACTS_ADD = "ADDR,AFN,BIRT,CHR,DEAT,BURI,CREM,ADOP,BAPM,BARM,BASM,BLES,CHRA,CONF,_EMAIL,FAX,FCOM,ORDN,NATU,EMIG,IMMI,CENS,PROB,WILL,GRAD,RETI,CAST,DSCR,EDUC,IDNO,NATI,NCHI,NMR,OCCU,PROP,RELI,RESI,SSN,TITL,BAPL,CONL,ENDL,SLGC,_MILI";
+$INDI_FACTS_ADD = "ADDR,AFN,BIRT,CHR,DEAT,BURI,CREM,ADOP,BAPM,BARM,BASM,BLES,CHRA,CONF,EMAIL,FAX,FCOM,ORDN,NATU,EMIG,IMMI,CENS,PROB,WILL,GRAD,RETI,CAST,DSCR,EDUC,IDNO,NATI,NCHI,NMR,OCCU,PROP,RELI,RESI,SSN,TITL,BAPL,CONL,ENDL,SLGC,_MILI";
 $INDI_FACTS_QUICK = "BIRT,ADDR,RESI,OCCU,DEAT";
 $FAM_FACTS_UNIQUE = "NCHI,MARL,DIV,ANUL,DIVF,ENGA,MARB,MARC,MARS";
 $FAM_FACTS_ADD = "CENS,MARR,RESI,SLGS,MARR_CIVIL,MARR_RELIGIOUS,MARR_PARTNERS";
@@ -187,7 +204,7 @@ $ADVANCED_PLAC_FACTS = "";
 $SURNAME_TRADITION = "paternal";
 
 $ENABLE_RSS = true;
-$RSS_FORMAT = "RSS1.0"; //-- format of RSS to use.
+$RSS_FORMAT = "ATOM"; //-- default feed format.
 // -- amount of time to execute before quitting in seconds
 // -- set this to 0 to remove all time limits
 $TIME_LIMIT = "60";

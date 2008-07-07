@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.8 2007/05/28 14:52:39 lsces Exp $
+ * @version $Id: config.php,v 1.9 2008/07/07 18:01:10 lsces Exp $
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -36,20 +36,21 @@ if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
 
 $INDEX_DIRECTORY = "./index/";					//-- Readable and Writeable Directory to store index files (include the trailing "/")
 $PGV_SIMPLE_MAIL = true;						//-- allow admins to set this so that they can override the name <emailaddress> combination in the emails
-$USE_REGISTRATION_MODULE = false;				//-- turn on the user self registration module
+$USE_REGISTRATION_MODULE = true;				//-- turn on the user self registration module
 $REQUIRE_ADMIN_AUTH_REGISTRATION = true;		//-- require an admin user to authorize a new registration before a user can login
-$ALLOW_USER_THEMES = false;						//-- Allow user to set their own theme
+$ALLOW_USER_THEMES = true;						//-- Allow user to set their own theme
 $ALLOW_CHANGE_GEDCOM = true;					//-- A true value will provide a link in the footer to allow users to change the gedcom they are viewing
-$LOGFILE_CREATE = "weekly";					//-- set how often new log files are created, "none" turns logs off, "daily", "weekly", "monthly", "yearly"
+$LOGFILE_CREATE = "monthly";					//-- set how often new log files are created, "none" turns logs off, "daily", "weekly", "monthly", "yearly"
 $LOG_LANG_ERROR = false;						//-- Set if non-existing language variables should be written to a logfile
-$PGV_SESSION_SAVE_PATH = "c:/network/Apache2/tmp/";					//-- Path to save PHP session Files -- DO NOT MODIFY unless you know what you are doing
+$PGV_SESSION_SAVE_PATH = "";					//-- Path to save PHP session Files -- DO NOT MODIFY unless you know what you are doing
 												//-- leaving it blank will use the default path for your php configuration as found in php.ini
 $PGV_SESSION_TIME = "7200";						//-- number of seconds to wait before an inactive session times out
-$SERVER_URL = "http://localhost/bitweaverdev/phpGedView/";								//-- the URL used to access this server
-$MAX_VIEWS = "100";								//-- the maximum number of page views per xx seconds per session
-$MAX_VIEW_TIME = "0";							//-- the number of seconds in which the maximum number of views must not be reached
+$SERVER_URL = "http:/engineering/phpGedView4_1_5/";								//-- the URL used to access this server
+$LOGIN_URL = "";								//-- the URL to use to go to the login page, use this value if you want to redirect to a different site when users login, useful for switching from http to https
+$MAX_VIEWS = "20";								//-- the maximum number of page views per xx seconds per session
+$MAX_VIEW_TIME = "1";							//-- the number of seconds in which the maximum number of views must not be reached
 $PGV_MEMORY_LIMIT = "32M";						//-- the maximum amount of memory that PGV should be allowed to consume
-$ALLOW_REMEMBER_ME = true;						//-- whether the users have the option of being remembered on the current computer
+$ALLOW_REMEMBER_ME = false;						//-- whether the users have the option of being remembered on the current computer
 $CONFIG_VERSION = "4.0";						//-- the version this config file goes to
 
 $DIRECTORY_MODE = "ldap";						//-- User info stored in db or ldap directory

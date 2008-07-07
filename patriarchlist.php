@@ -2,6 +2,23 @@
 /**
  * Patriarch List
  *
+ * phpGedView: Genealogy Viewer
+ * Copyright (C) 2008 PhpGedView Development Team.  All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  * The individual list shows all individuals from a chosen gedcom file. The list is
  * setup in two sections. The alphabet bar and the details.
  *
@@ -32,7 +49,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: patriarchlist.php,v 1.6 2007/06/09 21:11:02 lsces Exp $
+ * @version $Id: patriarchlist.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -55,9 +72,7 @@ require_once("includes/functions_print_lists.php");
 $patrilist = array();
 $patrialpha = array();
 
-
 function indi2roots() {
-	//--global PHPGEDVIEW_DB_PREFIX, $GEDCOM;
 	global $ct,$patrilist,$patrialpha;
 
 	$my2indilist= array();
@@ -65,18 +80,13 @@ function indi2roots() {
 	$orignames= array();
 	$person = array();
 
-	//--print "<br/>start indi2:" . date("m/d/y G.i:s",time()) . "<br/>\n";
-
 	$my2indilist = get_indi_list();
 	$ct = count($my2indilist);
-
-	//--	print "<br/>tijd na getindi:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 
 	//--	first select the names then do the alphabetic sort
 	$orignum=0;
 	$i=0;
 	$keys = array_keys($my2indilist);
-	//--key is I<nr>
 
 	while ($i < $ct) {
 		$key=$keys[$i];
@@ -97,34 +107,25 @@ function indi2roots() {
 
 		//-- first spouse record. assuming a person has just one father and one mother.
 		if ($famc == "") {
-			//--print "select:$orignum,$key,$value,$person<br/>";
 			$orignum ++;
 			$orignames["$key"]["name"]=$value;
-		 	$orignames["$key"]["gedfile"]=$value2;
+			$orignames["$key"]["gedfile"]=$value2;
 		}
 		$i++;
 	}
 	$ct= $orignum;
-	//--print "totaal aantal=,$ct<br/>";
-	//--	print "<br/>indi2 na select:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 	$patrilist=$orignames;
 	uasort($patrilist, "itemsort");
 
-	//--end search
-	//--print "<br/>indi2 na sort:" . date("m/d/y G.i:s",time()) . "<br/>\n";
-
 	$i=0;
 	$keys = array_keys($patrilist);
-	//--key is I<nr>
 
 	$oldletter= "";
 	while ($i < $ct) {
 		$key=$keys[$i];
-//		$value= trim($patrilist[$key]["name"]);
 		$value = get_sortable_name($key);
 		$value2= $patrilist[$key]["gedfile"];
 		$person= find_person_record($key);
-//--> Changed MA @@@ as in extract_surname() etc.
 		$tmpnames = preg_split("/,/", $value);
 		$tmpnames[0] = preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z\. ]*/"), array(",",",",""), $tmpnames[0]);
 		$tmpnames[0] = trim($tmpnames[0]);
@@ -137,29 +138,23 @@ function indi2roots() {
 		if ($tmpletter!=$oldletter) $oldletter=$tmpletter;
 		if ((!isset($alpha)) || ($alpha = $tmpletter)) {
 			$orignames["$key"]["name"]=$value;
-		 	$orignames["$key"]["gedfile"]=$value2;
+			$orignames["$key"]["gedfile"]=$value2;
 			$letter=$tmpletter;
-//<---- MA @@@
 			if (!isset($patrialpha[$letter])) {
-	 			$patrialpha[$letter]["letter"]= "$letter";
-	 			$patrialpha[$letter]["gid"]= "$key";
+				$patrialpha[$letter]["letter"]= "$letter";
+				$patrialpha[$letter]["gid"]= "$key";
 			}
 			else $patrialpha[$letter]["gid"].= ",$key";
-			//-- print " reeks: $letter,$key,==" . $patrialpha[$letter]["gid"] . "==<br/>";
-			//-- print "select:$i,$letter,$key,$value,$person<br/>";
 		}
 		$i++;
 	}
 	$patrilist=$orignames;
-	//--print "<br/>indi2 na alpha:" . date("m/d/y G.i:s",time()) . "<br/>\n";
 }
-// end indi2roots
 
 
 function put_patri_list() {
 	//-- save the items in the database
 	global $ct,$patrilist,$patrialpha;
-	//-- print "start roots2database<br />";
 	global $GEDCOM,$INDEX_DIRECTORY, $FP, $pgv_lang;
 
 	$indexfile = $INDEX_DIRECTORY.$GEDCOM."_patriarch.php";
@@ -184,7 +179,6 @@ function get_alpha_patri($letter) {
 	$list = $patrialpha[$letter]["gid"];
 	$gids = preg_split("/[+,]/", $list);
 	foreach($gids as $indexval => $gid)	{
-//-- print "regel201:letter,gid,list,gids: " . $letter . ":" . $gid . ":" . $patrilist[$gid] . ":" . $gids[0] . ":<br/>";
 		$tpatrilist[$gid] = $patrilist[$gid];
 	}
 	return $tpatrilist;
@@ -214,8 +208,6 @@ if (isset($surname)) $surname = stripslashes($surname);
 
 $pass = FALSE;
 $tpatrilist = array();
-
-//-- name in $patriarchalpha for sorting??? MA @@@ =====>
 
 uasort($patrialpha, "lettersort");
 
@@ -269,12 +261,9 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	$surnames = array();
 	$indi_hide=array();
 	foreach($tpatrilist as $gid=>$fam) {
-	//-- make sure that favorites from other gedcoms are not shown
     	if ($fam["gedfile"]==$gGedcom->mGEDCOMId) {
-			// Added space to regexp after z to also remove prefixes
-
-			if (displayDetailsById($gid)||showLivingNameById($gid)) {          //-- MA @@@@
-				extract_surname($fam["name"]);                                 //-- MA @@@@
+			if (displayDetailsById($gid)||showLivingNameById($gid)) {
+				extract_surname($fam["name"]);
 			}
 			else $indi_hide[$gid."[".$fam["gedfile"]."]"] = 1;
 		}
@@ -296,12 +285,12 @@ if (($surname_sublist=="yes")&&($show_all=="yes")) {
 
 	foreach($surnames as $surname=>$namecount) {
 		if (begRTLText($namecount["name"])) {
-			print "<div class =\"rtl\"><a href=\"patriarchlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=".$namecount["name"]."\">".$namecount["name"]." - &rlm;[".($namecount["match"])."]&rlm;";
+			print "<div class =\"rtl\"><a href=\"patriarchlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=".$namecount["name"]."\">".$namecount["name"]." - " . getRLM() . "[".($namecount["match"])."]" . getRLM();
 		}
 		else if (substr(trim($namecount["name"]), 0, 4) == "@N.N") {
-			print "<div class =\"ltr\"><a href=\"patriarchlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=@N.N.\">".$pgv_lang["NN"]." - &lrm;[".($namecount["match"])."]&lrm;";
+			print "<div class =\"ltr\"><a href=\"patriarchlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=@N.N.\">".$pgv_lang["NN"]." - " . getLRM() . "[".($namecount["match"])."]" . getLRM();
 		}
-		else print "<div class =\"ltr\"><a href=\"patriarchlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=".$namecount["name"]."\">".$namecount["name"]." - &lrm;[".($namecount["match"])."]&lrm;";
+		else print "<div class =\"ltr\"><a href=\"patriarchlist.php?alpha=".$namecount["alpha"]."&amp;surname_sublist=$surname_sublist&amp;surname=".$namecount["name"]."\">".$namecount["name"]." - " . getLRM() ."[".($namecount["match"])."]" . getLRM();
 		print "</a></div>\n";
 		$count_indi += $namecount["match"];
 		$i++;
@@ -326,13 +315,12 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	$surnames = array();
 	$indi_hide=array();
 	foreach($tpatrilist as $gid=>$fam) {
-	//-- make sure that favorites from other gedcoms are not shown
         if ($fam["gedfile"]==$gGedcom->mGEDCOMId) {
-			if (displayDetailsById($gid)||showLivingNameById($gid)) {          //-- MA @@@@
-				extract_surname($fam["name"]);                                 //-- MA @@@@
+			if (displayDetailsById($gid)||showLivingNameById($gid)) {
+				extract_surname($fam["name"]);
 			}
 			else $indi_hide[$gid."[".$fam["gedfile"]."]"] = 1;
-	    }
+		}
 	}
 	$i = 0;
 	uasort($surnames, "itemsort");
@@ -350,9 +338,9 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 
 	foreach($surnames as $surname=>$namecount) {
 		if (begRTLText($namecount["name"])) {
-			print "<div class =\"rtl\">&nbsp;<a href=\"patriarchlist.php?alpha=".$alpha."&amp;surname_sublist=$surname_sublist&amp;surname=".urlencode($namecount["name"])."\">".$namecount["name"]." - &rlm;[".($namecount["match"])."]&rlm;";
+			print "<div class =\"rtl\">&nbsp;<a href=\"patriarchlist.php?alpha=".$alpha."&amp;surname_sublist=$surname_sublist&amp;surname=".urlencode($namecount["name"])."\">".$namecount["name"]." - " . getRLM() . "[".($namecount["match"])."]" . getRLM();
 		}
-		else print "<div class =\"ltr\">&nbsp;<a href=\"patriarchlist.php?alpha=".$alpha."&amp;surname_sublist=$surname_sublist&amp;surname=".$namecount["name"]."\">".$namecount["name"]." - &lrm;[".($namecount["match"])."]&lrm;";
+		else print "<div class =\"ltr\">&nbsp;<a href=\"patriarchlist.php?alpha=".$alpha."&amp;surname_sublist=$surname_sublist&amp;surname=".$namecount["name"]."\">".$namecount["name"]." - " . getLRM() . "[".($namecount["match"])."]" . getLRM();
 		print "</a>&nbsp;</div>\n";
 		$count_indi += $namecount["match"];
 		$i++;
@@ -374,7 +362,6 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 else {
 	$firstname_alpha = false;
 	//-- if the surname is set then only get the names in that surname list
-	//echo "<br/> 3"; //-- MA @@@
 	if ((!empty($surname))&&($surname_sublist=="yes")) {
 		$tpatrilist = get_patri_list();
 		$npatrilist = array();
@@ -386,13 +373,9 @@ else {
 	else if (($surname_sublist=="no")&&($show_all=="yes")) $tpatrilist = get_patri_list();
 	else $tpatrilist = get_alpha_patri($alpha);
 
-//		$ct = count($tpatrilist);
-//echo "<br/> 4"; //-- MA @@@
-
 	$i=0;
 	$surnames = array();
 	foreach($tpatrilist as $gid=>$fam) {
-		//-- make sure that favorites from other gedcoms are not shown
 		if ($fam["gedfile"]==$gGedcom->mGEDCOMId) {
 			if (!empty($names[1])) $firstname = trim($names[1]);
 			else $firstname = "";
@@ -401,7 +384,6 @@ else {
 			if (empty($surname)) $surname = $gid;
 			$surnames[$surname.$firstname.$gid]["name"] = check_NN($fam["name"]);
 			$surnames[$surname.$firstname.$gid]["gid"] = $gid;
-//--regel 467
 			$surnames[$surname.$firstname.$gid]["gedfile"] = $fam["gedfile"];
 		}
 	}
@@ -415,7 +397,7 @@ else {
 		print "</td></tr><tr>\n";
 		print "<td class=\"list_value\"><ul>\n";
 		foreach($surnames as $k => $surname) {
-			print_list_person($surname["gid"], array($surname["name"], get_gedcom_from_id($surname["gedfile"])));
+			echo format_list_person($surname["gid"], array($surname["name"], get_gedcom_from_id($surname["gedfile"])));
 			$i++;
 			if ($i==floor($count/2)) print "</ul></td><td class=\"list_value\"><ul>\n";
 		}
@@ -432,8 +414,6 @@ else {
 	}
 }
 print "</tr></table>";
-
-//print_indi_table($surnames);
 
 print "<br />";
 if ($alpha != "@") {

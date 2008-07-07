@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: family.php,v 1.3 2006/10/29 11:02:13 lsces Exp $
+ * @version $Id: family.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
  */
 
 /**
@@ -42,6 +42,20 @@ $gGedcom = new BitGEDCOM();
 require_once 'includes/controllers/family_ctrl.php';
 
 print_header($controller->getPageTitle());
+// completely prevent display if privacy dictates so
+if (!$controller->family->disp) {
+	print_privacy_error($CONTACT_EMAIL);
+	print_footer();
+	exit;
+}
+
+// LB added for Lightbox viewer ==============================================================
+if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+	include_once('modules/lightbox/lb_config.php');
+	include_once('modules/lightbox/functions/lb_call_js.php');
+}	
+// LB ======================================================================================
+
 ?>
 <?php if ($controller->family->isMarkedDeleted()) print "<span class=\"error\">".$pgv_lang["record_marked_deleted"]."</span>"; ?>
 <script language="JavaScript" type="text/javascript">
@@ -61,7 +75,7 @@ print_header($controller->getPageTitle());
 		<td>
 		<?php
 		print print_family_parents($controller->getFamilyID());
-		if (!$controller->isPrintPreview() && $controller->display && userCanEdit($controller->uname)) {
+		if (!$controller->isPrintPreview() && $controller->display && PGV_USER_CAN_EDIT) {
 		$husb = $controller->getHusband();
 		if (empty($husb)) { ?>
 			<?php print_help_link("edit_add_parent_help", "qm"); ?>
@@ -76,15 +90,19 @@ print_header($controller->getPageTitle());
 		?></td>
 		<td valign="top" class="noprint">
 			<div class="accesskeys">
+			<?php
+                        if (empty($SEARCH_SPIDER)) {
+                        ?>
 				<a class="accesskeys" href="<?php print 'timeline.php?pids[0]=' . $controller->parents['HUSB'].'&amp;pids[1]='.$controller->parents['WIFE'];?>" title="<?php print $pgv_lang['parents_timeline'] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_parents_timeline']; ?>"><?php print $pgv_lang['parents_timeline'] ?></a>
 				<a class="accesskeys" href="<?php print 'timeline.php?' . $controller->getChildrenUrlTimeline();?>" title="<?php print $pgv_lang["children_timeline"] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_children_timeline']; ?>"><?php print $pgv_lang['children_timeline'] ?></a>
 				<a class="accesskeys" href="<?php print 'timeline.php?pids[0]=' .$controller->getHusband().'&amp;pids[1]='.$controller->getWife().'&amp;'.$controller->getChildrenUrlTimeline(2);?>" title="<?php print $pgv_lang['family_timeline'] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_timeline']; ?>"><?php print $pgv_lang['family_timeline'] ?></a>
 				<?php if ($SHOW_GEDCOM_RECORD) { ?>
 				<a class="accesskeys" href="javascript:show_gedcom_record();" title="<?php print $pgv_lang["view_gedcom"] ?>" tabindex="-1" accesskey="<?php print $pgv_lang["accesskey_family_gedcom"]; ?>"><?php print $pgv_lang["view_gedcom"] ?></a>
 				<?php } ?>
+			<?php } ?>
 			</div>
 			<?php
-			if ($_REQUEST['view'] != 'preview') :
+			if (empty($SEARCH_SPIDER) && ($_REQUEST['view'] != 'preview')) :
 			?>
 			<table class="sublinks_table" cellspacing="4" cellpadding="0">
 				<tr>
@@ -103,7 +121,7 @@ print_header($controller->getPageTitle());
 					//$menu = $controller->getReportsMenu();
 					//$menu->printMenu();
 					endif; // reports
-					if (userCanEdit($controller->uname) && ($controller->display)) :
+					if (userCanEdit() && ($controller->display)) :
 					?>
 					</td>
 					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
@@ -111,7 +129,7 @@ print_header($controller->getPageTitle());
 					$menu = $controller->getEditMenu();
 					$menu->printMenu();
 					endif; // edit_fam
-					if ($controller->display && ($SHOW_GEDCOM_RECORD || $ENABLE_CLIPPINGS_CART >= getUserAccessLevel())) :
+					if ($controller->display && ($SHOW_GEDCOM_RECORD || $ENABLE_CLIPPINGS_CART >= PGV_USER_ACCESS_LEVEL)) :
 					?>
 					</td>
 					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
@@ -144,4 +162,11 @@ print_header($controller->getPageTitle());
 	</tr>
 </table>
 <br />
-<?php print_footer();?>
+<?php
+if(empty($SEARCH_SPIDER))
+        print_footer();
+else {
+        if($SHOW_SPIDER_TAGLINE)
+                print $pgv_lang["label_search_engine_detected"].": ".$SEARCH_SPIDER;
+        print "\n</div>\n\t</body>\n</html>";
+}

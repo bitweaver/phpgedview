@@ -3,7 +3,7 @@
  * UI for online updating of the config file.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2008  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see index/gedcoms.php
- * @version $Id: editgedcoms.php,v 1.6 2007/05/28 18:54:17 lsces Exp $
+ * @version $Id: editgedcoms.php,v 1.7 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**
@@ -79,8 +79,7 @@ if (!isset($ged)) $ged = "";
 
 //-- make sure that they have admin status before they can use this page
 //-- otherwise have them login again
-global $gBitUser;
-if (!$gBitUser->isAdmin()) {
+if (!PGV_USER_GEDCOM_ADMIN) {
 	header("Location: login.php?url=editgedcoms.php");
 	exit;
 }
@@ -88,7 +87,7 @@ print_header($pgv_lang["gedcom_adm_head"]);
 print "<center>\n";
 if ($action=="delete") {
 	delete_gedcom($ged);
-	unset($GEDCOMS[$ged]);
+	unset($gGedcom[$ged]);
 	store_gedcoms();
 	print "<br />".str_replace("#GED#", $ged, $pgv_lang["gedcom_deleted"])."<br />\n";
 }
@@ -106,8 +105,8 @@ if (($action=="setdefault") && isset($default_ged)) {
 		$DEFAULT_GEDCOM = urldecode($_POST["default_ged"]);
 		fwrite($fp, $configtext);
 		fclose($fp);
-		$logline = AddToLog("gedcoms.php updated by >".getUserName()."<");
- 		if (!empty($COMMIT_COMMAND)) check_in($logline, "gedcoms.php", $INDEX_DIRECTORY);	
+		$logline = AddToLog("gedcoms.php updated");
+ 		if (!empty($COMMIT_COMMAND)) check_in($logline, "gedcoms.php", $INDEX_DIRECTORY);
 	}
 }
 
@@ -119,12 +118,12 @@ print "<br /><br />";
 <?php
 // Default gedcom choice
 print "<br />";
-if (count($GEDCOMS)>0) {
+if (count($gGedcom)>0) {
 	if ($gBitUser->isAdmin()) {
 		print_help_link("default_gedcom_help", "qm");
 		print $pgv_lang["DEFAULT_GEDCOM"]."&nbsp;";
 		print "<select name=\"default_ged\" class=\"header_select\" onchange=\"document.defaultform.submit();\">";
-		foreach($GEDCOMS as $gedc=>$gedarray) {
+		foreach($gGedcom as $gedc=>$gedarray) {
 			if (empty($DEFAULT_GEDCOM)) $DEFAULT_GEDCOM = $gedc;
 			print "<option value=\"".urlencode($gedc)."\"";
 			if ($DEFAULT_GEDCOM==$gedc) print " selected=\"selected\"";
@@ -135,6 +134,8 @@ if (count($GEDCOMS)>0) {
 	}
 }
 
+print_help_link('SECURITY_CHECK_GEDCOM_DOWNLOADABLE_help', 'qm');
+print '<a href="editgedcoms.php?check_download=true">'.$pgv_lang['SECURITY_CHECK_GEDCOM_DOWNLOADABLE']."</a>\n";
 // Print table heading
 print "<table class=\"gedcom_table\">";
 if ($gBitUser->isAdmin()) {
@@ -142,11 +143,11 @@ if ($gBitUser->isAdmin()) {
 	print_help_link("help_addgedcom.php", "qm");
 	print "<a href=\"editconfig_gedcom.php?source=add_form\">".$pgv_lang["add_gedcom"]."</a>";
 	print "</td>";
+	print "<td class=\"list_label\">";
+	print_help_link("help_uploadgedcom.php", "qm");
+	print "<a href=\"editconfig_gedcom.php?source=upload_form\">".$pgv_lang["upload_gedcom"]."</a>";
+	print "</td>";
 }
-print "<td class=\"list_label\">";
-print_help_link("help_uploadgedcom.php", "qm");
-print "<a href=\"editconfig_gedcom.php?source=upload_form\">".$pgv_lang["upload_gedcom"]."</a>";
-print "</td>";
 if ($gBitUser->isAdmin()) {
 	print "<td class=\"list_label\">";
 	print_help_link("help_addnewgedcom.php", "qm");
@@ -156,12 +157,12 @@ if ($gBitUser->isAdmin()) {
 print  "<td class=\"list_label\"><a href=\"admin.php\">" . $pgv_lang["lang_back_admin"] . "</a></td></tr>";
 print "</table>";
 $current_ged = $GEDCOM;
-if (count($GEDCOMS)>0) {
+if (count($gGedcom)>0) {
 print "<table class=\"gedcom_table\">";
 $GedCount = 0;
 
 // Print the table of available GEDCOMs
-	foreach($GEDCOMS as $gedc=>$gedarray) {
+	foreach($gGedcom as $gedc=>$gedarray) {
 		if ($gBitUser->isAdmin()) {
 			if (empty($DEFAULT_GEDCOM)) $DEFAULT_GEDCOM = $gedc;
 
@@ -178,11 +179,11 @@ $GedCount = 0;
 			// Row 1: Heading
 			print "<tr>";
 			print "<td colspan=\"1\" class=\"list_label\">".$pgv_lang["ged_title"]."</td>";
-			print "<td colspan=\"4\" class=\"list_value_wrap\">";
+			print "<td colspan=\"5\" class=\"list_value_wrap\">";
 			if ($DEFAULT_GEDCOM==$gedc) print "<span class=\"label\">";
 			print PrintReady($gedarray["title"])."&nbsp;&nbsp;";
-			if ($TEXT_DIRECTION=="rtl") print "&rlm;(".$gedarray["id"].")&rlm;";
-			else print "&lrm;(".$gedarray["id"].")&lrm;";
+			if ($TEXT_DIRECTION=="rtl") print getRLM() . "(".$gedarray["id"].")" . getRLM();
+			else print getLRM() . "(".$gedarray["id"].")" . getLRM();
 			if ($DEFAULT_GEDCOM==$gedc) print "</span>";
 			print "&nbsp;&nbsp;<a href=\"editconfig_gedcom.php?source=replace_form&amp;path=".urlencode($gedarray['path'])."\">".$pgv_lang['upload_replacement']."</a>\n";
 			print "</td>";
@@ -198,16 +199,20 @@ $GedCount = 0;
 			print "<td valign=\"top\">";		// Column 2 (file name & notices)
 			if (file_exists($gedarray["path"])) {
 				if ($TEXT_DIRECTION=="ltr") print $gedarray["path"]." (";
-				else print "&lrm;".$gedarray["path"]." &rlm;(";
+				else print getLRM() . $gedarray["path"]." " . getRLM() . "(";
 				printf("%.2fKb", (filesize($gedarray["path"])/1024));
 				print ")";
-				if($SECURITY_CHECK_GEDCOM_DOWNLOADABLE){
+				/** deactivate [ 1573749 ]
+				 * -- activating based on a request parameter instead of a config parameter
+				 */
+				if(!empty($_REQUEST['check_download'])){
 					$url = check_gedcom_downloadable($gedarray["path"]);
 					if ($url!==false) {
 						print "<br />\n";
 						print "<span class=\"error\">".$pgv_lang["gedcom_downloadable"]." :</span>";
 						print "<br /><a href=\"$url\">$url</a>";
 					}
+					else print "<br /><b>".str_replace("#GEDCOM#", $gedarray["path"], $pgv_lang['gedcom_download_secure'])."</b><br />";
 				}
 			}
 			else print "<span class=\"error\">".$pgv_lang["file_not_found"]."</span>";
@@ -231,6 +236,11 @@ $GedCount = 0;
 			print "&nbsp;&nbsp;";
 			print "</td>";
 
+			print "<td valign=\"top\">";		// Column 6  (Check action)
+			print "<a href=\"gedcheck.php?ged=$gedc\">".$pgv_lang["ged_check"]."</a>";
+			print "&nbsp;&nbsp;";
+			print "</td>";
+
 			print "</tr>";
 
 
@@ -241,14 +251,14 @@ $GedCount = 0;
 			print "</td>";
 
 			print "<td valign=\"top\">";		// Column 2  (file name & notices)
-			print "&lrm;".$gedarray["config"];
+			print getLRM() . $gedarray["config"];
 			print "</td>";
 
 			print "<td valign=\"top\">";		// Column 3  (Edit action)
 			print "<a href=\"editconfig_gedcom.php?ged=".urlencode($gedc)."\">".$pgv_lang["edit"]."</a>";
 			print "</td>";
 
-			print "<td colspan=\"2\" valign=\"top\">";		// Columns 4-6  (blank)
+			print "<td colspan=\"3\" valign=\"top\">";		// Columns 4-6  (blank)
 			print "&nbsp;";
 			print "</td>";
 			print "</tr>";
@@ -260,14 +270,14 @@ $GedCount = 0;
 			print "</td>";
 
 			print "<td valign=\"top\">";		// Column 2  (file name & notices)
-			print "&lrm;".$gedarray["privacy"];
+			print getLRM() . $gedarray["privacy"];
 			print "</td>";
 
 			print "<td valign=\"top\">";		// Column 3  (Edit action)
 			print "<a href=\"edit_privacy.php?action=edit&amp;ged=".urlencode($gedc)."\">".$pgv_lang["edit"]."</a>";
 			print "</td>";
 
-			print "<td colspan=\"2\" valign=\"top\">";		// Columns 4-6  (blank)
+			print "<td colspan=\"3\" valign=\"top\">";		// Columns 4-6  (blank)
 			print "&nbsp;";
 			print "</td>";
 			print "</tr>";
@@ -279,18 +289,17 @@ $GedCount = 0;
 			print "</td>";
 
 			unset($SEARCHLOG_CREATE);
-
-			require($gedarray["config"]);
+			if (file_exists($gedarray["config"])) require($gedarray["config"]);
 			print "<td valign=\"top\">";		// Column 2  (notices)
 			if (!isset($SEARCHLOG_CREATE)) {
-				print "&lrm;".$pgv_lang["none"];
+				print getLRM() . $pgv_lang["none"];
 			}
 			else {
-				print "&lrm;".$pgv_lang[$SEARCHLOG_CREATE];
+				print getLRM() . $pgv_lang[$SEARCHLOG_CREATE];
 			}
 			print "</td>";
 
-			print "<td colspan=\"3\" valign=\"top\">";		// Columns 3-6  (file name selector)
+			print "<td colspan=\"4\" valign=\"top\">";		// Columns 3-6  (file name selector)
 			// Get the logfiles
 			if (!isset($logfilename)) $logfilename = "";
 			$file_nr = 0;
@@ -304,6 +313,7 @@ $GedCount = 0;
 			$d_logfile_str  = "<form name=\"logform\" action=\"editgedcoms.php\" method=\"post\">";
 			$d_logfile_str .= "\n<select name=\"logfilename\">\n";
 			if(isset($dir_array)) {
+				sort($dir_array);
 				$ct = count($dir_array);
 				for($x = 0; $x < $file_nr; $x++)
 				{
@@ -332,17 +342,17 @@ $GedCount = 0;
 			print "</td>";
 
 			unset($CHANGELOG_CREATE);
-			require($gedarray["config"]);
+			if (file_exists($gedarray["config"])) require($gedarray["config"]);
 			print "<td valign=\"top\">";		// Column 2  (notices)
 			if (!isset($CHANGELOG_CREATE)) {
-				print "&lrm;".$pgv_lang["none"];
+				print getLRM() . $pgv_lang["none"];
 			}
 			else {
-				print "&lrm;".$pgv_lang[$CHANGELOG_CREATE];
+				print getLRM() . $pgv_lang[$CHANGELOG_CREATE];
 			}
 			print "</td>";
 
-			print "<td colspan=\"3\" valign=\"top\">";		// Columns 3-6  (file name selector)
+			print "<td colspan=\"4\" valign=\"top\">";		// Columns 3-6  (file name selector)
 			// Get the logfiles
 			if (!isset($logfilename)) $logfilename = "";
 			$file_nr = 0;
@@ -356,6 +366,7 @@ $GedCount = 0;
 			$d_logfile_str  = "<form name=\"logform2\" action=\"editgedcoms.php\" method=\"post\">";
 			$d_logfile_str .= "\n<select name=\"logfilename\">\n";
 			if(isset($dir_array)) {
+				sort($dir_array);
 				$ct = count($dir_array);
 				for($x = 0; $x < $file_nr; $x++)
 				{
@@ -380,10 +391,10 @@ $GedCount = 0;
 
 print "</table>\n";
 }
-if (isset($GEDCOMS[$current_ged]) && file_exists($GEDCOMS[$current_ged]["config"])) require($GEDCOMS[$current_ged]["config"]);
+if (isset($gGedcom[$current_ged]) && file_exists($gGedcom[$current_ged]["config"])) require($gGedcom[$current_ged]["config"]);
 
 print "</form>";
-if (count($GEDCOMS)>2) {
+if (count($gGedcom)>2) {
 	print "<table class=\"gedcom_table\">";
 	if ($gBitUser->isAdmin()) {
 		print "<tr><td class=\"list_label\">";

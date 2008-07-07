@@ -1,9 +1,9 @@
 <?php
 /**
- * Print logfiles 
+ * Print logfiles
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2007  John Finlay and Others
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: printlog.php,v 1.4 2007/05/27 17:49:22 lsces Exp $
+ * @version $Id: printlog.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
  */
 
 /**
@@ -36,8 +36,13 @@ $gGedcom = new BitGEDCOM();
 // leave manual config until we can move it to bitweaver table 
 require "config.php";
 
-require  $confighelpfile["english"];
-if (file_exists( $confighelpfile[$LANGUAGE])) require  $confighelpfile[$LANGUAGE];
+//-- only allow admins
+if (!PGV_USER_GEDCOM_ADMIN) {
+	header("Location: login.php?url=admin.php");
+	exit;
+}
+
+loadLangFile("pgv_confighelp");
 
 print_simple_header("Print logfile");
 
@@ -61,9 +66,8 @@ if ($logtype == "searchlog") {
 
 //-- make sure that they have admin status before they can use this page
 $auth = false;
-global $gBitUser;
-if (($logtype == "syslog") && ($gBitUser->isAdmin())) $auth = true;
-if ((($logtype == "gedlog") || ($logtype == "searchlog"))  && (userGedcomAdmin($uname, $gedname))) $auth = true;
+if (($logtype == "syslog") && PGV_USER_IS_ADMIN) $auth = true;
+if ((($logtype == "gedlog") || ($logtype == "searchlog"))  && (userGedcomAdmin(PGV_USER_ID, $gedname))) $auth = true;
 
 if ($auth) {
 
@@ -72,14 +76,14 @@ if ($auth) {
 	$lines = array_reverse($lines);
 	$num = sizeof($lines);
 
-	// Print 
+	// Print
 	print "<table class=\"facts_table ".$TEXT_DIRECTION."\">";
-	
+
 	if (($logtype == "syslog") || ($logtype == "gedlog")) {
-		print "<tr><td colspan=\"3\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [&lrm;".$INDEX_DIRECTORY.$logfile."]</td></tr>";
+		print "<tr><td colspan=\"3\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [" . getLRM() .$INDEX_DIRECTORY.$logfile."]</td></tr>";
 		print "<tr><td colspan=\"3\" class=\"topbottombar\">";
 		print"<input type=\"button\" value=\"".$pgv_lang["back"]."\" onclick='self.close()';/>&nbsp;<input type=\"button\" value=\"".$pgv_lang["refresh"]."\" onclick='window.location.reload()';/></td></tr>";
-		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width80\">".$pgv_lang["message"]."</td></tr>";
+		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width80\">".$pgv_lang["log_message"]."</td></tr>";
 		for ($i = 0; $i < $num ; $i++)	{
 			print "<tr>";
 			$result = preg_split("/ - /", $lines[$i], 3);
@@ -99,7 +103,7 @@ if ($auth) {
 	}
 
 	if ($logtype == "searchlog") {
-		print "<tr><td colspan=\"6\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [&lrm;".$INDEX_DIRECTORY.$logfile."]</td></tr>";
+		print "<tr><td colspan=\"6\" class=\"topbottombar\">".$pgv_lang["logfile_content"]." [" . getLRM() .$INDEX_DIRECTORY.$logfile."]</td></tr>";
 		print "<tr><td colspan=\"6\" class=\"topbottombar\">";
 		print"<input type=\"button\" value=\"".$pgv_lang["back"]."\" onclick='self.close()';/>&nbsp;<input type=\"button\" value=\"".$pgv_lang["refresh"]."\" onclick='window.location.reload()';/></td></tr>";
 		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width10\">".$pgv_lang["user_name"]."</td><td class=\"list_label width10\">".$pgv_lang["searchtype"]."</td><td class=\"list_label width10\">".$pgv_lang["type"]."</td><td class=\"list_label width50\">".$pgv_lang["query"]."</td></tr>";
