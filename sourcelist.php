@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: sourcelist.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: sourcelist.php,v 1.8 2008/07/09 16:25:04 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -54,8 +54,8 @@ $ca = count($addsourcelist);
 $cs = count($sourcelist);
 $ctot = $ca + $cs;
 
-print "<div class=\"center\">";
-print "<h2>".$pgv_lang["source_list"]."</h2>\n\t";
+asort($sourcelist);
+asort($addsourcelist);
 
 $gBitSmarty->assign_by_ref( "sourcelist", array_merge($sourcelist, $addsourcelist) );
 

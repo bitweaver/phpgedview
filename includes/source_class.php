@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: source_class.php,v 1.6 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: source_class.php,v 1.7 2008/07/09 16:25:05 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -46,9 +46,9 @@ class Source extends GedcomRecord {
 		parent::GedcomRecord($gedrec);
 		$this->disp = displayDetailsByID($this->xref, "SOUR");
 		
-		$this->name = PrintReady(get_source_descriptor($this->xref));
+		$this->name = get_source_descriptor($this->xref);
 		$add_descriptor = get_add_source_descriptor($this->xref);
-		if ($add_descriptor) $this->name .= " - ".PrintReady($add_descriptor);
+		if ($add_descriptor) $this->name .= " - ".$add_descriptor;
 	}
 
 	/**
