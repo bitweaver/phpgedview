@@ -32,6 +32,7 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 }
 
 require_once 'includes/functions_charts.php';
+require_once 'includes/functions_rtl.php';
 
 /**
  * print the information for an individual chart box
@@ -95,8 +96,8 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 	 				else $title = $pid." :".$pgv_lang["descend_chart"];
 					print "<br /><a href=\"descendancy.php?pid=$pid&amp;show_full=$show_full&amp;generations=$generations&amp;box_width=$box_width&amp;ged=$GEDCOM\" title=\"$title\" $mouseAction1><b>".$pgv_lang["descend_chart"]."</b></a><br />\n";
 
-					$username = getUserName();
-					if (!empty($username)) {
+//					$username = getUserName();
+/*					if (!empty($username)) {
 						 $tuser=getUser($username);
 						 if (!empty($tuser["gedcomid"][$GEDCOM])) {
 	 						  if ($TEXT_DIRECTION=="ltr") $title = $pgv_lang["relationship_chart"].": ".$pid;
@@ -104,7 +105,7 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 							  print "<a href=\"relationship.php?pid1=".$tuser["gedcomid"][$GEDCOM]."&amp;pid2=".$pid."&amp;ged=$GEDCOM\" title=\"$title\" ".$mouseAction1."><b>".$pgv_lang["relationship_to_me"]."</b></a><br />\n";
 						 }
 					}
-					// NOTE: Zoom
+*/					// NOTE: Zoom
 					if (file_exists("ancestry.php")) {
 	 					if ($TEXT_DIRECTION=="ltr") $title = $pgv_lang["ancestry_chart"].": ".$pid;
 	 					else $title = $pid." :".$pgv_lang["ancestry_chart"];
@@ -324,8 +325,9 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 				   print "<br />";
 				   // NOTE: Start span addnamedef-$personcount.$pid.$count
 				   // NOTE: Close span addnamedef-$personcount.$pid.$count
-				   if (hasRTLText($addname) && $style=="1") print "<span id=\"addnamedef-$boxID\" class=\"name2\"> ";
-				   else print "<span id=\"addnamedef-$boxID\" class=\"name$style\"> ";
+//				   if (hasRTLText($addname) && $style=="1") print "<span id=\"addnamedef-$boxID\" class=\"name2\"> ";
+//				   else 
+					print "<span id=\"addnamedef-$boxID\" class=\"name$style\"> ";
  				   print PrintReady($addname)."</span><br />";
 			 }
 		     print "</a>";
@@ -396,9 +398,10 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 	 }
 	 if (strlen($addname) > 0) {
 		   print "<br />";
-		   if (hasRTLText($addname) && $style=="1")
-				print "<span id=\"addnamedef-$pid.$count\" class=\"name2\"> ";
-		   else print "<span id=\"addnamedef-$pid.$count\" class=\"name$style\"> ";
+//		   if (hasRTLText($addname) && $style=="1")
+//				print "<span id=\"addnamedef-$pid.$count\" class=\"name2\"> ";
+//		   else
+			print "<span id=\"addnamedef-$pid.$count\" class=\"name$style\"> ";
 		   print PrintReady($addname)."</span><br />";
 	 }
 	 print "</a>";
@@ -553,14 +556,14 @@ function print_header($title, $head="",$use_alternate_styles=true) {
 		}
 		//print "<link href=\"" . $SERVER_URL . "rss.php?ged=$GEDCOM&amp;auth=basic\" rel=\"alternate\" type=\"$applicationType\" title=\"$gedcomTitle - " . $pgv_lang["authenticated_feed"] . "\" />\n\t";
 	}
-	print "<link rel=\"stylesheet\" href=\"$stylesheet\" type=\"text/css\" media=\"all\"></link>\n\t";
+	print "<link rel=\"stylesheet\" href=\"".$THEME_DIR."style.css\" type=\"text/css\" media=\"all\"></link>\n\t";
 	if ((!empty($rtl_stylesheet))&&($TEXT_DIRECTION=="rtl")) print "<link rel=\"stylesheet\" href=\"$rtl_stylesheet\" type=\"text/css\" media=\"all\"></link>\n\t";
 	if ($use_alternate_styles) {
 		if ($BROWSERTYPE != "other") {
 			print "<link rel=\"stylesheet\" href=\"".$THEME_DIR.$BROWSERTYPE.".css\" type=\"text/css\" media=\"all\"></link>\n\t";
 		}
 	}
-	print "<link rel=\"stylesheet\" href=\"$print_stylesheet\" type=\"text/css\" media=\"print\"></link>\n\t";
+	print "<link rel=\"stylesheet\" href=\"".$THEME_DIR."print.css\" type=\"text/css\" media=\"print\"></link>\n\t";
 	if ($BROWSERTYPE == "msie") print "<style type=\"text/css\">\nFORM { margin-top: 0px; margin-bottom: 0px; }\n</style>\n";
 	print "<!-- Bitweaver PhpGedView v$VERSION -->\n";
 	if (isset($changelanguage)) {
@@ -775,7 +778,7 @@ function print_simple_header($title) {
 	   print "<link rel=\"shortcut icon\" href=\"$FAVICON\" type=\"image/x-icon\"></link>\n\t\t";
 	}
 	if (!isset($META_TITLE)) $META_TITLE = "";
-	print "<title>".PrintReady(strip_tags($title))." - ".$META_TITLE." - PhpGedView</title>\n\t<link rel=\"stylesheet\" href=\"$stylesheet\" type=\"text/css\"></link>\n\t";
+	print "<title>".PrintReady(strip_tags($title))." - ".$META_TITLE." - PhpGedView</title>\n\t<link rel=\"stylesheet\" href=\"".$THEME_DIR."style.css\" type=\"text/css\"></link>\n\t";
 	if ((!empty($rtl_stylesheet))&&($TEXT_DIRECTION=="rtl")) print "<link rel=\"stylesheet\" href=\"$rtl_stylesheet\" type=\"text/css\" media=\"all\"></link>\n\t";
 	$old_META_AUTHOR = $META_AUTHOR;
 		 $old_META_PUBLISHER = $META_PUBLISHER;
@@ -1148,12 +1151,12 @@ function print_contact_links($style=0) {
 function print_favorite_selector_xx($option=0) {
 	global $pgv_lang, $GEDCOM, $SCRIPT_NAME, $SHOW_ID_NUMBERS, $pid, $INDEX_DIRECTORY, $indilist, $famlist, $sourcelist, $medialist, $QUERY_STRING, $famid, $sid;
 	global $TEXT_DIRECTION, $REQUIRE_AUTHENTICATION, $PGV_IMAGE_DIR, $PGV_IMAGES, $SEARCH_SPIDER;
-	$username = getUserName();
-	if (!empty($username)) $userfavs = getUserFavorites($username);
-	else {
-		if ($REQUIRE_AUTHENTICATION) return false;
-		$userfavs = array();
-	}
+//	$username = getUserName();
+//	if (!empty($username)) $userfavs = getUserFavorites($username);
+//	else {
+//		if ($REQUIRE_AUTHENTICATION) return false;
+//		$userfavs = array();
+//	}
 	if (empty($pid)&&(!empty($famid))) $pid = $famid;
 	if (empty($pid)&&(!empty($sid))) $pid = $sid;
 	$gedcomfavs = array();
@@ -2055,12 +2058,12 @@ function PrintReady($text, $InHeaders=false) {
 				if ($tempChar==")" || $tempChar=="}" || $tempChar=="]") break;
 				$tempText .= $tempChar;
 			}
-			$thisLang = whatLanguage($tempText);
-			if (!isset($TEXT_DIRECTION_array[$thisLang]) || $TEXT_DIRECTION_array[$thisLang]=="ltr") {
+//			$thisLang = whatLanguage($tempText);
+//			if (!isset($TEXT_DIRECTION_array[$thisLang]) || $TEXT_DIRECTION_array[$thisLang]=="ltr") {
 				$newText .= "&lrm;" . $thisChar . $tempText. $tempChar . "&lrm;";
-			} else {
-				$newText .= "&rlm;" . $thisChar . $tempText. $tempChar . "&rlm;";
- 			   			}
+//			} else {
+//				$newText .= "&rlm;" . $thisChar . $tempText. $tempChar . "&rlm;";
+//			   			}
 		} else {
 			$newText .= $thisChar;
 			   			}
