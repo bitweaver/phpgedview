@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: person_class.php,v 1.7 2008/07/07 17:30:14 lsces Exp $
+ * @version $Id: person_class.php,v 1.8 2008/08/10 11:51:12 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -1362,7 +1362,7 @@ class Person extends GedcomRecord {
 		global $assolist, $GEDCOM, $gGedcom;
 		if (!function_exists("get_asso_list")) return;
 		get_asso_list('all', $person->getXref());
-		$apid = $person->getXref()."[".$gGedcom[$GEDCOM]["id"]."]";
+		$apid = $person->getXref()."[".$gGedcom->mGEDCOMId."]";
 		// associates exist ?
 		if (isset($assolist[$apid])) {
 			// if so, print all indi's where the indi is associated to
