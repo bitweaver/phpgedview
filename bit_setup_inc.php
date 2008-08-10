@@ -35,5 +35,6 @@ $OLD_HANDLER = set_error_handler("pgv_error_handler");
 require_once("includes/functions_db.php");
 require_once("includes/functions_name.php");
 require_once("includes/functions_date.php");
+require_once("themes/bitweaver/theme.php");
 $TBLPREFIX = PHPGEDVIEW_DB_PREFIX;
 ?>
