@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: lifespan_ctrl.php,v 1.1 2008/07/07 17:57:40 lsces Exp $
+ * @version $Id: lifespan_ctrl.php,v 1.2 2008/08/10 11:48:18 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -101,14 +101,13 @@ class LifespanControllerRoot extends BaseController {
 		$sql = "SELECT date1.d_gid, date1.d_file, MIN(date1.d_year) as birth, MAX(date2.d_year) as death ";
 		$sql .= "FROM ".$TBLPREFIX."dates as date1, ".$TBLPREFIX."dates as date2, ".$TBLPREFIX."individuals ";
 		$sql .= "WHERE date1.d_gid=date2.d_gid AND date1.d_gid=i_id AND date1.d_fact NOT IN ('CHAN','ENDL','SLGC','SLGS','BAPL') AND date1.d_file='".$gGedcom->mGEDCOMId."' ";
-		$sql .= "AND date1.d_file=date2.d_file AND date1.d_file=i_file AND date1.d_year>=".$DBCONN->escapeSimple($startyear)." AND date2.d_year<=".$DBCONN->escapeSimple($endyear)." AND date2.d_year!=0 GROUP BY d_gid";
-		$res = dbquery($sql);
+		$sql .= "AND date1.d_file=date2.d_file AND date1.d_file=i_file AND date1.d_year>=? AND date2.d_year<=? AND date2.d_year!=0 GROUP BY d_gid";
+		$res = $gGedcom->mDb->query($sql, array( $startyear, $endyear ));
 		//print $sql;
 		$myids = array();
-		while($row =& $res->fetchRow()){
-			$myids[] = $row[0];
+		while( $row = $res->fetchRow() ) {
+			$myids[] = $row['d_gid'];
 		}
-		$res->free();
 		//var_dump($myids);
 		$myindilist = load_people($myids);
 		return $myindilist;
