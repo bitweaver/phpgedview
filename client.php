@@ -26,7 +26,7 @@
  * 
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: client.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: client.php,v 1.8 2008/08/10 11:37:23 lsces Exp $
  */
 
 require "config.php";
@@ -315,11 +315,11 @@ else if ($action=='soundex') {
 		$res = search_indis_soundex($soundex, $lastname, $firstname, $place);
 		$msg_out = "SUCCESS\n";
 		// -- only get the names who match soundex
-		while($value = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-			$indilist[$row[4]]["gedcom"] = $row['i_gedcom'];
-			$indilist[$row[4]]["names"] = get_indi_names($row['i_gedcom']);
-			$indilist[$row[4]]["isdead"] = $row['i_isdead'];
-			$indilist[$row[4]]["gedfile"] = $row['i_file'];
+		while( $value = $res->fetchRow() ) {
+			$indilist[$row['sx_n_id']]["gedcom"] = $row['i_gedcom'];
+			$indilist[$row['sx_n_id']]["names"] = get_indi_names($row['i_gedcom']);
+			$indilist[$row['sx_n_id']]["isdead"] = $row['i_isdead'];
+			$indilist[$row['sx_n_id']]["gedfile"] = $row['i_file'];
 			if (displayDetailsById($xref)) $msg_out .= "$xref\n";
 		}
 		addDebugLog($action." lastname=$lastname firstname=$firstname ".$msg_out);
@@ -365,10 +365,7 @@ else if ($action=='getxref') {
 				$sql = "SELECT o_id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(o_id,2)";
 				break;
 		}
-		$res = dbquery($sql, true, 1);
-		$row = $res->fetchRow();
-		$res->free();
-		$xref = $row[0];
+		$xref = $gGedcom->mDb->getOne($sql);
 		addDebugLog($action." type=$type position=$position SUCCESS\n$xref");
 		print "SUCCESS\n$xref\n";
 	}
@@ -397,10 +394,7 @@ else if ($action=='getxref') {
 				break;
 		}
 		$sql .= " DESC";
-		$res = dbquery($sql, true, 1);
-		$row = $res->fetchRow();
-		$res->free();
-		$xref = $row[0];
+		$xref = $gGedcom->mDb->getOne($sql);
 		addDebugLog($action." type=$type position=$position SUCCESS\n$xref");
 		print "SUCCESS\n$xref\n";
 	}
@@ -434,30 +428,30 @@ else if ($action=='getxref') {
 		$msg_out = "SUCCESS\n";
 		switch($type) {
 			case "INDI":
-				$sql = "SELECT i_id FROM ".$TBLPREFIX."individuals WHERE i_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(i_id,2)";
+				$sql = "SELECT i_id AS id FROM ".$TBLPREFIX."individuals WHERE i_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(i_id,2)";
 				break;
 			case "FAM":
-				$sql = "SELECT f_id FROM ".$TBLPREFIX."families WHERE f_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(f_id,2)";
+				$sql = "SELECT f_id AS id FROM ".$TBLPREFIX."families WHERE f_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(f_id,2)";
 				break;
 			case "SOUR":
-				$sql = "SELECT s_id FROM ".$TBLPREFIX."sources WHERE s_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(s_id,2)";
+				$sql = "SELECT s_id AS id FROM ".$TBLPREFIX."sources WHERE s_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(s_id,2)";
 				break;
 			case "REPO":
-				$sql = "SELECT o_id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." AND o_type='REPO' ORDER BY 0+SUBSTRING(o_id,2)";
+				$sql = "SELECT o_id AS id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." AND o_type='REPO' ORDER BY 0+SUBSTRING(o_id,2)";
 				break;
 			case "NOTE":
-				$sql = "SELECT o_id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." AND o_type='NOTE' ORDER BY 0+SUBSTRING(o_id,2)";
+				$sql = "SELECT o_id AS id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." AND o_type='NOTE' ORDER BY 0+SUBSTRING(o_id,2)";
 				break;
 			case "OBJE":
-				$sql = "SELECT m_media FROM ".$TBLPREFIX."media WHERE m_gedfile=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(m_media,2)";
+				$sql = "SELECT m_media AS id FROM ".$TBLPREFIX."media WHERE m_gedfile=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(m_media,2)";
 				break;
 			case "OTHER":
-				$sql = "SELECT o_id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(o_id,2)";
+				$sql = "SELECT o_id AS id FROM ".$TBLPREFIX."other WHERE o_file=".$gGedcom->mGEDCOMId." ORDER BY 0+SUBSTRING(o_id,2)";
 				break;
 		}
-		$res = dbquery($sql);
+		$res = $gGedcom->mDb->query($sql);
 		while ($row = $res->fetchRow()) {		
-			$msg_out .= "$row[0]\n";
+			$msg_out .= "$row['id']\n";
 		}
 		$res->free();
 		addDebugLog($action." type=$type position=$position ".$msg_out);
