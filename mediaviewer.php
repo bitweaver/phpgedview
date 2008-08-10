@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: mediaviewer.php,v 1.1 2008/07/07 18:01:10 lsces Exp $
+ * @version $Id: mediaviewer.php,v 1.2 2008/08/10 11:45:00 lsces Exp $
  * @TODO use more theme specific CSS, allow a more fluid layout to take advantage of the page width
  */
 //These files are required for this page to work
@@ -40,16 +40,6 @@ $filename = $controller->getLocalFilename();
 	print_header($controller->getPageTitle());
 
 global $tmb;	
-	
-// LBox ============================================================================= 
-// Get Javascript variables from lb_config.php --------------------------- 
- if (file_exists("modules/lightbox/album.php")) {
-	include('modules/lightbox/lb_config.php');
-	include('modules/lightbox/functions/lb_call_js.php');	
-}
-// LBox  ============================================================================	
-
-loadLangFile("lb_lang");	// Load Lightbox language file	
 	
 	//The following lines of code are used to print the menu box on the top right hand corner
 	if ((!$controller->isPrintPreview())&&(empty($SEARCH_SPIDER))&&!empty($controller->pid)&&!empty($filename)) {
@@ -101,22 +91,10 @@ loadLangFile("lb_lang");	// Load Lightbox language file
 							// this is an image
 							$imgwidth = $controller->mediaobject->getWidth()+40;
 							$imgheight = $controller->mediaobject->getHeight()+150;
-							if (file_exists("modules/lightbox/album.php")) {							
-								$dwidth = 150;
-							}else{
-								$dwidth = 300;							
-							}
+							$dwidth = 300;							
 							if ($imgwidth<$dwidth) $dwidth = $imgwidth;
 							
-							// If Lightbox installed, open image with Lightbox
-							if ( file_exists("modules/lightbox/album.php") && ( eregi("\.jpg",$filename) || eregi("\.jpeg",$filename) || eregi("\.gif",$filename) || eregi("\.png",$filename) ) ) { 
-								//			print "<a href=\"" . $media["FILE"] . "\" rel=\"clearbox[general]\" title=\"" . stripslashes(PrintReady($name1)) . "\">" . "\n";
-								print "<a 
-									href=\"" . $filename . "\" 
-									onmouseover=\"window.status='javascript:;'; return true;\" 
-									onmouseout=\"window.status=''; return true;\"
-									rel=\"clearbox[general]\" title=\"" . $controller->pid . ":" . $GEDCOM . ":" . PrintReady(htmlspecialchars($controller->mediaobject->getTitle())) . "\">" . "\n";	
-							}else{
+							{
 								//Else open image with the Image View Page
 								?>
 								<a href="javascript:;" onclick="return openImage('<?php print rawurlencode($filename); ?>', <?php print $imgwidth; ?>, <?php print $imgheight; ?>);"> 
@@ -184,15 +162,6 @@ loadLangFile("lb_lang");	// Load Lightbox language file
 ?>
 <script language="JavaScript" type="text/javascript">
 <!--
-
-// javascript function to open the lightbox view
-function lightboxView(){
-//	var string = "<?php print $tmb; ?>";
-//	alert(string);
-//    	document.write(string);
-//	<?php print $tmb; ?>
-	return false;
-}
 
 // javascript function to open the original imageviewer.php page
 function openImageView(){

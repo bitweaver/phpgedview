@@ -473,7 +473,7 @@ function print_fact($factrec, $pid, $linenum, $indirec=false, $noedit=false) {
 	} else {
 		// -- catch all unknown codes here
 		$body = $pgv_lang["unrecognized_code"]." ".$fact;
-		$userName=getUserFullName($CONTACT_EMAIL);
+		$userName='To merge with $gBitUser';
 		if (!$HIDE_GEDCOM_ERRORS) print "\n\t\t<tr><td class=\"descriptionbox $styleadd\"><span class=\"error\">".$pgv_lang["unrecognized_code"].": $fact</span></td><td class=\"optionbox\">$event<br />".$pgv_lang["unrecognized_code_msg"]." <a href=\"javascript:;\" onclick=\"message('$CONTACT_EMAIL','', '', '$body'); return false;\">".$userName."</a>.</td></tr>";
 	}
 }
@@ -645,13 +645,7 @@ function print_media_links($factrec, $level,$pid='') {
 				if ($objectNum > 0) print "<br clear=\"all\" />";
 				print "<table><tr><td>";
 				if ($isExternal || media_exists($thumbnail)) {
-				
-//LBox --------  change for Lightbox Album --------------------------------------------
-					if (file_exists("modules/lightbox/album.php")&& ( eregi("\.jpg",$mainMedia) || eregi("\.jpeg",$mainMedia) || eregi("\.gif",$mainMedia) || eregi("\.png",$mainMedia) ) ) { 
-						$name = trim($row["m_titl"]);
-						print "<a href=\"" . $mainMedia . "\" rel=\"clearbox[general_1]\" title=\"" . $media_id . ":" . $GEDCOM . ":" . PrintReady($name) . "\">" . "\n";
-// ---------------------------------------------------------------------------------------------
-					}elseif ($USE_MEDIA_VIEWER) {
+					if ($USE_MEDIA_VIEWER) {
 						print "<a href=\"mediaviewer.php?mid=".$media_id."\">";
 					}else{
 						print "<a href=\"javascript:;\" onclick=\"return openImage('".rawurlencode($mainMedia)."',$imgwidth, $imgheight);\">";
@@ -1476,12 +1470,7 @@ function print_main_media_row($rtype, $rowm, $pid) {
 				$imgsize = findImageSize($mainMedia);
 				$imgwidth = $imgsize[0]+40;
 				$imgheight = $imgsize[1]+150;
-//LBox --------  change for Lightbox Album --------------------------------------------
-					if (file_exists("modules/lightbox/album.php") && ( eregi("\.jpg",$mainMedia) || eregi("\.jpeg",$mainMedia) || eregi("\.gif",$mainMedia) || eregi("\.png",$mainMedia) ) ) { 
-					$name = trim($rowm["m_titl"]);
-					print "<a href=\"" . $mainMedia . "\" rel=\"clearbox[general_3]\" title=\"" . $rowm["m_media"] . ":" . $GEDCOM . ":" . PrintReady($name) . "\">" . "\n";
-// ---------------------------------------------------------------------------------------------
-				}elseif ($USE_MEDIA_VIEWER) {
+				if ($USE_MEDIA_VIEWER) {
 					print "<a href=\"mediaviewer.php?mid=".$rowm["m_media"]."\">";
 				}else{
 					print "<a href=\"javascript:;\" onclick=\"return openImage('".rawurlencode($mainMedia)."',$imgwidth, $imgheight);\">";
@@ -1663,25 +1652,4 @@ function print_fact_icon($fact, $factrec, $label, $pid) {
 	}
 	return;
 }
-
-// -----------------------------------------------------------------------------
-//  Extra print_facts_functions for lightbox 
-// -----------------------------------------------------------------------------
-
-function lightbox_print_media($pid, $level=1, $related=false, $kind, $noedit=false ) {
-         include("modules/lightbox/functions/lightbox_print_media.php");
-}
-
-function lightbox_print_media_row($rtype, $rowm, $pid) {
-         include("modules/lightbox/functions/lightbox_print_media_row.php");
-}
-
-function lightbox_print_media_row_sort($rtype, $rowm, $pid) {
-         include("modules/lightbox/functions/lightbox_print_media_row_sort.php");
-}
-
-// -----------------------------------------------------------------------------
-//  End extra print_facts_functions for lightbox
-// -----------------------------------------------------------------------------
-
 ?>

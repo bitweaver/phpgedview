@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: individual.php,v 1.8 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: individual.php,v 1.9 2008/08/10 11:45:00 lsces Exp $
  */
 
 /**
@@ -40,8 +40,8 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require_once("includes/controllers/individual_ctrl.php");
+require_once("themes/bitweaver/theme.php");
 
-loadLangFile("lb_lang");	// Load Lightbox language file
 loadLangFile("gm_lang");	// Load GoogleMap language file
 
 global $USE_THUMBS_MAIN, $mediacnt, $tabno;
@@ -231,28 +231,11 @@ function showchanges() {
 	window.location = 'individual.php?pid=<?php print $controller->pid; ?>&show_changes=yes';
 }
 <?php } ?>
-<!-- ====================== Added for Lightbox Module ===================== -->
-<?php
-if (file_exists("modules/lightbox/album.php")) {
-	include_once ("modules/lightbox/lb_config.php");
-	if ($theme_name=="Minimal") {
-		// Force icon options to "text" when we're dealing with the Minimal theme
-		if ($LB_AL_HEAD_LINKS!="none") { $LB_AL_HEAD_LINKS = "text"; }
-		if ($LB_AL_THUMB_LINKS!="none") { $LB_AL_THUMB_LINKS = "text"; }
-		if ($LB_ML_THUMB_LINKS!="none") { $LB_ML_THUMB_LINKS = "text"; }
-	}
-	include_once ("modules/lightbox/functions/lb_indi_tabs_" . $mediatab . ".php");
-}else{
-?>
-<!-- ================== End Additions for Lightbox Module ================== -->
 var tabid = new Array('0', 'facts','notes','sources','media','relatives','researchlog');
 <?php if (file_exists("modules/googlemap/defaultconfig.php")) {?>
 var tabid = new Array('0', 'facts','notes','sources','media','relatives','researchlog','googlemap');
 <?php }?>
 var loadedTabs = new Array(false,false,false,false,false,false,false,false);
-<!-- ====================== Added for Lightbox Module ===================== -->
- <?php } ?>
-<!-- ================== End Additions for Lightbox Module ================== -->
 
 loadedTabs[<?php print ($controller->default_tab+1); ?>] = true;
 
@@ -272,10 +255,6 @@ function tempObj(tab, oXmlHttp) {
 				SetMarkersAndBounds();
 				ResizeMap();
 				ResizeMap();
-			}
-			//-- initialize lightbox tabs
-			if (tabid[tab]=='lightbox2' || tabid[tab]=='facts' || tabid[tab]=='media' || tabid[tab]=='relatives') {
-				CB_Init();
 			}
 			loadedTabs[tab] = true;
 		}
@@ -360,30 +339,16 @@ if ((!$controller->isPrintPreview())&&(empty($SEARCH_SPIDER))) {
 ?>
 <div class="door">
 <dl>
-<dd id="door1"><a href="javascript:;" onclick="tabswitch(1); return false;" ><?php print $pgv_lang["personal_facts"]?></a></dd>
-<dd id="door2"><a href="javascript:;" onclick="tabswitch(2); return false;" ><?php print $pgv_lang["notes"]?></a></dd>
-<dd id="door3"><a href="javascript:;" onclick="tabswitch(3); return false;" ><?php print $pgv_lang["ssourcess"]?></a></dd>
-
-<!-- ====================== Added for Lightbox Module ===================== -->
-<?php
-if (file_exists("modules/lightbox/album.php")) {
-	include_once ("modules/lightbox/functions/lb_indi_doors_" . $mediatab . ".php");
-}else{
-?>
-<!-- ================== End Additions for Lightbox Module ================== -->
-
-<dd id="door4"><a href="javascript:;" onclick="tabswitch(4); return false;" ><?php print $pgv_lang["media"]?></a></dd>
-<dd id="door5"><a href="javascript:;" onclick="tabswitch(5); return false;" ><?php print $pgv_lang["relatives"]?></a></dd>
-<dd id="door6"><a href="javascript:;" onclick="tabswitch(6); return false;" ><?php print $pgv_lang["research_assistant"]?></a></dd>
-<?php if (file_exists("modules/googlemap/defaultconfig.php")) {?>
-<dd id="door7"><a href="javascript:;" onclick="tabswitch(7); if (loadedTabs[7]) {ResizeMap(); ResizeMap();} return false;" ><?php print $pgv_lang["googlemap"]?></a></dd>
-<?php }?>
-<dd id="door0"><a href="javascript:;" onclick="tabswitch(0); if (loadedTabs[7]) {ResizeMap(); ResizeMap();} return false;" ><?php print $pgv_lang["all"]?></a></dd>
-
-<!-- ====================== Added for Lightbox Module ===================== -->
-<?php } ?>
-<!-- ================== End Additions for Lightbox Module ================== -->
-
+	<dd id="door1"><a href="javascript:;" onclick="tabswitch(1); return false;" ><?php print $pgv_lang["personal_facts"]?></a></dd>
+	<dd id="door2"><a href="javascript:;" onclick="tabswitch(2); return false;" ><?php print $pgv_lang["notes"]?></a></dd>
+	<dd id="door3"><a href="javascript:;" onclick="tabswitch(3); return false;" ><?php print $pgv_lang["ssourcess"]?></a></dd>
+	<dd id="door4"><a href="javascript:;" onclick="tabswitch(4); return false;" ><?php print $pgv_lang["media"]?></a></dd>
+	<dd id="door5"><a href="javascript:;" onclick="tabswitch(5); return false;" ><?php print $pgv_lang["relatives"]?></a></dd>
+	<dd id="door6"><a href="javascript:;" onclick="tabswitch(6); return false;" ><?php print $pgv_lang["research_assistant"]?></a></dd>
+	<?php if (file_exists("modules/googlemap/defaultconfig.php")) {?>
+	<dd id="door7"><a href="javascript:;" onclick="tabswitch(7); if (loadedTabs[7]) {ResizeMap(); ResizeMap();} return false;" ><?php print $pgv_lang["googlemap"]?></a></dd>
+	<?php }?>
+	<dd id="door0"><a href="javascript:;" onclick="tabswitch(0); if (loadedTabs[7]) {ResizeMap(); ResizeMap();} return false;" ><?php print $pgv_lang["all"]?></a></dd>
 </dl>
 </div>
 <br />
@@ -602,71 +567,6 @@ if(empty($SEARCH_SPIDER)) {
 ?>
 <!-- ========================== End 7th tab individual page ==== GoogleMaps ===== -->
 
-
-<!-- ========================== Start 8th tab individual page ==== Album ======== -->
-<?php
-if(empty($SEARCH_SPIDER) && file_exists("modules/lightbox/album.php")) {
-	print "<div id=\"lightbox2\" class=\"tab_page\" style=\"display:none;\" >\n";
-
-	if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
-
-		// The following is temporary, until the handling of the Lightbox Help system
-		// is adjusted to match the usual PhpGedView practice
-		$lbHelpFile = "modules/lightbox/languages/help.".$lang_short_cut[$LANGUAGE].".php";
-		if (!file_exists($lbHelpFile)) $lbHelpFile = "modules/lightbox/languages/help.en.php";
-
-		print "<span class=\"subheaders\">" . $pgv_lang["lightbox"] . "</span>\n";
-		print "&nbsp;&nbsp;";
-
-		// ---------- Help link --------------------
-		print "<a href=\"" . $lbHelpFile . "\" rel='clearbox(500,760,click)' title=\"" . $pgv_lang["page_help"] . "\" >";
-		if ($theme_name=="Minimal") {
-			// Force icon options to "text" when we're dealing with the Minimal theme
-			print $pgv_lang["page_help"];
-		}else{
-			print "<img src=\"".$PGV_IMAGE_DIR."/small/help.gif\" class=\"icon\" title=\"" . $pgv_lang["page_help"] . "\" />" ;
-		}
-        print "</a>" ;
-
-		// Header info ---------------------------------------------------
-		$mediacnt = $controller->get_media_count();
-		if ($mediacnt!=0) {
-			include_once('modules/lightbox/functions/lb_head.php');
-		}else{
-			include_once('modules/lightbox/functions/lb_head.php');
-			print "<table class=\"facts_table\"><tr><td id=\"no_tab8\" colspan=\"2\" class=\"facts_value\">".$pgv_lang["no_tab4"]."</td></tr></table>\n";
-		}
-    }else{
-       print "<div id=\"lightbox2\" class=\"tab_page\" style=\"display:block; \" >\n";
-    }
-	// Content info ---------------------------------------------------
-	print "<div id=\"lightbox2_content\"> \n";
-	if ($mediacnt!=0) {
-		if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
-		
-			// LB Fix if no googlemaps ========================================================
-			if (file_exists("modules/googlemap/googlemap.php")) {
-				if (($controller->default_tab==7)||(!empty($SEARCH_SPIDER))) {
-					$controller->getTab(7) ;
-				}else{
-					loading_message();
-				}
-			}else{
-				if (($controller->default_tab==6)||(!empty($SEARCH_SPIDER))) {
-					$controller->getTab(6) ;
-				}else{
-					loading_message();
-				}
-			}
-			// LB Fix if no googlemaps ========================================================
-		}
-	}
-
-    print "</div>\n";
-    print "</div>\n";
-}
-?>
-<!-- ============================= End 8th tab individual page ==== Album -->
 
 <script language="JavaScript" type="text/javascript">
 <!--
