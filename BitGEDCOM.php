@@ -16,6 +16,7 @@
 require_once( LIBERTY_PKG_PATH.'LibertyContent.php' );
 require_once('includes/functions.php');
 require_once('includes/functions_import.php');
+require_once('includes/bit_print.php');
 
 class BitGEDCOM extends LibertyContent {
 	var $mGEDCOMId;
