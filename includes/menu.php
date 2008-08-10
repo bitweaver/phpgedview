@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: menu.php,v 1.11 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: menu.php,v 1.12 2008/08/10 11:40:01 lsces Exp $
  */
 if (stristr($_SERVER["SCRIPT_NAME"], "/".basename(__FILE__))!==false) {
 	print "You cannot access an include file directly.";
@@ -605,14 +605,6 @@ class MenuBar
 					if (PGV_USER_ID) {
 						$pids[] = PGV_USER_GEDCOM_ID;
 						$pids[] = PGV_USER_ROOT_ID;
-					}
-				}
-				if ($rootid) {
-					foreach (getUserFavorites(PGV_USER_NAME) as $key=>$favorite) {
-						$pid = $favorite["gid"];
-						if (displayDetailsById($pid, $favorite["type"])) {
-							if ($favorite["type"]=="INDI" && $favorite["file"]==$GEDCOM) $pids[]=$pid;
-						}
 					}
 				}
 				$pids = array_unique($pids);
