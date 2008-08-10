@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.17 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: functions.php,v 1.18 2008/08/10 11:42:08 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -1046,53 +1046,50 @@ function find_highlighted_object($pid, $indirec) {
 	}
 
 	//-- find all of the media items for a person
-	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile='".$gGedcom[$GEDCOM]["id"]."' AND mm_gid='".$DBCONN->escapeSimple($pid)."' ORDER BY mm_order";
+	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile='".$gGedcom->mGEDCOMId."' AND mm_gid='".$DBCONN->escapeSimple($pid)."' ORDER BY mm_order";
 	$res = dbquery($sql);
-	if (!DB::isError($res)) {
-		while ($row = $res->fetchRow()) {
-			$media[] = $row;
-		}
-		$res->free();
+	while ( $row = $res->fetchRow() ) {
+		$media[] = $row;
 	}
 
 	//-- for the given media choose the
 	foreach ($media as $i=>$row) {
-		if (displayDetailsById($row[0], 'OBJE') && !FactViewRestricted($row[0], $row[2])) {
+		if (displayDetailsById($row['m_media'], 'OBJE') && !FactViewRestricted($row['m_media'], $row['m_gedrec'])) {
 			$level=0;
-			$ct = preg_match("/(\d+) OBJE/", $row[3], $match);
+			$ct = preg_match("/(\d+) OBJE/", $row['mm_gedrec'], $match);
 			if ($ct>0)
 				$level = $match[1];
-			if (strstr($row[3], "_PRIM ")) {
-				$thum = get_gedcom_value('_THUM', $level+1, $row[3]);
-				$prim = get_gedcom_value('_PRIM', $level+1, $row[3]);
+			if (strstr($row['mm_gedrec'], "_PRIM ")) {
+				$thum = get_gedcom_value('_THUM', $level+1, $row['mm_gedrec']);
+				$prim = get_gedcom_value('_PRIM', $level+1, $row['mm_gedrec']);
 			} else {
-				$thum = get_gedcom_value('_THUM', 1, $row[2]);
-				$prim = get_gedcom_value('_PRIM', 1, $row[2]);
+				$thum = get_gedcom_value('_THUM', 1, $row['m_gedrec']);
+				$prim = get_gedcom_value('_PRIM', 1, $row['m_gedrec']);
 			}
 			//-- always take _THUM Y objects
 			if ($thum=='Y') {
-				$object["file"] = check_media_depth($row[1]);
+				$object["file"] = check_media_depth($row['m_file']);
 				$object["thumb"] = $object["file"];
 				$object["level"] = $level;
-				$object["mid"] = $row[0];
+				$object["mid"] = $row['m_media'];
 				break;
 			} else
 				if ($prim=='Y') {
 					//-- take the first _PRIM Y object... _PRIM Y overrides first level 1 object
 					if (!isset($object['prim']) || !isset($object['level']) || $object['level']>$level) {
-						$object["file"] = check_media_depth($row[1]);
-						$object["thumb"] = thumbnail_file($row[1], true, false, $pid);
+						$object["file"] = check_media_depth($row['m_file']);
+						$object["thumb"] = thumbnail_file($row['m_file'], true, false, $pid);
 						$object["prim"] = $prim;
 						$object["level"] = $level;
-						$object["mid"] = $row[0];
+						$object["mid"] = $row['m_media'];
 					}
 				} else
 					if (empty($object['file']) && $level==1 && $thum!='N' && $prim!='N') {
 						//-- take the first level 1 object if we don't already have one and it doesn't have _THUM N or _PRIM N
-						$object["file"] = check_media_depth($row[1]);
-						$object["thumb"] = thumbnail_file($row[1], true, false, $pid);
+						$object["file"] = check_media_depth($row['m_file']);
+						$object["thumb"] = thumbnail_file($row['m_file'], true, false, $pid);
 						$object["level"] = $level;
-						$object["mid"] = $row[0];
+						$object["mid"] = $row['m_media'];
 					}
 		}
 	}
@@ -2778,7 +2775,7 @@ function get_report_list($force=false) {
 	$fp = @fopen($INDEX_DIRECTORY."/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
-	$logline = AddToLog("reports.dat updated");
+//	$logline = AddToLog("reports.dat updated");
  	if (!empty($COMMIT_COMMAND)) check_in($logline, "reports.dat", $INDEX_DIRECTORY);
 
 	return $files;
@@ -3099,7 +3096,7 @@ function get_new_xref($type='INDI', $use_cache=false) {
 	if (!empty($FILE) && !is_array($FILE)) {
 		$gedid = $gGedcom[$FILE]["id"];
 	} else
-		$gedid = $gGedcom[$GEDCOM]["id"];
+		$gedid = $gGedcom->mGEDCOMId;
 
 	$num = null;
 	//-- check if an id is stored in MAX_IDS used mainly during the import
@@ -3110,12 +3107,9 @@ function get_new_xref($type='INDI', $use_cache=false) {
 		$MAX_IDS[$type] = $num+1;
 	} else {
 		//-- check for the id in the nextid table
-		$sql = "SELECT ni_id FROM ".$TBLPREFIX."nextid WHERE ni_type='".$DBCONN->escapeSimple($type)."' AND ni_gedfile='".$DBCONN->escapeSimple($gedid)."'";
-		$res =& dbquery($sql);
-		if ($res->numRows() > 0) {
-			$row = $res->fetchRow();
-			$num = $row[0];
-		}
+		$sql = "SELECT ni_id FROM ".$TBLPREFIX."nextid WHERE ni_type=? AND ni_gedfile=?";
+		$num = $gGedcom->mDb->getOne($sql, array( $type, $gedid ) );
+
 		//-- the id was not found in the table so try and find it in the file
 		if (is_null($num) && !empty($fcontents)) {
 			$ct = preg_match_all("/0 @(.*)@ $type/", $fcontents, $match, PREG_SET_ORDER);
@@ -3134,8 +3128,8 @@ function get_new_xref($type='INDI', $use_cache=false) {
 		//-- type wasn't found in database or in file so make a new one
 		if (is_null($num)) {
 			$num = 1;
-			$sql = "INSERT INTO ".$TBLPREFIX."nextid VALUES('".$DBCONN->escapeSimple($num+1)."', '".$DBCONN->escapeSimple($type)."', '".$gedid."')";
-			$res = dbquery($sql);
+			$sql = "INSERT INTO ".$TBLPREFIX."nextid VALUES( ?, ?, ? )";
+			$res = $gGedcom->mDb->query($sql, array( $num+1, $type, $gedid ) );
 		}
 	}
 
@@ -3307,14 +3301,6 @@ function loadLangFile($fileListNames="") {
 		case "sm_help":
 			$fileName1 = "modules/sitemap/languages/help_text.".$lang_short_cut["english"].".php";
 			$fileName2 = "modules/sitemap/languages/help_text.".$lang_short_cut[$LANGUAGE].".php";
-			break;
-		case "lb_lang":
-			$fileName1 = "modules/lightbox/languages/lang.".$lang_short_cut["english"].".php";
-			$fileName2 = "modules/lightbox/languages/lang.".$lang_short_cut[$LANGUAGE].".php";
-			break;
-		case "lb_help":
-			$fileName1 = "modules/lightbox/languages/help_text.".$lang_short_cut["english"].".php";
-			$fileName2 = "modules/lightbox/languages/help_text.".$lang_short_cut[$LANGUAGE].".php";
 			break;
 		case "pgv_lang":
 			$fileName1 = $pgv_language["english"];
