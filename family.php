@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: family.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: family.php,v 1.5 2008/08/10 11:46:26 lsces Exp $
  */
 
 /**
@@ -48,14 +48,6 @@ if (!$controller->family->disp) {
 	print_footer();
 	exit;
 }
-
-// LB added for Lightbox viewer ==============================================================
-if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
-	include_once('modules/lightbox/lb_config.php');
-	include_once('modules/lightbox/functions/lb_call_js.php');
-}	
-// LB ======================================================================================
-
 ?>
 <?php if ($controller->family->isMarkedDeleted()) print "<span class=\"error\">".$pgv_lang["record_marked_deleted"]."</span>"; ?>
 <script language="JavaScript" type="text/javascript">

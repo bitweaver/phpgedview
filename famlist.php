@@ -36,7 +36,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: famlist.php,v 1.11 2008/07/07 20:00:26 lsces Exp $
+ * @version $Id: famlist.php,v 1.12 2008/08/10 11:46:26 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -53,29 +53,23 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
 
-
-if (empty($surname_sublist)) $surname_sublist = "yes";
+if (isset($_REQUEST['alpha']) ) { $alpha = $_REQUEST['alpha']; }
+if (isset($_REQUEST['surname']) ) { $surname = $_REQUEST['surname']; }
+if (isset($_REQUEST['surname_sublist']) ) { $surname_sublist = $_REQUEST['surname_sublist']; }
+else $surname_sublist = 'yes';
+if (isset($_REQUEST['show_all']) ) { $show_all = $_REQUEST['show_all']; }
 if (empty($show_all)) $show_all = "no";
 
 // Remove slashes
 if (isset($alpha)) {
-	$alpha = stripLRMRLM(stripslashes($alpha));
-	$doctitle = $pgv_lang["family_list"]." : ".$alpha;
+	$alpha = stripslashes($alpha);
+	$doctitle = "Family List : ".$alpha;
 }
 if (isset($surname)) {
-	$surname = stripLRMRLM(stripslashes($surname));
-	$doctitle = $pgv_lang["family_list"]." : ";
+	$surname = stripslashes($surname);
+	$doctitle = "Family List : ";
 	if (empty($surname) or trim("@".$surname,"_")=="@" or $surname=="@N.N.") $doctitle .= $pgv_lang["NN"];
 	else $doctitle .= $surname;
-}
-if (isset($doctitle)) {
-	?>
-	<script language="JavaScript" type="text/javascript">
-	<!--
-		document.title = '<?php print $doctitle; ?>';
-	//-->
-	</script>
-	<?php
 }
 if (empty($show_all_firstnames)) $show_all_firstnames = "no";
 if (empty($DEBUG)) $DEBUG = false;
@@ -104,8 +98,8 @@ $tfamlist = array();
  */
 
 $famalpha = get_fam_alpha();
-
-uasort($famalpha, "stringsort");
+//uasort($famalpha, "stringsort");
+asort($famalpha);
 
 if (empty($surname_sublist))
         $surname_sublist = "yes";
@@ -156,8 +150,6 @@ if (count($famalpha) > 0) {
 	if (isset($startalpha)) $alpha = $startalpha;
 	$gBitSmarty->assign_by_ref( "indialpha", $famalpha );
 }
-
-
 
 if (($surname_sublist=="yes")&&($show_all=="yes")) {
 	get_fam_list();
@@ -253,7 +245,7 @@ else {
 	}
 
 	//-- simplify processing for ALL famlist
-	if (($surname_sublist=="no")&&($show_all=="yes")) {
+	if( ( $surname_sublist == "no" ) && ( $show_all == "yes" ) ) {
 		$tfamlist = get_fam_list();
 		uasort($tfamlist, "itemsort");
 	}
@@ -296,6 +288,15 @@ else {
 		}
 		uasort($tfamlist, "itemsort");
 	}
+	// Fill family data
+	require_once 'includes/family_class.php';
+	foreach( $tfamlist as $gid=>$fam ) {
+		$family =  new Family($fam['f_gedcom']);
+		$tfamlist[$gid]['url'] = "family.php?ged=".$GEDCOM."&amp;pid=".$gid."#content";
+		$tfamlist[$gid]['marriagedate'] = $family->getMarriageDate();
+		$tfamlist[$gid]['marriageplace'] = $family->getMarriagePlace();
+		$tfamlist[$gid]['placeurl'] = $family->getPlaceUrl($tfamlist[$gid]['marriageplace']);
+	}
 }
 
 if ($show_all=="yes") unset($alpha);
@@ -304,11 +305,10 @@ else if (isset($alpha) and $show_all=="no") $legend = "Families with surname sta
 else $legend = $pgv_lang["families"];
 if ($show_all_firstnames=="yes") $falpha = "@";
 if (isset($falpha) and $falpha!="@") $legend .= ", ".$falpha.".";
-//$legend = PrintReady($legend);
 
 if (!empty($surname) or $surname_sublist=="no") {
 //	print_fam_table($tfamlist, $legend);
-	$gBitSmarty->assign_by_ref( "names", $tfamlist );
+	$gBitSmarty->assign_by_ref( "families", $tfamlist );
 }
 if (isset($alpha)) {
 	$gBitSmarty->assign( "alpha", $alpha );
