@@ -85,7 +85,7 @@ class IndividualControllerRoot extends BaseController {
 	var $total_names = 0;
 	var $SEX_COUNT = 0;
 	var $sexarray = array();
-	var $tabarray = array("facts","notes","sources","media","relatives","research","map","lightbox");
+	var $tabarray = array("facts","notes","sources","media","relatives","research","map");
 	
 	/**
 	 * constructor
@@ -163,8 +163,7 @@ class IndividualControllerRoot extends BaseController {
 		}
 
 		if ($this->default_tab<-2 || $this->default_tab>9) $this->default_tab=0;
-
-		$this->indi = new Person($indirec, false);
+		$this->indi = new Person($indirec['i_gedcom'], false);
 
 		//-- if the person is from another gedcom then forward to the correct site
 		/*
@@ -316,6 +315,7 @@ class IndividualControllerRoot extends BaseController {
 	 */
 	function getPageTitle() {
 		global $pgv_lang, $GEDCOM;
+		
 		$name = $this->indi->getName();
 		return $name." - ".$this->indi->getXref()." - ".$pgv_lang["indi_info"];
 	}
@@ -395,12 +395,6 @@ class IndividualControllerRoot extends BaseController {
 					//Gets the Media View Link Information and Concatinate
 					$mid = $firstmediarec['mid'];
 					
-//LBox --------  change for Lightbox Album --------------------------------------------
-					if (file_exists("modules/lightbox/album.php")) {
-						$name1 = trim($firstmediarec["file"]);
-						print "<a href=\"" . $filename . "\" rel=\"clearbox[general_1]\" title=\"" . $mid . "\">" . "\n";
-					}else
-// ---------------------------------------------------------------------------------------------
 					if (!$USE_MEDIA_VIEWER && $imgsize) {
 						$result .= "<a href=\"javascript:;\" onclick=\"return openImage('".rawurlencode($firstmediarec["file"])."',$imgwidth, $imgheight);\">";
 					}else{
@@ -928,9 +922,9 @@ class IndividualControllerRoot extends BaseController {
 // LB Fix for no googlemaps ==========================================================================
 
 		if (file_exists("modules/googlemap/defaultconfig.php")) { 
-			$tab_array = array("facts","notes","sources","media","relatives","research","map","lightbox");
+			$tab_array = array("facts","notes","sources","media","relatives","research","map");
 		}else{
-			$tab_array = array("facts","notes","sources","media","relatives","research","lightbox");
+			$tab_array = array("facts","notes","sources","media","relatives","research");
 		}
 		$tabType = $tab_array[$tab];
 
@@ -959,9 +953,6 @@ class IndividualControllerRoot extends BaseController {
 			case "map":
 				$this->print_map_tab();
 				break;
-			case "lightbox":
-				$this->print_lightbox_tab();
-				break;				
 			default:
 				print "No tab found";
 				break;
@@ -1875,45 +1866,6 @@ class IndividualControllerRoot extends BaseController {
 						// LB Fix if no googlemaps ========================================================
 		}
 	}
-
-// -----------------------------------------------------------------------------
-// Functions for Lightbox Album 
-// -----------------------------------------------------------------------------
-	/**
-	 * print the lightbox tab, ( which =  getTab7()  )
-	 */
-	function print_lightbox_tab() {
-		global $MULTI_MEDIA, $TBLPREFIX, $SHOW_ID_NUMBERS, $MEDIA_EXTERNAL;
-		global $pgv_lang, $pgv_changes, $factarray, $view;
-		global $GEDCOM, $MEDIATYPE, $pgv_changes, $DBCONN, $DBTYPE;
-		global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION, $is_media;
-		global $cntm1, $cntm2, $cntm3, $cntm4, $t, $mgedrec ;
-		global $typ2b, $edit ;	
-		global $CONTACT_EMAIL, $pid, $tabno;
-
-		print "<table class=\"facts_table\">\n";		
-		$media_found = false;
-		if (!$this->indi->canDisplayDetails()) {
-			print "<tr><td class=\"facts_value\">";
-			print_privacy_error($CONTACT_EMAIL);
-			print "</td></tr>";
-		}else{
-			if (file_exists("modules/lightbox/album.php")) { 
-				include_once('modules/lightbox/album.php');	
-			}		
-		}
-		print "</table>";
-	}
-	
-	/**
-	 * include lightbox controller
-	 */
-    function lightbox() {
-        include('modules/lightbox/functions/lightbox_ctrl.php');
-    }
-// -----------------------------------------------------------------------------
-// End LightBox Album Functions
-// -----------------------------------------------------------------------------
 		
 }
 // -- end of class
@@ -1930,4 +1882,5 @@ else
 }
 $controller = new IndividualController();
 $controller->init();
+
 ?>
