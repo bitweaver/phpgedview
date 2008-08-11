@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: person_class.php,v 1.8 2008/08/10 11:51:12 lsces Exp $
+ * @version $Id: person_class.php,v 1.9 2008/08/11 14:24:34 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -649,7 +649,7 @@ class Person extends GedcomRecord {
 				if (!is_null($family)) {
 					if ($SHOW_LIVING_NAMES || $family->disp) $families[$famid] = $family;
 				}
-				else echo "<span class=\"warning\">".$pgv_lang["unable_to_find_family"]." ".$famid."</span>";
+				$error = $pgv_lang["unable_to_find_family"]." ".$famid;
 			}
 		}
 		$this->childFamilies = $families;
@@ -753,7 +753,7 @@ class Person extends GedcomRecord {
 				if ($temp!="birth" && isset($pgv_lang[$temp])) return $pgv_lang[$temp]." ";
 			}
 		}
-		return $pgv_lang["as_child"];
+		return "Family with Parents";
 	}
 	/**
 	 * get the correct label for a step family
