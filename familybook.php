@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: familybook.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: familybook.php,v 1.5 2008/08/11 15:26:31 lsces Exp $
  */
 
 // Initialization
@@ -37,10 +37,9 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once("includes/functions_charts.php");
-require($factsfile["english"]);
-if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
+require_once("languages/facts.en.php");
+
 // -- args
 $view="";
 if (!empty($_REQUEST['view'])) $view = $_REQUEST['view'];

@@ -49,7 +49,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
  *
- * @version $Id: patriarchlist.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: patriarchlist.php,v 1.8 2008/08/11 15:26:30 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -67,7 +67,6 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once("includes/functions_print_lists.php");
 $patrilist = array();
 $patrialpha = array();

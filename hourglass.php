@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: hourglass.php,v 1.3 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: hourglass.php,v 1.4 2008/08/11 15:26:30 lsces Exp $
  */
 require_once("includes/controllers/hourglass_ctrl.php");
 if (isset($_REQUEST['show_full'])) $show_full = $_REQUEST['show_full'];
@@ -42,13 +42,6 @@ if ($controller->view=="preview") {
 }
 	
 $controller->setupJavascript();
-
-// LBox =====================================================================================
-if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
-	include('modules/lightbox/lb_config.php');
-	include('modules/lightbox/functions/lb_call_js.php');
-}	
-// ==========================================================================================
 
 $gencount=0;
 if ($view!="preview") {

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: fanchart.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: fanchart.php,v 1.5 2008/08/11 15:26:31 lsces Exp $
  */
 
 /**
@@ -37,9 +37,8 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once("includes/functions_charts.php");
-require( $factsfile["english"]);
+require_once("languages/facts.en.php");
 if (file_exists( $factsfile[$LANGUAGE])) require  $factsfile[$LANGUAGE];
 
 /**

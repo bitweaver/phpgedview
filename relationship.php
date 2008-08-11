@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: relationship.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: relationship.php,v 1.5 2008/08/11 15:26:31 lsces Exp $
  */
 
 /**
@@ -38,7 +38,6 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once("includes/functions_charts.php");
 require_once("includes/person_class.php");
 

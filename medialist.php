@@ -21,9 +21,22 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: medialist.php,v 1.5 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: medialist.php,v 1.6 2008/08/11 15:26:31 lsces Exp $
  */
-require_once("config.php");
+
+/**
+ * Initialization
+ */
+require_once( '../bit_setup_inc.php' );
+
+// Is package installed and enabled
+$gBitSystem->verifyPackage( 'phpgedview' );
+
+include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
+
+$gGedcom = new BitGEDCOM();
+
+// leave manual config until we can move it to bitweaver table 
 require_once('includes/functions_print_facts.php');
 
 

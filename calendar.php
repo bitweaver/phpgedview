@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.8 2008/07/07 18:01:12 lsces Exp $
+ * $Id: calendar.php,v 1.9 2008/08/11 15:26:30 lsces Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -42,7 +42,6 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once("includes/functions_print_lists.php");
 
 if (isset($_REQUEST['cal'])) $cal = $_REQUEST['cal'];

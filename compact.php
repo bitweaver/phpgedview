@@ -37,7 +37,6 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once("includes/functions_charts.php");
 
 // -- args
@@ -62,13 +61,6 @@ else {
 }
 // -- print html header information
 print_header(PrintReady($name) . " " . $pgv_lang["compact_chart"]);
-
-// LBox =====================================================================================
-if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
-	include('modules/lightbox/lb_config.php');
-	include('modules/lightbox/functions/lb_call_js.php');
-}	
-// ==========================================================================================
 
 if (strlen($name)<30) $cellwidth="420";
 else $cellwidth=(strlen($name)*14);

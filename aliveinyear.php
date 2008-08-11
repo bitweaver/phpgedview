@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: aliveinyear.php,v 1.5 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: aliveinyear.php,v 1.6 2008/08/11 15:26:31 lsces Exp $
  */
 
 /**
@@ -35,7 +35,6 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require("config.php");
 require_once('includes/functions_print_lists.php');
 
 /**

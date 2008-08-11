@@ -42,7 +42,6 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require_once("config.php");
 require_once("includes/controllers/basecontrol.php");
 require_once("includes/person_class.php");
 require_once("includes/functions_charts.php");
