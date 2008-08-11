@@ -116,7 +116,6 @@ class IndividualControllerRoot extends BaseController {
 		
 		$this->default_tab = $GEDCOM_DEFAULT_TAB;
 		$indirec = find_person_record($this->pid);
-//		print_r($indirec);
 		if (($USE_RIN)&&($indirec==false)) {
 		   $this->pid = find_rin_id($this->pid);
 		   $indirec = find_person_record($this->pid);
@@ -137,25 +136,6 @@ class IndividualControllerRoot extends BaseController {
 				$indirec = "0 @".$this->pid."@ INDI\r\n";
 			}
 		}
-		//-- check for the user
-		if (PGV_USER_ID) {
-			$this->default_tab=get_user_setting(PGV_USER_ID, 'defaulttab');
-		}
-
-		//-- check for a cookie telling what the last tab was when they were last
-		//-- visiting this individual
-		if($this->default_tab == -2)
-		{
-			if (isset($_COOKIE['lasttabs'])) {
-				$ct = preg_match("/".$this->pid."=(\d+)/", $_COOKIE['lasttabs'], $match);
-				if ($ct>0) {
-					$this->default_tab = $match[1]-1;
-				}
-			}
-		}
-
-		//-- if the action is a research assistant action then default to the RA tab
-		if (strstr($this->action, 'ra_')!==false) $this->default_tab = 5;
 
 		//-- set the default tab from a request parameter
 		if (isset($_REQUEST['tab'])) {
@@ -165,13 +145,6 @@ class IndividualControllerRoot extends BaseController {
 		if ($this->default_tab<-2 || $this->default_tab>9) $this->default_tab=0;
 		$this->indi = new Person($indirec['i_gedcom'], false);
 
-		//-- if the person is from another gedcom then forward to the correct site
-		/*
-		if ($this->indi->isRemote()) {
-			header('Location: '.preg_replace("/&amp;/", "&", $this->indi->getLinkUrl()));
-			exit;
-		}
-		*/
 		if (!$this->isPrintPreview()) {
 			$this->visibility = "hidden";
 			$this->position = "absolute";
@@ -305,7 +278,7 @@ class IndividualControllerRoot extends BaseController {
 				header("Location: index.php?ctype=gedcom");
 				exit;
 			}
-			$this->indi = new Person($indirec);
+			$this->indi = new Person($indirec['i_gedcom']);
 		}
 	}
 
