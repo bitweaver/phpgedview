@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.19 2008/08/11 14:25:02 lsces Exp $
+ * @version $Id: functions.php,v 1.20 2008/08/11 15:25:57 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -2764,9 +2764,9 @@ function get_report_list($force=false) {
 			}
 			fclose($fp);
 			xml_parser_free($xml_parser);
-			if (isset($report_array["title"]) && isset($report_array["access"]) && isset($report_array["icon"])) {
-				$files[$file]["title"][$LANGUAGE] = $report_array["title"];
-				$files[$file]["access"] = $report_array["access"];
+			if (isset($report_array["title"]) && /* isset($report_array["access"]) && */ isset($report_array["icon"])) {
+				$files[$file]["title"] = $report_array["title"];
+//				$files[$file]["access"] = $report_array["access"];
 				$files[$file]["icon"] = $report_array["icon"];
 			}
 		}
