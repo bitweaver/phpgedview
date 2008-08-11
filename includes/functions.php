@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.18 2008/08/10 11:42:08 lsces Exp $
+ * @version $Id: functions.php,v 1.19 2008/08/11 14:25:02 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -3398,7 +3398,7 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 		$TIME_FORMAT	= $TIME_FORMAT_array[$LANGUAGE];
 		$WEEK_START		= $WEEK_START_array[$LANGUAGE];
 		$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
-vd($DATE_FORMAT);
+
 		// Load functions that are specific to the active language
 		$file = "./includes/extras/functions.".$lang_short_cut[$LANGUAGE].".php";
 		if (file_exists($file)) {
