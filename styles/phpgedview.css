@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: phpgedview.css,v 1.1 2007/06/03 20:40:03 lsces Exp $
+ * @version $Id: phpgedview.css,v 1.2 2008/08/11 14:15:06 lsces Exp $
  */
 
 .something {
@@ -814,7 +814,7 @@ table.center {
 /*-- pseudo-class for fanchart : used on server-side to draw image --*/
 .fan_chart {
 	/*-- font-family must contain a server TTF file --*/
-	font-family: url(./fonts/LucidaSansRegular.ttf);
+	font-family: Arial, sans-serif;
 	font-size: 7px;
 	color: #000000;
 	background-color : #EEEEEE;
@@ -902,8 +902,6 @@ table.center {
 	color: #FF0000;
 }
 .rela {
-	filter: alpha(opacity=67);
-	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=67);
 	-moz-opacity: 0.67;
 	opacity: 0.67;
 }
