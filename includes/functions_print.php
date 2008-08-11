@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print.php,v 1.12 2008/07/07 17:30:14 lsces Exp $
+ * @version $Id: functions_print.php,v 1.13 2008/08/11 14:21:02 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -2290,7 +2290,7 @@ function print_asso_rela_record($pid, $factrec, $linebr=false, $type='INDI') {
 			print "</a>";
 			// ID age
 			if (!strstr($factrec, "_BIRT_") && preg_match("/2 DATE (.*)/", $factrec, $dmatch)) {
-				$tmp=new Person($gedrec);
+				$tmp=new Person($gedrec['i_gedcom']);
 				$birth_date=$tmp->getBirthDate();
 				$event_date=new GedcomDate($dmatch[1]);
 				$age=get_age_at_event(GedcomDate::GetAgeGedcom($birth_date, $event_date), false);
@@ -2438,7 +2438,7 @@ function format_fact_date($factrec, $anchor=false, $time=false, $fact=false, $pi
 			else if ($fact!='CHAN') {
 				if (!$indirec)
 					$indirec=find_person_record($pid);
-				$person=new Person($indirec);
+				$person=new Person($indirec['i_gedcom']);
 				$birth_date=$person->getBirthDate();
 				$death_date=$person->getDeathDate();
 				if (GedcomDate::Compare($date, $death_date)<=0 || $fact=='DEAT') {
