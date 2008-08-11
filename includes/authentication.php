@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.19 2008/07/07 17:30:13 lsces Exp $
+ * $Id: authentication.php,v 1.20 2008/08/11 14:18:49 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2008 John Finlay and Others.  All rights reserved.
@@ -120,7 +120,6 @@ function userGedcomAdmin($username, $ged="") {
 	global $GEDCOM, $gBitUser;
 
 	if (empty($ged)) $ged = $GEDCOM;
-vd($gBitUser);
 	if ($gBitUser->isAdmin()) return true;
 	if (empty($username)) return false;
 	$user = getUser($username);
