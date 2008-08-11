@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: media_class.php,v 1.7 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: media_class.php,v 1.8 2008/08/11 14:23:24 lsces Exp $
  */
 
 require_once(PHPGEDVIEW_PKG_PATH.'includes/gedcomrecord.php');
@@ -32,7 +32,7 @@ class Media extends GedcomRecord {
 	var $ext = "";
 	
 	function Media($gedrec) {
-		parent::GedcomRecord($gedrec);
+		parent::GedcomRecord($gedrec['m_gedcom']);
 		$this->title = get_gedcom_value("TITL", 1, $gedrec);
 		if (empty($this->title)) $this->title = get_gedcom_value("TITL", 2, $gedrec);
 		$this->file = get_gedcom_value("FILE", 1, $gedrec);
