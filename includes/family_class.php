@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: family_class.php,v 1.6 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: family_class.php,v 1.7 2008/08/11 14:19:55 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -54,13 +54,13 @@ class Family extends GedcomRecord {
 		global $pgv_changes, $GEDCOM;
 
 		//-- get the husbands ids
-		$husb = get_gedcom_value("HUSB", 1, $gedrec);
+		$husb = $gedrec['f_husb'];
 		if (!empty($husb)) $this->husb = Person::getInstance($husb, $simple);
 		//-- get the wifes ids
-		$wife = get_gedcom_value("WIFE", 1, $gedrec);
+		$wife = $gedrec['f_wife'];
 		if (!empty($wife)) $this->wife = Person::getInstance($wife, $simple);
 		//-- load the parents before privatizing the record because the parents may be remote records
-		parent::GedcomRecord($gedrec);
+		parent::GedcomRecord($gedrec['f_gedcom']);
 		$this->disp = displayDetailsById($this->xref, "FAM");
 	}
 
@@ -94,6 +94,7 @@ class Family extends GedcomRecord {
 				$fromfile = true;
 			}
 		}
+
 		if (empty($gedrec)) return null;
 		$object = new Family($gedrec, $simple);
 		if (!empty($fromfile)) $object->setChanged(true);
