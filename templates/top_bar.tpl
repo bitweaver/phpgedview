@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/top_bar.tpl,v 1.2 2007/06/02 14:14:53 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/top_bar.tpl,v 1.3 2008/08/11 15:21:49 lsces Exp $ *}
 	<div class="data">
 		<table class="data">
 			<caption><h1>{tr}Gedcom documents navigation menu{/tr}</h1></caption>
@@ -15,7 +15,7 @@
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}descendancy.php">Descendancy Chart</a>
 		<br />
-		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}ancestry.php.php">Ancestry Chart</a>
+		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}ancestry.php">Ancestry Chart</a>
 		<br />
 		<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}compact.php">Compact Chart</a>
 		<br />
