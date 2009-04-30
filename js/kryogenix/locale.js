@@ -8,7 +8,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: locale.js,v 1.1 2008/07/07 17:57:07 lsces Exp $
+ * @version $Id: locale.js,v 1.2 2009/04/30 17:50:27 lsces Exp $
  */
 
 
@@ -65,6 +65,14 @@ function _lc(str) {
 
 // sort function with locale support
 function _lc_sort(a,b) {
+	// Checking for @N.N. and @P.N. would be better, but slower.
+	if (a[0]=='@' && b[0]!='@') {
+		return 1;
+	}
+	if (a[0]!='@' && b[0]=='@') {
+		return -1;
+	}
+
 	var a_l = _lc(a);
 	var b_l = _lc(b);
 

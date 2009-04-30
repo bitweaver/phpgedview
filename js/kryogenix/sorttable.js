@@ -8,7 +8,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: sorttable.js,v 1.2 2008/07/07 17:57:07 lsces Exp $
+ * @version $Id: sorttable.js,v 1.3 2009/04/30 17:50:27 lsces Exp $
  */
 
 addEvent(window, "load", sortables_init);
@@ -40,7 +40,7 @@ function ts_makeSortable(table) {
 		var txt = ts_getInnerText(cell);
 		if (cell.className.match(/\bsorttable_nosort\b/)) continue // PGV: skip this col
 		if (cell.getElementsByTagName("img") && cell.nodeName.toLowerCase()=="th") txt = cell.innerHTML; // PGV: allow icon as text
-		if (txt=="") continue; // PGV: do not process empty cols
+		if (txt=="" || txt.match(/javascript/)) continue; // PGV: do not process empty cols or custom sorting
 		cell.innerHTML = '<a href="javascript:;" class="sortheader" '+
 		'onmousedown="this.style.cursor=\'wait\';" ' + // PGV: set cursor
 		'onclick="ts_resortTable(this, '+i+');return false;">' +
