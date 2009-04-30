@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.9 2008/07/07 18:01:10 lsces Exp $
+ * @version $Id: config.php,v 1.10 2009/04/30 21:43:37 lsces Exp $
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {
@@ -57,4 +57,4 @@ $DIRECTORY_MODE = "ldap";						//-- User info stored in db or ldap directory
 $COMMIT_COMMAND = "";						//-- Choices are empty string, cvs or svn
 
 $CONFIGURED = true;
-require_once("includes/session.php");
+//require_once("includes/session.php");
