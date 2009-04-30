@@ -4,17 +4,19 @@
  *
  * See the readme file : http://www.phpclasses.org/browse/file/4685.html
  *
- * $Id: cssparser.inc.php,v 1.4 2008/07/07 17:30:13 lsces Exp $
+ * $Id: cssparser.inc.php,v 1.5 2009/04/30 18:32:43 lsces Exp $
  *
  * @author http://www.phpclasses.org/browse/package/1289.html
  * @package PhpGedView
  * @subpackage Charts
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_CSS_PARSER_PHP', '');
 
 class cssparser {
   var $css;

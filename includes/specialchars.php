@@ -1,14 +1,14 @@
 <?PHP
 /**
- * Special Character tables, for use by JavaScript to input characters 
+ * Special Character tables, for use by JavaScript to input characters
  * that aren't on your keyboard
- * 
+ *
  * THIS FILE MUST BE SAVED IN UTF-8 ENCODING (or some special characters will be lost)
- * 
- * When updating, be sure to add the language into the array $specialchar_languages, 
- * add a case for that language into the switch, and add any new special characters 
+ *
+ * When updating, be sure to add the language into the array $specialchar_languages,
+ * add a case for that language into the switch, and add any new special characters
  * into the default case of the switch near the bottom.
- * 
+ *
  * Languages alpha by name in original language.
  * Special characters by language from European Commision, Research in Official Statistics:
  * http://europa.eu.int/comm/eurostat/research/index.htm?http://europa.eu.int/en/comm/eurostat/research/isi/special/&1
@@ -17,9 +17,9 @@
  * Irish: offline sources
  * Hawaiian: http://www.olelo.hawaii.edu/eng/resources/unicode.html
  * Lithuanian: http://www.eki.ee/letter/chardata.cgi?lang=lt+Lithuanian&script=latin
- * 
+ *
  * Other special characters are all listed at the bottom.
- * 
+ *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2007  PGV Development Team
  *
@@ -39,19 +39,22 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: specialchars.php,v 1.3 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: specialchars.php,v 1.4 2009/04/30 18:32:43 lsces Exp $
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_SPECIALCHARS_PHP', '');
 
 loadLangFile("pgv_confighelp");
 
 $specialchar_languages = array(
 	"af" => "Afrikaans",
 	"cs" => $pgv_lang["lang_name_czech"], // Czech
+	"sk" => $pgv_lang["lang_name_slovak"], // Slovak
 	"da" => $pgv_lang["lang_name_danish"], // Danish
 	"de" => $pgv_lang["lang_name_german"], // German
 	"en" => $pgv_lang["lang_name_english"],
@@ -146,6 +149,52 @@ case "cs": // Ceština
 		"&#341;" => "ŕ", // r acute
 		"&#345;" => "ř", // r hachek
 		"&#353;" => "š", // s hachek
+		"&#382;" => "ž", // z hachek
+	);
+	break;
+case "sk": // Slovenčina
+   $ucspecialchars = array(
+		"&#193;" => "Á",
+		"&#196;" => "Ä",
+		"&#268;" => "Č", // C hachek
+		"&#270;" => "Ď", // D hachek
+		"&#201;" => "É",
+		"&#282;" => "Ě", // E hachek
+		"&#205;" => "Í",
+		"&#313;" => "Ĺ", // L acute
+		"&#317;" => "Ľ", // L hachek
+		"&#327;" => "Ň", // N hachek
+		"&#211;" => "Ó",
+		"&#212;" => "Ô",
+		"&#340;" => "Ŕ", // R acute
+		"&#344;" => "Ř", // R hachek
+		"&#352;" => "Š", // S hachek
+		"&#356;" => "Ť", // T hachek
+		"&#218;" => "Ú",
+		"&#366;" => "Ů", // U ring
+		"&#221;" => "Ý",
+		"&#381;" => "Ž", // Z hachek
+	);
+	$lcspecialchars = array(
+		"&#225;" => "á",
+		"&#228;" => "ä",
+		"&#269;" => "č", // c hachek
+		"&#271;" => "ď", // d hacheck
+		"&#233;" => "é",
+		"&#283;" => "ě", // e hachek
+		"&#237;" => "í",
+		"&#314;" => "ĺ", // l acute
+		"&#318;" => "ľ", // l hachek
+		"&#328;" => "ň", // n hachek
+		"&#243;" => "ó",
+		"&#244;" => "ô",
+		"&#341;" => "ŕ", // r acute
+		"&#345;" => "ř", // r hachek
+		"&#353;" => "š", // s hachek
+		"&#357;" => "ť", // t hachek
+		"&#250;" => "ú",
+		"&#367;" => "ů", // u ring
+		"&#253;" => "ý",
 		"&#382;" => "ž", // z hachek
 	);
 	break;
@@ -442,7 +491,7 @@ case "lt": // Lithuanian
 		"&#279;" => "ė", // e with dot above
 		"&#303;" => "į", // i with ogonek
 		"&#353;" => "š", // s hachek
-		"&#371;" => "ų", // u with ogonek		
+		"&#371;" => "ų", // u with ogonek
 		"&#363;" => "ū", // u with macron
 		"&#382;" => "ž", // z hachek
          );
@@ -1105,6 +1154,7 @@ default: // list all
 		"&#262;" => "Ć", // C with acute
 		"&#208;" => "Ð", // eth
 		"&#272;" => "Ð", // D with stroke
+		"&#270;" => "Ď", // D hachek
 		"&#200;" => "È",
 		"&#201;" => "É",
 		"&#202;" => "Ê",
@@ -1121,6 +1171,7 @@ default: // list all
 		"&#298;" => "Ī", // I with macron
 		"&#306;" => "Ĳ", // ligature IJ
 		"&#313;" => "Ĺ", // L acute
+		"&#317;" => "Ľ", // L hachek
 		"&#321;" => "Ł", // L with stroke
 		"&#209;" => "Ñ",
 		"&#327;" => "Ň", // N hachek
@@ -1139,6 +1190,7 @@ default: // list all
 		"&#352;" => "Š", // S hachek
 		"&#346;" => "Ś", // S with acute
 		"&#350;" => "Ş", // S with cedilla
+		"&#356;" => "Ť", // T hachek
 		"&#217;" => "Ù",
 		"&#218;" => "Ú",
 		"&#219;" => "Û",
@@ -1167,7 +1219,7 @@ default: // list all
 		"&#231;" => "ç",
 		"&#269;" => "č", // c hachek/caron
 		"&#263;" => "ć", // c with acute
-		"&#271;" => "ď", // &#271; d apostrophe - shows incorrectly as d hacheck - d
+		"&#271;" => "ď", // d hacheck
 		"&#273;" => "đ", // d with stroke
 		"&#240;" => "ð",
 		"&#232;" => "è",
@@ -1186,6 +1238,7 @@ default: // list all
 		"&#299;" => "ī", // i with macron
 		"&#307;" => "ĳ", // ligature ij
 		"&#314;" => "ĺ", // l acute
+		"&#318;" => "ľ", // l hachek
 		"&#322;" => "ł", // l with stroke
 		"&#241;" => "ñ",
 		"&#329;" => "ŉ", // n preceded by apostrophe
@@ -1230,7 +1283,7 @@ $otherspecialchars = array(
 	"&#187;" => "»",
 	"&#8224;" => "†",
 	"&#8225;" => "‡",
-	"&#8734;" => "∞",  // infinity 
+	"&#8734;" => "∞",  // infinity
 	"&#247;" => "÷",
 	"&#215;" => "×",
 	"&#170;" => "ª",  // feminine ordinal (nª)

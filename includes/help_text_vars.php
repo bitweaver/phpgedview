@@ -3,7 +3,7 @@
  * File contains var's to glue Help_text for PHPGedView together
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  John Finlay and Others
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,21 +22,23 @@
  * @package PhpGedView
  * @subpackage Help
  * @author John Finlay & Jans Luder
- * @version $Id: help_text_vars.php,v 1.1 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: help_text_vars.php,v 1.2 2009/04/30 18:32:43 lsces Exp $
  */
 
 // The variables in this file are used to glue together other var's in the help_text.xx.php
 // Do NOT put any var's, that need to be translated, in this file
-if (strstr($_SERVER["SCRIPT_NAME"],"help_text_vars")) {
-	print "Now, why would you want to do that.  You're not hacking are you?";
+
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_HELP_TEXT_VARS_PHP', '');
+
 loadLangFile("pgv_confighelp");
 
 $pgv_lang["help_manageservers.php"]	= "#pgv_lang[help_managesites]#";
 $pgv_lang["edit_RESN_help"]			= "#pgv_lang[RESN_help]#";
-
-$pgv_lang["help_aliveinyear.php"]	= "#pgv_lang[alive_in_year_help]#";
 
 //General
 $pgv_lang["start_ahelp"]			= "<div class=\"list_value_wrap\"><center class=\"error\">#pgv_lang[start_admin_help]#</center>";
@@ -83,7 +85,7 @@ $pgv_lang["index_myged_help"]			= "#pgv_lang[mygedview_portal_help_blocks]#<br /
 
 //Login
 $pgv_lang["help_login.php"]			= "#pgv_lang[login_page_help]#<br />#pgv_lang[mygedview_login_help]#";
-$pgv_lang["help_login_register.php"]		= "~#pgv_lang[requestaccount]#~<br /><br />#pgv_lang[register_info_01]#";
+$pgv_lang["help_login_register.php"]		= "#pgv_lang[register_info_01]#";
 $pgv_lang["help_login_lost_pw.php"]		= "~#pgv_lang[lost_pw_reset]#~<br /><br />#pgv_lang[pls_note11]#";
 $pgv_lang["index_login_register_help"]		= "#pgv_lang[index_login_help]#<br />#pgv_lang[new_user_help]#<br /><br />#pgv_lang[new_password_help]#<br />";
 
@@ -127,7 +129,7 @@ $pgv_lang["help_downloadgedcom.php"]		="#pgv_lang[download_gedcom_help]#";
 //-- Edit Gedcoms
 $pgv_lang["help_editgedcoms.php"]		="#pgv_lang[edit_gedcoms_help]#";
 //-- Edit Config Gedcoms
-$pgv_lang["help_editconfig_gedcom.php"]		="#pgv_lang[edit_config_gedcom_help]##pgv_lang[more_config_hjaelp]#<br /><br />#pgv_lang[readme_help]#";
+$pgv_lang["help_editconfig_gedcom.php"]		="#pgv_lang[edit_config_gedcom_help]##pgv_lang[more_help_advice]#<br /><br />#pgv_lang[readme_help]#";
 //-- Import Gedcom
 $pgv_lang["help_importgedcom.php"]		="#pgv_lang[import_gedcom_help]#";
 //-- Upload Gedcom
@@ -135,7 +137,7 @@ $pgv_lang["help_uploadgedcom.php"]		="#pgv_lang[upload_gedcom_help]#<br /><br />
 //-- Validate Gedcom
 $pgv_lang["help_validategedcom.php"]		="#pgv_lang[validate_gedcom_help]#";
 //-- Edit Privacy
-$pgv_lang["help_edit_privacy.php"]		="~#pgv_lang[edit_privacy_title]#~<br /><br />#pgv_lang[edit_privacy_help]##pgv_lang[more_config_hjaelp]#<br />#pgv_lang[readme_help]#";
+$pgv_lang["help_edit_privacy.php"]		="~#pgv_lang[edit_privacy_title]#~<br /><br />#pgv_lang[edit_privacy_help]##pgv_lang[more_help_advice]#<br />#pgv_lang[readme_help]#";
 
 //Specials for contents
 $vpos = strpos($pgv_lang["enter_terms"], ":", 0);
@@ -195,6 +197,7 @@ $pgv_lang["h38"]	= "help_hourglass.php,hourglass_chart";
 $pgv_lang["h39"]	= "help_familybook.php,familybook_chart";
 $pgv_lang["h40"]	= "search_replace_help,search_replace";
 $pgv_lang["h41"]	= "soundex_search_help,search_soundex";
+$pgv_lang["h42"]	= "help_treenav.php,interactive_tree";
 
 $pgv_lang["help_contents_help"] = "";
 $i=1;

@@ -21,13 +21,15 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_cache.php,v 1.3 2008/07/07 17:30:14 lsces Exp $
+ * @version $Id: index_cache.php,v 1.4 2009/04/30 18:32:43 lsces Exp $
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_INDEX_CACHE_PHP', '');
 
 /**
  * load a cached block from a file
@@ -36,13 +38,13 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
  * @return boolean  returns false if the block could not be loaded from cache
  */
 function loadCachedBlock($block, $index) {
-	global $PGV_BLOCKS, $INDEX_DIRECTORY, $DEBUG, $lang_short_cut, $LANGUAGE, $GEDCOM;
-	
-	//-- ignore caching when DEBUG is set
-	if (isset($DEBUG) && $DEBUG==true) return false;
+	global $PGV_BLOCKS, $INDEX_DIRECTORY, $lang_short_cut, $LANGUAGE, $GEDCOM;
 
+	//-- ignore caching when DEBUG is set
 	//-- ignore caching for logged in users
-	if (PGV_USER_ID) return false;
+	if (PGV_DEBUG || PGV_USER_ID) {
+		return false;
+	}
 
 	//-- ignore cache when its life is not configured or when its life is zero
 	$cacheLife = 0;
@@ -62,7 +64,7 @@ function loadCachedBlock($block, $index) {
 			$checktime = ($cacheLife*24*60*60);
 			$modtime = $modtime+$checktime;
 			if ($modtime<time()) return false;
-		}		
+		}
 		return @readfile($fname);
 	}
 	return false;
@@ -76,20 +78,20 @@ function loadCachedBlock($block, $index) {
  * @return boolean  returns false if the block could not be saved to cache
  */
 function saveCachedBlock($block, $index, $content) {
-	global $PGV_BLOCKS, $INDEX_DIRECTORY, $DEBUG, $lang_short_cut, $LANGUAGE, $GEDCOM;
-	
-	//-- ignore caching when DEBUG is set
-	if (isset($DEBUG) && $DEBUG==true) return false;
+	global $PGV_BLOCKS, $INDEX_DIRECTORY, $lang_short_cut, $LANGUAGE, $GEDCOM;
 
+	//-- ignore caching when DEBUG is set
 	//-- ignore caching for logged in users
-	if (PGV_USER_ID) return false;
+	if (PGV_DEBUG || PGV_USER_ID) {
+		return false;
+	}
 
 	//-- ignore cache when its life is not configured or when its life is zero
 	$cacheLife = 0;
 	if (isset($block[1]['cache'])) $cacheLife = $block[1]['cache'];
 	else if (isset($PGV_BLOCKS[$block[0]]['config']['cache'])) $cacheLife = $PGV_BLOCKS[$block[0]]['config']['cache'];
 	if ($cacheLife==0) return false;
-	
+
 	$fname = $INDEX_DIRECTORY."/cache";
 	@mkdir($fname);
 	//--many people are not going to like automatically setting the permissions
@@ -117,8 +119,8 @@ function saveCachedBlock($block, $index, $content) {
  * clears the cache files
  */
 function clearCache() {
-	global $PGV_BLOCKS, $INDEX_DIRECTORY, $DEBUG, $lang_short_cut, $LANGUAGE, $GEDCOM;
-	
+	global $PGV_BLOCKS, $INDEX_DIRECTORY, $lang_short_cut, $LANGUAGE, $GEDCOM;
+
 	foreach($lang_short_cut as $key=>$value) {
 		$fname = $INDEX_DIRECTORY."/cache/".$value."/".$GEDCOM;
 		if (file_exists($fname)) {
@@ -128,7 +130,7 @@ function clearCache() {
 			}
 		}
 	}
-	
+
 	if (file_exists($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php")) {
 		@unlink($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php");
 	}

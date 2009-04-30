@@ -7,13 +7,15 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportheader.php,v 1.4 2008/07/07 17:30:13 lsces Exp $
+ * @version $Id: reportheader.php,v 1.5 2009/04/30 18:32:43 lsces Exp $
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_REPORTHEADER_PHP', '');
 
 /**
  * element handlers array
@@ -45,7 +47,7 @@ $report_array = array();
  */
 function startElement($parser, $name, $attrs) {
 	global $elementHandler, $processIfs, $processGedcoms, $processRepeats;
-	
+
 	if (($processIfs==0 || $name=="PGVRif")) {
 		if (isset($elementHandler[$name]["start"])) call_user_func($elementHandler[$name]["start"], $attrs);
 	}
@@ -60,7 +62,7 @@ function startElement($parser, $name, $attrs) {
  */
 function endElement($parser, $name) {
 	global $elementHandler, $processIfs, $processGedcoms, $processRepeats;
-	
+
 	if (($processIfs==0 || $name=="PGVRif")) {
 		if (isset($elementHandler[$name]["end"])) call_user_func($elementHandler[$name]["end"]);
 	}
@@ -76,14 +78,14 @@ function endElement($parser, $name) {
  */
 function characterData($parser, $data) {
 	global $text;
-	
+
 	$text .= $data;
 }
 
 function PGVReportSHandler($attrs) {
 	global $report_array;
 	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE;
-	
+
 	$access = $PRIV_PUBLIC;
 	if (isset($attrs["access"])) {
 		if (isset($$attrs["access"])) $access = $$attrs["access"];
@@ -96,7 +98,7 @@ function PGVReportSHandler($attrs) {
 
 function PGVRvarSHandler($attrs) {
 	global $text, $vars, $pgv_lang, $factarray, $fact, $desc, $type, $generation;
-	
+
 	$var = $attrs["var"];
 	if (!empty($var)) {
 		$tfact = $fact;
@@ -111,27 +113,27 @@ function PGVRvarSHandler($attrs) {
 
 function PGVRTitleSHandler() {
 	global $report_array, $text;
-	
+
 	$text = "";
 }
 
 function PGVRTitleEHandler() {
 	global $report_array, $text;
-	
+
 	$report_array["title"] = $text;
 	$text = "";
 }
 
 function PGVRDescriptionEHandler() {
 	global $report_array, $text;
-	
+
 	$report_array["description"] = $text;
 	$text = "";
 }
 
 function PGVRInputSHandler($attrs) {
 	global $input, $text;
-	
+
 	$text ="";
 	$input = array();
 	$input["name"] = "";
@@ -144,7 +146,7 @@ function PGVRInputSHandler($attrs) {
 	if (isset($attrs["type"])) $input["type"] = $attrs["type"];
 	if (isset($attrs["lookup"])) $input["lookup"] = $attrs["lookup"];
 	if (isset($attrs["default"])) {
-		if ($attrs["default"]=="NOW") $input["default"] = date("d M Y"); 
+		if ($attrs["default"]=="NOW") $input["default"] = date("d M Y");
 		else {
 			$ct = preg_match("/NOW\s*([+\-])\s*(\d+)/", $attrs['default'], $match);
 			if ($ct>0) {
@@ -160,7 +162,7 @@ function PGVRInputSHandler($attrs) {
 
 function PGVRInputEHandler() {
 	global $report_array, $text, $input;
-	
+
 	$input["value"] = $text;
 	if (!isset($report_array["inputs"])) $report_array["inputs"] = array();
 	$report_array["inputs"][] = $input;
