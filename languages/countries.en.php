@@ -11,7 +11,9 @@
  *
  * These codes do not appear in the two Chapman lists cited:
  *		ALA		Åland Islands
+ *		CAT		Catalonia
  *		COD		Congo (Brazzaville)		This country was known as Zaire
+ *		IOM		Isle of Man				Chapman lists this as part of the UK -- it's not!!
  *		NFK		Norfolk Island
  *		PRI		Puerto Rico				Chapman lists this as a state of the USA
  *		SCG		Serbia and Montenegro	Chapman lists these separately
@@ -40,8 +42,8 @@
  * @version $Id$
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access a language file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
 
@@ -88,6 +90,7 @@ $countries["BWI"]="British West Indies";
 $countries["CAF"]="Central African Republic";
 $countries["CAN"]="Canada";
 $countries["CAP"]="Cape Colony";
+$countries["CAT"]="Catalonia";
 $countries["CCK"]="Cocos (Keeling) Islands";
 $countries["CHE"]="Switzerland";
 $countries["CHI"]="Channel Islands";
@@ -155,6 +158,7 @@ $countries["HTI"]="Haiti";
 $countries["HUN"]="Hungary";
 $countries["IDN"]="Indonesia";
 $countries["IND"]="India";
+$countries["IOM"]="Isle of Man";
 $countries["IOT"]="British Indian Ocean Territory";
 $countries["IRL"]="Ireland";
 $countries["IRN"]="Iran";

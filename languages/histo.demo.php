@@ -4,13 +4,12 @@
  *
  * Each line is a GEDCOM style record to describe an event, including newline chars (\n)
  * File to be renamed : histo.xx.php where xx is language code
- * File included in : person_class.php
  *
  * $Id$
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access this file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
 
