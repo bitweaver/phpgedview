@@ -54,10 +54,10 @@ PHPGEDVIEW_DB_PREFIX.'link' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'name' => "
-	n_gid C(32) PRIMARY,
 	n_file I4 PRIMARY,
-	n_num I4
-	n_type C(10)
+	n_id C(32) PRIMARY,
+	n_num I4,
+	n_type C(15),
 	n_sort C(250),
 	n_full C(250),
 	n_list C(250),
