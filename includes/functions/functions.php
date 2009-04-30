@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: functions.php,v 1.3 2009/04/30 23:23:31 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -2985,8 +2985,10 @@ function get_report_list($force=false) {
 	$fp = @fopen($INDEX_DIRECTORY."/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
-	$logline = AddToLog("reports.dat updated");
- 	check_in($logline, "reports.dat", $INDEX_DIRECTORY);
+	if (function_exists('AddToLog')) {
+		$logline = AddToLog("reports.dat updated");
+		check_in($logline, "reports.dat", $INDEX_DIRECTORY);
+	}
 
 	return $files;
 }

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportengine.php,v 1.8 2008/08/11 15:27:25 lsces Exp $
+ * @version $Id: reportengine.php,v 1.9 2009/04/30 23:23:31 lsces Exp $
  */
 
 /**
@@ -38,7 +38,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
 
-require_once("includes/functions_charts.php");
+require_once(PHPGEDVIEW_PKG_PATH."includes/functions/functions_charts.php");
 require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");
 //if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
