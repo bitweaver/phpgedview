@@ -37,7 +37,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.11 2009/04/30 19:12:13 lsces Exp $
+ * $Id: indilist.php,v 1.12 2009/04/30 21:48:07 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -53,6 +53,15 @@ $gBitSystem->verifyPackage( 'phpgedview' );
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
+require_once 'config.php';
+require_once 'config_gedcom.php';
+require_once 'includes/functions/functions_db.php';
+require_once 'includes/functions/functions_print_lists.php';
+
+// We show three different lists:
+$alpha   =safe_GET('alpha'); // All surnames beginning with this letter where "@"=unknown and ","=none
+$surname =safe_GET('surname', '[^<>&%{};]*'); // All indis with this surname.  NB - allow ' and "
+$show_all=safe_GET('show_all', array('no','yes'), 'no'); // All indis
 
 // Don't show the list until we have some filter criteria
 if (isset($alpha) || isset($surname) || $show_all=='yes') {
@@ -109,21 +118,22 @@ $tindilist = array();
  *
  * The indialpha array will contain all first letters that are extracted from an individuals
  * lastname.
- * @global array $indialpha
+ * @global array $initials
  */
 
-if (empty($SEARCH_SPIDER))
-	$gBitSmarty->assign( "SEARCH_SPIDER", $SEARCH_SPIDER );
 $gBitSmarty->assign( "show_all", $show_all );
 
-$indialpha = get_indi_alpha();
-//uasort($indialpha, "stringsort");
-asort($indialpha);
+// Fetch a list of the initial letters of all surnames in the database
+$initials=get_indilist_salpha($SHOW_MARRIED_NAMES, false, $gGedcom->mGEDCOMId);
+// If there are no individuals in the database, do something sensible
+if (!$initials) {
+	$initials[]='@';
+}
 
-if (isset($alpha) && !isset($indialpha["$alpha"])) unset($alpha);
+if (isset($alpha) && !isset($initials["$alpha"])) unset($alpha);
 
-if (count($indialpha) > 0) {
-	foreach($indialpha as $letter=>$list) {
+if (count($initials) > 0) {
+	foreach($initials as $letter=>$list) {
 		if (empty($alpha)) {
 			if (!empty($surname)) {
 				$alpha = get_first_letter(strip_prefix($surname));
@@ -136,10 +146,10 @@ if (count($indialpha) > 0) {
 			}
 		}
 		if ($letter === "@") $pass = true;
-		$indialpha[$letter]['url'] = urlencode($letter);
+		$ininitials[$letter]['url'] = urlencode($letter);
 	}
 	if (isset($startalpha)) $alpha = $startalpha;
-	$gBitSmarty->assign_by_ref( "indialpha", $indialpha );
+	$gBitSmarty->assign_by_ref( "indialpha", $initials );
 }
 
 $gBitSmarty->assign( "surname_sublist", $surname_sublist );
