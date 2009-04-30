@@ -31,8 +31,8 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 	exit;
 }
 
-require_once 'includes/functions_charts.php';
-require_once 'includes/functions_rtl.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_charts.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_rtl.php');
 
 /**
  * print the information for an individual chart box

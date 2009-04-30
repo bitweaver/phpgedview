@@ -20,7 +20,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_import.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+* @version $Id: functions_import.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
 * @package PhpGedView
 * @subpackage DB
 */
@@ -32,12 +32,12 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_FUNCTIONS_IMPORT_PHP', '');
 
-require_once 'includes/index_cache.php';
-require_once 'includes/classes/class_media.php';
-require_once 'includes/classes/class_mutex.php';
-require_once 'includes/functions/functions_lang.php';
-require_once 'includes/functions/functions_name.php';
-require_once 'includes/functions/functions_export.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/index_cache.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_media.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_mutex.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_lang.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_name.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_export.php');
 
 // Tidy up a gedcom record on import, so that we can access it consistently/efficiently.
 function reformat_record_import($rec) {

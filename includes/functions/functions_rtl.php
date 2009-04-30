@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_rtl.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id: functions_rtl.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -153,14 +153,15 @@ function whatLanguage($string) {
  * @see http://www.php.net/manual/en/function.get-html-translation-table.php
  * @param string $string	the string to remove the entities from
  * @return string	the string with entities converted
- */
+
 function unhtmlentities($string)  {
 	$trans_tbl=array_flip(get_html_translation_table (HTML_ENTITIES));
 	$trans_tbl['&lrm;']=PGV_UTF8_LRM;
 	$trans_tbl['&rlm;']=PGV_UTF8_RLM;
 	return preg_replace('/&#(\d+);/e', "chr(\\1)", strtr($string, $trans_tbl));
 }
-
+ */
+ 
 /**
  * process a string according to bidirectional rules
  *

@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_person.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+* @version $Id: class_person.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -31,8 +31,8 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_PERSON_PHP', '');
 
-require_once 'includes/classes/class_gedcomrecord.php';
-require_once 'includes/classes/class_event.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_event.php');
 
 class Person extends GedcomRecord {
 	var $indifacts = array();

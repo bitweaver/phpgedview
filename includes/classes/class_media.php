@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: class_media.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id: class_media.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -31,7 +31,7 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_class_MEDIA_PHP', '');
 
-require_once('includes/classes/class_gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_gedcomrecord.php');
 
 class Media extends GedcomRecord {
 	var $title         =null;

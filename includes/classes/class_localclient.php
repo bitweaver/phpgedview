@@ -20,7 +20,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: class_localclient.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id: class_localclient.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -30,7 +30,7 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_LOCALCLIENT_PHP', '');
 
-require_once 'includes/classes/class_serviceclient.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_serviceclient.php');
 
 class LocalClient extends ServiceClient {
 	/**

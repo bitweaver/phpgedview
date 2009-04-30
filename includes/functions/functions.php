@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id: functions.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -33,9 +33,9 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_FUNCTIONS_PHP', '');
 
-require_once 'includes/classes/class_mutex.php';
-require_once 'includes/classes/class_media.php';
-require_once 'includes/functions/functions_UTF8.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_mutex.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_media.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_UTF8.php');
 
 // ************************************************* START OF INITIALIZATION FUNCTIONS ********************************* //
 /**

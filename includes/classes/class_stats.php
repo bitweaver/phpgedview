@@ -22,7 +22,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: class_stats.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+* @version $Id: class_stats.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
 * @author Patrick Kellum
 * @package PhpGedView
 * @subpackage Lists
@@ -35,7 +35,7 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_STATS_PHP', '');
 
-require_once 'includes/functions/functions_print_lists.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_print_lists.php');
 
 // Methods not allowed to be used in a statistic
 define('STATS_NOT_ALLOWED', 'stats,getAllTags,getTags');

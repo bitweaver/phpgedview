@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: class_note.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id: class_note.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -31,8 +31,8 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_NOTE_PHP', '');
 
-require_once 'includes/classes/class_gedcomrecord.php';
-require_once 'includes/classes/class_serviceclient.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_serviceclient.php');
 
 class Note extends GedcomRecord {
 	// Get an instance of a Shared note.  We either specify

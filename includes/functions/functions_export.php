@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Admin
-* @version $Id: functions_export.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+* @version $Id: functions_export.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -31,7 +31,7 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_FUNCTIONS_EXPORT_PHP', '');
 
-require_once 'includes/classes/class_gedownloadgedcom.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_gedownloadgedcom.php');
 
 // Tidy up a gedcom record on export, for compatibility/portability
 function reformat_record_export($rec) {

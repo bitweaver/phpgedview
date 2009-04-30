@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_serviceclient.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+* @version $Id: class_serviceclient.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -31,9 +31,9 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_SERVICECLIENT_PHP', '');
 
-require_once 'includes/classes/class_gedcomrecord.php';
-require_once 'includes/classes/class_family.php';
-require_once 'includes/functions/functions_import.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_gedcomrecord.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_family.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_import.php');
 
 class ServiceClient extends GedcomRecord {
 	var $url = "";

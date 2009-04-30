@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: class_reportpdf.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id: class_reportpdf.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -33,9 +33,9 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_REPORTPDF_PHP', '');
 
-require_once 'includes/classes/class_reportbase.php';
-require_once 'tcpdf/config/lang/eng.php';
-require_once 'tcpdf/tcpdf.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_reportbase.php');
+require_once(PHPGEDVIEW_PKG_PATH.'tcpdf/config/lang/eng.php');
+require_once(PHPGEDVIEW_PKG_PATH.'tcpdf/tcpdf.php');
 
 /**
  * main PGV Report Class

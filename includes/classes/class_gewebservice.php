@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage Tools
- * @version $Id: class_gewebservice.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id: class_gewebservice.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -29,7 +29,7 @@ if (!defined('PGV_PHPGEDVIEW')) {
 
 define('PGV_CLASS_GEWEBSERVICE_PHP', '');
 
-require_once 'includes/classes/class_grampsexport.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_grampsexport.php');
 
 class GEWebService extends GrampsExport
 {
