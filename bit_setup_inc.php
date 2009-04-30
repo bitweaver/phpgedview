@@ -27,14 +27,13 @@ if( !defined( 'PHPGEDVIEW_DB_PREFIX' ) ) {
 }
 
 //--load common functions
-require_once("includes/functions.php");
-require_once("includes/menu.php");
+require_once("includes/functions/functions.php");
 //-- set the error handler
 $OLD_HANDLER = set_error_handler("pgv_error_handler");
 //-- load db specific functions
-require_once("includes/functions_db.php");
-require_once("includes/functions_name.php");
-require_once("includes/functions_date.php");
+require_once("includes/functions/functions_db.php");
+require_once("includes/functions/functions_name.php");
+require_once("includes/functions/functions_date.php");
 require_once("themes/bitweaver/theme.php");
 $TBLPREFIX = PHPGEDVIEW_DB_PREFIX;
 ?>

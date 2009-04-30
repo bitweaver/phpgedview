@@ -1,9 +1,9 @@
 <?php
 /**
- * Allow visitor to change the theme
+ * Parses gedcom file and displays a list of the shared notes in the file.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
+ * Copyright (C) 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,30 +19,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @author John Finlay
+ * @version $Id: notelist.php,v 1.1 2009/04/30 19:12:13 lsces Exp $
  * @package PhpGedView
- * @subpackage Themes
- * @version $Id: themechange.php,v 1.4 2009/04/30 19:12:13 lsces Exp $
+ * @subpackage Lists
  */
 
 require './config.php';
 
-// Extract request variables
-$mytheme =safe_GET('mytheme');
-$frompage=safe_GET('frompage', PGV_REGEX_URL, 'index.php');
+require_once 'includes/functions/functions_print_lists.php';
 
-// Only change to a valid theme
-foreach (get_theme_names() as $themename=>$themedir) {
-	if ($themedir==$mytheme) {
-		$_SESSION['theme_dir']=$mytheme;
-		// Make the change permanent, if allowed
-		if (get_user_setting(PGV_USER_ID, 'editaccount')=='Y') {
-			set_user_setting(PGV_USER_ID, 'theme', $mytheme);
-		}
-		break;
-	}
-}
-
-// Go back to where we came from
-header('Location: '.encode_url(decode_url($frompage), false));
+print_header($pgv_lang['shared_note_list']);
+echo '<div class="center"><h2>'.$pgv_lang['shared_note_list'].'</h2>';
+print_note_table(get_note_list(PGV_GED_ID));
+echo '</div>';
+print_footer();
 ?>

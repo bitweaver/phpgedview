@@ -17,6 +17,9 @@
  * Beneath the details list is the option to skip the surname list or show it.
  * Depending on the current status of the list.
  *
+ * NOTE: indilist.php and famlist.php contain mostly identical code.
+ * Updates to one file almost certainly need to be made to the other one as well.
+ *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2007  PGV Development Team
  *
@@ -34,7 +37,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.10 2008/07/07 18:01:12 lsces Exp $
+ * $Id: indilist.php,v 1.11 2009/04/30 19:12:13 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -51,16 +54,12 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
 
-global $SEARCH_SPIDER;
-// Leave until translation stuff moved over to bitweaver
-require(PHPGEDVIEW_PKG_PATH."languages/lang.en.php");
-
-if(!(empty($SEARCH_SPIDER))) {
-	$surname_sublist = "no";
-	}
-else {
-	if (empty($surname_sublist)) $surname_sublist = "yes";
-	}
+// Don't show the list until we have some filter criteria
+if (isset($alpha) || isset($surname) || $show_all=='yes') {
+	$showList = true;
+} else {
+	$showList = false;
+}
 
 if (empty($show_all_firstnames)) $show_all_firstnames = "no";
 

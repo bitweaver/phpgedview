@@ -1,7 +1,7 @@
 <?php
 /**
  * Command line utility for backups.
- * 
+ *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2007  PGV Development Team
  *
@@ -18,17 +18,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * @author John Finlay
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: usermigrate_cli.php,v 1.1 2008/07/07 18:01:10 lsces Exp $
+ * @version $Id: usermigrate_cli.php,v 1.2 2009/04/30 19:12:13 lsces Exp $
  */
+
+require './config.php';
+require_once 'includes/controllers/usermigrate_ctrl.php';
+
+$controller = new UserMigrateController();
+$controller->init();
 
 function print_usage() {
 	?>
 	PhpGedView Command Line Backup Utility
-	Usage: 
+	Usage:
 	usermigrate_cli.php command [options]
 	Command should be one of the following:
 	--backup [options]
@@ -40,10 +46,10 @@ function print_usage() {
 		-Xs		Exclude GEDCOM configuration and privacy settings
 		-Xl		Exclude log files
 		-Xm		Exclude media files
-		
-	--export 
+
+	--export
 		Export user settings to corresponding files in the index directory.
-		
+
 	--import
 		Import user settings into databases from files in the index directory.
 	<?php
@@ -60,7 +66,7 @@ if ($argv[1]=="--backup") {
 	$argsarray = array("-Xc"=>"um_config","-Xu"=>"um_usinfo","-Xg"=>"um_gedcoms","-Xs"=>"um_gedsets","-Xl"=>"um_logs","-Xm"=>"um_media");
 	for($i=2; $i<$argc; $i++) {
 		if (!isset($argsarray[$argv[$i]])) {
-			$parts = preg_split("/=/", $argv[$i]);
+			$parts = explode('=', $argv[$i]);
 			if ($parts[0]=="-t") {
 				set_time_limit($parts[1]);
 			}
@@ -84,7 +90,6 @@ else {
 	}
 }
 
-require_once("includes/controllers/usermigrate_ctrl.php");
 // load admin lang keys
 $file = "./languages/admin.".$lang_short_cut[$LANGUAGE].".php";
 if (file_exists($file)) include($file);
@@ -96,12 +101,12 @@ if (file_exists($file)) include($file);
 if (!empty($controller->errorMsg)) print "\r\n\r\n*** ERROR: ".$controller->errorMsg." ***\r\n\r\n";
 
 // Backup part of usermigrate
-if ($controller->proceed == "backup") {	
+if ($controller->proceed == "backup") {
 	// Make the zip
 	if (count($controller->flist) > 0) {
 		if ($controller->v_list == 0) {
 			print $controller->errorMsg;
-		} else { 
+		} else {
 			print $pgv_lang["um_zip_succ"]."\r\n";
 			print $pgv_lang["um_zip_dl"]." ".$controller->fname;
 			printf("(%.0f Kb)\r\n", (filesize($controller->fname)/1024));
@@ -111,7 +116,7 @@ if ($controller->proceed == "backup") {
 			}
 		}
 	}
-	else { 
+	else {
 		print $pgv_lang["um_nofiles"];
 	}
 	exit;
@@ -122,11 +127,11 @@ if (($controller->proceed == "export") || ($controller->proceed == "exportovr"))
 	print "\r\n".$pgv_lang["um_sql_index"]."\r\n";
 }
 if ($controller->proceed == "import") {
-	if ((file_exists($INDEX_DIRECTORY."authenticate.php")) == false) { 
-		print $pgv_lang["um_nousers"]; 
+	if ((file_exists($INDEX_DIRECTORY."authenticate.php")) == false) {
+		print $pgv_lang["um_nousers"];
 		exit;
 	}
-	
+
 	if ($controller->impSuccess) {
 		print $pgv_lang["um_imp_succ"]."<br /><br />";
 	}
