@@ -1,9 +1,9 @@
 <?php
 /**
-* Controller for the source page view
+* Controller for the repository page view
 *
 * phpGedView: Genealogy Viewer
-* Copyright (C) 2002 to 2009 PGV Development Team.  All rights reserved.
+* Copyright (C) 2002 to 2008 PGV Development Team.  All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id$
+* @version $Id: repository_ctrl.php,v 1.1 2009/04/30 19:09:48 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -29,31 +29,30 @@ if (!defined('PGV_PHPGEDVIEW')) {
 	exit;
 }
 
-define('PGV_SOURCE_CTRL_PHP', '');
+define('PGV_REPOSITORY_CTRL_PHP', '');
 
 require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_print_facts.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
-require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_source.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_repository.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_menu.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_import.php');
 
 $nonfacts = array();
 /**
-* Main controller class for the source page.
+* Main controller class for the repository page.
 */
-class SourceControllerRoot extends BaseController {
-	var $sid;
-	/* @var Source */
-	var $source = null;
+class RepositoryControllerRoot extends BaseController {
+	var $rid;
+	var $repository = null;
 	var $uname = "";
-	var $diffsource = null;
+	var $diffrepository = null;
 	var $accept_success = false;
 	var $canedit = false;
 
 	/**
 	* constructor
 	*/
-	function SourceRootController() {
+	function RepositoryRootController() {
 		parent::BaseController();
 	}
 
@@ -63,16 +62,16 @@ class SourceControllerRoot extends BaseController {
 	function init() {
 		global $pgv_lang, $CONTACT_EMAIL, $GEDCOM, $pgv_changes;
 
-		$this->sid = safe_GET_xref('sid');
+		$this->rid         =safe_GET_xref('rid');
 
-		$sourcerec = find_source_record($this->sid);
-		if (!$sourcerec) $sourcerec = "0 @".$this->sid."@ SOUR\n";
+		$repositoryrec = find_other_record($this->rid);
+		if (!$repositoryrec) $repositoryrec = "0 @".$this->rid."@ REPO\n";
 
-		$this->source = new Source($sourcerec);
-		$this->source->ged_id=PGV_GED_ID; // This record is from a file
+		$this->repository = new Repository($repositoryrec);
+		$this->repository->ged_id=PGV_GED_ID; // This record is from a file
 
-		if (!$this->source->canDisplayDetails()) {
-			print_header($pgv_lang["private"]." ".$pgv_lang["source_info"]);
+		if (!$this->repository->canDisplayDetails()) {
+			print_header($pgv_lang["private"]." ".$pgv_lang["repo_info"]);
 			print_privacy_error($CONTACT_EMAIL);
 			print_footer();
 			exit;
@@ -89,25 +88,25 @@ class SourceControllerRoot extends BaseController {
 				$this->acceptChanges();
 				break;
 			case "undo":
-				$this->source->undoChange();
+				$this->repository->undoChange();
 				break;
 		}
 
 		//-- check for the user
 		//-- if the user can edit and there are changes then get the new changes
-		if ($this->show_changes && PGV_USER_CAN_EDIT && isset($pgv_changes[$this->sid."_".$GEDCOM])) {
-			$newrec = find_updated_record($this->sid);
-			$this->diffsource = new Source($newrec);
-			$this->diffsource->setChanged(true);
-			$sourcerec = $newrec;
+		if ($this->show_changes && PGV_USER_CAN_EDIT && isset($pgv_changes[$this->rid."_".$GEDCOM])) {
+			$newrec = find_updated_record($this->rid);
+			$this->diffrepository = new Repository($newrec);
+			$this->diffrepository->setChanged(true);
+			$repositoryrec = $newrec;
 		}
 
-		if ($this->source->canDisplayDetails()) {
+		if ($this->repository->canDisplayDetails()) {
 			$this->canedit = PGV_USER_CAN_EDIT;
 		}
 
 		if ($this->show_changes && $this->canedit) {
-			$this->source->diffMerge($this->diffsource);
+			$this->repository->diffMerge($this->diffrepository);
 		}
 	}
 
@@ -119,12 +118,12 @@ class SourceControllerRoot extends BaseController {
 		if (empty($this->uname)) return;
 		if (!empty($_REQUEST["gid"])) {
 			$gid = strtoupper($_REQUEST["gid"]);
-			$indirec = find_source_record($gid);
+			$indirec = find_other_record($gid);
 			if ($indirec) {
 				$favorite = array();
 				$favorite["username"] = $this->uname;
 				$favorite["gid"] = $gid;
-				$favorite["type"] = "SOUR";
+				$favorite["type"] = "REPO";
 				$favorite["file"] = $GEDCOM;
 				$favorite["url"] = "";
 				$favorite["note"] = "";
@@ -141,16 +140,16 @@ class SourceControllerRoot extends BaseController {
 		global $GEDCOM;
 
 		if (!PGV_USER_CAN_ACCEPT) return;
-		if (accept_changes($this->sid."_".$GEDCOM)) {
+		if (accept_changes($this->rid."_".$GEDCOM)) {
 			$this->show_changes=false;
 			$this->accept_success=true;
-			$indirec = find_source_record($this->sid);
+			$indirec = find_other_record($this->rid);
 			//-- check if we just deleted the record and redirect to index
 			if (empty($indirec)) {
 				header("Location: index.php?ctype=gedcom");
 				exit;
 			}
-			$this->source = new Source($indirec);
+			$this->repository = new Repository($indirec);
 		}
 	}
 
@@ -160,7 +159,7 @@ class SourceControllerRoot extends BaseController {
 	*/
 	function getPageTitle() {
 		global $pgv_lang;
-		return $this->source->getFullName()." - ".$this->sid." - ".$pgv_lang["source_info"];
+		return $this->repository->getFullName()." - ".$this->rid." - ".$pgv_lang["repo_info"];
 	}
 	/**
 	* check if use can edit this person
@@ -185,68 +184,68 @@ class SourceControllerRoot extends BaseController {
 			return $tempvar;
 		}
 
-		// edit source menu
-		$menu = new Menu($pgv_lang['edit_source']);
+		// edit repository menu
+		$menu = new Menu($pgv_lang['edit_repo']);
 		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN)
-			$menu->addOnclick('return edit_source(\''.$this->sid.'\');');
-		if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+			$menu->addOnclick('return edit_raw(\''.$this->rid.'\');');
+		if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 		$menu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}", "submenu{$ff}");
 
-		// edit source / edit_raw
+		// edit repository / edit_raw
 		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) {
 			$submenu = new Menu($pgv_lang['edit_raw']);
-			$submenu->addOnclick("return edit_raw('".$this->sid."');");
-			if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-				$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+			$submenu->addOnclick("return edit_raw('".$this->rid."');");
+			if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+				$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 			$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 			$menu->addSubmenu($submenu);
 		}
 
-		// edit source / delete_source
-		$submenu = new Menu($pgv_lang['delete_source']);
-		$submenu->addOnclick("if (confirm('".$pgv_lang["confirm_delete_source"]."')) return deletesource('".$this->sid."'); else return false;");
-		if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+		// edit repository / delete_repository
+		$submenu = new Menu($pgv_lang['delete_repo']);
+		$submenu->addOnclick("if (confirm('".$pgv_lang["confirm_delete_repo"]."')) return deleterepository('".$this->rid."'); else return false;");
+		if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 		$menu->addSubmenu($submenu);
 
-		if (isset($pgv_changes[$this->sid.'_'.$GEDCOM]))
+		if (isset($pgv_changes[$this->rid.'_'.$GEDCOM]))
 		{
-			// edit_sour / separator
+			// edit_repo / separator
 			$submenu = new Menu();
 			$submenu->isSeparator();
 			$menu->addSubmenu($submenu);
 
-			// edit_sour / show/hide changes
+			// edit_repo / show/hide changes
 			if (!$this->show_changes)
 			{
-				$submenu = new Menu($pgv_lang['show_changes'], encode_url("source.php?sid={$this->sid}&show_changes=yes"));
-				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+				$submenu = new Menu($pgv_lang['show_changes'], encode_url("repo.php?rid={$this->rid}&show_changes=yes"));
+				if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 			}
 			else
 			{
-				$submenu = new Menu($pgv_lang['hide_changes'], encode_url("source.php?sid={$this->sid}&show_changes=no"));
-				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+				$submenu = new Menu($pgv_lang['hide_changes'], encode_url("repo.php?rid={$this->rid}&show_changes=no"));
+				if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 			}
 
 			if (PGV_USER_CAN_ACCEPT)
 			{
-				// edit_source / accept_all
-				$submenu = new Menu($pgv_lang["undo_all"], encode_url("source.php?sid={$this->sid}&action=undo"));
+				// edit_repository / accept_all
+				$submenu = new Menu($pgv_lang["undo_all"], encode_url("repo.php?rid={$this->rid}&action=undo"));
 				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
-				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+				if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 				$menu->addSubmenu($submenu);
-				$submenu = new Menu($pgv_lang['accept_all'], encode_url("source.php?sid={$this->sid}&action=accept"));
-				if (!empty($PGV_IMAGES["edit_sour"]["small"]))
-					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_sour']['small']}");
+				$submenu = new Menu($pgv_lang['accept_all'], encode_url("repo.php?rid={$this->rid}&action=accept"));
+				if (!empty($PGV_IMAGES["edit_repo"]["small"]))
+					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_repo']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 			}
@@ -265,7 +264,7 @@ class SourceControllerRoot extends BaseController {
 		if ($TEXT_DIRECTION=="rtl") $ff="_rtl";
 		else $ff="";
 
-		if (!$this->source->canDisplayDetails() || (!$SHOW_GEDCOM_RECORD && $ENABLE_CLIPPINGS_CART < PGV_USER_ACCESS_LEVEL)) {
+		if (!$this->repository->canDisplayDetails() || (!$SHOW_GEDCOM_RECORD && $ENABLE_CLIPPINGS_CART < PGV_USER_ACCESS_LEVEL)) {
 			$tempvar = false;
 			return $tempvar;
 		}
@@ -289,7 +288,7 @@ class SourceControllerRoot extends BaseController {
 		{
 			if (!empty($PGV_IMAGES["clippings"]["small"]))
 				$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['clippings']['small']}");
-			$menu->addLink(encode_url("clippings.php?action=add&id={$this->sid}&type=sour"));
+			$menu->addLink(encode_url("clippings.php?action=add&id={$this->rid}&type=repo"));
 		}
 		if ($SHOW_GEDCOM_RECORD)
 		{
@@ -310,16 +309,16 @@ class SourceControllerRoot extends BaseController {
 		if ($ENABLE_CLIPPINGS_CART >= PGV_USER_ACCESS_LEVEL)
 		{
 				// other / add_to_cart
-				$submenu = new Menu($pgv_lang['add_to_cart'], encode_url("clippings.php?action=add&id={$this->sid}&type=sour"));
+				$submenu = new Menu($pgv_lang['add_to_cart'], encode_url("clippings.php?action=add&id={$this->rid}&type=repo"));
 				if (!empty($PGV_IMAGES["clippings"]["small"]))
 					$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['clippings']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
 		}
-		if ($this->source->canDisplayDetails() && !empty($this->uname))
+		if ($this->repository->canDisplayDetails() && !empty($this->uname))
 		{
 				// other / add_to_my_favorites
-				$submenu = new Menu($pgv_lang['add_to_my_favorites'], encode_url("source.php?action=addfav&sid={$this->sid}&gid={$this->sid}"));
+				$submenu = new Menu($pgv_lang['add_to_my_favorites'], encode_url("repo.php?action=addfav&rid={$this->rid}&gid={$this->rid}"));
 				$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['gedcom']['small']}");
 				$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
 				$menu->addSubmenu($submenu);
@@ -329,13 +328,13 @@ class SourceControllerRoot extends BaseController {
 }
 // -- end of class
 //-- load a user extended class if one exists
-if (file_exists('includes/controllers/source_ctrl_user.php'))
+if (file_exists('includes/controllers/repository_ctrl_user.php'))
 {
-	include_once 'includes/controllers/source_ctrl_user.php';
+	include_once 'includes/controllers/repository_ctrl_user.php';
 }
 else
 {
-	class SourceController extends SourceControllerRoot
+	class RepositoryController extends RepositoryControllerRoot
 	{
 	}
 }

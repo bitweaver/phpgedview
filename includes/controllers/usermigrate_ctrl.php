@@ -5,7 +5,7 @@
  * authenticate.php and xxxxxx.dat files (MySQL mode).
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007  PGV Development Team
+ * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,16 +24,18 @@
  * @author Boudewijn Sjouke	sjouke@users.sourceforge.net
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: usermigrate_ctrl.php,v 1.1 2008/07/07 17:57:40 lsces Exp $
+ * @version $Id: usermigrate_ctrl.php,v 1.2 2009/04/30 19:09:48 lsces Exp $
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
 
-require_once("config.php");
-require_once 'includes/controllers/basecontrol.php';
+define('PGV_USERMIGRATE_CTRL_PHP', '');
+
+require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_export.php');
 
 loadLangFile("pgv_confighelp");
 
@@ -50,7 +52,6 @@ else if (!PGV_USER_IS_ADMIN) {
 	exit;
 }
 
-require_once("includes/functions_export.php");
 
 class UserMigrateControllerRoot extends BaseController {
 	var $proceed;
@@ -126,9 +127,8 @@ class UserMigrateControllerRoot extends BaseController {
 	 *
 	 */
 	function backup() {
-		global $INDEX_DIRECTORY, $gGedcom, $GEDCOM, $MEDIA_DIRECTORY, $SYNC_GEDCOM_FILE;
+		global $INDEX_DIRECTORY, $GEDCOMS, $GEDCOM, $MEDIA_DIRECTORY, $SYNC_GEDCOM_FILE;
 		global $USE_MEDIA_FIREWALL, $MEDIA_FIREWALL_ROOTDIR;
-		global $VERSION, $VERSION_RELEASE;
 		$this->flist = array();
 
 		// Backup user information
@@ -159,7 +159,7 @@ class UserMigrateControllerRoot extends BaseController {
 
 		// Backup gedcoms
 		if (isset($_POST["um_gedcoms"])) {
-			foreach($gGedcom as $key=>$gedcom) {
+			foreach($GEDCOMS as $key=>$gedcom) {
 				//-- load the gedcom configuration settings
 				require(get_config_file($key));
 				//-- backup the original gedcom file
@@ -188,7 +188,7 @@ class UserMigrateControllerRoot extends BaseController {
 			// Gedcoms file
 			if (file_exists($INDEX_DIRECTORY."gedcoms.php")) $this->flist[] = $INDEX_DIRECTORY."gedcoms.php";
 
-			foreach($gGedcom as $key => $gedcom) {
+			foreach($GEDCOMS as $key => $gedcom) {
 
 				// Config files
 				if (file_exists($INDEX_DIRECTORY.$gedcom["gedcom"]."_conf.php")) $this->flist[] = $INDEX_DIRECTORY.$gedcom["gedcom"]."_conf.php";
@@ -200,7 +200,7 @@ class UserMigrateControllerRoot extends BaseController {
 
 		// Backup logfiles and counters
 		if (isset($_POST["um_logs"])) {
-			foreach($gGedcom as $key => $gedcom) {
+			foreach($GEDCOMS as $key => $gedcom) {
 
 				// Gedcom counters
 				if (file_exists($INDEX_DIRECTORY.$gedcom["gedcom"]."pgv_counters.php")) $this->flist[] = $INDEX_DIRECTORY.$gedcom["gedcom"]."pgv_counters.php";
@@ -244,7 +244,7 @@ class UserMigrateControllerRoot extends BaseController {
 			require_once "includes/pclzip.lib.php";
 			$this->buname = date("YmdHis").".zip";
 			$this->fname = $INDEX_DIRECTORY.$this->buname;
-			$comment = "Created by PhpGedView ".$VERSION." ".$VERSION_RELEASE." on ".date("r").".";
+			$comment = "Created by ".PGV_PHPGEDVIEW." ".PGV_VERSION_TEXT." on ".date("r").".";
 			$archive = new PclZip($this->fname);
 			//-- remove ../ from file paths when creating zip
 			$ct = preg_match("~((\.\./)+)~", $INDEX_DIRECTORY, $match);
@@ -269,7 +269,7 @@ class UserMigrateControllerRoot extends BaseController {
 	 */
 	function import() {
 		global $INDEX_DIRECTORY, $TBLPREFIX, $pgv_lang, $DBCONN;
-		global $gGedcom, $GEDCOM;
+		global $GEDCOMS, $GEDCOM;
 
 		if ((file_exists($INDEX_DIRECTORY."authenticate.php")) == false) {
 			$this->impSuccess = false;
@@ -290,7 +290,7 @@ class UserMigrateControllerRoot extends BaseController {
 				//-- make sure fields are set for v4.0 DB
 				if (!isset($user["firstname"])) {
 					if (isset($user["fullname"])) {
-						$parts = preg_split("/ /", trim($user["fullname"]));
+						$parts = explode(' ', trim($user["fullname"]));
 						$user["lastname"] = array_pop($parts);
 						$user["firstname"] = implode(" ", $parts);
 					}
@@ -469,6 +469,5 @@ else
 	{
 	}
 }
-$controller = new UserMigrateController();
-$controller->init();
+
 ?>

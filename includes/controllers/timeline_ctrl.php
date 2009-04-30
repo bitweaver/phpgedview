@@ -1,58 +1,47 @@
 <?php
 /**
- * Controller for the timeline chart
- *
- * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	PGV Development Team
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * @package PhpGedView
- * @subpackage Charts
- * @version $Id$
- */
+* Controller for the timeline chart
+*
+* phpGedView: Genealogy Viewer
+* Copyright (C) 2002 to 2009 PGV Development Team.  All rights reserved.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+* @package PhpGedView
+* @subpackage Charts
+* @version $Id$
+*/
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
 
+define('PGV_TIMELINE_CTRL_PHP', '');
+
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_charts.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_person.php');
 /**
- * Initialization
- */
-require_once( '../bit_setup_inc.php' );
-
-// Is package installed and enabled
-$gBitSystem->verifyPackage( 'phpgedview' );
-
-include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
-
-$gGedcom = new BitGEDCOM();
-
-// leave manual config until we can move it to bitweaver table 
-require_once("includes/functions_charts.php");
-require_once 'includes/controllers/basecontrol.php';
-require_once 'includes/person_class.php';
-/**
- * Main controller class for the timeline page.
- */
+* Main controller class for the timeline page.
+*/
 class TimelineControllerRoot extends BaseController {
 	var $bheight = 30;
 	var $placements = array();
 	var $familyfacts = array();
-	var $indifacts = array();						// array to store the fact records in for sorting and displaying
+	var $indifacts = array(); // array to store the fact records in for sorting and displaying
 	var $birthyears=array();
 	var $birthmonths=array();
 	var $birthdays=array();
@@ -62,35 +51,36 @@ class TimelineControllerRoot extends BaseController {
 	var $people = array();
 	var $pidlinks = "";
 	var $scale = 2;
-	// GEDCOM elements that will be found but should not be displayed
-	var $nonfacts = "FAMS,FAMC,MAY,BLOB,OBJE,SEX,NAME,SOUR,NOTE,BAPL,ENDL,SLGC,SLGS,_TODO,CHAN,HUSB,WIFE,CHIL";
+	// GEDCOM elements that may have DATE data, but should not be displayed
+	var $nonfacts = array("BAPL","ENDL","SLGC","SLGS","_TODO","CHAN");
 	/**
-	 * constructor
-	 */
+	* constructor
+	*/
 	function TimelineRootController() {
 		parent::BaseController();
 	}
 	/**
-	 * Initialization function
-	 */
+	* Initialization function
+	*/
 	function init() {
+		global $GEDCOM_ID_PREFIX;
+
 		$this->baseyear = date("Y");
 		//-- new pid
-		if (isset($_REQUEST['newpid'])) {
-			$newpid = clean_input($_REQUEST['newpid']);
+		$newpid=safe_GET_xref('newpid');
+		if ($newpid) {
 			$indirec = find_person_record($newpid);
-			if (empty($indirec)) {
-				if (stristr($newpid, "I")===false) $newpid = "I".$newpid;
+			if (empty($indirec) && $GEDCOM_ID_PREFIX) {
+				if (stristr($newpid, $GEDCOM_ID_PREFIX)===false) $newpid = $GEDCOM_ID_PREFIX.$newpid;
 			}
 		}
-		
-		if (isset($_REQUEST['clear'])) unset($_SESSION['timeline_pids']);
-		else {
+
+		if (safe_GET('clear', '1')=='1') {
+			unset($_SESSION['timeline_pids']);
+		} else {
 			if (isset($_SESSION['timeline_pids'])) $this->pids = $_SESSION['timeline_pids'];
 			//-- pids array
-			if (isset($_REQUEST['pids'])){
-				$this->pids = $_REQUEST['pids'];
-			}
+			$this->pids=safe_GET_xref('pids');
 		}
 		if (!is_array($this->pids)) $this->pids = array();
 		else {
@@ -99,20 +89,19 @@ class TimelineControllerRoot extends BaseController {
 		}
 		if (!empty($newpid) && !in_array($newpid, $this->pids)) $this->pids[] = $newpid;
 		if (count($this->pids)==0) $this->pids[] = check_rootid("");
-		$remove = "";
-		if (!empty($_REQUEST['remove'])) $remove = $_REQUEST['remove'];
+		$remove = safe_GET_xref('remove');
 		//-- cleanup user input
 		$newpids = array();
 		foreach($this->pids as $key=>$value) {
 			if ($value!=$remove) {
-				$value = clean_input($value);
 				$newpids[] = $value;
 				$person = Person::getInstance($value);
-				if (!is_null($person)) $this->people[] = $person; 
+				if (!is_null($person)) $this->people[] = $person;
 			}
 		}
 		$this->pids = $newpids;
 		$this->pidlinks = "";
+		/* @var $indi Person */
 		foreach($this->people as $p=>$indi) {
 			if (!is_null($indi) && $indi->canDisplayDetails()) {
 				//-- setup string of valid pids for links
@@ -128,48 +117,43 @@ class TimelineControllerRoot extends BaseController {
 					}
 				}
 				// find all the fact information
-				$facts = get_all_subrecords($indi->getGedcomRecord(), $this->nonfacts, true, false);
-				foreach($facts as $indexval => $factrec) {
+				$indi->add_family_facts(false);
+				foreach($indi->getIndiFacts() as $event) {
 					//-- get the fact type
-					$ct = preg_match("/1 (\w+)(.*)/", $factrec, $match);
-					if ($ct > 0) {
-						$fact = trim($match[1]);
-						$desc = trim($match[2]);
+					$fact = $event->getTag();
+					if (!in_array($fact, $this->nonfacts)) {
 						//-- check for a date
-						if (preg_match("/2 DATE (.*)/", $factrec, $match)) {
-							$date=new GedcomDate($match[1]);
-							$date=$date->MinDate();
-							$date=$date->convert_to_cal('gregorian');
-							if ($date->y) {
-								$this->baseyear=min($this->baseyear, $date->y);
-								$this->topyear =max($this->topyear,  $date->y);
-
-								if (!is_dead_id($indi->getXref()))
-									$this->topyear=max($this->topyear, date('Y'));
-								$tfact = array();
-								$tfact["p"] = $p;
-								$tfact["pid"] = $indi->getXref();
-								$tfact[1] = $factrec;
-								$this->indifacts[] = $tfact;
-							}
+						$date = $event->getDate();
+						$date=$date->MinDate();
+						$date=$date->convert_to_cal('gregorian');
+						if ($date->y) {
+							$this->baseyear=min($this->baseyear, $date->y);
+							$this->topyear =max($this->topyear,  $date->y);
+	
+							if (!$indi->isDead())
+								$this->topyear=max($this->topyear, date('Y'));
+							$event->temp = $p;
+							//-- do not add the same fact twice (prevents marriages from being added multiple times)
+	 						if (!in_array($event, $this->indifacts, true)) $this->indifacts[] = $event;
 						}
 					}
 				}
 			}
 		}
 		$_SESSION['timeline_pids'] = $this->pids;
-		if (empty($_REQUEST['scale'])) {
+		$scale=safe_GET_integer('scale', 0, 200, 0);
+		if ($scale==0) {
 			$this->scale = round(($this->topyear-$this->baseyear)/20 * count($this->indifacts)/4);
 			if ($this->scale<6) $this->scale = 6;
 		}
-		else $this->scale = $_REQUEST['scale'];
+		else $this->scale = $scale;
 		if ($this->scale<2) $this->scale=2;
 		$this->baseyear -= 5;
 		$this->topyear += 5;
 	}
 	/**
-	 * check the privacy of the incoming people to make sure they can be shown
-	 */
+	* check the privacy of the incoming people to make sure they can be shown
+	*/
 	function checkPrivacy() {
 		global $CONTACT_EMAIL;
 		$printed = false;
@@ -177,7 +161,7 @@ class TimelineControllerRoot extends BaseController {
 			if (!is_null($this->people[$i])) {
 				if (!$this->people[$i]->canDisplayDetails()) {
 					if ($this->people[$i]->canDisplayName()) {
-						print "&nbsp;<a href=\"individual.php?pid=".$this->people[$i]->getXref()."\">".PrintReady($this->people[$i]->getName())."</a>";
+						print "&nbsp;<a href=\"".encode_url($this->people[$i]->getLinkUrl())."\">".PrintReady($this->people[$i]->getFullName())."</a>";
 						print_privacy_error($CONTACT_EMAIL);
 						print "<br />";
 						$printed = true;
@@ -190,30 +174,26 @@ class TimelineControllerRoot extends BaseController {
 			}
 		}
 	}
-	function print_time_fact($factitem) {
+
+	function print_time_fact($event) {
 		global $basexoffset, $baseyoffset, $factcount, $TEXT_DIRECTION;
-		global $factarray, $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES, $SHOW_PEDIGREE_PLACES, $placements;
+		global $factarray, $pgv_lang, $lang_short_cut, $LANGUAGE, $PGV_IMAGE_DIR, $PGV_IMAGES, $SHOW_PEDIGREE_PLACES, $placements;
 		global $familyfacts, $GEDCOM;
-		$factrec = $factitem[1];
-		$ct = preg_match("/1 (\w+)(.*)/", $factrec, $match);
-		if ($ct > 0) {
-			$fact = trim($match[1]);
-			$desc = trim($match[2]);
+		/* @var $event Event */
+		$factrec = $event->getGedComRecord();
+			$fact = $event->getTag();
+			$desc = $event->getDetail();
 			if ($fact=="EVEN" || $fact=="FACT") {
-				$ct = preg_match("/2 TYPE (.*)/", $factrec, $match);
-				if ($ct>0) $fact = trim($match[1]);
+				$fact = $event->getType();
 			}
-			$ct = preg_match("/2 DATE (.*)/", $factrec, $match);
-			if ($ct>0) {
 				//-- check if this is a family fact
-				$ct = preg_match("/1 _PGVFS @(.*)@/", $factrec, $fmatch);
-				if ($ct>0) {
-					$famid = trim($fmatch[1]);
+				$famid = $event->getFamilyId();
+				if ($famid!=null) {
 					//-- if we already showed this family fact then don't print it
-					if (isset($familyfacts[$famid.$fact])&&($familyfacts[$famid.$fact]!=$factitem["p"])) return;
-					$familyfacts[$famid.$fact] = $factitem["p"];
+					if (isset($familyfacts[$famid.$fact])&&($familyfacts[$famid.$fact]!=$event->temp)) return;
+					$familyfacts[$famid.$fact] = $event->temp;
 				}
-				$gdate=new GedcomDate($match[1]);
+				$gdate=$event->getDate();
 				$date=$gdate->MinDate();
 				$date=$date->convert_to_cal('gregorian');
 				$year  = $date->y;
@@ -249,25 +229,58 @@ class TimelineControllerRoot extends BaseController {
 				if ($TEXT_DIRECTION=="ltr") print "left";
 				else print "right";
 				print ": 3px;\" />\n";
-				$col = $factitem["p"] % 6;
+				$col = $event->temp % 6;
 				print "</td><td valign=\"top\" class=\"person".$col."\">\n";
-				if (count($this->pids) > 6)print get_person_name($factitem["pid"])." - ";
-				if (isset($factarray[$fact])) print $factarray[$fact];
-				else if (isset($pgv_lang[$fact])) print $pgv_lang[$fact];
-				else print $fact;
-				print "--";
-				print $gdate->Display(false);
-				$indi=Person::GetInstance($factitem["pid"]); // TODO we already have this object somewhere....
-				$birth_date=$indi->getEstimatedBirthDate();
-				$age=get_age_at_event(GedcomDate::GetAgeGedcom($birth_date, $gdate), false);
-				if (!empty($age))
-					print " ({$pgv_lang['age']} {$age})";
-				print " {$desc}";
+				if (count($this->pids) > 6) print $event->getParentObject()->getFullName()." - ";
+				$indi=$event->getParentObject();
+				if ($fact=="_AKAN" || $fact=="_AKA" || $fact=="ALIA" || $fact == "_INTE") {
+					// Allow special processing for different languages
+					$func="fact_AKA_localisation_{$lang_short_cut[$LANGUAGE]}";
+					if (function_exists($func) && get_class($indi)=="Person") {
+						// Localise the facts
+						$func($fact, $indi->getXref());
+						print $factarray[$fact];
+					}
+					else print $event->getLabel();
+				}
+				else print $event->getLabel();
+				print " -- ";
+				if (get_class($indi)=="Person") {
+					print format_fact_date($event);
+				}
+				if (get_class($indi)=="Family") {
+					print $gdate->Display(false);
+					$family=$indi;
+					$husbid=$family->getHusbId();
+					$wifeid=$family->getWifeId();
+					//-- Retrieve husband and wife age
+					for($p=0; $p<count($this->pids); $p++) {
+						if ($this->pids[$p]==$husbid) {
+							$husb=$family->getHusband();
+							if (is_null($husb)) $husb = new Person('');
+							$hdate=$husb->getBirthDate();
+							if ($hdate->isOK()) $ageh=get_age_at_event(GedcomDate::GetAgeGedcom($hdate, $gdate), false);
+						}
+						else if ($this->pids[$p]==$wifeid) {
+							$wife=$family->getWife();
+							if (is_null($wife)) $wife = new Person('');
+							$wdate=$wife->getBirthDate();
+							if ($wdate->isOK()) $agew=get_age_at_event(GedcomDate::GetAgeGedcom($wdate, $gdate), false);
+						}
+					}
+					if (!empty($ageh) && $ageh > 0)
+						if (empty($agew)) print '<span class="age"> '.PrintReady("({$pgv_lang["age"]} {$ageh})").'</span>';
+						else print '<span class="age"> '.PrintReady("({$pgv_lang["husb_age"]} {$ageh},").' ';
+					if (!empty($agew) && $agew > 0)
+						if (empty($ageh)) print '<span class="age"> '.PrintReady("({$pgv_lang["age"]} {$agew})").'</span>';
+						else print PrintReady("{$pgv_lang["wife_age"]} {$agew})").'</span>';
+				}
+				print " ".PrintReady($desc);
 				if ($SHOW_PEDIGREE_PLACES>0) {
-					$pct = preg_match("/2 PLAC (.*)/", $factrec, $match);
-					if ($pct>0) {
-						print " - ";
-						$plevels = preg_split("/,/", $match[1]);
+					$place = $event->getPlace();
+					if ($place!=null) {
+						if ($desc!=null) print " - ";
+						$plevels = explode(',', $place);
 						for($plevel=0; $plevel<$SHOW_PEDIGREE_PLACES; $plevel++) {
 							if (!empty($plevels[$plevel])) {
 								if ($plevel>0) print ", ";
@@ -277,19 +290,24 @@ class TimelineControllerRoot extends BaseController {
 					}
 				}
 				//-- print spouse name for marriage events
-				$ct = preg_match("/1 _PGVS @(.*)@/", $factrec, $match);
-				if ($ct>0) {
-					$spouse=$match[1];
-					if ($spouse!=="") {
-						for($p=0; $p<count($this->pids); $p++) {
-							if ($this->pids[$p]==$spouse) break;
+				$spouse = Person::getInstance($event->getSpouseId());
+				if ($spouse) {
+					for($p=0; $p<count($this->pids); $p++) {
+						if ($this->pids[$p]==$spouse->getXref()) break;
+					}
+					if ($p==count($this->pids)) $p = $event->temp;
+					$col = $p % 6;
+					if ($spouse->getXref()!=$this->pids[$p]) {
+						echo ' <a href="', $spouse->getLinkUrl(), '">', $spouse->getFullName(), '</a>';
+					}
+					else {
+						$ct = preg_match("/2 _PGVFS @(.*)@/", $factrec, $match);
+						if ($ct>0) {
+							print " <a href=\"".encode_url("family.php?pid={$match[1]}&ged={$GEDCOM}")."\">";
+							if (displayDetailsById($match[1])||showLivingNameById($match[1])) print $event->getParentObject()->getFullName();
+							else print $pgv_lang["private"];
+							print "</a>";
 						}
-						if ($p==count($this->pids)) $p = $factitem["p"];
-						$col = $p % 6;
-						print " <span class=\"person$col\"> <a href=\"individual.php?pid=$spouse&amp;ged=$GEDCOM\">";
-						if (displayDetailsById($spouse)||showLivingNameById($spouse)) print get_person_name($spouse);
-						else print $pgv_lang["private"];
-						print "</a> </span>";
 					}
 				}
 				print "</td></tr></table>\n";
@@ -319,8 +337,6 @@ class TimelineControllerRoot extends BaseController {
 				print " background-image: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$img]["other"]."');";
 				print " background-position: 0% $ypos; \" >\n";
 				print "</div>\n";
-			}
-		}
 	}
 }
 // -- end of class
@@ -335,6 +351,5 @@ else
 	{
 	}
 }
-$controller = new TimelineController();
-$controller->init();
+
 ?>

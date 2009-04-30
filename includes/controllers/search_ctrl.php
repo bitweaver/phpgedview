@@ -4,7 +4,7 @@
  * Controller for the Search Page
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007	John Finlay and Others
+ * Copyright (C) 2002 to 2009	PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@
  * @version $Id$
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_SEARCH_CTRL_PHP', '');
 
 /**
  * Initialization
@@ -44,8 +46,8 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require_once ("config.php");
-require_once ("includes/controllers/basecontrol.php");
+//require_once ("config.php");
+require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
 
 /**
  * Main controller class for the search page.
@@ -53,9 +55,9 @@ require_once ("includes/controllers/basecontrol.php");
 class SearchControllerRoot extends BaseController {
 	var $isPostBack = false;
 	var $topsearch;
-	var $action = "general";
 	var $srfams;
 	var $srindi;
+	var $srnote;
 	var $srsour;
 	var $resultsPageNum = 0;
 	var $resultsPerPage = 50;
@@ -66,10 +68,10 @@ class SearchControllerRoot extends BaseController {
 	var $srcResultsPrinted = -1;
 	var $multiResultsPerPage = -1;
 	var $multiTotalResults = -1;
-	var $view = "";
 	var $query;
 	var $myquery = "";
-	var $soundex = "Russell";
+//	var $soundex = "Russell";
+	var $soundex = "DaitchM";
 	var $subaction = "";
 	var $nameprt = "";
 	var $tagfilter = "on";
@@ -98,23 +100,11 @@ class SearchControllerRoot extends BaseController {
 	var $myyear;
 	var $sgeds = array ();
 	var $Sites = array ();
-	var $indi_total = array ();
-	var $indi_hide = array ();
-	var $indi_private = array ();
-	var $fam_total = array ();
-	var $fam_hide = array ();
-	var $fam_private = array ();
-	var $repo_total = array ();
-	var $repo_hide = array ();
-	var $source_total = array ();
-	var $source_hide = array ();
 	var $myindilist = array ();
 	var $mysourcelist = array ();
 	var $myfamlist = array ();
-	var $myfamlist2 = array ();
+	var $mynotelist = array ();
 	var $multisiteResults = array ();
-	var $printname = array ();
-	var $printfamname = array ();
 	var $inputFieldNames = array ();
 	var $replace = false;
 	var $replaceNames = false;
@@ -133,7 +123,11 @@ class SearchControllerRoot extends BaseController {
 	 * Initialization function
 	 */
 	function init() {
-		global $pgv_lang, $ALLOW_CHANGE_GEDCOM, $GEDCOM, $gGedcom;
+		global $pgv_lang, $ALLOW_CHANGE_GEDCOM, $GEDCOM, $GEDCOMS;
+
+		if ($this->action=='') {
+			$this->action='general';
+		}
 
 		if (!empty ($_REQUEST["topsearch"])) {
 			$this->topsearch = true;
@@ -141,7 +135,7 @@ class SearchControllerRoot extends BaseController {
 			$this->srfams = 'yes';
 			$this->srindi = 'yes';
 			$this->srsour = 'yes';
-			$this->srrepo = 'yes';
+			$this->srnote = 'yes';
 		}
 
 		// Get the query and remove slashes
@@ -149,14 +143,15 @@ class SearchControllerRoot extends BaseController {
 			// Reset the "Search" text from the page header
 			if ($_REQUEST["query"] == $pgv_lang["search"] || strlen($_REQUEST["query"])<2 || preg_match("/^\.+$/", $_REQUEST["query"])>0) {
 				$this->query="";
+				$this->myquery="";
 			} else {
 				$this->query = stripslashes($_REQUEST["query"]);
-				$this->myquery = $this->query;
+				$this->myquery = htmlspecialchars($this->query,ENT_COMPAT,'UTF-8');
 			}
 		}
 		if (isset ($_REQUEST["replace"])) {
 			$this->replace = $_REQUEST["replace"];
-				
+
 			if(isset($_REQUEST["replaceNames"])) $this->replaceNames = true;
 			if(isset($_REQUEST["replacePlaces"])) $this->replacePlaces = true;
 			if(isset($_REQUEST["replacePlacesWord"])) $this->replacePlacesWord = true;
@@ -164,21 +159,8 @@ class SearchControllerRoot extends BaseController {
 		}
 
 		// Aquire all the variables values from the $_REQUEST
-		$varNames = array ("isPostBack", "action", "topsearch", "srfams", "srindi", "srsour", "view", "soundex", "subaction", "nameprt", "tagfilter", "showasso", "resultsPageNum", "resultsPerPage", "totalResults", "totalGeneralResults", "indiResultsPrinted", "famResultsPrinted", "multiTotalResults", "srcResultsPrinted", "multiResultsPerPage", "indi_total", "indi_hide", "indi_private", "fam_total", "fam_hide", "fam_private", "repo_total", "repo_hide", "source_total", "source_hide", "mysourcelist", "myfamlist", "myfamlist2");
+		$varNames = array ("isPostBack", "action", "topsearch", "srfams", "srindi", "srsour", "srnote", "view", "soundex", "subaction", "nameprt", "tagfilter", "showasso", "resultsPageNum", "resultsPerPage", "totalResults", "totalGeneralResults", "indiResultsPrinted", "famResultsPrinted", "multiTotalResults", "srcResultsPrinted", "multiResultsPerPage", "myindilist", "mysourcelist", "mynotelist", "myfamlist");
 		$this->setRequestValues($varNames);
-
-		if ($this->action == "reset") {
-			$this->indi_total = array ();
-			$this->indi_private = array ();
-			$this->indi_hide = array ();
-			$this->fam_total = array ();
-			$this->fam_private = array ();
-			$this->fam_hide = array ();
-			$this->source_total = array ();
-			$this->source_hide = array ();
-			$this->repo_total = array ();
-			$this->repo_hide = array ();
-		}
 
 		if (!$this->isPostBack) {
 			// Enable the default gedcom for search
@@ -187,8 +169,8 @@ class SearchControllerRoot extends BaseController {
 		}
 
 		// Retrieve the gedcoms to search in
-		if (($ALLOW_CHANGE_GEDCOM) && (count($gGedcom) > 1)) {
-			foreach ($gGedcom as $key => $gedarray) {
+		if (($ALLOW_CHANGE_GEDCOM) && (count($GEDCOMS) > 1)) {
+			foreach ($GEDCOMS as $key => $gedarray) {
 				$str = preg_replace(array ("/\./", "/-/", "/ /"), array ("_", "_", "_"), $key);
 				if (isset ($_REQUEST["$str"]) || isset ($this->topsearch)) {
 					$this->sgeds[] = $key;
@@ -198,7 +180,7 @@ class SearchControllerRoot extends BaseController {
 		}
 		else
 		$this->sgeds[] = $GEDCOM;
-			
+
 		// Retrieve the sites that can be searched
 		$this->Sites = get_server_list();
 
@@ -290,6 +272,7 @@ class SearchControllerRoot extends BaseController {
 		$this->inputFieldNames[] = "srindi";
 		$this->inputFieldNames[] = "srfams";
 		$this->inputFieldNames[] = "srsour";
+		$this->inputFieldNames[] = "srnote";
 		$this->inputFieldNames[] = "showasso";
 		$this->inputFieldNames[] = "firstname";
 		$this->inputFieldNames[] = "lastname";
@@ -310,7 +293,6 @@ class SearchControllerRoot extends BaseController {
 		// Get the search results based on the action
 		if (isset ($this->topsearch)) $this->TopSearch();
 		// If we want to show associated persons, build the list
-		if ($this->showasso == "on") get_asso_list();
 		if ($this->action == "general") $this->GeneralSearch();
 		else if ($this->action == "soundex") $this->SoundexSearch();
 		else if ($this->action == "replace") $this->SearchAndReplace();
@@ -375,39 +357,10 @@ class SearchControllerRoot extends BaseController {
 
 		// Then see if an ID is typed in. If so, we might want to jump there.
 		if (isset ($this->query)) {
-
-			// see if it's an indi ID. If it's found and privacy allows it, JUMP!!!!
-			if (find_person_record($this->query)) {
-				if (showLivingNameByID($this->query) || displayDetailsByID($this->query)) {
-					header("Location: individual.php?pid=".$this->query."&ged=".$GEDCOM);
-					exit;
-				}
-			}
-			// see if it's a family ID. If it's found and privacy allows it, JUMP!!!!
-			if (find_family_record($this->query)) {
-				//-- check if we can display both parents
-				if (displayDetailsByID($this->query, "FAM") == true) {
-					$parents = find_parents($this->query);
-					if (showLivingNameByID($parents["HUSB"]) && showLivingNameByID($parents["WIFE"])) {
-						header("Location: family.php?famid=".$this->query."&ged=".$GEDCOM);
-						exit;
-					}
-				}
-			}
-			// see if it's an source ID. If it's found and privacy allows it, JUMP!!!!
-			if ($SHOW_SOURCES >= PGV_USER_ACCESS_LEVEL) {
-				if (find_source_record($this->query)) {
-					header("Location: source.php?sid=".$this->query."&ged=".$GEDCOM);
-					exit;
-				}
-			}
-
-			// see if it's a repository ID. If it's found and privacy allows it, JUMP!!!!
-			if ($SHOW_SOURCES >= PGV_USER_ACCESS_LEVEL) {
-				if (find_repo_record($this->query)) {
-					header("Location: repo.php?rid=".$this->query."&ged=".$GEDCOM);
-					exit;
-				}
+			$record=GedcomRecord::getInstance($this->query);
+			if ($record && $record->canDisplayDetails()) {
+				header("Location: ".encode_url($record->getLinkUrl(), false));
+				exit;
 			}
 		}
 	}
@@ -416,153 +369,100 @@ class SearchControllerRoot extends BaseController {
 	 * 	Gathers results for a general search
 	 */
 	function GeneralSearch() {
-		global $REGEXP_DB, $GEDCOM, $gGedcom;
+		global $GEDCOM, $GEDCOMS;
 		$oldged = $GEDCOM;
+
+		// Split search terms into an array
+		$query_terms=array();
+		$query=$this->query;
+		// Words in double quotes stay together
+		while (preg_match('/"([^"]+)"/', $query, $match)) {
+			$query_terms[]=trim($match[1]);
+			$query=str_replace($match[0], '', $query);
+		}
+		// Other words get treated separately
+		while (preg_match('/[\S]+/', $query, $match)) {
+			$query_terms[]=trim($match[0]);
+			$query=str_replace($match[0], '', $query);
+		}
+
+		// Get a list of gedcom IDs to search
+		// TODO: don't we already have this somewhere?
+		$ged_ids=array();
+		foreach ($this->sgeds as $gedcom) {
+			$ged_ids[]=get_id_from_gedcom($gedcom);
+		}
+
 		//-- perform the search
-		if (isset ($this->query)) {
-			// -- array of names to be used for results. Must be here and empty.
-			$this->myindilist = array ();
-			$this->mysourcelist = array ();
-			$this->myfamlist = array ();
-			$this->myfamlist2 = array ();
+		if ($query_terms && $ged_ids) {
+			// Write a log entry
+			$logstring = "Type: General<br />Query: ".$this->query;
+			AddToSearchlog($logstring, $this->sgeds);
 
-			// Now see if there is a query left after the cleanup
-			if (trim($this->query) != "") {
+			// Search the indi's
+			if (isset ($this->srindi)) {
+				$this->myindilist=search_indis($query_terms, $ged_ids, 'AND', $this->tagfilter=='on');
+			} else {
+				$this->myindilist=array();
+			}
 
-				// Write a log entry
-				$logstring = "Type: General<br />Query: ".$this->query;
-				AddToSearchlog($logstring, $this->sgeds);
+			// Search the fams
+			if (isset ($this->srfams)) {
+				$this->myfamlist=array_merge(
+					search_fams($query_terms, $ged_ids, 'AND', $this->tagfilter=='on'),
+					search_fams_names($query_terms, $ged_ids, 'AND')
+				);
+			} else {
+				$this->myfamlist=array();
+			}
 
-				// Cleanup the querystring so it can be used in a database query
-				// Note: when more than one word is entered, this will return results where one word
-				// is in one subrecord, another in another subrecord. Theze results are filtered later.
-				if (strlen($this->query) == 1)
-				$this->query = preg_replace(array ("/\?/", "/\|/", "/\*/"), array ("\\\?", "\\\|", "\\\\\*"), $this->query);
-				if ($REGEXP_DB)
-				$this->query = preg_replace(array ("/\(/", "/\)/", "/\//", "/\]/", "/\[/", "/\s+/"), array ('\(', '\)', '\/', '\]', '\[', '.*'), $this->query);
-				else {
-					$this->query = "%".preg_replace("/\s+/", "%", $this->query)."%";
-				}
-				// Search the indi's
-				if ((isset ($this->srindi)) && (count($this->sgeds) > 0)) {
-					$this->myindilist = search_indis($this->query, $this->sgeds);
-//					uasort($this->myindilist, "itemsort");
-				}
+			// Search the sources
+			if (isset ($this->srsour)) {
+				if (!empty ($this->query))
+				$this->mysourcelist=search_sources($query_terms, $ged_ids, 'AND', $this->tagfilter=='on');
+			} else {
+				$this->mysourcelist=array();
+			}
 
-				// Search the fams
-				if ((isset ($this->srfams)) && (count($this->sgeds) > 0)) {
-					// Get the indilist, to check name hits. Store the ID's/names found in
-					// the search array, so the fam records can be retrieved.
-					// This way we include hits on family names.
-					// If indi's are not searched yet, we have to search them first
-					if (!isset ($this->srindi))
-						$this->myindilist = search_indis($this->query, $this->sgeds);
-					$famquery = array ();
-					$cntgeds = count($this->sgeds);
-					if ($cntgeds==1) $ged = $gGedcom[$this->sgeds[0]]["id"];
-					foreach ($this->myindilist as $key1 => $myindi) {
-						foreach ($myindi["names"] as $key2 => $name) {
-							if ((preg_match("/".$this->query."/i", $name[0]) > 0)) {
-								if ($cntgeds > 1) {
-									$ged = splitkey($key1, "ged");
-									$key1 = splitkey($key1, "id");
-								}
-								$famquery[] = array ($key1, $ged);
-								break;
-							}
-						}
-					}
-					// Get the famrecs with hits on names from the family table
-					if (!empty ($famquery))
-					$this->myfamlist = search_fams_names($famquery, "OR", true, $cntgeds);
-					// Get the famrecs with hits in the gedcom record from the family table
-					if (!empty ($this->query))
-					$this->myfamlist2 = search_fams($this->query, $this->sgeds, "OR", true);
-					$this->myfamlist = pgv_array_merge($this->myfamlist, $this->myfamlist2);
-				}
+			// Search the notes
+			if (isset ($this->srnote)) {
+				if (!empty ($this->query))
+				$this->mynotelist=search_notes($query_terms, $ged_ids, 'AND', $this->tagfilter=='on');
+			} else {
+				$this->mynotelist=array();
+			}
 
-				// Search the sources
-				if ((isset ($this->srsour)) && (count($this->sgeds) > 0)) {
-					if (!empty ($this->query))
-					$this->mysourcelist = search_sources($this->query, $this->sgeds);
+			// If only 1 item is returned, automatically forward to that item
+			// If ID cannot be displayed, continue to the search page.
+			if (count($this->myindilist)==1 && !$this->myfamlist && !$this->mysourcelist && !$this->mynotelist) {
+				$indi=$this->myindilist[0];
+				if (!count_linked_indi($indi->getXref(), 'ASSO', $indi->getGedId()) && !count_linked_fam($indi->getXref(), 'ASSO', $indi->getGedId()) && $indi->canDisplayName()) {
+					header("Location: ".encode_url($indi->getLinkUrl(), false));
+					exit;
 				}
-
-				//-- if only 1 item is returned, automatically forward to that item
-				// Check for privacy first. If ID cannot be displayed, continue to the search page.
-				if ((count($this->myindilist) == 1) && (count($this->myfamlist) == 0) && (count($this->mysourcelist) == 0)) {
-					foreach ($this->myindilist as $key => $indi) {
-						if (count($this->sgeds) > 1) {
-							$ged = splitkey($key, "ged");
-							$pid = splitkey($key, "id");
-							if ($GEDCOM != $ged) {
-								$oldged = $GEDCOM;
-								$GEDCOM = $ged;
-								include (get_privacy_file());
-							}
-						} else {
-							$pid = $key;
-							$key = $key."[".get_gedcom_from_id($indi["gedfile"])."]";
-						}
-						if (!isset ($assolist[$key])) {
-							if (showLivingNameByID($pid) || displayDetailsByID($pid)) {
-								header("Location: individual.php?pid=".$pid."&ged=".get_gedcom_from_id($indi["gedfile"]));
-								exit;
-							}
-						}
-						if ((count($this->sgeds > 1)) && (isset ($oldged))) {
-							$GEDCOM = $oldged;
-							include (get_privacy_file());
-						}
-					}
+			}
+			if (!$this->myindilist && count($this->myfamlist)==1 && !$this->mysourcelist && !$this->mynotelist) {
+				$fam=$this->myfamlist[0];
+				if ($fam->canDisplayName()) {
+					header("Location: ".encode_url($fam->getLinkUrl(), false));
+					exit;
 				}
-				if ((count($this->myindilist) == 0) && (count($this->myfamlist) == 1) && (count($this->mysourcelist) == 0)) {
-					foreach ($this->myfamlist as $famid => $fam) {
-						if (count($this->sgeds) > 1) {
-							$ged = splitkey($famid, "ged");
-							$famid = splitkey($famid, "id");
-							if ($GEDCOM != $ged) {
-								$oldged = $GEDCOM;
-								$GEDCOM = $ged;
-								include (get_privacy_file());
-							}
-						}
-						if (displayDetailsByID($famid, "FAM") == true) {
-							$parents = find_parents($famid);
-							if (showLivingNameByID($parents["HUSB"]) && showLivingNameByID($parents["WIFE"])) {
-								header("Location: family.php?famid=".$famid."&ged=".$GEDCOM);
-								exit;
-							}
-						}
-						if (count($this->sgeds > 1)) {
-							$GEDCOM = $oldged;
-							include (get_privacy_file());
-						}
-					}
+			}
+			if (!$this->myindilist && !$this->myfamlist && count($this->mysourcelist)==1 && !$this->mynotelist) {
+				$sour=$this->mysourcelist[0];
+				if ($sour->canDisplayName()) {
+					header("Location: ".encode_url($sour->getLinkUrl(), false));
+					exit;
 				}
-				if ((count($this->myindilist) == 0) && (count($this->myfamlist) == 0) && (count($this->mysourcelist) == 1)) {
-					foreach ($this->mysourcelist as $sid => $source) {
-						if (count($this->sgeds) > 1) {
-							$ged = splitkey($sid, "ged");
-							$sid = splitkey($sid, "id");
-							if ($GEDCOM != $ged) {
-								$oldged = $GEDCOM;
-								$GEDCOM = $ged;
-								include (get_privacy_file());
-							}
-						}
-						if (displayDetailsByID($sid, "SOUR")) {
-							header("Location: source.php?sid=".$sid."&ged=".get_gedcom_from_id($source["gedfile"]));
-							exit;
-						}
-						if (count($this->sgeds > 1)) {
-							$GEDCOM = $oldged;
-							include (get_privacy_file());
-						}
-					}
+			}
+			if (!$this->myindilist && !$this->myfamlist && !$this->mysourcelist && count($this->mynotelist)==1) {
+				$note=$this->mynotelist[0];
+				if ($note->canDisplayName()) {
+					header("Location: ".encode_url($note->getLinkUrl(), false));
+					exit;
 				}
 			}
 		}
-		$GEDCOM = $oldged;
 	}
 
 	/**
@@ -576,16 +476,19 @@ class SearchControllerRoot extends BaseController {
 		$this->srindi = "yes";
 		$this->srfams = "yes";
 		$this->srsour = "yes";
+		$this->srnote = "yes";
 		$oldquery = $this->query;
 		$this->GeneralSearch();
 
 		//-- don't try to make any changes if nothing was found
-		if (count($this->myindilist)==0 && count($this->myfamlist)==0 && count($this->mysourcelist)==0) return;
+		if (!$this->myindilist && !$this->myfamlist && !$this->mysourcelist && !$this->mynotelist) {
+			return;
+		}
 
 		AddToLog("Search And Replace old:".$oldquery." new:".$this->replace);
 		$manual_save = true;
 		// Include edit functions.
-		include_once("includes/functions_edit.php");
+		include_once("includes/functions/functions_edit.php");
 		// These contain the search query and the replace string
 		// $this->replace;
 		// $this->query;
@@ -595,14 +498,18 @@ class SearchControllerRoot extends BaseController {
 		//$this->myindilist;
 		$adv_name_tags = preg_split("/[\s,;: ]+/", $ADVANCED_NAME_FACTS);
 		$name_tags = array_unique(array_merge($STANDARD_NAME_FACTS, $adv_name_tags));
-		foreach($this->myindilist as $id => $individual) {
-			if (isset($pgv_changes[$id."_".$GEDCOM])) $individual["gedcom"] = find_updated_record($id);
-
-			$newRecord = $individual["gedcom"];
+		$name_tags[] = "_MARNM";
+		foreach($this->myindilist as $id=>$individual) {
+			if (isset($pgv_changes[$individual->getXref().'_'.$GEDCOM])) {
+				$indirec=find_updated_record($individual->getXref());
+			} else {
+				$indirec=$individual->getGedcomRecord();
+			}
+			$oldRecord = $indirec;
+			$newRecord = $indirec;
 			if($this->replaceAll) {
 				$newRecord = preg_replace("~".$oldquery."~i", $this->replace, $newRecord);
-			}
-			else {
+			} else {
 				if($this->replaceNames) {
 					foreach($name_tags as $f=>$tag) {
 						$newRecord = preg_replace("~(\d) ".$tag." (.*)".$oldquery."(.*)~i",	"$1 ".$tag." $2".$this->replace."$3", $newRecord);
@@ -614,15 +521,21 @@ class SearchControllerRoot extends BaseController {
 				}
 			}
 			//-- if the record changed replace the record otherwise remove it from the search results
-			if($newRecord != $individual["gedcom"]) replace_gedrec($id, $newRecord);
-			else unset($this->myindilist[$id]);
+			if($newRecord != $oldRecord) {
+				replace_gedrec($individual->getXref(), $newRecord);
+			} else {
+				unset($this->myindilist[$id]);
+			}
 		}
 
-		foreach($this->myfamlist as $id => $family) {
-			if (isset($pgv_changes[$id."_".$GEDCOM]))
-			$family["gedcom"] = find_updated_record($id);
-
-			$newRecord = $family["gedcom"];
+		foreach($this->myfamlist as $id=>$family) {
+			if (isset($pgv_changes[$family->getXref().'_'.$GEDCOM])) {
+				$indirec=find_updated_record($family->getXref());
+			} else {
+				$indirec=$family->getGedcomRecord();
+			}
+			$oldRecord = $indirec;
+			$newRecord = $indirec;
 
 			if($this->replaceAll) {
 				$newRecord = preg_replace("~".$oldquery."~i", $this->replace, $newRecord);
@@ -633,21 +546,26 @@ class SearchControllerRoot extends BaseController {
 					else $newRecord = preg_replace("~(\d) PLAC (.*)".$oldquery."(.*)~i",	"$1 PLAC $2".$this->replace."$3",$newRecord);
 				}
 			}
-			if($newRecord != $family["gedcom"]) replace_gedrec($id, $newRecord);
-			else unset($this->myfamlist[$id]);
+			//-- if the record changed replace the record otherwise remove it from the search results
+			if($newRecord != $oldRecord) {
+				replace_gedrec($family->getXref(), $newRecord);
+			} else {
+				unset($this->myfamlist[$id]);
+			}
 		}
 
-		foreach($this->mysourcelist as $id => $source)
-		{
-			if (isset($pgv_changes[$id."_".$GEDCOM]))
-			$source["gedcom"] = find_updated_record($id);
-
-			$newRecord = $source["gedcom"];
-				
-			if($this->replaceAll) {
-				$newRecord = preg_replace("~".$oldquery."~i", $this->replace, $newRecord);
+		foreach ($this->mysourcelist as $id=>$source) {
+			if (isset($pgv_changes[$source->getXref().'_'.$GEDCOM])) {
+				$indirec=find_updated_record($source->getXref());
+			} else {
+				$indirec=$source->getGedcomRecord();
 			}
-			else {
+			$oldRecord = $indirec;
+			$newRecord = $indirec;
+
+			if ($this->replaceAll) {
+				$newRecord = preg_replace("~".$oldquery."~i", $this->replace, $newRecord);
+			} else {
 				if($this->replaceNames) {
 					$newRecord = preg_replace("~(\d) TITL (.*)".$oldquery."(.*)~i",	"$1 TITL $2".$this->replace."$3", $newRecord);
 					$newRecord = preg_replace("~(\d) ABBR (.*)".$oldquery."(.*)~i",	"$1 ABBR $2".$this->replace."$3", $newRecord);
@@ -657,60 +575,35 @@ class SearchControllerRoot extends BaseController {
 					else $newRecord = preg_replace("~(\d) PLAC (.*)".$oldquery."(.*)~i",	"$1 PLAC $2".$this->replace."$3",$newRecord);
 				}
 			}
-			if($newRecord != $source["gedcom"]) replace_gedrec($id, $newRecord);
-			else unset($this->mysourcelist[$id]);
+			//-- if the record changed replace the record otherwise remove it from the search results
+			if($newRecord != $oldRecord) {
+				replace_gedrec($source->getXref(), $newRecord);
+			}	else {
+				unset($this->mysourcelist[$id]);
+			}
+		}
+
+		foreach ($this->mynotelist as $id=>$note) {
+			if (isset($pgv_changes[$note->getXref().'_'.$GEDCOM])) {
+				$indirec=find_updated_record($note->getXref());
+			} else {
+				$indirec=$note->getGedcomRecord();
+			}
+			$oldRecord = $indirec;
+			$newRecord = $indirec;
+
+			if ($this->replaceAll) {
+				$newRecord = preg_replace("~".$oldquery."~i", $this->replace, $newRecord);
+			}
+			//-- if the record changed replace the record otherwise remove it from the search results
+			if($newRecord != $oldRecord) {
+				replace_gedrec($note->getXref(), $newRecord);
+			}	else {
+				unset($this->mynotelist[$id]);
+			}
 		}
 
 		write_changes();
-	}
-
-	/**
-	 * Retrieves a list of places and performs a soundex search on them.
-	 *
-	 * Assigns the results to the global printname[]
-	 */
-	function Place_Search()
-	{
-		global $TBLPREFIX, $GEDCOM, $gGedcom, $DBQUERY;
-		$sql = "SELECT i.i_id, i.i_file, i.i_name FROM ".$TBLPREFIX."places JOIN ".$TBLPREFIX."placelinks ON p_id = pl_p_id JOIN ".$TBLPREFIX."individuals as i ON pl_gid = i_id WHERE p_file = ".$gGedcom->mGEDCOMId." AND i_file = p_file AND (";
-
-		$place_sdx = "";
-			
-		$placearr = explode(",", $this->place);
-			
-		//Determines type of soundex and performs it
-		foreach($placearr as $place)
-		{
-			if($this->soundex == "DaitchM")
-			{
-				$place_sdx = DMSoundex($place);
-					
-				foreach($place_sdx as $key=>$val)
-				{
-
-					$sql .= "p_dm_soundex like '%".$place_sdx[$key]."%' OR ";
-				}
-			}
-
-			if($this->soundex == "Russell")
-			{
-				$place_sdx = soundex($place);
-					
-				$sql .= "p_std_soundex = '".$place_sdx."' OR ";
-			}
-		}
-			
-		// Strip the extra 'OR' at the end of the sql query
-		$sql = substr($sql, 0, strlen($sql) - 3);
-		$sql .= ")";
-		$res = dbquery($sql);
-			
-		//Stores results in printname[]
-		$this->printname = array();
-		while($row = $res->fetchRow())
-		{
-			$this->printname[] = array (sortable_name_from_name($row[2]), $row[0], get_gedcom_from_id($row[1]), "");
-		}
 	}
 
 	/**
@@ -725,7 +618,6 @@ class SearchControllerRoot extends BaseController {
 	 *  Does not work on separate double word surnames
 	 *  Does not work on duplicate code values of the searched text and does not give the correct code
 	 *     Cohen should give DM codes 556000, 456000, 460000 and 560000, in 4.1 we search only on 560000??
-	 *  Print the DM codes at least when the URL contains &DEBUG=1
 	 *
 	 *  The names' Soundex SQL table contains all the soundex values twice
 	 *  The places table contains only one value
@@ -734,9 +626,7 @@ class SearchControllerRoot extends BaseController {
 	 *
 	 */
 	function SoundexSearch() {
-		global $REGEXP_DB, $GEDCOM, $gGedcom;
-		global $TBLPREFIX;
-		global $DBCONN, $indilist;
+		global $GEDCOM, $GEDCOMS;
 
 		if (((!empty ($this->lastname)) || (!empty ($this->firstname)) || (!empty ($this->place))) && (count($this->sgeds) > 0)) {
 			$logstring = "Type: Soundex<br />";
@@ -749,157 +639,50 @@ class SearchControllerRoot extends BaseController {
 			if (!empty ($this->year))
 			$logstring .= "Year: ".$this->year."<br />";
 			AddToSearchlog($logstring, $this->sgeds);
-			
-			if(!empty($this->place) && empty($this->firstname) && empty($this->lastname))
-			{
-				$this->Place_Search();
-				return;
+
+			// Get a list of gedcom IDs to search
+			// TODO: don't we already have this somewhere?
+			$ged_ids=array();
+			foreach ($this->sgeds as $gedcom) {
+				$ged_ids[]=get_id_from_gedcom($gedcom);
 			}
 
-			$this->myindilist = array ();
-			if (count($this->sgeds) > 0) {
-				// Start the search
-				$this->printname = array ();
-				$this->printfamname = array ();
-				$res = search_indis_soundex($this->soundex, $this->lastname, $this->firstname, $this->place, $this->sgeds);
-				if ($res!==false) {
-					while($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-						$indilist[$row['i_id']]["gedcom"] = $row['i_gedcom'];
-						$indilist[$row['i_id']]["isdead"] = $row['i_isdead'];
-						$indilist[$row['i_id']]["gedfile"] = $row['i_file'];
-						$save = true;
-						if ((!empty ($this->place)) || (!empty ($this->year))) {
-							$indirec = $row['i_gedcom'];
-							if ((!empty ($this->place)) &&  empty ($this->lastname) && empty ($this->firstname)) {
-								$savep = false;
-								$pt = preg_match_all("/\d PLAC (.*)/i", $indirec, $match, PREG_PATTERN_ORDER);
-								if ($pt > 0) {
-									$places = array ();
-									for ($pp = 0; $pp < count($match[1]); $pp ++) {
-										$places[$pp] = preg_split("/,\s/", trim($match[1][$pp]));
-									}
-									$cp = count($places);
-									$p = 0;
-									while ($p < $cp && $savep == false) {
-										$pp = 0;
-										while ($pp < count($places[$p]) && $savep == false) {
-											if ($this->soundex == "Russell") {
-												if (soundex(trim($places[$p][$pp])) == $parr)
-												$savep = true;
-											}
-											if ($this->soundex == "DaitchM") {
-												$arr1 = DMsoundex(trim($places[$p][$pp]));
-												$y = 0;
-												while ($y < count($arr1) && $savep == false) {
-													$z = 0;
-													while ($z < count($parr) && $savep == false) {
-														if ($arr1[$y] == $parr[$z])
-														$savep = true;
-														$z ++;
-													}
-													$y ++;
-												}
-											}
-											$pp ++;
-										}
-										$p ++;
-									}
-								}
-								if (empty ($this->lastname) && empty ($this->firstname) && $savep == true)
-								$save = true;
-								else
-								$save = false;
-							}
-							if (!empty ($this->year) && $save == true) {
-								$yt = preg_match("/\d DATE (.*$this->year.*)/i", $indirec, $match);
-								if ($yt == 0)
-								$save = false;
-							}
-						}
-						if ($save === true) {
-							$this->printname[] = array (sortable_name_from_name($row["i_name"]), $row["i_id"], get_gedcom_from_id($row["i_file"]), "");
-							//								break; // leave out if we want all names from one indi shown
-						}
-					}
-						
-				}
+			if ($ged_ids) {
+				$this->myindilist=search_indis_soundex($this->soundex, $this->lastname, $this->firstname, $this->place, $ged_ids);
+			} else {
+				$this->myindilist=array();
 			}
 		}
 
-		// check the result on required characters
-		if (isset ($barr)) {
-			foreach ($this->printname as $pkey => $pname) {
-				$print = true;
-				foreach ($barr as $key => $checkchar) {
-					if (str2upper(substr($pname[0], $checkchar[1], $checkchar[2])) != str2upper($checkchar[0])) {
-						$print = false;
-						break;
-					}
-				}
-				if ($print == false) {
-					unset ($this->printname[$pkey]);
-				}
-			}
-		}
 		// Now we have the final list of indi's to be printed.
 		// We may add the assos at this point.
 
 		if ($this->showasso == "on") {
-			foreach ($this->printname as $key => $pname) {
-				$apid = $pname[1]."[".$pname[2]."]";
-				// Check if associates exist
-				if (isset ($assolist[$apid])) {
-					// if so, print all indi's where the indi is associated to
-					foreach ($assolist[$apid] as $indexval => $asso) {
-						if ($asso["type"] == "indi") {
-							$indi_printed[$indexval] = "1";
-							// print all names
-							foreach ($asso["name"] as $nkey => $assoname) {
-								$key = splitkey($indexval, "id");
-								$this->printname[] = array (sortable_name_from_name($assoname[0]), $key, get_gedcom_from_id($asso["gedfile"]), $apid);
-							}
-						} else
-						if ($asso["type"] == "fam") {
-							$fam_printed[$indexval] = "1";
-							// print all names
-							foreach ($asso["name"] as $nkey => $assoname) {
-								$assosplit = preg_split("/(\s\+\s)/", trim($assoname));
-								// Both names have to have the same direction
-								if (hasRTLText($assosplit[0]) == hasRTLText($assosplit[1])) {
-									$apid2 = splitkey($indexval, "id");
-									$this->printfamname[] = array (check_NN($assoname), $apid2, get_gedcom_from_id($asso["gedfile"]), $apid);
-								}
-							}
-						}
-					}
-					unset ($assolist[$apid]);
+			foreach ($this->myindilist as $indi) {
+				foreach (fetch_linked_indi($indi->getXref(), 'ASSO', $indi->getGedId()) as $asso) {
+					$this->myindilist[]=$asso;
+				}
+				foreach (fetch_linked_fam($indi->getXref(), 'ASSO', $indi->getGedId()) as $asso) {
+					$this->myfamlist[]=$asso;
 				}
 			}
 		}
 
 		//-- if only 1 item is returned, automatically forward to that item
-		if (count($this->printname) == 1 && $this->action!="replace") {
-			$oldged = $GEDCOM;
-			$GEDCOM = $this->printname[0][2];
-			include (get_privacy_file());
-			if (showLivingNameByID($this->printname[0][1]) || displayDetailsByID($this->printname[0][1])) {
-				header("Location: individual.php?pid=".$this->printname[0][1]."&ged=".$this->printname[0][2]);
-				exit;
-			} else {
-				$GEDCOM = $oldged;
-				include (get_privacy_file());
-			}
+		if (count($this->myindilist)==1 && $this->action!="replace") {
+			$indi=$this->myindilist[0];
+			header("Location: ".encode_url($indi->getLinkUrl(), false));
+			exit;
 		}
-		uasort($this->printname, "itemsort");
-		reset($this->printname);
+		usort($this->myindilist, array('GedcomRecord', 'Compare'));
+		usort($this->myfamlist, array('GedcomRecord', 'Compare'));
 	}
 
 	/**
 	 *
 	 */
 	function MultiSiteSearch() {
-		global $REGEXP_DB;
-		require_once ('includes/serviceclient_class.php');
+		require_once ('includes/classes/class_serviceclient.php');
 
 		if (!empty ($this->Sites) && count($this->Sites) > 0) {
 			$this->myindilist = array ();
@@ -911,13 +694,7 @@ class SearchControllerRoot extends BaseController {
 					// Now see if there is a query left after the cleanup
 					if (trim($my_query) != "") {
 						// Cleanup the querystring so it can be used in a database query
-						if (strlen($my_query) == 1)
-						$my_query = preg_replace(array ("/\?/", "/\|/", "/\*/"), array ("\\\?", "\\\|", "\\\\\*"), $my_query);
-						if ($REGEXP_DB)
-						$my_query = preg_replace(array ("/\s+/", "/\(/", "/\)/", "/\//", "/\]/", "/\[/"), array (".*", '\(', '\)', '\/', '\]', '\['), $my_query);
-						else {
-							$my_query = "%".preg_replace("/\s+/", "%", $my_query)."%";
-						}
+						$my_query = "%".preg_replace("/\s+/", "%", $my_query)."%";
 					}
 				}
 
@@ -966,453 +743,98 @@ class SearchControllerRoot extends BaseController {
 						$result = $serviceClient->search($my_query);
 						$this->multisiteResults[$key] = $result;
 					}
-					$i ++;
+					$i++;
 				}
 			}
 		}
 	}
 
 	function printResults() {
-		include_once ("includes/functions_print_lists.php");
-		global $GEDCOM, $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $global_facts, $REGEXP_DB;
+		include_once ("includes/functions/functions_print_lists.php");
+		global $GEDCOM, $GEDCOMS, $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $global_facts;
 		//-- all privacy settings must be global if we are going to load up privacy files
 		global $SHOW_DEAD_PEOPLE,$SHOW_LIVING_NAMES,$SHOW_SOURCES,$MAX_ALIVE_AGE,$USE_RELATIONSHIP_PRIVACY,$MAX_RELATION_PATH_LENGTH;
 		global $CHECK_MARRIAGE_RELATIONS,$PRIVACY_BY_YEAR,$PRIVACY_BY_RESN,$SHOW_PRIVATE_RELATIONSHIPS,$person_privacy,$user_privacy;
 		global $global_facts,$person_facts;
 		$somethingPrinted = false;	// whether anything printed
 		// ---- section to search and display results on a general keyword search
-		if ($this->action == "general" || $this->action=="replace") {
-			if ((isset ($this->query)) && ($this->query != "")) {
-				//--- Results in these tags will be ignored when the tagfilter is on
+		if ($this->action=="general" || $this->action=="soundex" || $this->action=="replace") {
+			if ($this->myindilist || $this->myfamlist || $this->mysourcelist || $this->mynotelist) {
+				echo '<br />';
 
-				// Never show results in _UID
-				$skiptags = "_UID";
-
-				// If not admin, also hide searches in RESN tags
-				if (!PGV_USER_IS_ADMIN) $skiptags .= ", RESN";
-
-				// Add the optional tags
-				if ($this->tagfilter == "on") $skiptags .= ", _PGVU, FILE, FORM, TYPE, CHAN, SUBM, REFN";
-
-				// Keep track of what indis are already printed to keep a reliable counter
-				$indi_printed = array ();
-				$fam_printed = array ();
-
-				// init various counters
-				//		init_list_counters();
-
-				// printqueues for indi's and fams
-				$printindiname = array ();
-				$printfamname = array ();
-				$actualsourcelist = array ();
-
-				// remove the % added for the like comparision of non-regex databases
-				if(!$REGEXP_DB)
-				$this->query = str_replace('%', '.*', substr($this->query, 1, strlen($this->query) - 2));
-
-				$cti = count($this->myindilist);
-				if (($cti > 0) && (isset ($this->srindi))) {
-					$oldged = $GEDCOM;
-					$curged = $GEDCOM;
-
-					// Add the facts in $global_facts that should not show
-					$skiptagsged = $skiptags;
-					foreach ($global_facts as $gfact => $gvalue) {
-						if (isset ($gvalue["show"])) {
-							if (($gvalue["show"] < PGV_USER_ACCESS_LEVEL))
-							$skiptagsged .= ", ".$gfact;
-						}
-					}
-
-					foreach ($this->myindilist as $key => $value) {
-						if (count($this->sgeds) > 1) {
-							$GEDCOM = get_gedcom_from_id(splitkey($key, "ged"));
-							$key = splitkey($key, "id");
-							if ($GEDCOM != $curged) {
-								include (get_privacy_file());
-								$curged = $GEDCOM;
-								// Recalculate the tags to skip
-								$skiptagsged = $skiptags;
-								foreach ($global_facts as $gfact => $gvalue) {
-									if (isset ($gvalue["show"])) {
-										if (($gvalue["show"] < PGV_USER_ACCESS_LEVEL))
-										$skiptagsged .= ", ".$gfact;
-									}
-								}
-							}
-						}
-						//-- make sure that the data that was searched on is not in a private part of the record
-						$hit = false;
-						if (!displayDetailsById($key) && showLivingNameById($key)) {
-							//-- any record that is not a FAMC, FAMS is private
-							$ncnt = count($value["names"]);
-							$found = false;
-							for ($ci = 1; $ci <= $ncnt; $ci ++) {
-								$record = get_sub_record($ci, "1 NAME", $value["gedcom"]);
-								if (preg_match("/".$this->query."/i", $record) > 0) {
-									$hit = true;
-									$found = true;
-								}
-							}
-						} else {
-							$found = false;
-							// First check if the hit is in the key!
-							if ($this->tagfilter == "off") {
-								if (strpos(str2upper($key), str2upper($this->query)) !== false)
-								$found = true;
-							}
-							if ($found == false) {
-								$recs = get_all_subrecords($value["gedcom"], "", false, false, false);
-								// Also levels>1 must be checked for tags. This is done below.
-								foreach ($recs as $keysr => $subrec) {
-									$recs2 = preg_split("/\r?\n/", $subrec);
-									foreach ($recs2 as $keysr2 => $subrec2) {
-										// There must be a hit in a subrec. If found, check in which tag
-										if (preg_match("/$this->query/i", $subrec2, $result) > 0) {
-											$ct = preg_match("/\d\s(\S*)\s*.*/i", $subrec2, $result2);
-											if (($ct > 0) && (!empty ($result2[1]))) {
-												// if the tag can be displayed, do so
-												if (strpos($skiptagsged, $result2[1]) === false) {
-													$hit = true;
-													$found = true;
-												} else {
-													if (strpos($skiptags, $result2[1]) !== false) {
-														// Hit is hidden because we don't want to know about it
-														$hit = false;
-														$found = false;
-													} else {
-														// Hit is hidden because of Fact Privacy settings
-														$hit = true;
-														$found = false;
-													}
-												}
-											}
-										}
-										if ($found == true)
-										break;
-									}
-									if ($found == true)
-									break;
-								}
-							}
-						}
-						if ($found == true) {
-
-							// print all names from the indi found
-							foreach ($value["names"] as $indexval => $namearray) {
-								$printindiname[] = array (check_NN(sortable_name_from_name($namearray[0])), $key, get_gedcom_from_id($value["gedfile"]), "");
-							}
-							$indi_printed[$key."[".$GEDCOM."]"] = "1";
-
-							// If associates must be shown, see if we can display them and add them to the print array
-							if (($this->showasso == "on") && (strpos($skiptagsged, "ASSO") === false)) {
-								$apid = $key."[".$value["gedfile"]."]";
-								// Check if associates exist
-								if (isset ($assolist[$apid])) {
-									// if so, print all indi's where the indi is associated to
-									foreach ($assolist[$apid] as $indexval => $asso) {
-										if ($asso["type"] == "indi") {
-											$indi_printed[$indexval] = "1";
-											// print all names
-											foreach ($asso["name"] as $nkey => $assoname) {
-												$key = splitkey($indexval, "id");
-												$printindiname[] = array (sortable_name_from_name($assoname[0]), $key, get_gedcom_from_id($asso["gedfile"]), $apid);
-											}
-										} else
-										if ($asso["type"] == "fam") {
-											$fam_printed[$indexval] = "1";
-											// print all names
-											foreach ($asso["name"] as $nkey => $assoname) {
-												$assosplit = preg_split("/(\s\+\s)/", trim($assoname));
-												// Both names have to have the same direction
-												if (hasRTLText($assosplit[0]) == hasRTLText($assosplit[1])) {
-													$apid2 = splitkey($indexval, "id");
-													$printfamname[] = array (check_NN($assoname), $apid2, get_gedcom_from_id($asso["gedfile"]), $apid);
-												}
-											}
-										}
-									}
-								}
-							}
-						} else
-						if ($hit == true)
-						$this->indi_hide[$key."[".get_gedcom_from_id($value["gedfile"])."]"] = 1;
-					}
-					$GEDCOM = $oldged;
-				}
-				// Process the fams
-				$ctf = count($this->myfamlist);
-				if ($ctf > 0 || count($printfamname) > 0) {
-					$oldged = $GEDCOM;
-					$curged = $GEDCOM;
-
-					// Add the facts in $global_facts that should not show
-					$skiptagsged = $skiptags;
-					foreach ($global_facts as $gfact => $gvalue) {
-						if (isset ($gvalue["show"])) {
-							if (($gvalue["show"] < PGV_USER_ACCESS_LEVEL))
-							$skiptagsged .= ", ".$gfact;
-						}
-					}
-
-					foreach ($this->myfamlist as $key => $value) {
-						if (count($this->sgeds) > 1) {
-							$GEDCOM = splitkey($key, "ged");
-							$key = splitkey($key, "id");
-							if ($GEDCOM != $curged) {
-								include (get_privacy_file());
-								$curged = $GEDCOM;
-								// Recalculate the tags to skip
-								$skiptagsged = $skiptags;
-								foreach ($global_facts as $gfact => $gvalue) {
-									if (isset ($gvalue["show"])) {
-										if (($gvalue["show"] < PGV_USER_ACCESS_LEVEL))
-										$skiptagsged .= ", ".$gfact;
-									}
-								}
-							}
-						}
-
-						// lets see where the hit is
-						$found = false;
-						// If a name is hit, no need to check for tags
-						foreach ($value["name"] as $nkey => $famname) {
-							if ((preg_match("/".$this->query."/i", $famname)) > 0) {
-								$found = true;
-								break;
-							}
-						}
-						$hit = false;
-						// First check if the hit is in the key!
-						if (($this->tagfilter == "off") && ($found == false)) {
-							if (strpos(str2upper($key), str2upper($this->query)) !== false) {
-								$found = true;
-								$hit = true;
-							}
-						}
-						// If no hit in a name or ID, check if there is a hit on a valid tag
-						if ($found == false) {
-							$recs = get_all_subrecords($value["gedcom"], $skiptagsged, false, false, false);
-							// Also levels>1 must be checked for tags. This is done below.
-							foreach ($recs as $keysr => $subrec) {
-								$recs2 = preg_split("/\r?\n/", $subrec);
-								foreach ($recs2 as $keysr2 => $subrec2) {
-									// There must be a hit in a subrec. If found, check in which tag
-									if (preg_match("/$this->query/i", $subrec2, $result) > 0) {
-										$ct = preg_match("/\d.(\S*).*/i", $subrec2, $result2);
-										if (($ct > 0) && (!empty ($result2[1]))) {
-											// if the tag can be displayed, do so
-											if (strpos($skiptagsged, $result2[1]) === false) {
-												$hit = true;
-												$found = true;
-											} else {
-												if (strpos($skiptags, $result2[1]) !== false) {
-													// Hit is hidden because we don't want to know about it
-													$hit = false;
-													$found = false;
-												} else {
-													// Hit is hidden because of Fact Privacy settings
-													$hit = true;
-													$found = false;
-												}
-											}
-										}
-									}
-									if ($found == true)
-									break;
-								}
-								if ($found == true)
-								break;
-							}
-						}
-						if ($found == true) {
-							foreach ($value["name"] as $namekey => $famname) {
-								$famsplit = preg_split("/(\s\+\s)/", trim($famname));
-								// Both names have to have the same direction
-								if (hasRTLText($famsplit[0]) == hasRTLText($famsplit[1])) {
-									// do not print if the hit only in the second name. We want it first.
-									if (!((preg_match("/".$this->query."/i", $famsplit[0]) == 0) && (preg_match("/".$this->query."/i", $famsplit[1]) > 0))) {
-										$printfamname[] = array (check_NN($famname), $key, get_gedcom_from_id($value["gedfile"]), "");
-									}
-								}
-							}
-							$fam_printed[$key."[".$GEDCOM."]"] = "1";
-						} else
-						if ($hit == true)
-						$this->fam_hide[$key."[".get_gedcom_from_id($value["gedfile"])."]"] = 1;
-					}
-					uasort($printfamname, "itemsort");
-					$GEDCOM = $oldged;
-				}
-				$cts = count($this->mysourcelist);
-				if ($cts > 0) {
-					uasort($this->mysourcelist, "itemsort");
-					$oldged = $GEDCOM;
-					$curged = $GEDCOM;
-
-					// Add the facts in $global_facts that should not show
-					$skiptagsged = $skiptags;
-					foreach ($global_facts as $gfact => $gvalue) {
-						if (isset ($gvalue["show"])) {
-							if (($gvalue["show"] < PGV_USER_ACCESS_LEVEL))
-							$skiptagsged .= ", ".$gfact;
-						}
-					}
-
-					foreach ($this->mysourcelist as $key => $value) {
-						if (count($this->sgeds) > 1) {
-							$GEDCOM = splitkey($key, "ged");
-							$key = splitkey($key, "id");
-							if ($curged != $GEDCOM) {
-								include (get_privacy_file());
-								$curged = $GEDCOM;
-								// Recalculate the tags to skip
-								$skiptagsged = $skiptags;
-								foreach ($global_facts as $gfact => $gvalue) {
-									if (isset ($gvalue["show"])) {
-										if (($gvalue["show"] < PGV_USER_ACCESS_LEVEL))
-										$skiptagsged .= ", ".$gfact;
-									}
-								}
-							}
-						}
-						$found = false;
-						$hit = false;
-						// First check if the hit is in the key!
-						if ($this->tagfilter == "off") {
-							if (strpos(str2upper($key), str2upper($this->query)) !== false) {
-								$found = true;
-								$hit = true;
-							}
-						}
-						if ($found == false) {
-							$recs = get_all_subrecords($value["gedcom"], $skiptagsged, false, false, false);
-							// Also levels>1 must be checked for tags. This is done below.
-							foreach ($recs as $keysr => $subrec) {
-								$recs2 = preg_split("/[\r\n]+/", $subrec);
-								foreach ($recs2 as $keysr2 => $subrec2) {
-									// There must be a hit in a subrec. If found, check in which tag
-									if (preg_match("/$this->query/i", $subrec2, $result) > 0) {
-										$ct = preg_match("/\d.(\S*).*/i", $subrec2, $result2);
-										if (($ct > 0) && (!empty ($result2[1]))) {
-											// if the tag can be displayed, do so
-											if (strpos($skiptagsged, $result2[1]) === false) {
-												$hit = true;
-												$found = true;
-											} else {
-												if (strpos($skiptags, $result2[1]) !== false) {
-													// Hit is hidden because we don't want to know about it
-													$hit = false;
-													$found = false;
-												} else {
-													// Hit is hidden because of Fact Privacy settings
-													$hit = true;
-													$found = false;
-												}
-											}
-										}
-									}
-									if ($found == true)
-									break;
-								}
-								if ($found == true)
-								break;
-							}
-						}
-						if ($found == true)
-						$actualsourcelist[$key] = $value;
-						else
-						if ($hit == true)
-						$this->source_hide[$key."[".get_gedcom_from_id($value["gedfile"])."]"] = 1;
-					}
-					$GEDCOM = $oldged;
-				}
-				// Start output here, because from the indi's we may have printed some fams which need the column header.
-				print "<br />";
-				print "\n\t<div class=\"center\">\n";
-
-				//-- [start] new code for sortable tables
-				global $gGedcom;
-				$oldged = $GEDCOM;
-				foreach ($this->sgeds as $key=>$GEDCOM) {
-					require(get_privacy_file());
+				$OLD_GEDCOM=$GEDCOM;
+				// Split individuals by gedcom
+				foreach ($this->sgeds as $gedcom) {
 					$datalist = array();
-					foreach ($printindiname as $k=>$v) if ($v[2]==$GEDCOM) $datalist[$v[1]]=array("gid"=>$v[1]);
-					// I removed the "name"=>$v[0] from the $datalist[$v[1]]=array("gid"=>$v[1], "name"=>$v[0]);
-					// array because it contained an alternate name instead of the expected main name
-					if ( count($datalist) > 0 ) {
-						$somethingPrinted = true;
+					foreach ($this->myindilist as $individual) {
+						if ($individual->getGedId()==get_id_from_gedcom($gedcom)) {
+							$datalist[]=$individual;
+						}
 					}
-					print_indi_table($datalist, $pgv_lang["individuals"]." : &laquo;".$this->myquery."&raquo; @ ".$gGedcom->mGedcomName);
+					if ($datalist) {
+						$somethingPrinted = true;
+						usort($datalist, array('GedcomRecord', 'Compare'));
+						$GEDCOM=$gedcom;
+						print_indi_table($datalist, $pgv_lang['individuals'].' : &laquo;'.$this->myquery.'&raquo; @ '.PrintReady($GEDCOMS[$gedcom]['title'], true));
+					}
 				}
-				foreach ($this->sgeds as $key=>$GEDCOM) {
-					require(get_privacy_file());
+				// Split families by gedcom
+				foreach ($this->sgeds as $gedcom) {
 					$datalist = array();
-					foreach ($printfamname as $k=>$v) if ($v[2]==$GEDCOM) $datalist[]=$v[1];
-					if ( count($datalist) > 0 ) {
-						$somethingPrinted = true;
+					foreach ($this->myfamlist as $family) {
+						if ($family->getGedId()==get_id_from_gedcom($gedcom)) {
+							$datalist[]=$family;
+						}
 					}
-					print_fam_table(array_unique($datalist), $pgv_lang["families"]." : &laquo;".$this->myquery."&raquo; @ ".$gGedcom->mGedcomName);
+					if ($datalist) {
+						$somethingPrinted = true;
+						usort($datalist, array('GedcomRecord', 'Compare'));
+						$GEDCOM=$gedcom;
+						print_fam_table($datalist, $pgv_lang['families'].' : &laquo;'.$this->myquery.'&raquo; @ '.PrintReady($GEDCOMS[$gedcom]['title'], true));
+					}
 				}
-				foreach ($this->sgeds as $key=>$GEDCOM) {
-					require(get_privacy_file());
+				// Split sources by gedcom
+				foreach ($this->sgeds as $gedcom) {
 					$datalist = array();
-					foreach ($actualsourcelist as $k=>$v) if ($v["gedfile"]==$gGedcom[$GEDCOM]["id"]) $datalist[]=$k;
-					if ( count($datalist) > 0 ) {
-						$somethingPrinted = true;
+					foreach ($this->mysourcelist as $source) {
+						if ($source->getGedId()==get_id_from_gedcom($gedcom)) {
+							$datalist[]=$source;
+						}
 					}
-					print_sour_table(array_unique($datalist), $pgv_lang["sources"]." : &laquo;".$this->myquery."&raquo; @ ".$gGedcom->mGedcomName);
+					if ($datalist) {
+						$somethingPrinted = true;
+						usort($datalist, array('GedcomRecord', 'Compare'));
+						$GEDCOM=$gedcom;
+						print_sour_table($datalist, $pgv_lang['sources'].' : &laquo;'.$this->myquery.'&raquo; @ '.PrintReady($GEDCOMS[$gedcom]['title'], true));
+					}
 				}
-				$GEDCOM = $oldged;
-				require(get_privacy_file());
-				//-- [end] new code for sortable tables
-				print "</div>";
+				// Split notes by gedcom
+				foreach ($this->sgeds as $gedcom) {
+					$datalist = array();
+					foreach ($this->mynotelist as $note) {
+						if ($note->getGedId()==get_id_from_gedcom($gedcom)) {
+							$datalist[]=$note;
+						}
+					}
+					if ($datalist) {
+						$somethingPrinted = true;
+						usort($datalist, array('GedcomRecord', 'Compare'));
+						$GEDCOM=$gedcom;
+						print_note_table($datalist, $pgv_lang['notes'].' : &laquo;'.$this->myquery.'&raquo; @ '.PrintReady($GEDCOMS[$gedcom]['title'], true));
+					}
+				}
+				$GEDCOM=$OLD_GEDCOM;
 			} else
 			if (isset ($this->query)) {
-				print "<br /><div class=\"warning\" style=\" text-align: center;\"><i>".$pgv_lang["no_results"]."</i><br />\n\t\t";
-				if (!isset ($this->srindi) && !isset ($this->srfams) && !isset ($this->srsour)) {
-					print "<i>".$pgv_lang["no_search_for"]."</i><br /></div>\n\t\t";
+				print "<br /><div class=\"warning\" style=\" text-align: center;\"><i>".$pgv_lang["no_results"]."</i><br />";
+				if (!isset ($this->srindi) && !isset ($this->srfams) && !isset ($this->srsour) && !isset ($this->srnote)) {
+					print "<i>".$pgv_lang["no_search_for"]."</i><br />";
 				}
+				echo '</div>';
 			}
 			// Prints the Paged Results: << 1 2 3 4 >> links if there are more than $this->resultsPerPage results
 			if ($this->resultsPerPage >= 1 && $this->totalGeneralResults > $this->resultsPerPage) {
 				$this->printPageResultsLinks($this->inputFieldNames, $this->totalGeneralResults, $this->resultsPerPage);
-			}
-		}
-
-		//----- section to search and display results for a Soundex Search
-		if ($this->action == "soundex") {
-			if ($this->soundex == "DaitchM")
-			DMsoundex("", "closecache");
-			print "<br />";
-			print "\n\t<div class=\"center\">\n";
-			global $gGedcom;
-			$oldged = $GEDCOM;
-			$this->myquery = trim($this->mylastname." ".$this->myfirstname." ".$this->myplace." ".$this->myyear);
-			foreach ($this->sgeds as $key=>$GEDCOM) {
-				require(get_privacy_file());
-				$datalist = array();
-				foreach ($this->printname as $k=>$v) if ($v[2]==$GEDCOM) $datalist[]=$v[1];
-				if ( count($datalist) > 0 ) {
-					$somethingPrinted = true;
-				}
-				print_indi_table(array_unique($datalist), $pgv_lang["individuals"]." : &laquo;".$this->myquery."&raquo; @ ".$gGedcom->mGedcomName);
-			}
-			foreach ($this->sgeds as $key=>$GEDCOM) {
-				require(get_privacy_file());
-				$datalist = array();
-				foreach ($this->printfamname as $k=>$v) if ($v[2]==$GEDCOM) $datalist[]=$v[1];
-				if ( count($datalist) > 0 ) {
-					$somethingPrinted = true;
-				}
-				print_fam_table(array_unique($datalist), $pgv_lang["families"]." : &laquo;".$this->myquery."&raquo; @ ".$gGedcom->mGedcomName);
-			}
-			$GEDCOM = $oldged;
-			print "</div>";
-
-			// Prints the Paged Results: << 1 2 3 4 >> links if there are more than $this->resultsPerPage results
-			if ($this->resultsPerPage >= 1 && $this->totalResults > $this->resultsPerPage) {
-				$this->printPageResultsLinks($this->inputFieldNames, $this->totalResults, $this->resultsPerPage);
 			}
 		}
 
@@ -1434,14 +856,14 @@ class SearchControllerRoot extends BaseController {
 					$no_results_found = false;
 					// Start output here, because from the indi's we may have printed some fams which need the column header.
 					print "<br />";
-					print "\n\t<div class=\"center\">";
+					print "<div class=\"center\">";
 
 					if (isset ($this->multisiteResults) && (count($this->multisiteResults) > 0)) {
 						$this->totalResults = 0;
 						$this->multiTotalResults = 0;
-						$somethingPrinted = true;	
+						$somethingPrinted = true;
 						foreach ($this->multisiteResults as $key => $siteResults) {
-							include_once('includes/serviceclient_class.php');
+							include_once('includes/classes/class_serviceclient.php');
 							$serviceClient = ServiceClient :: getInstance($key);
 							$siteName = $serviceClient->getServiceTitle();
 							$siteURL = dirname($serviceClient->getURL());
@@ -1470,16 +892,13 @@ class SearchControllerRoot extends BaseController {
 												print "<tr><td><table id=\"multiResultsInTbl\" align=\"center\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" ><tr>";
 											}
 											$displayed_once = true;
-											print "<td class=\"list_label\" colspan=\"2\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" >".$pgv_lang["site_list"]."<a href=\"".$siteURL."\" target=\"_blank\">".$siteName."</a>".$pgv_lang["site_had"]."</td></tr>";
+											print "<td class=\"list_label\" colspan=\"2\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" >".$pgv_lang["site_list"]."<a href=\"".encode_url($siteURL)."\" target=\"_blank\">".$siteName."</a>".$pgv_lang["site_had"]."</td></tr>";
 										}
 										print "<tr><td class=\"list_value $TEXT_DIRECTION\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" valign=\"center\" ><ul>";
 										print "<li class=\"$TEXT_DIRECTION\" dir=\"$TEXT_DIRECTION\">";
-										print "<a href=\"".$siteURL."/individual.php?pid=".$person->PID."&amp;ged=";
-										print $serviceClient->gedfile;
-										print "\" target=\"_blank\">";
-										$indiName = sortable_name_from_name($person->gedcomName);
+										print "<a href=\"".encode_url("{$siteURL}/individual.php?pid={$person->PID}&ged={$serviceClient->gedfile}")."\" target=\"_blank\">";
 										$pageResultsNum += 1;
-										print "<b>".$indiName."</b>";
+										print "<b>".$person->getFullName()."</b>";
 										if (!empty ($person->PID)) {
 											print " (".$person->PID.")";
 										}
@@ -1497,7 +916,7 @@ class SearchControllerRoot extends BaseController {
 
 										/*******************************  Remote Links Per Result *************************************************/
 										if (PGV_USER_CAN_EDIT) {
-											print "<td class=\"list_value $TEXT_DIRECTION\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" >"."<ul style=\"list-style: NONE\"><li><a href=\"javascript:;\" "."onclick=\"return open_link('".$key."', '".$person->PID."', '".$indiName."');\">"."<b>".$pgv_lang["title_search_link"]."</b></a></ul></li></td></tr>\n";
+											print "<td class=\"list_value $TEXT_DIRECTION\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" >"."<ul style=\"list-style: NONE\"><li><a href=\"javascript:;\" "."onclick=\"return open_link('".$key."', '".$person->PID."', '".$person->getFullName()."');\">"."<b>".$pgv_lang["title_search_link"]."</b></a></ul></li></td></tr>\n";
 										}
 									}
 								}
@@ -1514,8 +933,9 @@ class SearchControllerRoot extends BaseController {
 							} else
 							print "</tr></table>";
 						}
-						print "</table></div>";
+						print "</table>";
 					}
+					echo '</div>';
 					if (!$no_results_found && $this->multiTotalResults == 0 && (isset ($this->multiquery) || isset ($this->name) || isset ($this->birthdate) || isset ($this->birthplace) || isset ($this->deathdate) || isset ($this->deathplace) || isset ($this->gender))) {
 						print "<table align=\"center\" \><td class=\"warning\" style=\" text-align: center;\"><font color=\"red\"><b><i>".$pgv_lang["no_results"]."</i></b></font><br /></td></tr></table>";
 					}
@@ -1621,25 +1041,19 @@ class SearchControllerRoot extends BaseController {
 		*/
 	function printQueryString($inputFieldNames, $pageNum) {
 		global $GEDCOM;
-		$first = true;
-		print "search.php";
+		$tempURL = "search.php?ged={$GEDCOM}";
 		foreach ($inputFieldNames as $key => $value) {
 			$controllerVar = $this->getValue($value);
 			if (!empty ($controllerVar)) {
-				if ($first) {
-					print "?";
-					$first = false;
-				} else
-				print "&amp;";
-				print "$value=".$controllerVar;
+				$tempURL .= "&{$value}={$controllerVar}";
 			}
 		}
-		print "&amp;resultsPageNum=".$pageNum;
+		$tempURL .= "&resultsPageNum={$pageNum}";
 		foreach($this->sgeds as $i=>$key) {
 			$str = preg_replace(array ("/\./", "/-/", "/ /"), array ("_", "_", "_"), $key);
-			print "&amp;".$str."=yes";
+			$tempURL .= "&{$str}=yes";
 		}
-		print "&amp;ged=".$GEDCOM;
+		print encode_url($tempURL);
 	}
 
 	function getValue($varName) {
@@ -1659,6 +1073,5 @@ if (file_exists('includes/controllers/search_ctrl_user.php')) {
 	class SearchController extends SearchControllerRoot {
 	}
 }
-$controller = new SearchController();
-$controller->init();
+
 ?>

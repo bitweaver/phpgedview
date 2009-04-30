@@ -3,7 +3,7 @@
  * Controller for the Descendancy Page
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007	John Finlay and Others
+ * Copyright (C) 2002 to 2008	PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,12 @@
  * @version $Id$
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_DESCENDANCY_PHP', '');
 
 /**
  * Initialization
@@ -42,13 +44,12 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require_once 'includes/controllers/basecontrol.php';
-require_once("includes/functions_charts.php");
+require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_charts.php');
 
 loadLangFile("pgv_confighelp");
 
-require_once 'includes/menu.php';
-require_once 'includes/person_class.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_person.php');
 
 $indifacts = array();			 // -- array to store the fact records in for sorting and displaying
 $globalfacts = array();
@@ -70,8 +71,6 @@ $nonfamfacts[] = "";
  * Main controller class for the individual page.
  */
 class DescendancyControllerRoot extends BaseController {
-	var $show_changes = "yes";
-	var $action = "";
 	var $pid = "";
 	var $descPerson = null;
 
@@ -89,7 +88,6 @@ class DescendancyControllerRoot extends BaseController {
 	var $chart_style;
 	var $sexarray = array();
 	var $generations;
-	var $view;
 	var $personcount;
 	var $box_width;
 	var $Dbwidth;
@@ -113,37 +111,30 @@ class DescendancyControllerRoot extends BaseController {
 	 * Initialization function
 	 */
 	function init() {
-	global $USE_RIN, $MAX_ALIVE_AGE, $bwidth, $bheight, $pbwidth, $pbheight, $GEDCOM, $GEDCOM_DEFAULT_TAB, $pgv_changes, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
-	global $show_full;
+	global $USE_RIN, $MAX_ALIVE_AGE, $bwidth, $bheight, $pbwidth, $pbheight, $GEDCOM, $GEDCOM_DEFAULT_TAB, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS, $DEFAULT_PEDIGREE_GENERATIONS, $show_full;
 
 	$this->sexarray["M"] = $pgv_lang["male"];
 	$this->sexarray["F"] = $pgv_lang["female"];
 	$this->sexarray["U"] = $pgv_lang["unknown"];
 
-	//set arguments
-	if (isset($_REQUEST["show_full"])) $this->show_full = $_REQUEST["show_full"];
-	else $this->show_full = 1;
-	$show_full = $this->show_full;
-	if (!empty($_REQUEST["chart_style"])) $this->chart_style = $_REQUEST["chart_style"];
-	else $this->chart_style = 0;
-	if (!empty($_REQUEST["generations"])) $this->generations = $_REQUEST["generations"];
-	else $this->generations = 2;
-	if ($this->generations > $MAX_DESCENDANCY_GENERATIONS) $this->generations = $MAX_DESCENDANCY_GENERATIONS;
+	// Extract parameters from form
+	$this->pid        =safe_GET_xref('pid');
+	$this->show_full  =safe_GET('show_full', array('0', '1'), $PEDIGREE_FULL_DETAILS);
+	$this->chart_style=safe_GET_integer('chart_style', 0, 3, 0);
+	$this->generations=safe_GET_integer('generations', 2, $MAX_DESCENDANCY_GENERATIONS, $DEFAULT_PEDIGREE_GENERATIONS);
+	$this->box_width  =safe_GET_integer('box_width',   50, 300, 100);
+
+	// This is passed as a global.  A parameter would be better...
+	$show_full=$this->show_full;
+
 	if (!isset($this->view)) $this->view="";
 	if (!isset($this->personcount)) $this->personcount = 1;
 
-	// -- size of the boxes
-	if (!isset($_REQUEST["box_width"])) $this->box_width = "100";
-	else $this->box_width = $_REQUEST["box_width"];
-	if (empty($this->box_width)) $this->box_width = "100";
-	$this->box_width=max($this->box_width, 50);
-	$this->box_width=min($this->box_width, 300);
 	$this->Dbwidth*=$this->box_width/100;
 
 	if (!$this->show_full) {
 		$bwidth *= $this->box_width / 150;
-	}
-	else {
+	} else {
 		$bwidth*=$this->box_width/100;
 	}
 
@@ -154,27 +145,22 @@ class DescendancyControllerRoot extends BaseController {
 	$pbwidth = $bwidth+12;
 	$pbheight = $bheight+14;
 
-	if (!empty($_REQUEST["show_changes"])) $this->show_changes = $_REQUEST["show_changes"];
-	if (!empty($_REQUEST["action"])) $this->action = $_REQUEST["action"];
-	if (!empty($_REQUEST["pid"])) $this->pid = strtoupper($_REQUEST["pid"]);
+	$this->show_changes=safe_GET('show_changes');
+	$this->action      =safe_GET('action');
 
-	// -- root id
-	if (!isset($this->pid)) $this->pid="";
-	$this->pid = clean_input($this->pid);
+	// Validate form variables
 	$this->pid=check_rootid($this->pid);
-
-	if ((DisplayDetailsByID($this->pid))||(showLivingNameByID($this->pid))) $this->name = get_person_name($this->pid);
-	else $this->name = $pgv_lang["private"];
 
 	if (strlen($this->name)<30) $this->cellwidth="420";
 	else $this->cellwidth=(strlen($this->name)*14);
 
 	$this->descPerson = Person::getInstance($this->pid);
+	$this->name=$this->descPerson->getFullName();
 
 	//-- if the person is from another gedcom then forward to the correct site
 	/*
 	if ($this->indi->isRemote()) {
-		header('Location: '.preg_replace("/&amp;/", "&", $this->indi->getLinkUrl()));
+		header('Location: '.encode_url(decode_url($this->indi->getLinkUrl(), false)));
 		exit;
 	}
 	*/
@@ -205,8 +191,7 @@ class DescendancyControllerRoot extends BaseController {
 	 * @param int $depth the descendancy depth to show
 	 */
 	function print_child_family(&$person, $depth, $label="1.", $gpid="") {
-		global $pgv_lang;
-		global $PGV_IMAGE_DIR, $PGV_IMAGES, $personcount;
+		global $personcount;
 
 		if (is_null($person)) return;
 		$families = $person->getSpouseFamilies();
@@ -214,12 +199,10 @@ class DescendancyControllerRoot extends BaseController {
 		foreach($families as $famid => $family) {
 			print_sosa_family($family->getXref(), "", -1, $label, $person->getXref(), $gpid, $personcount);
 			$personcount++;
-			//$children = get_children_ids($famids);
 			$children = $family->getChildren();
 			$i=1;
-
-			foreach ($children as $childid => $child) {
-			$this->print_child_family($child, $depth-1, $label.($i++).".", $person->getXref());
+			foreach ($children as $child) {
+				$this->print_child_family($child, $depth-1, $label.($i++).".", $person->getXref());
 			}
 		}
 	}
@@ -257,7 +240,7 @@ function print_child_descendancy(&$person, $depth) {
 			$parid=$parents["HUSB"];
 			if ($parid=="") $parid=$parents["WIFE"];
 			if ($parid!="") {
-				print_url_arrow($parid.$personcount.$person->getXref(), "?pid=$parid&amp;generations=$this->generations&amp;chart_style=$this->chart_style&amp;show_full=$this->show_full&amp;box_width=$this->box_width", $pgv_lang["start_at_parents"], 2);
+				print_url_arrow($parid.$personcount.$person->getXref(), encode_url("?pid={$parid}&generations={$this->generations}&chart_style={$this->chart_style}&show_full={$this->show_full}&box_width={$this->box_width}"), $pgv_lang["start_at_parents"], 2);
 				$personcount++;
 			}
 		}
@@ -319,8 +302,9 @@ function print_family_descendancy(&$person, &$family, $depth) {
 		print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" height=\"2\" width=\"".($Dindent+4)."\" border=\"0\" alt=\"\" />";
 		print "<span class=\"details1\" style=\"white-space: nowrap; \" >";
 		print "<a href=\"#\" onclick=\"expand_layer('".$famid.$personcount."'); return false;\" class=\"top\"><img id=\"".$famid.$personcount."_img\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["minus"]["other"]."\" align=\"middle\" hspace=\"0\" vspace=\"3\" border=\"0\" alt=\"".$pgv_lang["view_family"]."\" /></a> ";
-		echo "<a href=\"family.php?famid=$famid&amp;ged=$GEDCOM\" class=\"details1\">";
-		if (showFact("MARR", $famid)) print_simple_fact($famrec, "MARR", $id);
+		echo '<a href="', encode_url("family.php?famid={$famid}&ged={$GEDCOM}"), '" class="details1">';
+		$marriage = $family->getMarriage();
+		if ($marriage->canShow()) $marriage->print_simple_fact();
 		else print $pgv_lang["private"];
 		echo "</a>";
 		print "</span>";
@@ -342,7 +326,7 @@ function print_family_descendancy(&$person, &$family, $depth) {
 				$parid=$parents["HUSB"];
 				if ($parid=="") $parid=$parents["WIFE"];
 				if ($parid!="") {
-					print_url_arrow($parid.$personcount.$person->getXref(), "?pid=$parid&amp;generations=$this->generations&amp;show_full=$this->show_full&amp;box_width=$this->box_width", $pgv_lang["start_at_parents"], 2);
+					print_url_arrow($parid.$personcount.$person->getXref(), encode_url("?pid={$parid}&generations={$this->generations}&show_full={$this->show_full}&box_width={$this->box_width}"), $pgv_lang["start_at_parents"], 2);
 					$personcount++;
 				}
 			}
@@ -357,7 +341,7 @@ function print_family_descendancy(&$person, &$family, $depth) {
 		else print $factarray["NCHI"].": ".count($children);
 		print "</td></tr></table>";
 		print "</li>\r\n";
-		if ($depth>0) foreach ($children as $childid => $child) {
+		if ($depth>0) foreach ($children as $child) {
 			$personcount++;
 			$this->print_child_descendancy($child, $depth-1);
 		}
@@ -381,6 +365,4 @@ else
 	}
 }
 
-$controller = new DescendancyController();
-$controller->init();
 ?>

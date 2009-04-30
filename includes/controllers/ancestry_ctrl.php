@@ -3,7 +3,7 @@
  * Controller for the Ancestry Page
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007	John Finlay and Others
+ * Copyright (C) 2002 to 2008	PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,12 @@
  * @version $Id$
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_ANCESTRY_CTRL_PHP', '');
 
 /**
  * Initialization
@@ -42,11 +44,10 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require_once("includes/functions_charts.php");
-require_once 'includes/controllers/basecontrol.php';
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_charts.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
 
 loadLangFile("pgv_confighelp");
-
 
 $indifacts = array();			 // -- array to store the fact records in for sorting and displaying
 $globalfacts = array();
@@ -67,8 +68,6 @@ $nonfamfacts[] = "";
  * Main controller class for the Ancestry page.
  */
 class AncestryControllerRoot extends BaseController {
-	var $show_changes = "yes";
-	var $action = "";
 	var $pid = "";
 
 	var $user = false;
@@ -76,13 +75,8 @@ class AncestryControllerRoot extends BaseController {
 	var $visibility = "visible";
 	var $position = "relative";
 	var $display = "block";
-	var $view;
-	var $max_generation;
 	var $show_cousins;
 	var $rootid;
-	var $min_generation;
-	//var	$Dbwidth;
-	//var $Dbheight;
 	var $name;
 	var $addname;
 	var $OLD_PGENS;
@@ -100,48 +94,27 @@ class AncestryControllerRoot extends BaseController {
 	 * Initialization function
 	 */
 	function init() {
-		global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $bwidth, $bheight, $pbwidth, $pbheight, $GEDCOM_DEFAULT_TAB, $pgv_changes, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
+		global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $bwidth, $bheight, $pbwidth, $pbheight, $GEDCOM_DEFAULT_TAB, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
 		global $DEFAULT_PEDIGREE_GENERATIONS, $PEDIGREE_GENERATIONS, $MAX_PEDIGREE_GENERATIONS, $OLD_PGENS, $box_width, $Dbwidth, $Dbheight;
 		global $show_full;
 
-		// -- args
-		if (isset($_REQUEST["show_full"])) $this->show_full = $_REQUEST["show_full"];
-		else $this->show_full = 1;
-		$show_full = $this->show_full;
+		// Extract form parameters
+		$this->rootid        =safe_GET_xref('rootid');
+		$this->show_full     =safe_GET('show_full',    array('0', '1'), $PEDIGREE_FULL_DETAILS);
+		$this->show_cousins  =safe_GET('show_cousins', array('0', '1'), '0');
+		$this->chart_style   =safe_GET_integer('chart_style',          0, 3, 0);
+		$box_width           =safe_GET_integer('box_width',            50, 300, 100);
+		$PEDIGREE_GENERATIONS=safe_GET_integer('PEDIGREE_GENERATIONS', 2, $MAX_PEDIGREE_GENERATIONS, $DEFAULT_PEDIGREE_GENERATIONS);
 
-		if (isset($_REQUEST["chart_style"])) $this->chart_style = $_REQUEST["chart_style"];
-		else $this->chart_style = 0;
-		if (isset($_REQUEST["show_cousins"])) $this->show_cousins = $_REQUEST["show_cousins"];
-		else $this->show_cousins = 0;
-		//if (!isset($this->chart_style)) $this->chart_style = 0;
-		//if ($this->chart_style=="") $this->chart_style = 0;
-		//if (!isset($this->show_cousins)) $this->show_cousins = 0;
-		//if ($this->show_cousins == "") $this->show_cousins = 0;
-		if ((!isset($PEDIGREE_GENERATIONS)) || ($PEDIGREE_GENERATIONS == "")) $PEDIGREE_GENERATIONS = $DEFAULT_PEDIGREE_GENERATIONS;
+		// This is passed as a global.  A parameter would be better...
+		$show_full=$this->show_full;
 
-		if ($PEDIGREE_GENERATIONS > $MAX_PEDIGREE_GENERATIONS) {
-			$PEDIGREE_GENERATIONS = $MAX_PEDIGREE_GENERATIONS;
-			$this->max_generation = true;
-		}
-
-		if ($PEDIGREE_GENERATIONS < 2) {
-			$PEDIGREE_GENERATIONS = 2;
-			$thmin_generation = true;
-		}
 		$OLD_PGENS = $PEDIGREE_GENERATIONS;
 
-		if (empty($_REQUEST["rootid"])){
-			if (!isset($this->rootid)) $this->rootid = "";
-			$this->rootid = clean_input($this->rootid);
-			$this->rootid = check_rootid($this->rootid);
-		}
-		else $this->rootid = $_REQUEST["rootid"];
+		// Validate form parameters
+		$this->rootid = check_rootid($this->rootid);
 
 		// -- size of the boxes
-		if (isset($_REQUEST['box_width'])) $box_width = $_REQUEST['box_width'];
-		if (empty($box_width)) $box_width = "100";
-		$box_width=max($box_width, 50);
-		$box_width=min($box_width, 300);
 		$Dbwidth*=$box_width/100;
 		$bwidth=$Dbwidth;
 		if (!$this->show_full) {
@@ -155,22 +128,12 @@ class AncestryControllerRoot extends BaseController {
 		$pbwidth = $bwidth+12;
 		$pbheight = $bheight+14;
 
-
-
-		if ((DisplayDetailsByID($this->rootid)) || (showLivingNameByID($this->rootid))) {
-			$this->name = get_person_name($this->rootid);
-			$this->addname = get_add_person_name($this->rootid);
-		}
-		else {
-			$this->name = $pgv_lang["private"];
-			$this->addname = "";
-		}
+		$this->ancestry = Person::getInstance($this->rootid);
+		$this->name     = $this->ancestry->getFullName();
+		$this->addname  = $this->ancestry->getAddName();
 
 		if (strlen($this->name)<30) $this->cellwidth="420";
 		else $this->cellwidth=(strlen($this->name)*14);
-
-
-		$this->ancestry = Person::getInstance($this->pid);
 
 		if (!$this->isPrintPreview()) {
 			$this->visibility = "hidden";
@@ -206,7 +169,7 @@ class AncestryControllerRoot extends BaseController {
 
 		$person = Person::getInstance($pid);
 		// child
-		print "<li>";
+		print "\r\n<li>";
 		print "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><a name=\"sosa".$sosa."\"></a>";
 		$new=($pid=="" or !isset($pidarr["$pid"]));
 		if ($sosa==1) print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" height=\"3\" width=\"$Dindent\" border=\"0\" alt=\"\" /></td><td>\n";
@@ -222,7 +185,7 @@ class AncestryControllerRoot extends BaseController {
 		} else {
 			$label = $pid." :".$pgv_lang["ancestry_chart"];
 		}
-		if ($sosa>1) print_url_arrow($pid, "?rootid=$pid&amp;PEDIGREE_GENERATIONS=$OLD_PGENS&amp;show_full=$this->show_full&amp;box_width=$box_width&amp;chart_style=$this->chart_style", $label, 3);
+		if ($sosa>1) print_url_arrow($pid, encode_url("?rootid={$pid}&PEDIGREE_GENERATIONS={$OLD_PGENS}&show_full={$this->show_full}&box_width={$box_width}&chart_style={$this->chart_style}"), $label, 3);
 		print "</td>";
 		print "<td class=\"details1\">&nbsp;<span dir=\"ltr\" class=\"person_box". (($sosa==1)?"NN":(($sosa%2)?"F":"")) . "\">&nbsp;$sosa&nbsp;</span>&nbsp;";
 		print "</td><td class=\"details1\">";
@@ -233,7 +196,10 @@ class AncestryControllerRoot extends BaseController {
 		print "</td>";
 		print "</tr></table>";
 
-		if (is_null($person)) return;
+		if (is_null($person)) {
+			print "</li>";
+			return;
+		}
 		// parents
 		$famids = $person->getChildFamilies();
 		$parents = false;
@@ -247,16 +213,19 @@ class AncestryControllerRoot extends BaseController {
 			}
 		}
 
-		if (($parents or $SHOW_EMPTY_BOXES) and $new and $depth>0) {
+		if (($parents || $SHOW_EMPTY_BOXES) && $new && $depth>0) {
 			// print marriage info
 			print "<span class=\"details1\" style=\"white-space: nowrap;\" >";
 			print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["spacer"]["other"]."\" height=\"2\" width=\"$Dindent\" border=\"0\" align=\"middle\" alt=\"\" /><a href=\"javascript: ".$pgv_lang["view_family"]."\" onclick=\"expand_layer('sosa_".$sosa."'); return false;\" class=\"top\"><img id=\"sosa_".$sosa."_img\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["minus"]["other"]."\" align=\"middle\" hspace=\"0\" vspace=\"3\" border=\"0\" alt=\"".$pgv_lang["view_family"]."\" /></a> ";
 			print "&nbsp;<span class=\"person_box\">&nbsp;".($sosa*2)."&nbsp;</span>&nbsp;".$pgv_lang["and"];
 			print "&nbsp;<span class=\"person_boxF\">&nbsp;".($sosa*2+1)." </span>&nbsp;";
-			if (showFact("MARR", $famid)) print_simple_fact($famrec, "MARR", $parents["WIFE"]); else print $pgv_lang["private"];
+			if (!empty($family)) {
+				$marriage = $family->getMarriage();
+				if ($marriage->canShow()) $marriage->print_simple_fact(); else print $pgv_lang["private"];
+			}
 			print "</span>";
 			// display parents recursively
-			print "<ul style=\"list-style: none; display: block;\" id=\"sosa_$sosa\">";
+			print "\r\n<ul style=\"list-style: none; display: block;\" id=\"sosa_$sosa\">";
 			$this->print_child_ascendancy($parents["HUSB"], $sosa*2, $depth-1);
 			$this->print_child_ascendancy($parents["WIFE"], $sosa*2+1, $depth-1);
 			print "</ul>\r\n";
@@ -279,6 +248,4 @@ else
 	}
 }
 
-$controller = new AncestryController();
-$controller->init();
 ?>

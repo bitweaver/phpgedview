@@ -3,7 +3,7 @@
  * Controller for the Hourglass Page
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007	John Finlay and Others
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,12 @@
  * @version $Id$
  */
 
-if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
-	print "You cannot access an include file directly.";
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
 	exit;
 }
+
+define('PGV_HOURGLASS_CTRL_PHP', '');
 
 /**
  * Initialization
@@ -42,9 +44,9 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require_once("includes/controllers/basecontrol.php");
-require_once("includes/person_class.php");
-require_once("includes/functions_charts.php");
+require_once(PHPGEDVIEW_PKG_PATH.'includes/controllers/basecontrol.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_person.php');
+require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_charts.php');
 
 $indifacts = array();			 // -- array to store the fact records in for sorting and displaying
 $globalfacts = array();
@@ -66,8 +68,6 @@ $nonfamfacts[] = "";
  * Main controller class for the individual page.
  */
 class HourglassControllerRoot extends BaseController {
-	var $show_changes = "yes";
-	var $action = "";
 	var $pid = "";
 
 	var $accept_success = false;
@@ -79,11 +79,10 @@ class HourglassControllerRoot extends BaseController {
 	var $total_names = 0;
 	var $SEX_COUNT = 0;
 	var $sexarray = array();
-	var $show_full = 1;
+	var $show_full = 0;
 	var $show_spouse = 0;
 	var $generations;
 	var $dgenerations;
-	var $view;
 	var $box_width;
 	var $name;
 	//  the following are ajax variables  //
@@ -102,12 +101,20 @@ class HourglassControllerRoot extends BaseController {
 	 * Initialization function
 	 */
 	function init($rootid='', $show_full=1, $generations=3) {
-		global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $bheight, $bwidth, $bhalfheight, $GEDCOM_DEFAULT_TAB, $pgv_changes, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
-		global $PGV_IMAGES, $PGV_IMAGE_DIR, $TEXT_DIRECTION;
+		global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $bheight, $bwidth, $bhalfheight, $GEDCOM_DEFAULT_TAB, $pgv_lang, $PEDIGREE_FULL_DETAILS, $MAX_DESCENDANCY_GENERATIONS;
+		global $PGV_IMAGES, $PGV_IMAGE_DIR, $TEXT_DIRECTION, $show_full;
 
+		// Extract parameters from from
+		$this->pid        =safe_GET_xref('pid');
+		$this->show_full  =safe_GET('show_full',   array('0', '1'), $PEDIGREE_FULL_DETAILS);
+		$this->show_spouse=safe_GET('show_spouse', array('0', '1'), '0');
+		$this->generations=safe_GET_integer('generations', 2, $MAX_DESCENDANCY_GENERATIONS, 3);
+		$this->box_width  =safe_GET_integer('box_width',   50, 300, 100);
+
+		// This is passed as a global.  A parameter would be better...
+		$show_full=$this->show_full;
 
 		if (!empty($_REQUEST["action"])) $this->action = $_REQUEST["action"];
-		if (!empty($_REQUEST["pid"])) $this->pid = strtoupper($_REQUEST["pid"]);
 		if (!empty($rootid)) $this->pid = $rootid;
 
 		//-- flip the arrows for RTL languages
@@ -120,39 +127,21 @@ class HourglassControllerRoot extends BaseController {
 		if (file_exists($PGV_IMAGE_DIR."/".$PGV_IMAGES['larrow']['other'])) {
 			$temp = getimagesize($PGV_IMAGE_DIR."/".$PGV_IMAGES['larrow']['other']);
 			$this->arrwidth = $temp[0];
-			$this->arrheight = $temp[1];
+			$this->arrheight= $temp[1];
 		}
 
-		//Checks query strings to see if they exist else assign a default value
-		if (isset($_REQUEST["show_full"])) $this->show_full = $_REQUEST["show_full"];
-		else $this->show_full = $show_full;
-		if (isset($_REQUEST["show_spouse"])) $this->show_spouse=$_REQUEST["show_spouse"];
-		else $this->show_spouse=0;
-		if (isset($_REQUEST["generations"])) $this->generations=$_REQUEST["generations"];
-		else $this->generations = $generations;
-		if ($this->generations > $MAX_DESCENDANCY_GENERATIONS) $this->generations = $MAX_DESCENDANCY_GENERATIONS;
-		if (!isset($this->view)) $this->view="";
-
 		// -- Sets the sizes of the boxes
-		if (isset($_REQUEST["box_width"])) $this->box_width=$_REQUEST["box_width"];
-		else $this->box_width=100;
-		if (empty($this->box_width)) $this->box_width = "100";
-		$this->box_width=max($this->box_width, 50);
-		$this->box_width=min($this->box_width, 300);
-		// If show details is unchecked it makes the boxes smaller
 		if (!$this->show_full) $bwidth *= $this->box_width / 150;
 		else $bwidth*=$this->box_width/100;
 
 		if (!$this->show_full) $bheight = (int)($bheight / 2);
 		$bhalfheight = (int)($bheight / 2);
 
-		// -- root id
-		if (!isset($this->pid)) $this->pid="";
+		// Validate parameters
 		$this->pid=check_rootid($this->pid);
-		if ((DisplayDetailsByID($this->pid))||(showLivingNameByID($this->pid))) $this->name = get_person_name($this->pid);
-		else $this->name = $pgv_lang["private"];
 
 		$this->hourPerson = Person::getInstance($this->pid);
+		$this->name=$this->hourPerson->getFullName();
 
 		//Checks how many generations of descendency is for the person for formatting purposes
 		$this->dgenerations = $this->max_descendency_generations($this->pid, 0);
@@ -165,9 +154,9 @@ class HourglassControllerRoot extends BaseController {
 		}
 		//-- perform the desired action
 		switch($this->action) {
-			case "addfav":
+/*			case "addfav":
 				$this->addFavorite();
-				break;
+				break; */
 			case "accept":
 				$this->acceptChanges();
 				break;
@@ -209,7 +198,7 @@ class HourglassControllerRoot extends BaseController {
 
 			//-- print an Ajax arrow on the last generation of the adult male
 			if ($count==$this->generations-1 && (count(find_family_ids($ARID))>0) && !is_null (find_family_ids($ARID))) {
-				print "<a href=\"#\" onclick=\"return ChangeDiv('td_".$ARID."','".$ARID."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."')\"><img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /></a> ";
+				print "<a href=\"#\" onclick=\"return ChangeDiv('td_".$ARID."','".$ARID."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."')\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /></a> ";
 			}
 			//-- recursively get the father's family
 			$this->print_person_pedigree($parents["HUSB"], $count+1);
@@ -227,7 +216,7 @@ class HourglassControllerRoot extends BaseController {
 
 			//-- print an ajax arrow on the last generation of the adult female
 			if ($count==$this->generations-1 && (count(find_family_ids($ARID))>0) && !is_null (find_family_ids($ARID))) {
-				print "<a href=\"#\" onclick=\"ChangeDiv('td_".$ARID."','".$ARID."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."'); return false;\"><img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /></a> ";
+				print "<a href=\"#\" onclick=\"ChangeDiv('td_".$ARID."','".$ARID."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."'); return false;\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /></a> ";
 			}
 
 			//-- recursively print the mother's family
@@ -249,7 +238,8 @@ class HourglassControllerRoot extends BaseController {
 	 */
 	function print_descendency($pid, $count, $showNav=true) {
 		global $TEXT_DIRECTION, $PGV_IMAGE_DIR, $PGV_IMAGES, $pgv_lang, $bheight, $bwidth, $bhalfheight;
-		
+		global $lastGenSecondFam;
+
 		if ($count>$this->dgenerations) return 0;
 		$person = Person::getInstance($pid);
 		if (is_null($person)) return;
@@ -263,7 +253,10 @@ class HourglassControllerRoot extends BaseController {
 		//	print $this->dgenerations;
 		print "<!-- print_descendency for $pid -->";
 		//-- put a space between families on the last generation
-		if ($count==$this->dgenerations-1) print "<br />";
+		if ($count==$this->dgenerations-1) {
+			if (isset($lastGenSecondFam)) print "<br />";
+			$lastGenSecondFam = true;
+		}
 
 		print "<table id=\"table_$pid\" align=\"".$tablealign."\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">";
 		print "<tr>";
@@ -319,7 +312,7 @@ class HourglassControllerRoot extends BaseController {
 
 				}
 				print "</table>\n";
-					
+
 			}
 			print "</td>\n";
 			print "<td width=\"$bwidth\">";
@@ -337,7 +330,7 @@ class HourglassControllerRoot extends BaseController {
 			if ($kcount==0) {
 				print "<div style=\"width: ".($this->arrwidth)."px;\"><br /></div>\n</td>\n<td width=\"$bwidth\">";
 			} else {
-				print "<div style=\"width: ".($this->arrwidth)."px;\"><a href=\"$pid\" onclick=\"return ChangeDis('td_".$pid."','".$pid."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."')\"><img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["larrow"]["other"]."\" border=\"0\" alt=\"\" /></a></div>\n";
+				print "<div style=\"width: ".($this->arrwidth)."px;\"><a href=\"$pid\" onclick=\"return ChangeDis('td_".$pid."','".$pid."','".$this->show_full."','".$this->show_spouse."','".$this->box_width."')\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["larrow"]["other"]."\" border=\"0\" alt=\"\" /></a></div>\n";
 				//-- move the arrow up to line up with the correct box
 				if ($this->show_spouse) {
 					foreach($families as $famid => $family) {
@@ -357,7 +350,7 @@ class HourglassControllerRoot extends BaseController {
 		print "<table id=\"table2_$pid\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td>";
 		print_pedigree_person($pid);
 		print "</td><td><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["hline"]["other"]."\" width=\"7\" height=\"3\" alt=\"\" />";
-		
+
 		//----- Print the spouse
 		if ($this->show_spouse) {
 			foreach($families as $famid => $family) {
@@ -406,7 +399,7 @@ class HourglassControllerRoot extends BaseController {
 						print "<a href=\"javascript: ".$pgv_lang["show"]."\" onclick=\"togglechildrenbox(); return false;\" onmouseover=\"swap_image('larrow',3);\" onmouseout=\"swap_image('larrow',3);\">";
 						print "<img id=\"larrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow"]["other"]."\" border=\"0\" alt=\"\" />";
 						print "</a><br />";
-							
+
 					}
 					print "\n\t\t<div id=\"childbox\" dir=\"".$TEXT_DIRECTION."\" style=\"width:".$bwidth."px; height:".$bheight."px; visibility: hidden;\">";
 					print "\n\t\t\t<table class=\"person_box\"><tr><td>";
@@ -416,8 +409,8 @@ class HourglassControllerRoot extends BaseController {
 							$spouse = $family->getSpouse($person);
 							if (!empty($spouse)) {
 								$spid = $spouse->getXref();
-								print "\n\t\t\t\t<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-								$name = $spouse->getName();
+								print "\n\t\t\t\t<a href=\"".encode_url("hourglass.php?pid={$spid}&show_spouse={$this->show_spouse}&show_full={$this->show_full}&generations={$this->generations}&box_width={$this->box_width}")."\"><span ";
+								$name = $spouse->getFullName();
 								$name = rtrim($name);
 								if (hasRTLText($name))
 								print "class=\"name2\">";
@@ -430,21 +423,21 @@ class HourglassControllerRoot extends BaseController {
 							$children = $family->getChildren();
 							foreach($children as $id=>$child) {
 								$cid = $child->getXref();
-								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$cid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-								$name = $child->getName();
+								print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"".encode_url("hourglass.php?pid={$cid}&show_spouse={$this->show_spouse}&show_full={$this->show_full}&generations={$this->generations}&box_width={$this->box_width}")."\"><span ";
+								$name = $child->getFullName();
 								$name = rtrim($name);
 								if (hasRTLText($name))
 								print "class=\"name2\">&lt; ";
 								else print "class=\"name1\">&lt; ";
 								print PrintReady($name);
-									
+
 								print "<br /></span></a>";
-									
+
 							}
 						}
 					}
 					//-- do we need to print this arrow?
-					print "<img id=\"arrow\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /> ";
+					print "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["rarrow"]["other"]."\" border=\"0\" alt=\"\" /> ";
 
 					//-- print the siblings
 					foreach($cfamids as $famid=>$family) {
@@ -454,8 +447,8 @@ class HourglassControllerRoot extends BaseController {
 								$husb = $family->getHusband();
 								if (!empty($husb)) {
 									$spid = $husb->getXref();
-									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-									$name = $husb->getName();
+									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"".encode_url("hourglass.php?pid={$spid}&show_spouse={$this->show_spouse}&show_full={$this->show_full}&generations={$this->generations}&box_width={$this->box_width}")."\"><span ";
+									$name = $husb->getFullName();
 									$name = rtrim($name);
 									if (hasRTLText($name))
 									print "class=\"name2\">";
@@ -466,8 +459,8 @@ class HourglassControllerRoot extends BaseController {
 								$husb = $family->getWife();
 								if (!empty($husb)) {
 									$spid = $husb->getXref();
-									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$spid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-									$name = $husb->getName();
+									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"".encode_url("hourglass.php?pid={$spid}&show_spouse={$this->show_spouse}&show_full={$this->show_full}&generations={$this->generations}&box_width={$this->box_width}")."\"><span ";
+									$name = $husb->getFullName();
 									$name = rtrim($name);
 									if (hasRTLText($name))
 									print "class=\"name2\">";
@@ -478,12 +471,13 @@ class HourglassControllerRoot extends BaseController {
 							}
 							$children = $family->getChildren();
 							$num = $family->getNumberOfChildren();
-							if ($num>1) print "<span class=\"name1\"><br />".$pgv_lang["siblings"]."<br /></span>";
+							if ($num>2) print "<span class=\"name1\"><br />".$pgv_lang["siblings"]."<br /></span>";
+							if ($num==2) print "<span class=\"name1\"><br />".$pgv_lang["sibling"]."<br /></span>";
 							foreach($children as $id=>$child) {
 								$cid = $child->getXref();
 								if ($cid!=$pid) {
-									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"hourglass.php?pid=$cid&amp;show_spouse=$this->show_spouse&amp;show_full=$this->show_full&amp;generations=$this->generations&amp;box_width=$this->box_width\"><span ";
-									$name = $child->getName();
+									print "\n\t\t\t\t&nbsp;&nbsp;<a href=\"".encode_url("hourglass.php?pid={$cid}&show_spouse={$this->show_spouse}&show_full={$this->show_full}&generations={$this->generations}&box_width={$this->box_width}")."\"><span ";
+									$name = $child->getFullName();
 									$name = rtrim($name);
 									if (hasRTLText($name))
 									print "class=\"name2\"> ";
@@ -542,48 +536,48 @@ class HourglassControllerRoot extends BaseController {
 	 */
 	function setupJavascript() {
 		global $bhalfheight;
-		?>
+?>
 <script language="JavaScript" type="text/javascript">
 <!--
 	var pastefield;
 	function paste_id(value) {
 		pastefield.value=value;
 	}
-	
-	// <!--Hourglass control..... Ajax arrows at the end of chart-->
+
+	// Hourglass control..... Ajax arrows at the end of chart
  	function ChangeDiv(div_id, ARID, full, spouse, width) {
  		var divelement = document.getElementById(div_id);
- 		var oXmlHttp = createXMLHttp();	
+ 		var oXmlHttp = createXMLHttp();
  		oXmlHttp.open("get", "hourglass_ajax.php?show_full="+full+"&pid="+ ARID + "&generations=1&box_width="+width+"&show_spouse="+spouse, true);
  		oXmlHttp.onreadystatechange=function()
  		{
   			if (oXmlHttp.readyState==4)
-   			{	
+   			{
     			divelement.innerHTML = oXmlHttp.responseText;
     			sizeLines();
     		}
    		};
-  		oXmlHttp.send(null);	
+  		oXmlHttp.send(null);
   		return false;
 	}
-	
-	// <!--Hourglass control..... Ajax arrows at the end of descendants chart-->
+
+	// Hourglass control..... Ajax arrows at the end of descendants chart
 	function ChangeDis(div_id, ARID, full, spouse, width) {
  		var divelement = document.getElementById(div_id);
- 		var oXmlHttp = createXMLHttp();	
+ 		var oXmlHttp = createXMLHttp();
  		oXmlHttp.open("get", "hourglass_ajax.php?type=desc&show_full="+full+"&pid="+ ARID + "&generations=1&box_width="+width+"&show_spouse="+spouse, true);
  		oXmlHttp.onreadystatechange=function()
  		{
   			if (oXmlHttp.readyState==4)
-   			{	
+   			{
     				divelement.innerHTML = oXmlHttp.responseText;
     				sizeLines();
     		}
    		};
-  		oXmlHttp.send(null);	
+  		oXmlHttp.send(null);
   		return false;
 	}
-	
+
 	function sizeLines() {
 		var vlines;
 		vlines = document.getElementsByName("tvertline");
@@ -591,18 +585,18 @@ class HourglassControllerRoot extends BaseController {
 			var pid = vlines[i].id.substr(vlines[i].id.indexOf("_")+1);
 			var hline = document.getElementById("table_"+pid);
 			var hline2 = document.getElementById("table2_"+pid);
-			var newHeight = Math.abs(hline.offsetHeight - (hline2.offsetTop + <?php print $bhalfheight+2 ?>));
+			var newHeight = Math.abs(hline.offsetHeight - (hline2.offsetTop + <?php print $bhalfheight+2;1?>));
 			vlines[i].style.height=newHeight+'px';
 		}
-		
+
 		vlines = document.getElementsByName("bvertline");
 		for(i=0; i < vlines.length; i++) {
 			var pid = vlines[i].id.substr(vlines[i].id.indexOf("_")+1);
 			var hline = document.getElementById("table_"+pid);
 			var hline2 = document.getElementById("table2_"+pid);
-			vlines[i].style.height=(hline.offsetTop+hline2.offsetTop + <?php print $bhalfheight+2 ?>)+'px';
+			vlines[i].style.height=(hline.offsetTop+hline2.offsetTop + <?php print $bhalfheight+2; ?>)+'px';
 		}
-		
+
 		vlines = document.getElementsByName("pvline");
 		//alert(vlines[0].parentNode.parentNode.parentNode);
 		for(i=0; i < vlines.length; i++) {
@@ -629,7 +623,5 @@ else
 	{
 	}
 }
-
-$controller = new HourglassController();
 
 ?>
