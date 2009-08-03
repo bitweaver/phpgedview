@@ -2,8 +2,8 @@
 /**
  * Standard theme
  *
- * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * PhpGedView: Genealogy Viewer
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,11 @@
  * @subpackage Themes
  * @version $Id$
  */
+
+if (!defined('PGV_PHPGEDVIEW')) {
+	header('HTTP/1.0 403 Forbidden');
+	exit;
+}
 
 $theme_name = "Standard";		//-- the name of this theme
 
@@ -54,6 +59,9 @@ $PGV_IMAGES["repository"]["large"] = "repository.gif";
 $PGV_IMAGES["search"]["large"] = "search.gif";
 $PGV_IMAGES["sfamily"]["large"] = "sfamily.gif";
 $PGV_IMAGES["source"]["large"] = "source.gif";
+$PGV_IMAGES["sex"]["large"] = "male.gif";
+$PGV_IMAGES["sexf"]["large"] = "female.gif";
+$PGV_IMAGES["sexn"]["large"] = "fe_male.gif";
 
 //- PGV main icons for optional modules
 $PGV_IMAGES["menu_gallery"]["large"] = "menu_gallery.gif";
@@ -70,6 +78,7 @@ $PGV_IMAGES["descendant"]["small"] = "small/descendancy.gif";
 $PGV_IMAGES["edit_fam"]["small"] = "small/edit_fam.gif";
 $PGV_IMAGES["edit_indi"]["small"] = "small/edit_indi.gif";
 $PGV_IMAGES["edit_sour"]["small"] = "small/edit_sour.gif";
+$PGV_IMAGES["edit_repo"]["small"] = "small/edit_repo.gif";
 $PGV_IMAGES["fambook"]["small"] = "small/fambook.gif";
 $PGV_IMAGES["fanchart"]["small"] = "small/fanchart.gif";
 $PGV_IMAGES["gedcom"]["small"] = "small/gedcom.gif";
@@ -101,7 +110,7 @@ $PGV_IMAGES["timeline"]["small"] = "small/timeline.gif";
 //- PGV buttons for data entry pages
 $PGV_IMAGES["addrepository"]["button"] = "buttons/addrepository.gif";
 $PGV_IMAGES["addsource"]["button"] = "buttons/addsource.gif";
-$PGV_IMAGES["autocomplete"]["button"] = "buttons/autocomplete.gif";
+$PGV_IMAGES["addnote"]["button"] = "buttons/addnote.gif";
 $PGV_IMAGES["calendar"]["button"] = "buttons/calendar.gif";
 $PGV_IMAGES["family"]["button"] = "buttons/family.gif";
 $PGV_IMAGES["indi"]["button"] = "buttons/indi.gif";
@@ -110,13 +119,25 @@ $PGV_IMAGES["media"]["button"] = "buttons/media.gif";
 $PGV_IMAGES["place"]["button"] = "buttons/place.gif";
 $PGV_IMAGES["repository"]["button"] = "buttons/repository.gif";
 $PGV_IMAGES["source"]["button"] = "buttons/source.gif";
+$PGV_IMAGES["note"]["button"] = "buttons/note.gif";
+$PGV_IMAGES["head"]["button"] = "buttons/head.gif";
 
 // Media images
+$PGV_IMAGES["media"]["audio"] = "media/audio.png";
 $PGV_IMAGES["media"]["doc"] = "media/doc.gif";
+$PGV_IMAGES["media"]["flash"] = "media/flash.png";
+$PGV_IMAGES["media"]["flashrem"] = "media/flashrem.png";
 $PGV_IMAGES["media"]["ged"] = "media/ged.gif";
+$PGV_IMAGES["media"]["globe"] = "media/globe.png";
+$PGV_IMAGES["media"]["html"] = "media/html.gif";
+$PGV_IMAGES["media"]["picasa"] = "media/picasa.png";
 $PGV_IMAGES["media"]["pdf"] = "media/pdf.gif";
+$PGV_IMAGES["media"]["tex"] = "media/tex.gif";
+$PGV_IMAGES["media"]["wmv"] = "media/wmv.png";
+$PGV_IMAGES["media"]["wmvrem"] = "media/wmvrem.png";
 
 //- other images
+$PGV_IMAGES["add"]["other"]	= "add.gif";
 $PGV_IMAGES["darrow"]["other"] = "darrow.gif";
 $PGV_IMAGES["darrow2"]["other"] = "darrow2.gif";
 $PGV_IMAGES["ddarrow"]["other"] = "ddarrow.gif";
@@ -143,23 +164,12 @@ $PGV_IMAGES["vline"]["other"] = "vline.gif";
 $PGV_IMAGES["zoomin"]["other"] = "zoomin.gif";
 $PGV_IMAGES["zoomout"]["other"] = "zoomout.gif";
 $PGV_IMAGES["stop"]["other"] = "stop.gif";
+
 // - lifespan chart arrows
 $PGV_IMAGES["lsltarrow"]["other"] = "lsltarrow.gif";
 $PGV_IMAGES["lsrtarrow"]["other"] = "lsrtarrow.gif";
 $PGV_IMAGES["lsdnarrow"]["other"] = "lsdnarrow.gif";
 $PGV_IMAGES["lsuparrow"]["other"] = "lsuparrow.gif";
-
-//- digits
-$PGV_IMAGES["0"]["digit"] = "0.jpg";
-$PGV_IMAGES["1"]["digit"] = "1.jpg";
-$PGV_IMAGES["2"]["digit"] = "2.jpg";
-$PGV_IMAGES["3"]["digit"] = "3.jpg";
-$PGV_IMAGES["4"]["digit"] = "4.jpg";
-$PGV_IMAGES["5"]["digit"] = "5.jpg";
-$PGV_IMAGES["6"]["digit"] = "6.jpg";
-$PGV_IMAGES["7"]["digit"] = "7.jpg";
-$PGV_IMAGES["8"]["digit"] = "8.jpg";
-$PGV_IMAGES["9"]["digit"] = "9.jpg";
 
 //-- This section defines variables for the pedigree chart
 $bwidth = 225;		// -- width of boxes on pedigree chart
@@ -180,13 +190,12 @@ $Dbheight = 80;			// -- height of DIV layer boxes
 $Dindent = 15;			// -- width to indent descendancy boxes
 $Darrowwidth = 15;		// -- additional width to include for the up arrows
 
-$CHARTS_CLOSE_HTML = true;		//-- should the charts, pedigree, descendacy, etc clost the HTML on the page
+$CHARTS_CLOSE_HTML = true;		//-- should the charts, pedigree, descendacy, etc close the HTML on the page
 $PGV_DXHTMLTAB_COLORS = "#d6e0ea,white";
 
 // Arrow symbol or icon for up-page links on Help pages
-$ImgSrc = $PGV_IMAGE_DIR."/uarrow3.gif";
-$UpArrow = "<b>^&nbsp;&nbsp;</b>";
-if (file_exists($ImgSrc)) $UpArrow = "<img src=\"$ImgSrc\" class=\"icon\" border=\"0\" alt=\"\" />";
-$pgv_lang["UpArrow"] = $UpArrow;	// help_text.xx.php requires this _untranslatable_ term!
+// This icon is referred to in Help text by: #GLOBALS[UpArrow]#
+if (file_exists($PGV_IMAGE_DIR."/uarrow3.gif")) $UpArrow = "<img src=\"{$PGV_IMAGE_DIR}/uarrow3.gif\" class=\"icon\" border=\"0\" alt=\"^\" />";
+else $UpArrow = "<b>^^&nbsp;&nbsp;</b>";
 
 ?>

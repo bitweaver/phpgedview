@@ -5,7 +5,7 @@
  * To learn more about CSS visit http: //www.w3.org/TR/REC-CSS2/
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008 John Finlay and Others, all rights reserved.
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: style.css 2888 2008-04-24 02:57:52Z kosherjava $
+ * @version $Id: style.css 5954 2009-07-20 23:38:06Z windmillway $
  */
+ 
 
 .something {
 	/*empty style to make sure that the BODY style is not ignored */
@@ -372,8 +373,6 @@ a:hover .nameZoom {
 }
 
 .gender_image {
-	height: 9px;
-	width: 9px;
 	margin: 0px 3px;
 	border: none;
 	vertical-align: middle;
@@ -474,6 +473,12 @@ a:hover .nameZoom {
 	text-align: center;
 }
 
+.hit-counter {
+	background: black;
+	color: white;
+	font-weight: bold;
+}
+
 /* This is the original.
  * It's not used, but it's left in in case you want to go back to it. */
 .flag {
@@ -485,26 +490,26 @@ a:hover .nameZoom {
 .activeflag {
 	height: 15px;
 	border: none;
-	opacity: 1;		/* IE does not yet support this */
+	opacity: 1;		/* IE's support is different */
 }
 
 /* This one is for an inactive language when the mouse is hovering over it */
 .brightflag {
 	height: 15px;
 	border: none;
-	opacity: 1;		/* IE does not yet support this */
+	opacity: 1;		/* IE's support is different */
 }
 
 /* This one is for an inactive language when the mouse is not hovering over it */
 .dimflag {
 	height: 15px;
 	border: none;
-	opacity: 0.4;	/* IE does not yet support this */
+	opacity: 0.5;		/* IE's support is different */
 }
 
 .border1 {
 	border: solid black 1px;
-}	
+}
 
 .header_select {
 	font-size: 9pt;
@@ -539,7 +544,6 @@ a:hover .nameZoom {
 	color: black;
 	text-decoration: none;
 	font: 11px tahoma, arial, helvetica, sans-serif;
-	text-align: center;
 	background-color: #d6e0ea;
 	border: solid #9ca3d4 1px;
 	white-space: nowrap;
@@ -548,6 +552,8 @@ a:hover .nameZoom {
 }
 
 .submenuitem, .submenuitem_rtl {
+	vertical-align: middle;
+	height: 25px;
 	color: #555555;
 	text-decoration: none;
 	font: 11px tahoma, arial, helvetica, sans-serif;
@@ -565,12 +571,18 @@ a:hover .nameZoom {
 }
 
 .submenuitem_hover, .submenuitem_hover_rtl {
+	vertical-align: middle;
+	height: 25px;
 	color: black;
-	text-decoration: underline;
 	font: 11px tahoma, arial, helvetica, sans-serif;
 	background-color: #e6f0fa;
 	white-space: nowrap;
 	padding: 1px;
+}
+
+.submenuitem a, .submenuitem_rtl a, .submenuitem_hover a, .submenuitem_hover_rtl a {
+	display: inline-block;
+	vertical-align: middle;
 }
 
 .news_box {
@@ -637,6 +649,10 @@ a:hover .nameZoom {
 	max-height: 200px;
 	overflow: auto;
 	font: normal 10px tahoma, arial, helvetica, sans-serif;
+}
+
+.normal_inner_block {
+	overflow: auto;
 }
 
 .block {
@@ -979,9 +995,6 @@ h4 {
 }
 
 .rela {
-	filter: alpha(opacity=67);
-	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=67);
-	-moz-opacity: 0.67;
 	opacity: 0.67;
 }
 
@@ -992,6 +1005,7 @@ h4 {
 
 .rtl {
 	text-align: right;
+	direction: rtl;
 }
 
 /* Width settings */
@@ -1091,8 +1105,6 @@ h4 {
 	height: 100%; float: left;
 	font-weight: bold;
 	display: none;
-	-moz-border-radius-topleft: 0.6em;
-	-moz-border-radius-topright: 0.6em;
 }
 
 .note_details {
@@ -1100,55 +1112,53 @@ h4 {
 }
 
 a.showit {
-   position: relative;
-   z-index: 24;
-   color: black;
-   text-decoration: none;
+	position: relative;
+	z-index: 24;
+	color: black;
+	text-decoration: none;
 }
 
 a.showit:hover {
-   z-index: 25;
-   background-color: #ffff9b;
-   cursor: crosshair;
+	z-index: 25;
+	background-color: #ffff9b;
+	cursor: crosshair;
 }
 
 a.showit span {
-   display: none;
+	display: none;
 }
 
 a.showit:hover span {
-   display: block;
-   position: absolute;
-   top: 22px;
-   left: 0px;
-   width: 225px;
-   border-style: outset;
-   border-left: 15px outset #1f1f1f;
-   border-top: 2px solid #1f1f1f;
-   border-bottom: 2px solid black;
-   border-right: 2px solid black;
-   padding: 3px;
-   background: #4f4f4f;
-   color: white;
-   font: 15px tahoma, arial, helvetica, sans-serif;
-   text-align: left;
-   FILTER: Alpha(Opacity=90, FinishOpacity=90, Style=2);
-   -moz-opacity: .85;
-   -khtml-opacity: .85;
-   z-index: 5;
+	display: block;
+	position: absolute;
+	top: 22px;
+	left: 0px;
+	width: 225px;
+	border-style: outset;
+	border-left: 15px outset #1f1f1f;
+	border-top: 2px solid #1f1f1f;
+	border-bottom: 2px solid black;
+	border-right: 2px solid black;
+	padding: 3px;
+	background: #4f4f4f;
+	color: white;
+	font: 15px tahoma, arial, helvetica, sans-serif;
+	text-align: left;
+	opacity: .85;
+	z-index: 5;
 }
 
 .lifespan_people span:first-letter {
-   font: bold 16px tahoma, arial, helvetica, sans-serif;
-   font-variant: small-caps;
-   padding: 1px;
+	font: bold 16px tahoma, arial, helvetica, sans-serif;
+	font-variant: small-caps;
+	padding: 1px;
 }
 
 .lifespan_outer {
-	position: relative; 
-	width: 99.5%; 
-	height: 600px; 
-	overflow: hidden; 
+	position: relative;
+	width: 99.5%;
+	height: 600px;
+	overflow: hidden;
 	border: solid blue 1px;
 }
 
@@ -1162,29 +1172,79 @@ a.showit:hover span {
 }
 
 .lifespan_timeline {
-	position: absolute; 
-	width: 100%; 
-	left: -10px; 
-	top: -65px; 
-	z-index: 2; 
+	position: absolute;
+	width: 100%;
+	left: -10px;
+	top: -65px;
+	z-index: 2;
 	background-color: white
 }
 
 .lifespan_people {
-	position: absolute; 
-	width: 500px; 
-	left: -10px; 
-	top: -60px; 
+	position: absolute;
+	width: 500px;
+	left: -10px;
+	top: -60px;
 	z-index: 1;
 }
 .iwstyle {
 	width:360px;
 	/*background-color: #FFFFFF;*/
-} 
+}
 .iwstyle a {
-} 
+}
 .iwstyle a:hover {
 }
+
+#map_nav {
+	position: relative;
+	top: -484px;
+	left: 101%;
+}
+
+#tree_nav {
+	position: relative;
+	top: -584px;
+	left: 90%;  
+	z-index: 100;
+}
+
+	#map_type
+	{
+		margin: 0;
+		padding: 0;
+		font-family: Arial;
+		font-size: 10px;
+		list-style: none;
+	}
+	#map_type li
+	{
+		display: block;
+		width: 70px;
+		text-align: center;
+		padding: 2px;
+		border: 1px solid black;
+		cursor: pointer;
+		float: left;
+		margin-left: 2px;
+	}
+	#map_type li.non_active
+	{
+		background: white;
+		color: black;
+		font-weight: normal;
+	}
+	#map_type li.active
+	{
+		background: gray;
+		color: white;
+		font-weight: bold;
+	}
+	#map_type li:hover
+	{
+		background: #ddd;
+	}
+
 /* Tag Cloud styles*/
 .tag_cloud_table {
 	width:70%;
@@ -1205,13 +1265,97 @@ a.showit:hover span {
 }
 /* End of Tag Cloud styles*/
 
-/* Because the CSS file is only read once, the following two overriding classes MUST
-   appear at the end of the entire CSS file.
-*/
+/* Autocomplete styles*/
+.ac_input {
+	background-color: #EEE8AA;
+}
+
+.ac_results {
+	padding: 0px;
+	border: 1px solid black;
+	background-color: white;
+	overflow: hidden;
+	z-index: 99999;
+}
+
+.ac_results ul {
+	width: 100%;
+	list-style-position: outside;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.ac_results li {
+	margin: 0px;
+	padding: 2px 5px;
+	cursor: default;
+	display: block;
+	/* 
+	if width will be 100% horizontal scrollbar will apear 
+	when scroll mode will be used
+	*/
+	/*width: 100%;*/
+	font: menu;
+	font-size: 12px;
+	/* 
+	it is very important, if line-height not setted or setted 
+	in relative units scroll will be broken in firefox
+	*/
+	line-height: 14px;
+	overflow: hidden;
+}
+
+.ac_loading {
+	background: white url(../../images/indicator.gif) right center no-repeat;
+}
+
+.ac_odd {
+	background-color: #eee;
+}
+
+.ac_over {
+	background-color: #0A246A;
+	color: white;
+}
+/* End of Autocomplete styles*/
+
+/* Flyout menu Styles */
+.flyout {
+color:#000000; 
+text-align: left;
+margin-top: -20px;
+right: 210px;
+padding: 3px;
+}
+.flyoutrtl {
+color:#000000; 
+text-align: right;
+margin-top: -20px;
+left: 210px;
+padding: 3px;
+}
+/* End of Flyout Menu styles*/
+
+/* The following two overriding classes MUST appear at the end of the entire CSS file. */
 .nowrap {
 	white-space: nowrap;
 }
 
 .wrap {
 	white-space: normal;
+}
+
+ul.clist {
+	list-style-image: none;
+	margin: 0px;
+}
+
+.menu_separator img {
+	height: 3px;
+	width: 8em;
+}
+
+
+.statistics_chart{
 }

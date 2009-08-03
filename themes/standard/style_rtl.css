@@ -5,7 +5,7 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: style_rtl.css 2778 2008-03-28 13:40:36Z canajun2eh $
+ * @version $Id: style_rtl.css 4197 2008-10-30 12:24:13Z fisharebest $
  */
 body {
 	direction: rtl;
