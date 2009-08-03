@@ -21,7 +21,7 @@
  * along with this program; if not;write to the Free Software
  * Foundation;Inc.;59 Temple Place;Suite 330;Boston;MA  02111-1307  USA
  *
- * $Id: lang_settings_std.php,v 1.7 2009/04/30 18:32:43 lsces Exp $
+ * $Id: lang_settings_std.php,v 1.8 2009/08/03 20:10:43 lsces Exp $
  *
  * @package PhpGedView
  * @subpackage Languages
@@ -94,7 +94,7 @@ $language_settings['catalan']=array(
 'MULTI_LETTER_ALPHABET'=>'l·l',
 'MULTI_LETTER_EQUIV'=>'',
 'DICTIONARY_SORT'=>true,
-'COLLATION'=>'utf8_spanish_ci'
+'COLLATION'=>'utf8_unicode_ci'
 );
 
 //-- settings for czech

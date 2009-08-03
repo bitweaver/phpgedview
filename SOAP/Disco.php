@@ -18,12 +18,12 @@
  * @author     Chuck Hagenbuch <chuck@horde.org>
  * @author     Jan Schneider <jan@horde.org>
  * @copyright  2003-2005 The PHP Group
- * @version $Id $
+ * @version $Id$
  * @license    http://www.php.net/license/2_02.txt  PHP License 2.02
  * @link       http://pear.php.net/package/SOAP
  */
 
-require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Base.php');
+require_once 'SOAP/Base.php';
 
 class SOAP_DISCO_Server extends SOAP_Base_Object {
 

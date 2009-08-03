@@ -19,7 +19,7 @@
  * @author     Chuck Hagenbuch <chuck@horde.org>   Maintenance
  * @author     Jan Schneider <jan@horde.org>       Maintenance
  * @copyright  2003-2005 The PHP Group
- * @version $Id $
+ * @version $Id$
  * @license    http://www.php.net/license/2_02.txt  PHP License 2.02
  * @link       http://pear.php.net/package/SOAP
  */

@@ -6,56 +6,69 @@
 	<PGVRInput name="deathplace" lookup="PLAC" type="text"><PGVRvar var="pgv_lang[deathplace]" /></PGVRInput>
 	<PGVRInput name="deathdate1" lookup="DATE" type="text"><PGVRvar var="pgv_lang[deathdate1]" /></PGVRInput>
 	<PGVRInput name="deathdate2" lookup="DATE" type="text"><PGVRvar var="pgv_lang[deathdate2]" /></PGVRInput>
-	<PGVRInput name="sortby" type="select" options="NAME,DEAT"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
-	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
-	<PGVRStyle name="header" font="dejavusans" size="16" style="b" />
-	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
-	<PGVRStyle name="text" font="dejavusans" size="8" style="" />
-	<PGVRStyle name="label" font="dejavusans" size="8" style="" />
-	<PGVRDoc pageSize="$pageSize" orientation="L" margin="24">
+	<PGVRInput name="sortby" type="select" options="NAME,DEAT:DATE"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
+	<PGVRInput name="pageSize" type="select" default="A4" options="letter,A3,A4,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRInput name="fonts" type="select" default="dejavusans" options="arialunicid0,dejavusans,helvetica"><PGVRvar var="pgv_lang[font]"/></PGVRInput>
+	<PGVRStyle name="header" font="$fonts" size="16" style="b" />
+	<PGVRStyle name="pagenum" font="$fonts" size="8" />
+	<PGVRStyle name="text" font="$fonts" size="9" />
+	<PGVRStyle name="label" font="$fonts" size="10" style="b"/>
+	<PGVRStyle name="genby" font="$fonts" size="9" />
+	<PGVRDoc pageSize="$pageSize" orientation="landscape">
 		<PGVRHeader>
-			<PGVRCell width="0" height="20" align="center" style="header"><PGVRvar var="pgv_lang[death_report]" /></PGVRCell>
-			<PGVRCell width="0" height="10" align="right" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /> - <PGVRNow /></PGVRCell>
-			<PGVRTextBox width="200" height="12" border="1">
+			<PGVRCell align="center" height="20" newline="1" style="header"><PGVRvar var="pgv_lang[death_report]" /></PGVRCell>
+			<PGVRCell align="right" newline="1" style="pagenum"><PGVRvar var="pgv_lang[page]" /> <PGVRPageNum /> <PGVRvar var="pgv_lang[of]" /> <PGVRTotalPages /> - <PGVRNow /></PGVRCell>
+
+			<PGVRSetVar name="fill" value="" />
+			<PGVRif condition="$sortby=='NAME'">
+				<PGVRSetVar name="fill" value="#DDDDDD" />
+			</PGVRif>
+			<PGVRTextBox bgcolor="$fill" border="1" width="200">
 				<PGVRText style="label"><PGVRvar var="pgv_lang[name]" /></PGVRText>
 			</PGVRTextBox>
-			<PGVRTextBox width="100" height="12" border="1">
+
+			<PGVRSetVar name="fill" value="" />
+			<PGVRif condition="$sortby=='DEAT:DATE'">
+				<PGVRSetVar name="fill" value="#DDDDDD" />
+			</PGVRif>
+			<PGVRTextBox bgcolor="$fill" border="1" width="100">
 				<PGVRText style="label"><PGVRvar var="factarray[DATE]" /></PGVRText>
 			</PGVRTextBox>
-			<PGVRTextBox width="225" height="12" border="1">
+
+			<PGVRTextBox border="1" width="225">
 				<PGVRText style="label"><PGVRvar var="factarray[PLAC]" /></PGVRText>
 			</PGVRTextBox>
-			<PGVRTextBox width="225" height="12" border="1" newline="1">
+
+			<PGVRTextBox border="1" newline="1">
 			  <PGVRText style="label"><PGVRvar var="factarray[SOUR]" /></PGVRText>
-			</PGVRTextBox>      
+			</PGVRTextBox>
 		</PGVRHeader>
+
 		<PGVRBody>
 			<PGVRList list="individual" filter1="DEAT:PLAC CONTAINS $deathplace" filter2="DEAT:DATE GTE $deathdate1" filter3="DEAT:DATE LTE $deathdate2" filter4="NAME CONTAINS $name" sortby="$sortby">
-				<PGVRTextBox width="200" height="12" border="0">
+				<PGVRTextBox width="200">
 					<PGVRText style="text"><PGVRGetPersonName id="" /> - (<PGVRGedcomValue tag="@id" />)</PGVRText>
 				</PGVRTextBox>
-				<PGVRTextBox width="100" height="12" border="0">
+				<PGVRTextBox width="100">
 					<PGVRText style="text"><PGVRGedcomValue tag="DEAT:DATE" /></PGVRText>
 				</PGVRTextBox>
-				<PGVRTextBox width="220" height="12" border="0">
+				<PGVRTextBox width="225">
 					<PGVRText style="text"><PGVRGedcomValue tag="DEAT:PLAC" /></PGVRText>
 				</PGVRTextBox>
-				<PGVRTextBox width="5" height="12" border="0">
-					<PGVRText style="text"> </PGVRText>
-				</PGVRTextBox>
-        		<PGVRTextBox width="220" height="12" border="0">        
+				<PGVRTextBox newline="1">        
 					<PGVRText style="text"><PGVRGedcomValue tag="DEAT:@SOUR" /></PGVRText>
 					<PGVRGedcom id="DEAT:@SOUR">
 						<PGVRText style="text"><PGVRGedcomValue tag="TITL" /></PGVRText>
 					</PGVRGedcom>
-        		</PGVRTextBox>        
-				<PGVRTextBox width="5" height="12" border="0" newline="1">
-					<PGVRText style="text"> </PGVRText>
 				</PGVRTextBox>
-     		</PGVRList>
-      		<PGVRCell width="0" height="24" border="0" align="right" style="label">
+			</PGVRList>
+
+			<PGVRCell align="right" height="24" newline="1" style="label">
 				<PGVRvar var="pgv_lang[total_indis]" />: <PGVRListTotal />
-      		</PGVRCell>
+			</PGVRCell>
 		</PGVRBody>
+		<PGVRFooter>
+			<PGVRCell newline="1" style="genby"><PGVRNow/></PGVRCell>
+		</PGVRFooter>
 	</PGVRDoc>
 </PGVReport>

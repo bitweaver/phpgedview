@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.pl.php,v 1.1 2009/04/30 17:52:57 lsces Exp $
+ * @version $Id: functions.pl.php,v 1.2 2009/08/03 20:10:42 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -152,6 +152,15 @@ function age_localisation_pl(&$agestring, &$show_years) {
 		),
 		$agestring
 	);
+}
+function age2_localisation_pl($years) {
+	global $pgv_lang;
+
+	if ($years==1) $years .= " ".$pgv_lang["year1"];
+	else if ($years > 1 && $years < 5) $years .= " ".$pgv_lang["years2"];
+	else if (substr($years, -1, 1) > 1 && substr($years, -1, 1) < 5 && substr($years, -2, 1) != 1) $years .= " ".$pgv_lang["years2"];
+	else $years .= " ".$pgv_lang["years"];
+	return $years;
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Localise a date differences. Lokalizacja różnic dat.
@@ -347,9 +356,71 @@ function cr_facts_localisation_pl(&$factrec, &$fact, &$explode_fact, &$pid) {
 ////////////////////////////////////////////////////////////////////////////////
 // Localise the relationships. Lokalizacja pokrewieństwa.
 ////////////////////////////////////////////////////////////////////////////////
-function rela_localisation_pl(&$rela) {
+function rela_localisation_pl(&$rela, &$pid2) {
+	global $pgv_lang;
 
-	print " ".ucfirst($rela).": ";
+	if (isset($pid2)) {
+		$record = Person::getInstance($pid2);
+		if (!empty($record)) {
+			$sex = $record->getSex();
+			switch ($rela) {
+				case $pgv_lang["informant"]:
+					if ($sex == "M")		$rela = "Informator";
+					else if ($sex == "F")   $rela = "Informatorka";
+					break;
+				case $pgv_lang["lodger"]:
+					if ($sex == "M")		$rela = "Lokator";
+					else if ($sex == "F")   $rela = "Lokatorka";
+					break;
+				case $pgv_lang["slave"]:
+					if ($sex == "M")		$rela = "Niewolnik";
+					else if ($sex == "F")   $rela = "Niewolnica";
+					break;
+				case $pgv_lang["attending"]:
+					if ($sex == "M")		$rela = "Obsługujący";
+					else if ($sex == "F")   $rela = "Obsługująca";
+					break;
+				case $pgv_lang["guardian"]:
+					if ($sex == "M")		$rela = "Opiekun";
+					else if ($sex == "F")   $rela = "Opiekunka";
+					break;
+				case $pgv_lang["nurse"]:
+					if ($sex == "M")		$rela = "Pielęgniarz";
+					else if ($sex == "F")   $rela = "Pielęgniarka";
+					break;
+				case $pgv_lang["attendant"]:
+					if ($sex == "M")		$rela = "Pomocnik";
+					else if ($sex == "F")   $rela = "Pomocnica";
+					break;
+				case $pgv_lang["employee"]:
+					if ($sex == "M")		$rela = "Pracownik";
+					else if ($sex == "F")   $rela = "Pracownica";
+					break;
+				case $pgv_lang["friend"]:
+					if ($sex == "M")		$rela = "Przyjaciel";
+					else if ($sex == "F")   $rela = "Przyjaciółka";
+					break;
+				case $pgv_lang["servant"]:
+					if ($sex == "M")		$rela = "Służący";
+					else if ($sex == "F")   $rela = "Służąca";
+					break;
+				case $pgv_lang["seller"]:
+					if ($sex == "M")		$rela = "Sprzedawca";
+					else if ($sex == "F")   $rela = "Sprzedawczyni";
+					break;
+				case $pgv_lang["owner"]:
+					if ($sex == "M")		$rela = "Właściciel";
+					else if ($sex == "F")   $rela = "Właścicielka";
+					break;
+				case $pgv_lang["ward"]:
+					if ($sex == "M")		$rela = "Wychowanek";
+					else if ($sex == "F")   $rela = "Wychowanka";
+					break;
+			}
+		}
+	}
+	
+	return " ".ucfirst($rela).": ";
 }
 
 function getRelationshipText_pl($relationshipDescription, $node, $pid1, $pid2) {
@@ -358,6 +429,7 @@ function getRelationshipText_pl($relationshipDescription, $node, $pid1, $pid2) {
 	}
 	return false;
 }
+
 //-- functions to calculate polish specific genitive names
 function getFirstRelationsName_pl($pid) {
 	// In Polish we want the genitive form of the name
@@ -519,5 +591,19 @@ function getFirstRelationsName_pl($pid) {
 	}
 	if (!empty($pname)) return trim($pname);
 	else return $fname;
+}
+
+function century_localisation_pl($n, $show=true) {
+	$arab = array(1, 4, 5, 9, 10);
+	$roman = array("I", "IV", "V", "IX", "X");
+	$roman_century = "";
+	for ($i=4; $i>=0; $i--) {
+		while ($n>=$arab[$i]) {
+			$n-=$arab[$i];
+			$roman_century .= $roman[$i];
+		}
+	}
+	if ($show) return $roman_century." w.";
+	else return $roman_century;
 }
 ?>

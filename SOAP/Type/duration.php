@@ -45,7 +45,7 @@ For example, P1347Y, P1347M and P1Y2MT2H are all allowed; P0Y1347M
 and P0Y1347M0D are allowed. P-1347M is not allowed although -P1347M
 is allowed. P1Y2MT is not allowed. 
 
- * @version $Id $
+ * @version $Id$
 
 */
 

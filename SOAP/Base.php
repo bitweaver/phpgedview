@@ -20,7 +20,7 @@
  * @author     Chuck Hagenbuch <chuck@horde.org>   Maintenance
  * @author     Jan Schneider <jan@horde.org>       Maintenance
  * @copyright  2003-2005 The PHP Group
- * @version $Id $
+ * @version $Id$
  * @license    http://www.php.net/license/2_02.txt  PHP License 2.02
  * @link       http://pear.php.net/package/SOAP
  */
@@ -46,20 +46,20 @@ $GLOBALS['SOAP_OBJECT_STRUCT'] = true;
 $GLOBALS['SOAP_RAW_CONVERT'] = false;
 
 require_once 'PEAR.php';
-require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Type/dateTime.php');
-require_once(PHPGEDVIEW_PKG_PATH.'SOAP/Type/hexBinary.php');
+require_once 'SOAP/Type/dateTime.php';
+require_once 'SOAP/Type/hexBinary.php';
 
 // optional features
 $GLOBALS['SOAP_options'] = array();
 
-@include_once(PHPGEDVIEW_PKG_PATH.'SOAP/Mail/mimePart.php');
-@include_once(PHPGEDVIEW_PKG_PATH.'SOAPMail/mimeDecode.php');
+@include_once 'SOAP/Mail/mimePart.php';
+@include_once 'SOAP/Mail/mimeDecode.php';
 if (class_exists('Mail_mimePart')) {
     $GLOBALS['SOAP_options']['Mime'] = 1;
     define('MAIL_MIMEPART_CRLF', "\r\n");
 }
 
-@include_once(PHPGEDVIEW_PKG_PATH.'SOAP/Net/DIME.php');
+@include_once 'SOAP/Net/DIME.php';
 if (class_exists('Net_DIME_Message')) {
     $GLOBALS['SOAP_options']['DIME'] = 1;
 }

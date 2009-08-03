@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: functions_places.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id: functions_places.php,v 1.2 2009/08/03 20:10:43 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -66,7 +66,7 @@ function setup_place_subfields($element_id) {
 	<script type="text/javascript" src="places/modomt.js"></script>
 	<script type="text/javascript" src="places/xmlextras.js"></script>
 	<script type="text/javascript" src="places/acdropdown.js"></script>
-	<script type="text/javascript" src="strings.js"></script>
+	<script type="text/javascript" src="js/strings.js"></script>
 	<script type="text/javascript">
 	<!--
 	var element_id = '<?php print $element_id; ?>';

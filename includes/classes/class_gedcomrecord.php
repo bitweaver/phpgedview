@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_gedcomrecord.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+* @version $Id: class_gedcomrecord.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -177,6 +177,12 @@ class GedcomRecord {
 			$object=new GedcomRecord($data, $simple);
 			break;
 		}
+		
+		// This is an object from the database, but we created it from raw gedcom
+		// rather than a database row.  Set the gedcom to indicate that it is not
+		// a dynamically created record.
+		$object->ged_id=$ged_id;
+
 		if (!empty($fromfile)) {
 			$object->setChanged(true);
 		}
@@ -577,6 +583,12 @@ class GedcomRecord {
 			return $pgv_lang['private'];
 		}
 	}
+	function getFindName() {
+		return strtr(utf8_decode(strip_tags($this->getListName())),
+								"ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ",
+								"aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn");
+	}
+
 	// Get the fullname in an alternative character set
 	function getAddName() {
 		if ($this->canDisplayName() && $this->getPrimaryName()!=$this->getSecondaryName()) {

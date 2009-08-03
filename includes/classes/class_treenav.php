@@ -20,7 +20,7 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
 * @package PhpGedView
-* @version $Id: class_treenav.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+* @version $Id: class_treenav.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -68,7 +68,7 @@ class TreeNav {
 				global $stylesheet;
 				?>
 				document.writeln('<link rel="stylesheet" href="<?php print $SERVER_URL.$stylesheet; ?>" type="text/css" media="all" />');
-				document.writeln('<script type="text/javascript" src="<?php print $SERVER_URL; ?>/phpgedview.js"></script>');
+				document.writeln('<script type="text/javascript" src="<?php print $SERVER_URL; ?>/js/phpgedview.js"></script>');
 				<?php
 				ob_start();
 				$w = safe_GET('width', PGV_REGEX_INTEGER, '');
@@ -482,11 +482,11 @@ class TreeNav {
 						?>
 					</td>
 					<?php
-					if ($hasChildren && $person->getNumberOfChildren()>1) { ?><td valign="top"><img style="position: absolute;" id="cline_<?php print $person->getXref();?>" name="vertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" /></td><?php }
-					else if ($hasChildren) { ?><td valign="top"><img style="position: absolute;" id="cline_<?php print $person->getXref();?>" name="vertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="3" /></td><?php }
+					if ($hasChildren && $person->getNumberOfChildren()>1) { ?><td valign="top"><img style="position: absolute;" id="cline_<?php print $person->getXref();?>" name="vertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" alt="" /></td><?php }
+					else if ($hasChildren) { ?><td valign="top"><img style="position: absolute;" id="cline_<?php print $person->getXref();?>" name="vertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="3"  alt=""/></td><?php }
 					}
 					if ($state>0) {
-						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" /></td><?php
+						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" alt="" /></td><?php
 					}
 					/* print the person */ ?>
 					<td>
@@ -511,7 +511,7 @@ class TreeNav {
 					</td>
 					<?php
 					if ($state<0) {
-						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" /></td><?php
+						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" alt="" /></td><?php
 					}
 					/* print the father */
 					if ($state>=0 && (!empty($father) || !empty($mother))) {
@@ -520,7 +520,7 @@ class TreeNav {
 						$lineid.="_";
 						if (!empty($mother)) $lineid.=$mother->getXref();
 						?>
-					<?php if (!empty($father) && (!empty($mother))) { ?><td><img style="position: absolute;" id="<?php print $lineid;?>" name="pvertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" /></td><?php } ?>
+					<?php if (!empty($father) && (!empty($mother))) { ?><td><img style="position: absolute;" id="<?php print $lineid;?>" name="pvertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" alt="" /></td><?php } ?>
 					<td align="left">
 						<table cellpadding="0" cellspacing="0" border="0">
 							<tbody>
@@ -615,10 +615,10 @@ class TreeNav {
 						?>
 					</td>
 					<?php
-					if ($hasChildren && $family->getNumberOfChildren()>1) { ?><td valign="top"><img style="position: absolute;" id="cline_<?php print $person->getXref();?>" name="vertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" /></td><?php }
+					if ($hasChildren && $family->getNumberOfChildren()>1) { ?><td valign="top"><img style="position: absolute;" id="cline_<?php print $person->getXref();?>" name="vertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" alt="" /></td><?php }
 					}
 					if ($state>0) {
-						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" /></td><?php
+						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" alt="" /></td><?php
 					}
 					/* print the person */ ?>
 					<td>
@@ -635,7 +635,7 @@ class TreeNav {
 					</td>
 					<?php
 					if ($state<0) {
-						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" /></td><?php
+						?><td><img src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['hline']['other']; ?>" width="8" height="3" alt="" /></td><?php
 					}
 					/* print the father */
 					if ($state>=0 && (!empty($father) || !empty($mother))) {
@@ -644,7 +644,7 @@ class TreeNav {
 						$lineid.="_";
 						if (!empty($mother)) $lineid.=$mother->getXref();
 						?>
-					<?php if (!empty($father) && (!empty($mother))) { ?><td><img style="position: absolute;" id="<?php print $lineid;?>" name="pvertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" /></td><?php } ?>
+					<?php if (!empty($father) && (!empty($mother))) { ?><td><img style="position: absolute;" id="<?php print $lineid;?>" name="pvertline" src="<?php print $SERVER_URL.$PGV_IMAGE_DIR."/".$PGV_IMAGES['vline']['other']; ?>" width="3" alt="" /></td><?php } ?>
 					<td align="left">
 						<table cellpadding="0" cellspacing="0" border="0">
 							<tbody>

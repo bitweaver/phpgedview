@@ -2,7 +2,7 @@
  * Common javascript functions
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: phpgedview.js,v 1.2 2006/10/01 22:44:03 lsces Exp $
+ * @version $Id: phpgedview.js,v 1.3 2009/08/03 20:11:56 lsces Exp $
  */
 if (!document.getElementById)	// Check if browser supports the getElementByID function
 {
@@ -43,15 +43,16 @@ function closeHelp() {
 }
 
 function openImage(filename, width, height) {
-		height=height+50;
-		screenW = screen.width;
-	 	screenH = screen.height;
-	 	if (width>screenW-100) width=screenW-100;
-	 	if (height>screenH-110) height=screenH-120;
-		if ((filename.search(/\.je?pg$/gi)!=-1)||(filename.search(/\.gif$/gi)!=-1)||(filename.search(/\.png$/gi)!=-1)||(filename.search(/\.bmp$/gi)!=-1)) window.open('imageview.php?filename='+filename,'_blank','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
-		else window.open(unescape(filename),'_blank','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
-		return false;
-	}
+	height=height+50;
+	screenW = screen.width;
+	screenH = screen.height;
+	if (width>screenW-100) width=screenW-100;
+	if (height>screenH-110) height=screenH-120;
+//	if (filename.search(/\.(jpe?g|gif|png)$/gi)!=-1)
+		window.open('imageview.php?filename='+filename,'_blank','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
+//	else window.open(unescape(filename),'_blank','top=50,left=50,height='+height+',width='+width+',scrollbars=1,resizable=1');
+	return false;
+}
 
 // variables to hold mouse x-y pos.s
 	var msX = 0;
@@ -201,9 +202,18 @@ var show = false;
 			famlinks = document.getElementById("I"+boxid+"links");
 			divbox = document.getElementById("out-"+boxid);
 			parentbox = document.getElementById("box"+boxid);
+			if (!parentbox) parentbox = document.getElementById(pboxid+".0");
 			if (famlinks && divbox && parentbox) {
-				famlinks.style.top = "0px";
-				if (textDirection=="ltr") famleft = parseInt(divbox.style.width)+15;
+				divWidth = parseInt(divbox.style.width);
+				linkWidth = parseInt(famlinks.style.width);
+				parentWidth = parseInt(parentbox.style.width);
+				//alert('Widths div:'+divWidth+' parent:'+parentWidth+' links:'+linkWidth);
+				famlinks.style.top = "3px";
+				famleft = divWidth+8;
+				if (textDirection=="rtl") {
+					famleft -= (divWidth+linkWidth+5);
+					if (browserType!="mozilla") famleft -= 11;
+				}
 				pagewidth = document.documentElement.offsetWidth+document.documentElement.scrollLeft;
 				//alert(pagewidth);
 				if (famleft+parseInt(parentbox.style.left) > pagewidth-100) famleft=25;
@@ -223,7 +233,7 @@ var show = false;
 
 	var timeouts = new Array();
 	function family_box_timeout(boxid) {
-		tout = setTimeout("hide_family_box('"+boxid+"')", 1500);
+		tout = setTimeout("hide_family_box('"+boxid+"')", 2500);
 		timeouts[boxid] = tout;
 	}
 
@@ -285,12 +295,22 @@ function getMouseXY(e) {
 }
 
 function edit_record(pid, linenum) {
-	window.open('edit_interface.php?action=edit&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=edit&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function edit_raw(pid) {
-	window.open('edit_interface.php?action=editraw&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=400,height=400,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=editraw&pid='+pid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=400,height=400,resizable=1,scrollbars=1');
+	return false;
+}
+
+function edit_note(pid) {
+	window.open('edit_interface.php?action=editnote&pid='+pid+'&linenum=1&'+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
+
+function edit_source(pid) {
+	window.open('edit_interface.php?action=editsource&pid='+pid+'&linenum=1&'+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
@@ -298,85 +318,98 @@ function add_record(pid, fact) {
 	factfield = document.getElementById(fact);
 	if (factfield) {
 		factvalue = factfield.options[factfield.selectedIndex].value;
-		if (factvalue.substr(0, 10)=="clipboard_") window.open('edit_interface.php?action=paste&pid='+pid+'&fact='+factvalue.substr(10)+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
-		else if (factvalue == "OBJE") window.open('addmedia.php?action=showmediaform&linkid='+pid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
-		else window.open('edit_interface.php?action=add&pid='+pid+'&fact='+factvalue+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+		if (factvalue == "OBJE") window.open('addmedia.php?action=showmediaform&linkid='+pid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+		else window.open('edit_interface.php?action=add&pid='+pid+'&fact='+factvalue+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	}
+	return false;
+}
+
+function addClipboardRecord(pid, fact) {
+	factfield = document.getElementById(fact);
+	if (factfield) {
+		factvalue = factfield.options[factfield.selectedIndex].value;
+		window.open('edit_interface.php?action=paste&pid='+pid+'&fact='+factvalue.substr(10)+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	}
 	return false;
 }
 
 function add_new_record(pid, fact) {
-		window.open('edit_interface.php?action=add&pid='+pid+'&fact='+fact+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+		window.open('edit_interface.php?action=add&pid='+pid+'&fact='+fact+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
-function addnewchild(famid,sex) {
-	window.open('edit_interface.php?action=addchild&sex='+sex+'&famid='+famid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+function addnewchild(famid,gender) {
+	window.open('edit_interface.php?action=addchild&gender='+gender+'&famid='+famid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewspouse(famid, famtag) {
-	window.open('edit_interface.php?action=addspouse&famid='+famid+'&famtag='+famtag+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addspouse&famid='+famid+'&famtag='+famtag+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
+
+function addopfchild(pid, gender) {
+	window.open('edit_interface.php?action=addopfchild&pid='+pid+'&gender='+gender+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addspouse(pid, famtag) {
-	window.open('edit_interface.php?action=addspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function linkspouse(pid, famtag) {
-	window.open('edit_interface.php?action=linkspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=linkspouse&pid='+pid+'&famtag='+famtag+'&famid=new&'+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function add_famc(pid) {
-	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag=CHIL'+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag=CHIL'+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function add_fams(pid, famtag) {
-	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag='+famtag+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	 window.open('edit_interface.php?action=addfamlink&pid='+pid+'&famtag='+famtag+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function edit_name(pid, linenum) {
-	window.open('edit_interface.php?action=editname&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=editname&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function add_name(pid) {
-	window.open('edit_interface.php?action=addname&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addname&pid='+pid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewparent(pid, famtag) {
-	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid=new'+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid=new'+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewparentfamily(pid, famtag, famid) {
-	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid='+famid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addnewparent&pid='+pid+'&famtag='+famtag+'&famid='+famid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function copy_record(pid, linenum) {
-	window.open('edit_interface.php?action=copy&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=copy&pid='+pid+'&linenum='+linenum+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function reorder_children(famid) {
-	window.open('edit_interface.php?action=reorder_children&pid='+famid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=reorder_children&pid='+famid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function reorder_families(pid) {
-	window.open('edit_interface.php?action=reorder_fams&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=reorder_fams&pid='+pid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
-function quickEdit(pid, act) {
-	window.open('edit_quickupdate.php?pid='+pid+"&"+sessionname+"="+sessionid+"&action="+act, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+function quickEdit(pid, act, ged) {
+	window.open('edit_quickupdate.php?pid='+pid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime+"&action="+act+"&ged="+ged, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
@@ -396,28 +429,74 @@ function delete_message(id) {
 }
 
 function delete_family(famid) {
-	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&action=deletefamily", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime+"&action=deletefamily", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function deletesource(pid) {
-	 window.open('edit_interface.php?action=deletesource&pid='+pid+"&"+sessionname+"="+sessionid, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	 window.open('edit_interface.php?action=deletesource&pid='+pid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	 return false;
 }
 
+function deletenote(pid) {
+	 window.open('edit_interface.php?action=deletenote&pid='+pid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime, '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	 return false;
+}
+
+function edit_family(famid) {
+	window.open('edit_interface.php?famid='+famid+'&linenum=1&'+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime+"&action=edit_family", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
+
 function change_family_members(famid) {
-	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&action=changefamily", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?famid='+famid+"&"+sessionname+"="+sessionid+"&accesstime="+accesstime+"&action=changefamily", '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
 
 function addnewsource(field) {
 	pastefield = field;
-	window.open('edit_interface.php?action=addnewsource&amp;pid=newsour', '_blank', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
+	window.open('edit_interface.php?action=addnewsource&pid=newsour', '_blank', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
+function addnewnote(field) {
+	pastefield = field;
+	window.open('edit_interface.php?action=addnewnote&noteid=newnote', '_blank', 'top=70,left=70,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
+function addnewnote_assisted(field, iid) {
+	pastefield = field;
+	window.open('edit_interface.php?action=addnewnote_assisted&noteid=newnote&pid='+iid, '_blank', 'top=70,left=70,width=1000,height=800,resizable=1,scrollbars=1');
+	return false;
+}
+function addmedia_links(field, iid, iname) {
+	pastefield = field;
+	insertRowToTable(iid, iname);
+	// AUTO OPEN Family Nav - If GEDFact_assistant installed, plus check for type of id (Family or Indi) ==================
+		/*
+		if (iid.match("I")=="I") {
+			winNav = window.open('edit_interface.php?action=addmedia_links&noteid=newnote&pid='+iid, 'winNav', 'top=50,left=600,width=420,height=650,resizable=1,scrollbars=1');
+			if (window.focus) {winNav.focus();}
+		}else if (iid.match("F")=="F") {
+			// TO DO (something different when family id is entered)
+			// alert('Opening Navigator with family id entered will come later');
+		}
+		*/
 	return false;
 }
 
 function valid_date(datefield) {
-	months = new Array("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC");
+	var months = new Array("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC");
+
+	//-- don't try to validate empty dates for Safari/opera
+	if (datefield.value=="") return;
+
+	// year only no validation for Safari/opera
+	var qsearch = /^(\d\d\d\d)$/i;
+ 	var found = qsearch.exec(datefield.value);
+ 	if (found) {
+	 	return;
+ 	}
+
 	// quarter format [ 1509083 ]
 	// e.g. Q1 1900
 	var qsearch = /^Q(\d) (\d\d\d\d)$/i;
@@ -428,8 +507,46 @@ function valid_date(datefield) {
 	 	m = (q-1)*3;
 		if (0<q && q<5) datefield.value = "BET "+months[m]+" "+y+" AND "+months[(m+2)]+" "+y;
 	}
+	// e.g. 17.11.1860 or 1999-12-31.  Use locale settings where DMY order is ambiguous.
+	var qsearch = /^(\d+)[^\d](\d+)[^\d](\d+)$/i;
+ 	if (qsearch.exec(datefield.value)) {
+		var f1=parseInt(RegExp.$1, 10);
+		var f2=parseInt(RegExp.$2, 10);
+		var f3=parseInt(RegExp.$3, 10);
+		var dmy='DMY';
+		if (typeof(locale_date_format)!='undefined')
+			if (locale_date_format=='MDY' || locale_date_format=='YMD')
+				dmy=locale_date_format;
+		var yyyy=new Date().getFullYear();
+		var yy=yyyy % 100;
+		var cc=yyyy - yy;
+	 	if (dmy=='DMY' && f1<=31 && f2<=12 || f1>13 && f1<=31 && f2<=12 && f3>31)
+			datefield.value=f1+" "+months[f2-1]+" "+(f3>=100?f3:(f3<=yy?f3+cc:f3+cc-100));
+		else if (dmy=='MDY' && f1<=12 && f2<=31 || f2>13 && f2<=31 && f1<=12 && f3>31)
+			datefield.value=f2+" "+months[f1-1]+" "+(f3>=100?f3:(f3<=yy?f3+cc:f3+cc-100));
+		else if (dmy=='YMD' && f2<=12 && f3<=31 || f3>13 && f3<=31 && f2<=12 && f1>31)
+			datefield.value=f3+" "+months[f2-1]+" "+(f1>=100?f1:(f1<=yy?f1+cc:f1+cc-100));
+	}
+
+	// Shortcuts for date ranges
+	datefield.value=datefield.value.replace(/^[~*]([\w ]+)$/, "ABT $1");
+	datefield.value=datefield.value.replace(/^[>+]([\w ]+)$/, "AFT $1");
+	datefield.value=datefield.value.replace(/^([\w ]+)[-/]$/, "AFT $1");
+	datefield.value=datefield.value.replace(/^[</-]([\w ]+)$/, "BEF $1");
+	datefield.value=datefield.value.replace(/^([\w ]+) ?- ?([\w ]+)$/, "BET $1 AND $2");
+	if (datefield.value.match(/^=([\d ()/+*-]+)$/)) datefield.value=eval(RegExp.$1);
+
 	// other format
-	date = new Date(datefield.value);
+	datestr = datefield.value;
+	datestr = datestr.replace(/-/g, "/");
+
+	// Use Javascript's Date() function to interpret a range of dates
+
+	date = new Date('1');  // Detect Opera bug
+	if (date && date.toString()!="NaN" && date.getDate().toString()!="NaN")
+		return;
+
+	date = new Date(datestr);
 	if (date && date.toString()!="NaN" && date.getDate().toString()!="NaN") {
 		day = date.getDate();
 		if (day<10) day = "0"+day;
@@ -453,6 +570,7 @@ var oldname = 0;
 var oldthumbdisp = 0;
 var repositioned = 0;
 var oldiconsdislpay = 0;
+
 function expandbox(boxid, bstyle) {
 	if (big==1) {
 		restorebox(oldboxid, bstyle);
@@ -467,7 +585,7 @@ function expandbox(boxid, bstyle) {
 		parentbox=divbox;
 	//	if (bstyle!=2) divbox.style.position="absolute";
 	}
-	sex = document.getElementById("box-"+boxid+"-sex");
+	gender = document.getElementById("box-"+boxid+"-gender");
 	thumb1 = document.getElementById("box-"+boxid+"-thumb");
 	famlinks = document.getElementById("I"+boxid+"links");
 	icons = document.getElementById("icons-"+boxid);
@@ -511,8 +629,32 @@ function expandbox(boxid, bstyle) {
 			//else parentbox.style.right=divleft+"px";
 		}
 		divbox.style.height='auto';
-		if (inbox) inbox.style.display='block';
+		if (inbox)
+		{
+			inbox.style.display='block';
+			if ( inbox.innerHTML.indexOf("LOADING")>0 )
+			{
+				//-- load data from expand_view.php
+				var pid = boxid.split(".")[0];
+				var oXmlHttp = createXMLHttp();
+				oXmlHttp.open("get", "expand_view.php?pid=" + pid, true);
+				oXmlHttp.onreadystatechange=function()
+				{
+		  			if (oXmlHttp.readyState==4)
+		  			{
+		   				inbox.innerHTML = oXmlHttp.responseText;
+		   			}
+		  		};
+		  		oXmlHttp.send(null);
+	  		}
+		}
+		else
+		{
+			inbox.style.display='none';
+		}
+
 		if (inbox2) inbox2.style.display='none';
+
 		fontdef = document.getElementById("fontdef-"+boxid);
 		if (fontdef) {
 			oldfont = fontdef.className;
@@ -531,22 +673,115 @@ function expandbox(boxid, bstyle) {
 		if (thumb1) {
 			oldthumbdisp = thumb1.style.display;
 			thumb1.style.display='block';
-			oldimgw = thumb1.width;
-			oldimgh = thumb1.height;
-			if (oldimgw) thumb1.style.width = oldimgw*2;
-			if (oldimgh) thumb1.style.height = oldimgh*2;
+			oldimgw = thumb1.offsetWidth;
+			oldimgh = thumb1.offsetHeight;
+			if (oldimgw) thumb1.style.width = (oldimgw*2)+"px";
+			if (oldimgh) thumb1.style.height = (oldimgh*2)+"px";
 		}
-		if (sex) {
-			oldimgw1 = sex.width;
-			oldimgh1 = sex.height;
-//			if (oldimgw1) sex.style.width = oldimgw1*2;
-//			if (oldimgh1) sex.style.height = oldimgh1*2;
-			if (oldimgw1) sex.style.width = "15px";
-			if (oldimgh1) sex.style.height = "15px";
+		if (gender) {
+			oldimgw1 = gender.offsetWidth;
+			oldimgh1 = gender.offsetHeight;
+			if (oldimgw1) gender.style.width = "15px";
+			if (oldimgh1) gender.style.height = "15px";
 		}
 	}
 	return true;
 }
+function createXMLHttp()
+{
+	if (typeof XMLHttpRequest != "undefined")
+	{
+		return new XMLHttpRequest();
+	}
+	else if (window.ActiveXObject)
+	{
+		var ARR_XMLHTTP_VERS=["MSXML2.XmlHttp.5.0","MSXML2.XmlHttp.4.0",
+			"MSXML2.XmlHttp.3.0","MSXML2.XmlHttp","Microsoft.XmlHttp"];
+
+		for (var i = 0; i < ARR_XMLHTTP_VERS.length; i++)
+		{
+			try
+			{
+				var oXmlHttp = new ActiveXObject(ARR_XMLHTTP_VERS[i]);
+				return oXmlHttp;
+			}
+			catch (oError) {;}
+		}
+	}
+	throw new Error("XMLHttp object could not be created.");
+};
+
+/**
+ * function to extract JS code from a text string.  Useful to call when loading
+ * content dynamically through AJAX which contains a mix of HTML and JavaScript.
+ * retrieves all of the JS code between <script></script> tags and adds it as a <script> node
+ * @param string text   the text that contains a mix of html and inline javascript
+ * @param DOMElement parentElement	the element that the text and JavaScript will added to
+ */
+function evalAjaxJavascript(text, parentElement) {
+	parentElement.innerHTML = "";
+	/* -- uncomment for debugging
+	debugelement = document.createElement("pre");
+	debugelement.appendChild(document.createTextNode(text));
+	parentElement.appendChild(debugelement);
+	*/
+	pos2 = -1;
+	//-- find the first occurrence of <script>
+	pos1 = text.indexOf("<script", pos2+1);
+	while(pos1>-1) {
+		//-- append the text up to the <script tag to the content of the parent element
+		parentElement.innerHTML += text.substring(0, pos1);
+
+		//-- find the close of the <script> tag
+		pos2 = text.indexOf(">",pos1+5);
+		if (pos2==-1) {
+			parentElement.innerHTML += "Error: incomplete text";
+			return;
+		}
+		//-- create a new <script> element to add to the parentElement
+		jselement = document.createElement("script");
+		jselement.type = "text/javascript";
+		//-- look for any src attributes
+		scripttag = text.substring(pos1, pos2);
+		regex = new RegExp("\\ssrc=\".*\"", "gi");
+		results = scripttag.match(regex);
+		if (results) {
+			for(i=0; i<results.length; i++) {
+				src = results[i].substring(results[i].indexOf("\"")+1, results[i].indexOf("\"", 6));
+				src = src.replace(/&amp;/gi, "&");
+				jselement.src = src;
+			}
+		}
+		opos1 = pos1;
+		pos1 = pos2;
+		//-- find the closing </script> tag
+		pos2 = text.indexOf("</script",pos1+1);
+		if (pos2==-1) {
+			parentElement.innerHTML += "Error: incomplete text";
+			return;
+		}
+		//-- get the JS code between the <script></script> tags
+		if (!results || results.length==0) {
+			jscode = text.substring(pos1+1, pos2);
+			if (jscode.length>0) {
+				ttext = document.createTextNode(jscode);
+				//-- add the JS code to the <script> element as a text node
+				jscode=jscode.replace(/<!--/g, ''); // remove html comment [ 1737256 ]
+				jscode=jscode.replace(/function ([^( ]*)/g,'window.$1 = function');
+				eval(jscode);
+			}
+		}
+		//-- add the javascript element to the parent element
+		parentElement.appendChild(jselement);
+		//-- shrink the text for the next iteration
+		text = text.substring(pos2+9, text.length);
+		//-- look for the next <script> tag
+		pos1 = text.indexOf("<script");
+	}
+	//-- make sure any HTML/text after the last </script> gets added
+	parentElement.innerHTML += text;
+}
+
 function restorebox(boxid, bstyle) {
 	divbox = document.getElementById("out-"+boxid);
 	inbox = document.getElementById("inout-"+boxid);
@@ -565,11 +800,11 @@ function restorebox(boxid, bstyle) {
 			else iconz.src = zoominout[0].src;
 		}
 		big = 0;
-		if (sex) {
+		if (gender) {
 			oldimgw1 = oldimgw1+"px";
 			oldimgh1 = oldimgh1+"px";
-			sex.style.width = oldimgw1;
-			sex.style.height = oldimgh1;
+			gender.style.width = oldimgw1;
+			gender.style.height = oldimgh1;
 		}
 		if (thumb1) {
 			oldimgw = oldimgw+"px";
@@ -641,41 +876,16 @@ function show_submenu(elementid, parentid, dir) {
 	var pagewidth = document.body.scrollWidth+document.documentElement.scrollLeft;
 	var element = document.getElementById(elementid);
 	if (element && element.style) {
-		element.style.visibility='visible';
-		if (dir=="down") {
-			var pelement = document.getElementById(parentid);
-			if (pelement) {
-				element.style.left=pelement.style.left;
-//				element.style.right=pelement.style.right;
-				var boxright = element.offsetLeft+element.offsetWidth+10;
 				if (document.all) {
 					pagewidth = document.body.offsetWidth;
-//					var pomoc = 15;
-					if (textDirection=="rtl") element.style.left = (element.offsetLeft-70)+'px';
+					//if (textDirection=="rtl") element.style.left = (element.offsetLeft-70)+'px';
 				}
 				else {
-//					var pomoc = 70;
 					pagewidth = document.body.scrollWidth+document.documentElement.scrollLeft-70;
 					if (textDirection=="rtl") {
-//						element.style.width = "220px";
 						boxright = element.offsetLeft+element.offsetWidth+10;
 					}
 				}
-				if (boxright > pagewidth) {
-					var menuleft = pagewidth-element.offsetWidth;
-//					var menuleft = menuleft-pomoc;
-					element.style.left = menuleft + "px";
-				}
-			}
-		}
-		if (dir=="right") {
-			var pelement = document.getElementById(parentid);
-			if (pelement) {
-				element.style.left=(pelement.offsetLeft+pelement.offsetWidth-40)+"px";
-			}
-		}
-
-		if (element.offsetLeft < 0) element.style.left = "0px";
 
 		//-- make sure the submenu is the size of the largest child
 		var maxwidth = 0;
@@ -688,7 +898,49 @@ function show_submenu(elementid, parentid, dir) {
 			element.style.width = maxwidth+"px";
 		}
 
+		if (dir=="down") {
+			var pelement = document.getElementById(parentid);
+			if (pelement) {
+				element.style.left=pelement.style.left;
+				var boxright = element.offsetLeft+element.offsetWidth+10;
+				if (boxright > pagewidth) {
+					var menuleft = pagewidth-element.offsetWidth;
+					element.style.left = menuleft + "px";
+				}
+			}
+		}
+		if (dir=="right") {
+			var pelement = document.getElementById(parentid);
+			if (pelement) {
+				if (textDirection=="ltr") {
+				var boxleft = pelement.offsetLeft+pelement.offsetWidth-40;
+				var boxright = boxleft+element.offsetWidth+10;
+				if (boxright > pagewidth) {
+					element.style.right = pelement.offsetLeft + "px";
+				}
+				else {
+					element.style.left=boxleft+"px";
+				}
+				}
+				else {
+//					element.style.right = pelement.offsetLeft+"px";
+					element.style.left = (pelement.offsetLeft-element.offsetWidth)+"px";
+//					alert(element.style.left);
+				}
+				element.style.top = pelement.offsetTop+"px";
+			}
+		}
+
+		if (element.offsetLeft < 0) element.style.left = "0px";
+
+		//-- put scrollbars on really long menus
+		if (element.offsetHeight > 500) {
+			element.style.height = '400px';
+			element.style.overflow = 'auto';
+		}
+
 		currentmenu = elementid;
+		element.style.visibility='visible';
 	}
 	clearTimeout(menutimeouts[elementid]);
 	menutimeouts[elementid] = null;
@@ -701,12 +953,14 @@ function show_submenu(elementid, parentid, dir) {
  * @param string elementid the id for the dom element you want to hide
  */
 function hide_submenu(elementid) {
+if (menutimeouts[elementid] != null) {
 	element = document.getElementById(elementid);
 	if (element && element.style) {
 		element.style.visibility='hidden';
 	}
 	clearTimeout(menutimeouts[elementid]);
 	menutimeouts[elementid] = null;
+}
 }
 
 /**
@@ -717,26 +971,10 @@ function hide_submenu(elementid) {
  */
 function timeout_submenu(elementid) {
 	if (menutimeouts[elementid] == null) {
-		tout = setTimeout("hide_submenu('"+elementid+"')", 500);
+		tout = setTimeout("hide_submenu('"+elementid+"')", 100);
 		menutimeouts[elementid] = tout;
 	}
 }
-/*
-var language_filter, magnify, pastefield;
-language_filter = "";
-magnify = "";
-function findSpecialChar(field) {
-	pastefield = field;
-	window.open('find.php?type=specialchar&language_filter='+language_filter+'&magnify='+magnify, '_blank', 'top=55,left=55,width=200,height=500,scrollbars=1,resizeable=1');
-	return false;
-}
-
-function paste_char(value,lang,mag) {
-	pastefield.value += value;
-	language_filter = lang;
-	magnify = mag;
-}
-*/
 function checkKeyPressed(e) {
 	if (IE) key = window.event.keyCode;
 	else key = e.which;
@@ -796,6 +1034,23 @@ function enabledisablelanguage(language) {
 function toggleStatus(sel) {
 	var cbox = document.getElementById(sel);
 	cbox.disabled=!(cbox.disabled);
+}
+
+
+function statusDisable(sel) {
+	var cbox = document.getElementById(sel);
+	cbox.checked = false;
+	cbox.disabled = true;
+}
+
+function statusEnable(sel) {
+	var cbox = document.getElementById(sel);
+	cbox.disabled = false;
+}
+
+function statusChecked(sel) {
+	var cbox = document.getElementById(sel);
+	cbox.checked = true;
 }
 
 var monthLabels = new Array();
@@ -935,7 +1190,7 @@ var monthLabels = new Array();
   	var day = tdate.getDay();
   	day = day - weekStart;
   	var daymilli = (1000*60*60*24);
-  	tdate = tdate.getTime() - (day*daymilli);
+  	tdate = tdate.getTime() - (day*daymilli) + (daymilli/2);
   	tdate = new Date(tdate);
 
   	for(j=0; j<6; j++) {
@@ -1000,10 +1255,17 @@ var monthLabels = new Array();
   	cal_toggleDate(dateDivId, dateFieldId);
   	return false;
   }
-function findIndi(field, indiname, multiple, ged) {
+function findIndi(field, indiname, multiple, ged,filter) {
         pastefield = field;
         nameElement = indiname;
+        if(filter)
+        {
+        window.open('find.php?type=indi&multiple='+multiple+'&ged='+ged+'&filter='+filter, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
+        }
+        else
+        {
         window.open('find.php?type=indi&multiple='+multiple+'&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
+        }
         return false;
 }
 
@@ -1030,6 +1292,12 @@ function findSource(field, sourcename, ged) {
 	window.open('find.php?type=source&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
 	return false;
 }
+function findnote(field, notename, ged) {
+	pastefield = field;
+	nameElement = notename;
+	window.open('find.php?type=note&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
+	return false;
+}
 function findRepository(field, ged) {
 	pastefield = field;
 	window.open('find.php?type=repo&ged='+ged, '_blank', 'left=50,top=50,width=600,height=500,resizable=1,scrollbars=1');
@@ -1037,6 +1305,92 @@ function findRepository(field, ged) {
 }
 function findSpecialChar(field) {
 	pastefield = field;
-	window.open('find.php?type=specialchar', '_blank', 'top=55,left=55,width=400,height=450,scrollbars=1,resizeable=1');
+	window.open('find.php?type=specialchar', '_blank', 'top=55,left=55,width=500,height=500,scrollbars=1,resizeable=1');
 	return false;
 }
+
+function toggleByClassName(tagName, className) {
+	var disp = "";
+	var elements = document.getElementsByTagName(tagName.toUpperCase());
+	for (var i = 0; i < elements.length; i++) {
+		var ecn = elements[i].className;
+		if (ecn && ecn.match(new RegExp("(^|\\s)" + className + "(\\s|$)"))) {
+			disp = elements[i].style.display;
+			if (disp == "none") {
+				if (tagName == "TR") {
+					disp = "table-row";
+					if (document.all && !window.opera) disp = "inline"; // IE
+				}
+				else disp = "block";
+				if (tagName == "SPAN") disp = "inline";
+			}
+			else disp = "none";
+			elements[i].style.display = disp;
+		}
+	}
+	// save status in a cookie
+	/*if (!navigator.cookieEnabled) return;
+	var cookieName = className;
+	var cookieValue = (disp=="none")? 0 : 1;
+	var cookieDate = new Date(2020,0,1);
+	document.cookie = cookieName+"="+cookieValue+"; expires="+cookieDate.toGMTString();*/
+}
+
+/**
+ * Load a CSS file from the body of a document
+ *
+ * CSS files are normally loaded through a <link rel="stylesheet" type="text/css" href="something" />
+ * statement.  This statement is only allowed in the <head> section of the document.
+ *
+ * See : http://www.phpied.com/javascript-include-ready-onload/
+ *
+ */
+function include_css(css_file) {
+    var html_doc = document.getElementsByTagName('head')[0];
+    var css = document.createElement('link');
+    css.setAttribute('rel', 'stylesheet');
+    css.setAttribute('type', 'text/css');
+    css.setAttribute('href', css_file);
+    html_doc.appendChild(css);
+}
+
+function include_js(file) {
+    var html_doc = document.getElementsByTagName('head')[0];
+    var js = document.createElement('script');
+    js.setAttribute('type', 'text/javascript');
+    js.setAttribute('src', file);
+    html_doc.appendChild(js);
+}
+
+  function findPosX(obj)
+  {
+    var curleft = 0;
+    if(obj.offsetParent)
+        while(1)
+        {
+          curleft += obj.offsetLeft;
+          if(!obj.offsetParent)
+            break;
+          obj = obj.offsetParent;
+        }
+    else if(obj.x)
+        curleft += obj.x;
+    return curleft;
+  }
+
+  function findPosY(obj)
+  {
+    var curtop = 0;
+    if(obj.offsetParent)
+        while(1)
+        {
+        	if (obj.style.position=="relative") break;
+          curtop += obj.offsetTop;
+          if(!obj.offsetParent)
+            break;
+          obj = obj.offsetParent;
+        }
+    else if(obj.y)
+        curtop += obj.y;
+    return curtop;
+  }

@@ -1,20 +1,21 @@
 <PGVReport access="PRIV_USER" icon="place">
 	<!-- $Id$ -->
-	<PGVRTitle><PGVRvar var="pgv_lang[address_labels]" /></PGVRTitle>
 	<PGVRDescription>Prints address labels</PGVRDescription>
-	<PGVRStyle name="header" font="dejavusans" size="16" style="b" />
-	<PGVRStyle name="pagenum" font="dejavusans" size="8" style="" />
-	<PGVRStyle name="text" font="dejavusans" size="8" style="" />
-	<PGVRStyle name="label" font="dejavusans" size="8" style="b" />
-	<PGVRStyle name="idstyle" font="dejavusans" size="6" style="" />
+	<PGVRTitle><PGVRvar var="pgv_lang[address_labels]" /></PGVRTitle>
 	<PGVRInput name="address" type="text"><PGVRvar var="pgv_lang[filter_address]" /> </PGVRInput>
 	<PGVRInput name="sortby" type="select" options="NAME,ID"><PGVRvar var="pgv_lang[sort_by]" /></PGVRInput>
 	<PGVRInput name="email_in" type="select" options="all,noemail,onlyemail"><PGVRvar var="pgv_lang[include]"/> </PGVRInput>
-	<PGVRInput name="pageSize" type="select" options="letter,A4,A3,A5,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRInput name="pageSize" type="select" default="A4" options="letter,A3,A4,legal"><PGVRvar var="pgv_lang[page_size]" /></PGVRInput>
+	<PGVRInput name="fonts" type="select" default="dejavusans" options="arialunicid0,dejavusans,helvetica"><PGVRvar var="pgv_lang[font]"/></PGVRInput>
 	<!--
 	<PGVRInput name="showid" type="checkbox" default="1"><PGVRvar var="pgv_lang[show_ids]" /></PGVRInput>
 	-->
-	<PGVRDoc pageSize="$pageSize" orientation="P" margin="1" showGeneratedBy="0">
+	<PGVRStyle name="header" font="$fonts" size="16" style="b" />
+	<PGVRStyle name="pagenum" font="$fonts" size="8" style="" />
+	<PGVRStyle name="text" font="$fonts" size="8" style="" />
+	<PGVRStyle name="label" font="$fonts" size="8" style="b" />
+	<PGVRStyle name="idstyle" font="$fonts" size="6" style="" />
+	<PGVRDoc pageSize="$pageSize" leftmargin="1" rightmargin="1" showGeneratedBy="0">
 		<PGVRHeader>
 		</PGVRHeader>
 		<PGVRBody>
@@ -53,7 +54,7 @@
 			<PGVRSetVar name="X" value="$Xstart" />
 			<PGVRSetVar name="Y" value="$Ystart" />
 			<PGVRList list="individual" filter1="$addrfilter" filter2="$addrfilter2" filter3="$email" sortby="$sortby">
-				<PGVRTextBox top="$Y" left="$X" width="$width" height="$height" border="0" newline="$newline" pagecheck="false">
+				<PGVRTextBox top="$Y" left="$X" width="$width" height="$height" newline="$newline" pagecheck="false">
 					<PGVRText style="label"><PGVRGetPersonName id="" /></PGVRText>
 					<PGVRText style="text"><br /><PGVRGedcomValue tag="ADDR" /><PGVRGedcomValue tag="RESI:ADDR" /></PGVRText>
 					<PGVRif condition="@ADDR:ADR1 != ''">

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: class_media.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: class_media.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -122,14 +122,6 @@ class Media extends GedcomRecord {
 		//-- also store it using its reference id (sid:pid and local gedcom for remote links)
 		$gedcom_record_cache[$pid][$ged_id]=&$object;
 		return $object;
-	}
-
-	/**
-	 *
-	 * get the title of the media item
-	 */
-	function getFullName() {
-		return $this->title;
 	}
 
 	/**
@@ -325,7 +317,7 @@ class Media extends GedcomRecord {
 	/**
 	 * check if the given Media object is in the objectlist
 	 * @param Media $obje
-	 * @return mixed  returns the ID for the for the matching media or false if not found
+	 * @return mixed  returns the ID for the for the matching media or null if not found
 	 */
 	static function in_obje_list(&$obje) {
 		global $TBLPREFIX, $GEDCOMS, $GEDCOM, $FILE, $DBCONN;
@@ -366,7 +358,13 @@ class Media extends GedcomRecord {
 
 	// Get an array of structures containing all the names in the record
 	function getAllNames() {
-		return parent::getAllNames('TITL', 2);
+		if (strpos($this->gedrec, "\n1 TITL ")) {
+			// Earlier gedcom versions had level 1 titles
+			return parent::getAllNames('TITL', 1);
+		} else {
+			// Later gedcom versions had level 2 titles
+			return parent::getAllNames('TITL', 2);
+		}
 	}
 
 	// Extra info to display when displaying this record in a list of

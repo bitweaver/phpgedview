@@ -2,7 +2,7 @@
 /**
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  PGV Development Team
+ * Copyright (C) 2002 to 2009  PGV Development Team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.en.php,v 1.1 2009/04/30 17:52:57 lsces Exp $
+ * @version $Id: functions.en.php,v 1.2 2009/08/03 20:10:42 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -149,5 +149,9 @@ function getRelationshipText_en($relationshipDescription, $node, $pid1, $pid2) {
 		return strtolower($relationshipDescription);
 	}
 	return false;
+}
+
+function century_localisation_en($n) {
+	return $n.ordinal_suffix_en($n);
 }
 ?>

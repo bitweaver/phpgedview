@@ -2,7 +2,7 @@
 /*~ class.smtp.php
 .---------------------------------------------------------------------------.
 |  Software: PHPMailer - PHP email class                                    |
-|   Version: 2.2.1                                                          |
+|   Version: 2.3                                                          |
 |   Contact: via sourceforge.net support pages (also www.codeworxtech.com)  |
 |      Info: http://phpmailer.sourceforge.net                               |
 |   Support: http://sourceforge.net/projects/phpmailer/                     |
@@ -31,7 +31,7 @@
  * to an SMTP server.
  * @package PHPMailer
  * @author Chris Ryan
- * $Id: class_smtp.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * $Id: class_smtp.php,v 1.2 2009/08/03 20:10:42 lsces Exp $
  */
 
 class SMTP {
@@ -171,7 +171,7 @@ class SMTP {
 			return false;
 		}
 
-		fputs($this->smtp_conn,"STARTTLS" . $extra . $this->CRLF);
+		fputs($this->smtp_conn,"STARTTLS" . $this->CRLF);
 
 		$rply = $this->get_lines();
 		$code = substr($rply,0,3);
@@ -1107,7 +1107,6 @@ class SMTP {
 		}
 		return $data;
 	}
-
 }
 
 ?>

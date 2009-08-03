@@ -19,7 +19,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_rss.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+* @version $Id: functions_rss.php,v 1.2 2009/08/03 20:10:43 lsces Exp $
 * @package PhpGedView
 * @subpackage RSS
 */
@@ -378,10 +378,9 @@ function getRecentChanges() {
 
 	if (count($changes)>0) {
 		$found_facts = array();
-		foreach($changes as $id=>$change) {
-			$gid = $change['d_gid'];
-			$gedrec = find_gedcom_record($change['d_gid']);
-			if (empty($gedrec)) $gedrec = find_updated_record($change['d_gid']);
+		foreach($changes as $gid) {
+			$gedrec = find_gedcom_record($gid);
+			if (empty($gedrec)) $gedrec = find_updated_record($gid);
 
 			if (!empty($gedrec)) {
 				$type = "INDI";

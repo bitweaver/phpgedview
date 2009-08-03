@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: class_source.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: class_source.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -92,6 +92,14 @@ class Source extends GedcomRecord {
 		//-- also store it using its reference id (sid:pid and local gedcom for remote links)
 		$gedcom_record_cache[$pid][$ged_id]=&$object;
 		return $object;
+	}
+
+	/**
+	 * get the repository of this source record
+	 * @return string
+	 */
+	function getRepo() {
+		return get_gedcom_value('REPO', 1, $this->gedrec, '', false);
 	}
 
 	/**

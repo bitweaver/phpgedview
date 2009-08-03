@@ -16,7 +16,7 @@
  * @author     Dietrich Ayala <dietrich@ganx4.com> Original Author
  * @author     Shane Caraveo <Shane@Caraveo.com>   Port to PEAR and more
  * @author     Jan Schneider <jan@horde.org>       Maintenance
- * @version $Id $
+ * @version $Id$
  * @copyright  2003-2005 The PHP Group
  * @license    http://www.php.net/license/2_02.txt  PHP License 2.02
  * @link       http://pear.php.net/package/SOAP
