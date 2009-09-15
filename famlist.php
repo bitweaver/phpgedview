@@ -2,11 +2,11 @@
 /**
  * Family List
  *
- * The Family list shows all families from a chosen gedcom file. The list is
+ * The family list shows all families from a chosen gedcom file. The list is
  * setup in two sections. The alphabet bar and the details.
  *
  * The alphabet bar shows all the available letters users can click. The bar is built
- * up from the lastnames' first letter. Added to this bar is the symbol @, which is
+ * up from the lastnames first letter. Added to this bar is the symbol @, which is
  * shown as a translated version of the variable <var>pgv_lang["NN"]</var>, and a
  * translated version of the word ALL by means of variable <var>$pgv_lang["all"]</var>.
  *
@@ -17,8 +17,11 @@
  * Beneath the details list is the option to skip the surname list or show it.
  * Depending on the current status of the list.
  *
+ * NOTE: indilist.php and famlist.php contain mostly identical code.
+ * Updates to one file almost certainly need to be made to the other one as well.
+ *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007  PGV Development Team
+ * Copyright (C) 2002 to 2008 PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,9 +37,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * This Page Is Valid XHTML 1.0 Transitional! > 24 August 2005
- *
- * @version $Id: famlist.php,v 1.12 2008/08/10 11:46:26 lsces Exp $
+ * $Id: famlist.php,v 1.13 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -53,12 +54,10 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
 $gGedcom = new BitGEDCOM();
 
-if (isset($_REQUEST['alpha']) ) { $alpha = $_REQUEST['alpha']; }
-if (isset($_REQUEST['surname']) ) { $surname = $_REQUEST['surname']; }
-if (isset($_REQUEST['surname_sublist']) ) { $surname_sublist = $_REQUEST['surname_sublist']; }
-else $surname_sublist = 'yes';
-if (isset($_REQUEST['show_all']) ) { $show_all = $_REQUEST['show_all']; }
-if (empty($show_all)) $show_all = "no";
+// We show three different lists:
+$alpha   =safe_GET('alpha'); // All surnames beginning with this letter where "@"=unknown and ","=none
+$surname =safe_GET('surname', '[^<>&%{};]*'); // All fams with this surname.  NB - allow ' and "
+$show_all=safe_GET('show_all', array('no','yes'), 'no'); // All fams
 
 // Remove slashes
 if (isset($alpha)) {

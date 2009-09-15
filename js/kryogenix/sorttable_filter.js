@@ -22,7 +22,7 @@
  * @see sorttable.js
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: sorttable_filter.js,v 1.3 2009/04/30 17:50:27 lsces Exp $
+ * @version $Id: sorttable_filter.js,v 1.4 2009/09/15 20:06:03 lsces Exp $
  */
 
 function table_filter(id, keyword, filter) {

@@ -3,7 +3,7 @@
  * Customizable FAQ page
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  PGV Development Team
+ * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,31 +23,41 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: faq.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: faq.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  */
- 
-require("config.php");
+
+require 'config.php';
 
 loadLangFile("pgv_confighelp");
 
 global $PGV_IMAGES, $faqs;
 
-if (PGV_USER_GEDCOM_ADMIN) $canconfig = true;
-else $canconfig = false;
-if (!isset($action)) $action = "show";
-if (!isset($adminedit) && $canconfig) $adminedit = true;
-else if (!isset($adminedit)) $adminedit = false;
-
 // -- print html header information
 $pgv_lang["faq_page"] = "Frequently Asked Questions";
 print_header($pgv_lang["faq_page"]);
+
+// -- Get all of the _POST variables we're interested in
+$action     = safe_REQUEST($_REQUEST, 'action',      PGV_REGEX_UNSAFE, 'show');
+$adminedit  = safe_REQUEST($_REQUEST, 'adminedit',   PGV_REGEX_UNSAFE, PGV_USER_GEDCOM_ADMIN);
+$type       = safe_REQUEST($_REQUEST, 'type',        PGV_REGEX_UNSAFE);
+$oldGEDCOM  = safe_REQUEST($_REQUEST, 'oldGEDCOM',   PGV_REGEX_UNSAFE);
+$whichGEDCOM= safe_REQUEST($_REQUEST, 'whichGEDCOM', PGV_REGEX_UNSAFE);
+$oldOrder   = safe_REQUEST($_REQUEST, 'oldOrder',    PGV_REGEX_UNSAFE);
+$order      = safe_REQUEST($_REQUEST, 'order',       PGV_REGEX_UNSAFE);
+$header     = safe_REQUEST($_POST,    'header',      PGV_REGEX_UNSAFE);
+$body       = safe_REQUEST($_POST,    'body',        PGV_REGEX_UNSAFE);
+$pidh       = safe_REQUEST($_REQUEST, 'pidh',        PGV_REGEX_UNSAFE);
+$pidb       = safe_REQUEST($_REQUEST, 'pidb',        PGV_REGEX_UNSAFE);
+$id         = safe_REQUEST($_REQUEST, 'id',          PGV_REGEX_UNSAFE);
 
 // NOTE: Commit the faq data to the DB
 if ($action=="commit") {
 	if (empty($whichGEDCOM)) $whichGEDCOM = $GEDCOM;
 	if (empty($oldGEDCOM)) $oldGEDCOM = $whichGEDCOM;
 	if (empty($order)) $order = 0;
-	if ($type == "update") {
+
+	switch ($type) {
+	case 'update':
 		$faqs = get_faq_data();
 		if (isset($faqs[$order]) && $order!=$oldOrder) {
 			// New position number is already in use: find next higher one that isn't used
@@ -58,24 +68,24 @@ if ($action=="commit") {
 			}
 		}
 		$header = str_replace(array('&lt;', '&gt;'), array('<', '>'), $header);
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".$order."', b_username='".$whichGEDCOM."', b_config='".$DBCONN->escapeSimple(serialize($header))."' WHERE b_id='".$pidh."' and b_username='".$oldGEDCOM."' and b_location='header'";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
+		PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=?, b_username=?, b_config=? WHERE b_id=? and b_username=? and b_location=?")
+			->execute(array($order, $whichGEDCOM, serialize($header), $pidh, $oldGEDCOM, 'header'));
+
 		$body = str_replace(array('&lt;', '&gt;'), array('<', '>'), $body);
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".$order."', b_username='".$whichGEDCOM."', b_config='".$DBCONN->escapeSimple(serialize($body))."' WHERE b_id='".$pidb."' and b_username='".$oldGEDCOM."' and b_location='body'";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;		
+		PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=?, b_username=?, b_config=? WHERE b_id=? and b_username=? and b_location=?")
+			->execute(array($order, $whichGEDCOM, serialize($body), $pidb, $oldGEDCOM, 'body'));
+
 		AddToChangeLog("FAQ item has been edited.<br />Header ID: ".$pidh.".<br />Body ID: ".$pidb, $GEDCOM);
-		$action = "show";
-	}
-	else if ($type == "delete") {
-		$sql = "DELETE FROM ".$TBLPREFIX."blocks WHERE b_order='".$id."' AND b_name='faq' AND b_username='".$oldGEDCOM."'";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
+		break;
+
+	case 'delete':
+		PGV_DB::prepare("DELETE FROM {$TBLPREFIX}blocks WHERE b_order=? AND b_name=? AND b_username=?")
+			->execute(array($id, 'faq', $oldGEDCOM));
+
 		AddToChangeLog("FAQ item has been deleted.<br />Header ID: ".$pidh.".<br />Body ID: ".$pidb, $oldGEDCOM);
-		$action = "show";
-	}
-	else if ($type == "add") {
+		break;
+
+	case 'add':
 		$faqs = get_faq_data();
 		if (isset($faqs[$order])) {
 			// New position number is already in use: find next higher one that isn't used
@@ -86,225 +96,224 @@ if ($action=="commit") {
 		}
 		$newid = get_next_id("blocks", "b_id");
 		$header = str_replace(array('&lt;', '&gt;'), array('<', '>'), $header);
-		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($newid, '".$whichGEDCOM."', 'header', '$order', 'faq', '".$DBCONN->escapeSimple(serialize($header))."')";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
+		PGV_DB::prepare("INSERT INTO {$TBLPREFIX}blocks (b_id, b_username, b_location, b_order, b_name, b_config) VALUES (?, ?, ?, ?, ?, ?)")
+			->execute(array($newid, $whichGEDCOM, 'header', $order, 'faq', serialize($header)));
+
 		$body = str_replace(array('&lt;', '&gt;'), array('<', '>'), $body);
-		$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES (".($newid+1).", '".$whichGEDCOM."', 'body', '".$order."', 'faq', '".$DBCONN->escapeSimple(serialize($body))."')";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
+		PGV_DB::prepare("INSERT INTO {$TBLPREFIX}blocks (b_id, b_username, b_location, b_order, b_name, b_config) VALUES (?, ?, ?, ?, ?, ?)")
+			->execute(array($newid+1, $whichGEDCOM, 'body', $order, 'faq', serialize($body)));
+
 		AddToChangeLog("FAQ item has been added.<br />Header ID: ".$newid.".<br />Body ID: ".($newid+1), $whichGEDCOM);
-		$action = "show";
-	}
-	else if ($type == "moveup") {
+		break;
+
+	case 'moveup':
 		$faqs = get_faq_data();
 		if (isset($faqs[$id-1])) {
-			$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id)."' WHERE b_id='".$faqs[$id-1]["header"]["pid"]."' and b_location='header'";;
-			$tempsql = dbquery($sql);
-			$res =& $tempsql;
-			$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id)."' WHERE b_id='".$faqs[$id-1]["body"]["pid"]."' and b_location='body'";
-			$tempsql = dbquery($sql);
-			$res =& $tempsql;
+			PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+				->execute(array($id, $faqs[$id-1]["header"]["pid"], 'header'));
+
+			PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+				->execute(array($id, $faqs[$id-1]["body"]["pid"], 'body'));
 		}
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id-1)."' WHERE b_id='".$pidh."' and b_location='header'";;
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id-1)."' WHERE b_id='".$pidb."' and b_location='body'";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;		
+		PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+			->execute(array($id-1, $pidh, 'header'));
+
+		PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+			->execute(array($id-1, $pidb, 'body'));
+
 		AddToChangeLog("FAQ item has been moved up.<br />Header ID: ".$pidh.".<br />Body ID: ".$pidb, $oldGEDCOM);
-		$action = "show";
-	}
-	else if ($type == "movedown") {
+		break;
+
+	case 'movedown':
 		$faqs = get_faq_data();
 		if (isset($faqs[$id+1])) {
-			$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id)."' WHERE b_id='".$faqs[$id+1]["header"]["pid"]."' and b_location='header'";;
-			$tempsql = dbquery($sql);
-			$res =& $tempsql;
-			$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id)."' WHERE b_id='".$faqs[$id+1]["body"]["pid"]."' and b_location='body'";
-			$tempsql = dbquery($sql);
-			$res =& $tempsql;
+			PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+				->execute(array($id, $faqs[$id+1]["header"]["pid"], 'header'));
+
+			PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+				->execute(array($id, $faqs[$id+1]["body"]["pid"], 'body'));
 		}
-		
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id+1)."' WHERE b_id='".$pidh."' and b_location='header'";;
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
-		$sql = "UPDATE ".$TBLPREFIX."blocks SET b_order='".($id+1)."' WHERE b_id='".$pidb."' and b_location='body'";
-		$tempsql = dbquery($sql);
-		$res =& $tempsql;
+		PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+			->execute(array($id+1, $pidh, 'header'));
+
+		PGV_DB::prepare("UPDATE {$TBLPREFIX}blocks SET b_order=? WHERE b_id=? and b_location=?")
+			->execute(array($id+1, $pidb, 'body'));
+
 		AddToChangeLog("FAQ item has been moved down.<br />Header ID: ".$pidh.".<br />Body ID: ".$pidb, $GEDCOM);
-		$action = "show";
-	}	
+		break;
+	}
+
 	$action = "show";
 }
 
 if ($action=="add") {
 	$i=1;
-	print "<form name=\"addfaq\" method=\"post\" action=\"faq.php\">";
-	print "<input type=\"hidden\" name=\"action\" value=\"commit\" />";
-	print "<input type=\"hidden\" name=\"type\" value=\"add\" />";
-	print "<input type=\"hidden\" name=\"oldGEDCOM\" value=\"\" />";
-	print "<input type=\"hidden\" name=\"oldOrder\" value=\"\" />";
-	print "<table class=\"center list_table $TEXT_DIRECTION\">";
-	print "<tr><td class=\"topbottombar\" colspan=\"2\">";
+	echo '<form name="addfaq" method="post" action="faq.php">';
+	echo '<input type="hidden" name="action" value="commit" />';
+	echo '<input type="hidden" name="type" value="add" />';
+	echo '<input type="hidden" name="oldGEDCOM" value="" />';
+	echo '<input type="hidden" name="oldOrder" value="" />';
+	echo '<table class="center list_table ', $TEXT_DIRECTION, '">';
+	echo '<tr><td class="topbottombar" colspan="2">';
 	print_help_link("add_faq_item_help","qm","add_faq_item");
-	print $pgv_lang["add_faq_item"]."</td></tr>";
-	print "<tr><td class=\"descriptionbox\" colspan=\"2\">";
+	echo $pgv_lang["add_faq_item"], '</td></tr>';
+	echo '<tr><td class="descriptionbox" colspan="2">';
 	print_help_link("add_faq_header_help","qm","add_faq_header");
-	print $pgv_lang["add_faq_header"]."</td></tr>";
-	print "<tr><td class=\"optionbox\" colspan=\"2\"><input type=\"text\" name=\"header\" size=\"90\" tabindex=\"".$i++."\" /></td></tr>";
-	print "<tr><td class=\"descriptionbox\" colspan=\"2\">";
+	echo $pgv_lang["add_faq_header"], '</td></tr>';
+	echo '<tr><td class="optionbox" colspan="2"><input type="text" name="header" size="90" tabindex="', $i++, '" /></td></tr>';
+	echo '<tr><td class="descriptionbox" colspan="2">';
 	print_help_link("add_faq_body_help","qm","add_faq_body");
-	print $pgv_lang["add_faq_body"]."</td></tr>";
-	print "<tr><td class=\"optionbox\" colspan=\"2\"><textarea name=\"body\" rows=\"10\" cols=\"90\" tabindex=\"".$i++."\"></textarea></td></tr>";
-	print "<tr><td class=\"descriptionbox\">";
+	echo $pgv_lang["add_faq_body"], '</td></tr>';
+	echo '<tr><td class="optionbox" colspan="2"><textarea name="body" rows="10" cols="90" tabindex="', $i++, '"></textarea></td></tr>';
+	echo '<tr><td class="descriptionbox">';
 	print_help_link("add_faq_order_help","qm","add_faq_order");
-	print $pgv_lang["add_faq_order"]."</td><td class=\"descriptionbox\">";
+	echo $pgv_lang["add_faq_order"], '</td><td class="descriptionbox">';
 	print_help_link("add_faq_visibility_help","qm","add_faq_order");
-	print $pgv_lang["add_faq_visibility"]."</td></tr>";
-	print "<tr><td class=\"optionbox\"><input type=\"text\" name=\"order\" size=\"3\" tabindex=\"".$i++."\" /></td>";
-	print "<td class=\"optionbox\">";
-		print "<select name=\"whichGEDCOM\" tabindex=\"".$i++."\" />";
-			print "<option value=\"*all*\">".$pgv_lang["all"]."</option>";
-			print "<option value=\"".$GEDCOM."\" selected=\"selected\">".$GEDCOM."</option";
-		print "</select>";
-	print "</td></tr>";
-	print "<tr><td class=\"topbottombar\" colspan=\"2\"><input type=\"submit\" value=\"".$pgv_lang["save"]."\" tabindex=\"".$i++."\" />";
-	print "&nbsp;<input type=\"button\" value=\"".$pgv_lang["cancel"]."\" onclick=window.location=\"faq.php\"; tabindex=\"".$i++."\" /></td></tr>";
-	print "</table>";
-	print "</form>";
+	echo $pgv_lang["add_faq_visibility"], '</td></tr>';
+	echo '<tr><td class="optionbox"><input type="text" name="order" size="3" tabindex="', $i++, '" /></td>';
+	echo '<td class="optionbox">';
+		echo '<select name="whichGEDCOM" tabindex="', $i++, '" />';
+			echo '<option value="*all*">', $pgv_lang["all"], '</option>';
+			echo '<option value="', $GEDCOM, '" selected="selected">', $GEDCOM, '</option';
+		echo '</select>';
+	echo '</td></tr>';
+	echo '<tr><td class="topbottombar" colspan="2"><input type="submit" value="', $pgv_lang["save"], '" tabindex="', $i++, '" />';
+	echo '&nbsp;<input type="button" value="', $pgv_lang["cancel"], '" onclick="window.location=\'faq.php\'"; tabindex="', $i++, '" /></td></tr>';
+	echo '</table>';
+	echo '</form>';
 }
 
 if ($action == "edit") {
-	if (!isset($id)) {
+	if ($id == NULL) {
 		$error = true;
 		$error_message =  $pgv_lang["no_id"];
 		$action = "show";
-	}
-	else {
+	} else {
 		$faqs = get_faq_data($id);
-		
+
 		$i=1;
-		print "<form name=\"editfaq\" method=\"post\" action=\"faq.php\">";
-		print "<input type=\"hidden\" name=\"action\" value=\"commit\" />";
-		print "<input type=\"hidden\" name=\"type\" value=\"update\" />";
-		print "<input type=\"hidden\" name=\"id\" value=\"".$id."\" />";
-		print "<table class=\"center list_table $TEXT_DIRECTION\">";
-		print "<tr><td class=\"topbottombar\" colspan=\"2\">";
+		echo '<form name="editfaq" method="post" action="faq.php">';
+		echo '<input type="hidden" name="action" value="commit" />';
+		echo '<input type="hidden" name="type" value="update" />';
+		echo '<input type="hidden" name="id" value="', $id, '" />';
+		echo '<table class="center list_table ', $TEXT_DIRECTION, '">';
+		echo '<tr><td class="topbottombar" colspan="2">';
 		print_help_link("edit_faq_item_help","qm","edit_faq_item");
-		print $pgv_lang["edit_faq_item"]."</td></tr>";
+		echo $pgv_lang["edit_faq_item"], '</td></tr>';
 		foreach ($faqs as $id => $data) {
-			print "<input type=\"hidden\" name=\"pidh\" value=\"".$data["header"]["pid"]."\" />";
-			print "<input type=\"hidden\" name=\"pidb\" value=\"".$data["body"]["pid"]."\" />";
-			print "<input type=\"hidden\" name=\"oldGEDCOM\" value=\"".$data["header"]["gedcom"]."\" />";
-			print "<input type=\"hidden\" name=\"oldOrder\" value=\"".$id."\" />";
-			$header = str_replace(array('&', '<', '>',), array('&amp;', '&lt;', '&gt;'), stripslashes($data["header"]["text"]));
-			print "<tr><td class=\"descriptionbox\" colspan=\"2\">";
+			echo '<input type="hidden" name="pidh" value="', htmlspecialchars($data["header"]["pid"]), '" />';
+			echo '<input type="hidden" name="pidb" value="', htmlspecialchars($data["body"]["pid"]), '" />';
+			echo '<input type="hidden" name="oldGEDCOM" value="', htmlspecialchars($data["header"]["gedcom"]), '" />';
+			echo '<input type="hidden" name="oldOrder" value="', htmlspecialchars($id), '" />';
+			echo '<tr><td class="descriptionbox" colspan="2">';
 			print_help_link("add_faq_header_help","qm","add_faq_header");
-			print $pgv_lang["add_faq_header"]."</td></tr>";
-			print "<tr><td class=\"optionbox\" colspan=\"2\"><input type=\"text\" name=\"header\" size=\"90\" tabindex=\"".$i++."\" value=\"".$header."\" /></td></tr>";
-			print "<tr><td class=\"descriptionbox\" colspan=\"2\">";
+			echo $pgv_lang["add_faq_header"], '</td></tr>';
+			echo '<tr><td class="optionbox" colspan="2"><input type="text" name="header" size="90" tabindex="', $i++, '" value="', htmlspecialchars($data["header"]["text"]), '" /></td></tr>';
+			echo '<tr><td class="descriptionbox" colspan="2">';
 			print_help_link("add_faq_body_help","qm","add_faq_body");
-			print $pgv_lang["add_faq_body"]."</td></tr>";
-			$body = str_replace(array('&', '<', '>',), array('&amp;', '&lt;', '&gt;'), stripslashes($data["body"]["text"]));
-			print "<tr><td class=\"optionbox\" colspan=\"2\"><textarea name=\"body\" rows=\"10\" cols=\"90\" tabindex=\"".$i++."\">".$body."</textarea></td></tr>";
-			print "<tr><td class=\"descriptionbox\">";
+			echo $pgv_lang["add_faq_body"], '</td></tr>';
+			echo '<tr><td class="optionbox" colspan="2"><textarea name="body" rows="10" cols="90" tabindex="', $i++, '">', htmlspecialchars($data["body"]["text"]), '</textarea></td></tr>';
+			echo '<tr><td class="descriptionbox">';
 			print_help_link("add_faq_order_help","qm","add_faq_order");
-			print $pgv_lang["add_faq_order"]."</td><td class=\"descriptionbox\">";
+			echo $pgv_lang["add_faq_order"], '</td><td class="descriptionbox">';
 			print_help_link("add_faq_visibility_help","qm","add_faq_order");
-			print $pgv_lang["add_faq_visibility"]."</td></tr>";
-			print "<tr><td class=\"optionbox\"><input type=\"text\" name=\"order\" size=\"3\" tabindex=\"".$i++."\" value=\"".$id."\" /></td>";
-			print "<td class=\"optionbox\">";
-				print "<select name=\"whichGEDCOM\" tabindex=\"".$i++."\" />";
-					print "<option value=\"*all*\"";if ($data["header"]["gedcom"]=="*all*") print " selected=\"selected\"";print ">".$pgv_lang["all"]."</option>";
-					print "<option value=\"".$GEDCOM."\"";if ($data["header"]["gedcom"]==$GEDCOM) print " selected=\"selected\"";print ">".$GEDCOM."</option";
-				print "</select>";
-			print "</td></tr>";
+			echo $pgv_lang["add_faq_visibility"], '</td></tr>';
+			echo '<tr><td class="optionbox"><input type="text" name="order" size="3" tabindex="', $i++, '" value="', $id, '" /></td>';
+			echo '<td class="optionbox">';
+				echo '<select name="whichGEDCOM" tabindex="', $i++, '" />';
+					echo '<option value="*all*"';if ($data["header"]["gedcom"]=="*all*") echo ' selected="selected"';echo '>', $pgv_lang["all"], '</option>';
+					echo '<option value="', $GEDCOM, '"';
+					if ($data["header"]["gedcom"]==$GEDCOM) echo ' selected="selected"';
+					echo '>', $GEDCOM, '</option';
+				echo '</select>';
+			echo '</td></tr>';
 		}
-		print "<tr><td class=\"topbottombar\" colspan=\"2\"><input type=\"submit\" value=\"".$pgv_lang["save"]."\" tabindex=\"".$i++."\" />";
-		print "&nbsp;<input type=\"button\" value=\"".$pgv_lang["cancel"]."\" onclick=window.location=\"faq.php\"; tabindex=\"".$i++."\" /></td></tr>";
-		print "</table>";
-		print "</form>";
+		echo '<tr><td class="topbottombar" colspan="2"><input type="submit" value="', $pgv_lang["save"], '" tabindex="', $i++, '" />';
+		echo '&nbsp;<input type="button" value="', $pgv_lang["cancel"], '" onclick=window.location="faq.php"; tabindex="', $i++, '" /></td></tr>';
+		echo '</table>';
+		echo '</form>';
 	}
 }
 
 if ($action == "show") {
-	loadLangFile("pgv_faqlib");	// Load FAQ library from language files
-	
+	loadLangFile("pgv_faqlib");
+
 	$faqs = get_faq_data();
-	print "<table class=\"list_table width100\">";
-	if (count($faqs) == 0 && $canconfig) {
-		print "<tr><td class=\"width20 list_label\">";
-		print_help_link("add_faq_item_help","qm","add_faq_item");
-		print "<a href=\"faq.php?action=add\">".$pgv_lang["add_faq_item"]."</a>";
-		print "</td></tr>";
-	}
-	else if (count($faqs) == 0 && !$canconfig) print "<tr><td class=\"error center\">".$pgv_lang["no_faq_items"]."</td></tr>";
-	else {
+	echo '<table class="list_table width100">';
+	if (count($faqs) == 0) {
+		if (PGV_USER_GEDCOM_ADMIN) {
+			echo '<tr><td class="width20 list_label">';
+			print_help_link("add_faq_item_help","qm","add_faq_item");
+			echo '<a href="faq.php?action=add">', $pgv_lang["add_faq_item"], '</a>';
+			echo '</td></tr>';
+		} else {
+			echo '<tr><td class="error center">', $pgv_lang["no_faq_items"], '</td></tr>';
+		}
+	} else {
 		// NOTE: Add a preview link
-		if ($canconfig) {
-			print "<tr>";
+		if (PGV_USER_GEDCOM_ADMIN) {
+			echo '<tr>';
 			if ($adminedit) {
-				print "<td class=\"descriptionbox center\" colspan=\"2\">";
+				echo '<td class="descriptionbox center" colspan="2">';
 				print_help_link("add_faq_item_help","qm","add_faq_item");
-				print "<a href=\"faq.php?action=add\">".$pgv_lang["add"]."</a></td>";
+				echo '<a href="faq.php?action=add">', $pgv_lang["add"], '</a></td>';
 			}
-			print "<td class=\"descriptionbox center\" colspan=\"2\">";
-			
+			echo '<td class="descriptionbox center" colspan="2">';
+
 			if ($adminedit) {
 				print_help_link("preview_faq_item_help","qm","preview_faq_item");
-				print "<a href=\"faq.php?adminedit=0\">".$pgv_lang["preview"]."</a>";
+				echo '<a href="faq.php?adminedit=0">', $pgv_lang["preview"], '</a>';
 			} else {
 				print_help_link("restore_faq_edits_help","qm","restore_faq_edits");
-				print "<a href=\"faq.php?adminedit=1\">".$pgv_lang["edit"]."</a>";
+				echo '<a href="faq.php?adminedit=1">', $pgv_lang["edit"], '</a>';
 			}
-			print "</td>";
-			
+			echo '</td>';
+
 			if ($adminedit) {
-				if (isset($error)) print "<td class=\"topbottombar red\">".$error_message."</td>";
-				else print "<td class=\"topbottombar\">&nbsp;</td>";
+				if (isset($error)) echo '<td class="topbottombar red">', $error_message, '</td>';
+				else echo '<td class="topbottombar">&nbsp;</td>';
 			}
-			print "</tr>";
+			echo '</tr>';
 		}
-		
+
 		foreach($faqs as $id => $data) {
 			if ($data["header"] && $data["body"]) {
-				print "<tr>";
+				echo '<tr>';
 				// NOTE: Print the position of the current item
-				if ($canconfig && $adminedit) {
-					print "<td class=\"descriptionbox width20 $TEXT_DIRECTION\" colspan=\"4\">";
-					print $pgv_lang["position_item"].": ".$id.", ";
-					if ($data["header"]["gedcom"]=="*all*") print $pgv_lang["all"];
-					else print PrintReady($data["header"]["gedcom"]);
-					print "</td>";
+				if ($adminedit) {
+					echo '<td class="descriptionbox width20 $TEXT_DIRECTION" colspan="4">';
+					echo $pgv_lang["position_item"], ': ', $id, ', ';
+					if ($data["header"]["gedcom"]=="*all*") echo $pgv_lang["all"];
+					else echo PrintReady($data["header"]["gedcom"]);
+					echo '</td>';
 				}
 				// NOTE: Print the header of the current item
 				$header = str_replace(array('&lt;', '&gt;'), array('<', '>'), stripslashes(print_text($data["header"]["text"], 0, 2)));
-				print "<td class=\"list_label wrap\">".$header."</td></tr>";
+				echo '<td class="list_label wrap">', $header, '</td></tr>';
 				$body = str_replace(array('&lt;', '&gt;'), array('<', '>'), stripslashes(print_text($data["body"]["text"], 0, 2)));
-				print "<tr>";
+				echo '<tr>';
 				// NOTE: Print the edit options of the current item
-				if ($canconfig && $adminedit) {
-					print "<td class=\"optionbox center\">";
+				if (PGV_USER_GEDCOM_ADMIN && $adminedit) {
+					echo '<td class="optionbox center">';
 					print_help_link("moveup_faq_item_help","qm","moveup_faq_item");
-					print "<a href=\"faq.php?action=commit&amp;type=moveup&amp;id=".$id."&amp;pidh=".$data["header"]["pid"]."&amp;pidb=".$data["body"]["pid"]."\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["uarrow"]["other"]."\" border=\"0\" alt=\"\" /></a>\n</td>";
-					print "\n<td class=\"optionbox center\">";
+					echo '<a href="', encode_url('faq.php?action=commit&type=moveup&id='.$id.'&pidh='.$data["header"]["pid"].'&pidb='.$data["body"]["pid"]), '"><img src="', $PGV_IMAGE_DIR, '/', $PGV_IMAGES["uarrow"]["other"], '" border="0" alt="" /></a></td>';
+					echo '<td class="optionbox center">';
 					print_help_link("movedown_faq_item_help","qm","movedown_faq_item");
-					print "<a href=\"faq.php?action=commit&amp;type=movedown&amp;id=".$id."&amp;pidh=".$data["header"]["pid"]."&amp;pidb=".$data["body"]["pid"]."\"><img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow"]["other"]."\" border=\"0\" alt=\"\" /></a>";
-					print "\n</td>\n<td class=\"optionbox center\">";					
+					echo '<a href="', encode_url('faq.php?action=commit&type=movedown&id='.$id.'&pidh='.$data["header"]["pid"].'&pidb='.$data["body"]["pid"]), '"><img src="', $PGV_IMAGE_DIR, '/', $PGV_IMAGES["darrow"]["other"], '" border="0" alt="" /></a>';
+					echo '</td><td class="optionbox center">';
 					print_help_link("edit_faq_item_help","qm","edit_faq_item");
-					print "<a href=\"faq.php?action=edit&amp;id=".$id."\">".$pgv_lang["edit"]."</a>";
-					print "\n</td><td class=\"optionbox center\">";
+					echo '<a href="', encode_url('faq.php?action=edit&id='.$id), '">', $pgv_lang["edit"], '</a>';
+					echo '</td><td class="optionbox center">';
 					print_help_link("delete_faq_item_help","qm","delete_faq_item");
-					print "<a href=\"faq.php?action=commit&amp;type=delete&amp;id=".$id."&amp;pidh=".$data["header"]["pid"]."&amp;pidb=".$data["body"]["pid"]."&amp;oldGEDCOM=".$data["header"]["gedcom"]."\" onclick=\"return confirm('".$pgv_lang["confirm_faq_delete"]."');\">".$pgv_lang["delete"]."</a>\n";
-					print "</td>";
+					echo '<a href="', encode_url('faq.php?action=commit&type=delete&id='.$id.'&pidh='.$data["header"]["pid"].'&amp;pidb='.$data["body"]["pid"].'&oldGEDCOM='.$data["header"]["gedcom"]), '" onclick="return confirm(\'', $pgv_lang["confirm_faq_delete"], '\');">', $pgv_lang["delete"], '</a>';
+					echo '</td>';
 				}
 				// NOTE: Print the body text of the current item
-				print "<td class=\"list_value wrap\">".nl2br($body)."</td></tr>";				
+				echo '<td class="list_value_wrap">', nl2br($body), '</td></tr>';
 			}
 		}
 	}
-	print "</table>";
+	echo '</table>';
 }
 if ($action != "show") {
 	?>

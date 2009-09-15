@@ -5,7 +5,7 @@
  * Use the $pids array to set which individuals to show on the chart
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  John Finlay and Others
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +25,22 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: lifespan.php,v 1.1 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: lifespan.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
-require_once("includes/controllers/lifespan_ctrl.php");
+require './config.php';
+
+require_once './includes/controllers/lifespan_ctrl.php';
+
+$controller = new LifespanController();
+$controller->init();
+
 $zoomfactor = 10;
 //if peeps !null then pass new array for zooming
 
 print_header($pgv_lang["lifespan_chart"]);
+
+if ($ENABLE_AUTOCOMPLETE) require './js/autocomplete.js.htm';
 ?>
 	<script language="JavaScript" type="text/javascript">
 	<!--
@@ -58,10 +66,10 @@ if (!$controller->isPrintPreview()) {
 			<?php print $pgv_lang["add_another"];?>&nbsp;
 			<input class="pedigree_form" type="text" size="5" id="newpid" name="newpid" />&nbsp;
 			<?php print_findindi_link("newpid",""); ?>
-			<br />		
+			<br />
 			<div style="text-align: center"><input type="checkbox" checked="checked" value="yes" name="addFamily"/><?php print $pgv_lang["include_family"];?></div>
 			<br />
-			<div style="text-align: center"><input type="submit" value="<?php print $pgv_lang["show"]; ?>" /></div>			
+			<div style="text-align: center"><input type="submit" value="<?php print $pgv_lang["show"]; ?>" /></div>
 		</td></tr>
 	</table>
 	<?php if (count($controller->pids)<11) { ?><br /><a href="timeline.php"><b><?php print $pgv_lang["switch_timeline"]; ?></b></a><br /><br /><?php } ?>
@@ -86,10 +94,10 @@ function scroll(move)
 	if (timer==null) return;  // If timer is not set timeline doesn't scroll'
 	timer = setTimeout("scroll('"+move+"')",speed); // Keeps the timeline moving as long as the user holds down the mouse button on one of the direction arrows
 	topInnerDiv = document.getElementById("topInner");
-	innerDiv = document.getElementById("inner");	
+	innerDiv = document.getElementById("inner");
 	myouterDiv = document.getElementById("outerDiv");
-	
-	//compares the direction the timeline is moving and how far it can move in each direction.	
+
+	//compares the direction the timeline is moving and how far it can move in each direction.
 	if(move == "left" && ((maxX+topInnerDiv.offsetLeft+350) > (myouterDiv.offsetLeft+myouterDiv.offsetWidth))){
 		left = (innerDiv.offsetLeft - offSetNum)+"px";
 		innerDiv.style.left = left;
@@ -101,7 +109,7 @@ function scroll(move)
 		topInnerDiv.style.left = right;
 	}
 	else if(move == "up" && innerDiv.offsetTop > maxY){
-		up = (innerDiv.offsetTop - offSetNum)+"px";		
+		up = (innerDiv.offsetTop - offSetNum)+"px";
 		innerDiv.style.top = up;
 	}
 	else if(move == "down" && innerDiv.offsetTop < -60){
@@ -124,68 +132,68 @@ function startZoom(move)
 
 function zoom(move){
 	if (move == "increase" && numOfIncrease < 5){
-	
+
 		increase = zoomfactor + 10;
 		numOfIncrease += 1;
-		
+
 		temp = document.getElementById("inner");
-		
+
 		for(i=0; i<temp.childNodes.length; i++) {
-		
-			 if(temp.childNodes[i].tagName=="DIV") {
-			 	width = temp.childNodes[i].offsetWidth;
-			 	height = temp.childNodes[i].offsetHeight;
-			 	left = temp.childNodes[i].offsetLeft;
-			 	top = temp.childNodes[i].offsetTop;
-			 	
-			 	width = width * 1.1;
-			 	height = height * 1.1;
-			 	left = left * 1.1;
-			 	font = font + 0.2;
-			 	
-			 	if(temp.childNodes[i].offsetTop <= 65){
+
+			if(temp.childNodes[i].tagName=="DIV") {
+				width = temp.childNodes[i].offsetWidth;
+				height = temp.childNodes[i].offsetHeight;
+				left = temp.childNodes[i].offsetLeft;
+				top = temp.childNodes[i].offsetTop;
+
+				width = width * 1.1;
+				height = height * 1.1;
+				left = left * 1.1;
+				font = font + 0.2;
+
+				if(temp.childNodes[i].offsetTop <= 65){
 					top = top;
 				}
 				else {
 					top = top * 1.2;
 				}
-			 	
-			 	temp.childNodes[i].style.width = width+'px';
-			 	temp.childNodes[i].style.height = height+'px';
-			 	temp.childNodes[i].style.left = left+'px';
-			 	temp.childNodes[i].style.fontSize = font+'pt';
-			 	temp.childNodes[i].style.top = top+'px';
-			 }
+
+				temp.childNodes[i].style.width = width+'px';
+				temp.childNodes[i].style.height = height+'px';
+				temp.childNodes[i].style.left = left+'px';
+				temp.childNodes[i].style.fontSize = font+'pt';
+				temp.childNodes[i].style.top = top+'px';
+			}
 		}
 	}
 	else if(move == "decrease" && numOfIncrease > 0){
 		decrease = zoomfactor - 10;
 		numOfIncrease -= 1;
-		
+
 		for(i=0; i<temp.childNodes.length; i++) {
-			 if(temp.childNodes[i].tagName=="DIV") {
-			 	width = temp.childNodes[i].offsetWidth;
-			 	height = temp.childNodes[i].offsetHeight;
-			 	left = temp.childNodes[i].offsetLeft;
-			 	top = temp.childNodes[i].offsetTop;
-			 	
-			 	width = width * 0.9;
-			 	height = height * 0.9;
-			 	left = left * 0.9;
-			 	font = font - 0.2;
-			 	
-			 	if(temp.childNodes[i].offsetTop <= 65){
+			if(temp.childNodes[i].tagName=="DIV") {
+				width = temp.childNodes[i].offsetWidth;
+				height = temp.childNodes[i].offsetHeight;
+				left = temp.childNodes[i].offsetLeft;
+				top = temp.childNodes[i].offsetTop;
+
+				width = width * 0.9;
+				height = height * 0.9;
+				left = left * 0.9;
+				font = font - 0.2;
+
+				if(temp.childNodes[i].offsetTop <= 65){
 					top = top;
 				}
 				else {
 					top = top * 0.95;
 				}
-			 	
-			 	temp.childNodes[i].style.width = width+'px';
-			 	temp.childNodes[i].style.height = height+'px';
-			 	temp.childNodes[i].style.left = left+'px';
-			 	temp.childNodes[i].style.fontSize = font+'pt';
-			 	temp.childNodes[i].style.top = top+'px';
+
+				temp.childNodes[i].style.width = width+'px';
+				temp.childNodes[i].style.height = height+'px';
+				temp.childNodes[i].style.left = left+'px';
+				temp.childNodes[i].style.fontSize = font+'pt';
+				temp.childNodes[i].style.top = top+'px';
 			}
 		}
 	}
@@ -193,9 +201,9 @@ function zoom(move){
 function reset(){
 	if(numOfIncrease >= 5){
 	temp = document.getElementById("inner");
-	
+
 		for(i=0; i<temp.childNodes.length; i++) {
-			
+
 			if(temp.childNodes[i].tagName=="DIV") {
 				width = temp.childNodes[i].offsetWidth;
 				height = temp.childNodes[i].offsetHeight;
@@ -208,9 +216,9 @@ function reset(){
 	}
 	else if(numOfDecrease >= 5){
 		temp = document.getElementById("inner");
-	
+
 		for(i=0; i<temp.childNodes.length; i++) {
-			
+
 			if(temp.childNodes[i].tagName=="DIV") {
 				width = temp.childNodes[i].offsetWidth;
 				height = temp.childNodes[i].offsetHeight;
@@ -253,17 +261,17 @@ var oldMx = 0;
 	}
 	// Main function to retrieve mouse x-y pos.s
 	function getMouseXY(e) {
-	  if (IE) { // grab the x-y pos.s if browser is IE
-	    msX = event.clientX + document.documentElement.scrollLeft;
-	    msY = event.clientY + document.documentElement.scrollTop;
-	  } else {  // grab the x-y pos.s if browser is NS
-	    msX = e.pageX;
-	    msY = e.pageY;
-	  }
-	  // catch possible negative values in NS4
-	  if (msX < 0){msX = 0;}
-	  if (msY < 0){msY = 0;}
-	  if (movei1!="") {
+		if (IE) { // grab the x-y pos.s if browser is IE
+			msX = event.clientX + document.documentElement.scrollLeft;
+			msY = event.clientY + document.documentElement.scrollTop;
+		} else {  // grab the x-y pos.s if browser is NS
+			msX = e.pageX;
+			msY = e.pageY;
+		}
+		// catch possible negative values in NS4
+		if (msX < 0){msX = 0;}
+		if (msY < 0){msY = 0;}
+		if (movei1!="") {
 		//ileft = parseInt(movei1.style.left);
 		//itop = parseInt(movei2.style.top);
 		var ileft = movei2.offsetLeft+1;
@@ -276,9 +284,9 @@ var oldMx = 0;
 		oldMx = msX;
 		oldMy = msY;
 		return false;
-	  }
+		}
 	}
-	
+
 	var IE = document.all?true:false;
 	if (!IE) document.captureEvents(Event.MOUSEMOVE | Event.MOUSEUP)
 	document.onmousemove = getMouseXY;
@@ -289,65 +297,70 @@ var oldMx = 0;
 <?php if (!$controller->isPrintPreview()) { ?>
 <form name="buttons" action="lifespan.php" method="get">
 
-  <table>
-   <tr>
-   		<td><?php print_help_link("timeline_control_help", "qm"); ?></td>
-    	<td align="center"><?php print $pgv_lang["timeline_scrollSpeed"];?></td>
-      	<td align="center"><?php print $pgv_lang["timeline_beginYear"];?></td>
-      	<td align="center"><?php print $pgv_lang["timeline_endYear"];?></td>
-      	<td align="center"><?php print $factarray["PLAC"];?></td>
-    </tr> 
-    <tr>   
+	<table>
+		<tr>
+			<td><?php print_help_link("timeline_control_help", "qm"); ?></td>
+			<td align="center"><?php print $pgv_lang["timeline_scrollSpeed"];?></td>
+				<td align="center"><?php print $pgv_lang["timeline_beginYear"];?></td>
+				<td align="center"><?php print $pgv_lang["timeline_endYear"];?></td>
+				<td align="center"><?php print $factarray["PLAC"];?></td>
+		</tr>
+		<tr>
 
-      <td></td>
-      <td><select name="speedMenu" size="1">
-    		<option value="4">1</option>
-    		<option value="3">2</option>
-    		<option value="2">3</option>
-    		<option value="1">4</option>
+			<td></td>
+			<td><select name="speedMenu" size="1">
+				<option value="4">1</option>
+				<option value="3">2</option>
+				<option value="2">3</option>
+				<option value="1">4</option>
 
-  			</select></td>
-  		<td><input type="text" name="beginYear" size="5" value="<?php if (isset($beginYear)) print $beginYear; ?>" /></td>
-  		<td><input type="text" name="endYear" size="5" value="<?php if (isset($endYear)) print $endYear; ?>" /></td>
-  		<td><input type="text" name="place" size="15" value="<?php if (isset($place)) print $place; ?>" /></td>
-  		<td><input type="submit" name="search" value="<?php print $pgv_lang["search"]; ?>" /></td>
-		<td><input type="button" value="<?php print $pgv_lang['clear_chart']; ?>" onclick="window.location = 'lifespan.php?clear=1';" /></td>
-    </tr>  
-  </table> 
-  <?php if(count($controller->people) > 0){ 
-  	print "<br /><b>".count($controller->people)." ".$pgv_lang['individuals']."</b>";
-  } ?>
+				</select></td>
+			<td><input type="text" name="beginYear" size="5" value="<?php if (isset($beginYear)) print $beginYear; ?>" /></td>
+			<td><input type="text" name="endYear" size="5" value="<?php if (isset($endYear)) print $endYear; ?>" /></td>
+			<td><input type="text" name="place" size="15" value="<?php if (isset($place)) print $place; ?>"/></td>
+			<td><input type="submit" name="search" value="<?php print $pgv_lang["search"]; ?>" /></td>
+		<td><input type="button" value="<?php print $pgv_lang["clear_chart"]; ?>" onclick="window.location = 'lifespan.php?clear=1';" /></td>
+		</tr>
+	</table>
+	<?php if(count($controller->people) > 0){
+	// Allow special processing for different languages
+	$func="num_people_localisation_{$lang_short_cut[$LANGUAGE]}";
+	if (!function_exists($func)) {
+		if(count($controller->people) == 1) print "<br /><b>".count($controller->people)." ".$pgv_lang["individual"]."</b>";
+		else print "<br /><b>".count($controller->people)." ".$pgv_lang["individuals"]."</b>";
+	}
+	else
+		// Localise the num of people
+		$func(count($controller->people));
+	} ?>
 </form>
 <?php } ?>
 </td></tr></table>
 <div dir="ltr" id="outerDiv" class="lifespan_outer" <?php if ($controller->isPrintPreview()) { ?>style="overflow: visible; border: none;"<?php } ?>>
-	<div dir="ltr" id="topInner"  class="lifespan_timeline" onmousedown="pandiv(); return false;">		
+	<div dir="ltr" id="topInner"  class="lifespan_timeline" onmousedown="pandiv(); return false;">
 	<?php $controller->PrintTimeline($controller->timelineMinYear,$controller->timelineMaxYear); ?>
 	</div>
 		<div id="inner" class="lifespan_people" onmousedown="pandiv(); return false;">
 		<?php $maxY = $controller->fillTL($controller->people,$controller->minYear,$controller->YrowLoc); ?>
-	<?php 	
-	?>
-	
 	</div>
 	<?php if (!$controller->isPrintPreview()) { ?>
 	<!--  Floating div controls START -->
 <div dir="ltr" style="position:relative; z-index: 100; filter: alpha(opacity=67); -moz-opacity: 0.67;  opacity: 0.67; width:180px; top: 80px;">
-  	<table style="margin-left: 20px" dir="ltr" border="0" cellpadding="0">
-  	<tr>
-  	  <td></td>
-      <td colspan="2" align="center"><a href="#" onclick="return false;" onmousedown="startScroll('up')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsuparrow"]["other"]; ?>" border="0" alt="" /></a></td>
-      <td></td>
-    </tr>
-    <tr>
-       <td><a href="#" onclick="return false;" onmousedown="startScroll('right')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsltarrow"]["other"]; ?>" border="0" alt="" /></a></td>
-  		<td align="center"><!-- <a href="#" onclick="return false;" onmousedown="startZoom('increase')"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["zoomin"]["other"]; ?>" border="0" alt="" /></a> --></td>
-  		<td align="center"><!-- <a href="#" onclick="return false;" onmousedown="startZoom('decrease')"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["zoomout"]["other"]; ?>" border="0" alt="" /></a> --></td>
-      <td><a href="#" onclick="return false;" onmousedown="startScroll('left')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsrtarrow"]["other"]; ?>" border="0" alt="" /></a></td>
-    </tr>
-    <tr>
-    <td> </td>  
-      <td colspan="2" align="center"><a href="#" onclick="return false;" onmousedown="startScroll('down')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsdnarrow"]["other"]; ?>" border="0" alt="" /></a></td>
+		<table style="margin-left: 20px" dir="ltr" border="0" cellpadding="0">
+		<tr>
+			<td></td>
+			<td colspan="2" align="center"><a href="#" onclick="return false;" onmousedown="startScroll('down')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsuparrow"]["other"]; ?>" border="0" alt="" /></a></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td><a href="#" onclick="return false;" onmousedown="startScroll('right')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsltarrow"]["other"]; ?>" border="0" alt="" /></a></td>
+			<td align="center"><!-- <a href="#" onclick="return false;" onmousedown="startZoom('increase')"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["zoomin"]["other"]; ?>" border="0" alt="" /></a> --></td>
+			<td align="center"><!-- <a href="#" onclick="return false;" onmousedown="startZoom('decrease')"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["zoomout"]["other"]; ?>" border="0" alt="" /></a> --></td>
+			<td><a href="#" onclick="return false;" onmousedown="startScroll('left')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsrtarrow"]["other"]; ?>" border="0" alt="" /></a></td>
+		</tr>
+		<tr>
+		<td> </td>
+		<td colspan="2" align="center"><a href="#" onclick="return false;" onmousedown="startScroll('up')" onmouseup="stopScroll()"><img src="<?php print $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["lsdnarrow"]["other"]; ?>" border="0" alt="" /></a></td>
 	<td> </td>
 	</tr>
 	</table>

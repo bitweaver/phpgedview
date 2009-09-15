@@ -24,7 +24,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id: media_ctrl.php,v 1.2 2009/04/30 19:09:48 lsces Exp $
+* @version $Id: media_ctrl.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -45,10 +45,10 @@ class MediaControllerRoot extends IndividualController{
 	var $show_changes=true;
 
 	function init() {
-		global $MEDIA_DIRECTORY, $USE_MEDIA_FIREWALL;
+		global $MEDIA_DIRECTORY, $USE_MEDIA_FIREWALL, $GEDCOM, $pgv_changes;
 
-		$filename=decrypt(safe_GET('filename'));
-		$this->mid     =safe_GET_xref('mid');
+		$filename = decrypt(safe_GET('filename'));
+		$this->mid = safe_GET_xref('mid');
 
 		if ($USE_MEDIA_FIREWALL && empty($filename) && empty($this->mid)) {
 			// this section used by mediafirewall.php to determine what media file was requested
@@ -89,16 +89,10 @@ class MediaControllerRoot extends IndividualController{
 			$this->mediaobject = Media::getInstance($this->mid);
 			//This sets the controller ID to be the Media ID
 			$this->pid = $this->mid;
-
-			if (is_null($this->mediaobject)) $this->mediaobject = new Media("0 @".$this->mid."@ OBJE");
 		}
 
-		// one final test to be sure we have a media object defined
-		// ways this can happen:
-		// if user failed to pass in a filename or mid to mediaviewer.php
-		// if the server did not set the environmental variables correctly for the media firewall
-		// if media firewall is being called from outside the media directory
-		if (is_null($this->mediaobject)) $this->mediaobject = new Media("0 @"."0"."@ OBJE");
+		if (is_null($this->mediaobject)) return false;
+
 		$this->mediaobject->ged_id=PGV_GED_ID; // This record is from a file
 
 		//-- perform the desired action
@@ -149,13 +143,11 @@ class MediaControllerRoot extends IndividualController{
 	* Also update the mediarec we will use to generate the page
 	*/
 	function acceptChanges() {
-		global $GEDCOM, $medialist;
+		global $GEDCOM;
 		if (!PGV_USER_CAN_ACCEPT) return;
 		if (accept_changes($this->pid."_".$GEDCOM)) {
 			$this->show_changes=false;
 			$this->accept_success=true;
-			//-- delete the record from the cache and refresh it
-			if (isset($medialist[$this->pid])) unset($medialist[$this->pid]);
 			$mediarec = find_media_record($this->pid);
 			//-- check if we just deleted the record and redirect to index
 			if (empty($mediarec)) {
@@ -180,7 +172,7 @@ class MediaControllerRoot extends IndividualController{
 			$name = $this->mediaobject->getFullName();
 			return $name." - ".$this->mediaobject->getXref();
 		}
-		else return $pgv_lang["unknown"];
+		else return $pgv_lang["unable_to_find_record"];
 	}
 
 	function canDisplayDetails() {
@@ -234,24 +226,36 @@ class MediaControllerRoot extends IndividualController{
 			}
 
 			// main link displayed on page
-			$submenu = new Menu($pgv_lang["set_link"]." >");
-			$submenu->addOnclick("return ilinkitem('".$this->pid."','person');");
-			$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff", "submenu$ff");
+			if (PGV_USER_GEDCOM_ADMIN && file_exists('modules/GEDFact_assistant/_MEDIA/media_1_ctrl.php')) {
+				$submenu = new Menu($pgv_lang["add_or_remove_links"]);
+			} else {	
+				$submenu = new Menu($pgv_lang["set_link"]);
+			}
+			
+			// GEDFact assistant Add Media Links =======================
+			if (PGV_USER_GEDCOM_ADMIN && file_exists('modules/GEDFact_assistant/_MEDIA/media_1_ctrl.php')) {
+				$submenu->addOnclick("return ilinkitem('".$this->pid."','manage');");
+				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff", "submenu$ff");
+				// Do not print ssubmunu
+			} else {
+				$submenu->addOnclick("return ilinkitem('".$this->pid."','person');");
+				$submenu->addClass("submenuitem$ff", "submenuitem_hover$ff", "submenu$ff");
 
-			$ssubmenu = new Menu($pgv_lang["to_person"]);
-			$ssubmenu->addOnclick("return ilinkitem('".$this->pid."','person');");
-			$ssubmenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
-			$submenu->addSubMenu($ssubmenu);
+				$ssubmenu = new Menu($pgv_lang["to_person"]);
+				$ssubmenu->addOnclick("return ilinkitem('".$this->pid."','person');");
+				$ssubmenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
+				$submenu->addSubMenu($ssubmenu);
 
-			$ssubmenu = new Menu($pgv_lang["to_family"]);
-			$ssubmenu->addOnclick("return ilinkitem('".$this->pid."','family');");
-			$ssubmenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
-			$submenu->addSubMenu($ssubmenu);
+				$ssubmenu = new Menu($pgv_lang["to_family"]);
+				$ssubmenu->addOnclick("return ilinkitem('".$this->pid."','family');");
+				$ssubmenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
+				$submenu->addSubMenu($ssubmenu);
 
-			$ssubmenu = new Menu($pgv_lang["to_source"]);
-			$ssubmenu->addOnclick("return ilinkitem('".$this->pid."','source');");
-			$ssubmenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
-			$submenu->addSubMenu($ssubmenu);
+				$ssubmenu = new Menu($pgv_lang["to_source"]);
+				$ssubmenu->addOnclick("return ilinkitem('".$this->pid."','source');");
+				$ssubmenu->addClass("submenuitem$ff", "submenuitem_hover$ff");
+				$submenu->addSubMenu($ssubmenu);
+			}
 			$menu->addSubmenu($submenu);
 		}
 		if (isset($pgv_changes[$this->pid."_".$GEDCOM])) {
@@ -427,7 +431,13 @@ class MediaControllerRoot extends IndividualController{
 	* @return string
 	*/
 	function getLocalFilename() {
-		return $this->mediaobject->getLocalFilename();
+		global $pgv_lang;
+		if ($this->mediaobject) {
+			return $this->mediaobject->getLocalFilename();
+		}
+		else {
+			return false;
+		}
 	}
 
 	/**

@@ -5,7 +5,7 @@
  * Serves images from the index directory
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005	John Finlay and Others
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,17 @@
  *
  *
  * @package PhpGedView
- * @version $Id: mediafirewall.php,v 1.1 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: mediafirewall.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
+require './config.php';
 require_once("includes/controllers/media_ctrl.php");
+
+// We have finished writing to $_SESSION, so release the lock
+session_write_close();
+
+$controller = new MediaController();
+$controller->init();
 
 $debug_mediafirewall	= 0; 	// set to 1 if you want to see media firewall values displayed instead of images
 $debug_watermark		= 0; 	// set to 1 if you want to see error messages from the watermark module instead of broken images
@@ -46,22 +53,34 @@ $debug_verboseLogging = 0;		// set to 1 for extra logging details
 function sendErrorAndExit($type, $line1, $line2 = false) {
 
 	// line2 contains the information that only an admin/editor should see, such as the full path to a file
-	if(!PGV_USER_CAN_EDIT) {  	 
+	if(!PGV_USER_CAN_EDIT) {
 		$line2 = false;
+	}
+
+	// arbitrary maxlen to keep images from getting too wide
+	$maxlen = 100;
+	$numchars = UTF8_strlen($line1);
+	if ($numchars > $maxlen) {
+		$line1 = UTF8_substr($line1, $maxlen);
+		$numchars = $maxlen;
+	}
+	$line1 = reverseText($line1);
+	if ($line2) {
+		$numchars2 = UTF8_strlen($line2);
+		if ($numchars2 > $maxlen) {
+			$line2 = UTF8_substr($line2, $maxlen);
+			$numchars2 = $maxlen;
+		}
+		if ($numchars2 > $numchars) {
+			$numchars = $numchars2;
+		}
+		$line2 = reverseText($line2);
 	}
 
 	$type = isImageTypeSupported($type);
 	if ( $type ){
-		// figure out how long the errr message is
-		$numchars = strlen($line1);
-		if ($line2 && (strlen($line2) > $numchars)) {
-			$numchars = strlen($line2);
-		}
-		// set an arbitrary max length
-		if ($numchars > 100) $numchars = 100;
-
 		// width of image is based on the number of characters
-		$width = $numchars * 6.5;
+		$width = ($numchars+1) * 6.5;
 		$height = 60;
 
 		$im  = imagecreatetruecolor($width, $height);  /* Create a black image */
@@ -108,9 +127,9 @@ function sendErrorAndExit($type, $line1, $line2 = false) {
 // this returns the complete serverpath to be used by the saved watermarked image
 // note that each gedcom gets a unique path to store images, this allows each gedcom to have their own watermarking config
 function getWatermarkPath ($path) {
-	global $gGedcom, $GEDCOM, $MEDIA_DIRECTORY;
+	global $MEDIA_DIRECTORY;
 	$serverroot = get_media_firewall_path($MEDIA_DIRECTORY);
-	$path = str_replace($serverroot, $serverroot . 'watermark/'.$gGedcom[$GEDCOM]['gedcom'].'/', $path);
+	$path = str_replace($serverroot, $serverroot . 'watermark/'.PGV_GEDCOM.'/', $path);
 	return $path;
 }
 
@@ -120,12 +139,10 @@ function getWatermarkPath ($path) {
 // this function can manipulate the image however it wants
 // before returning it back to the media firewall
 function applyWatermark($im) {
-	global $gGedcom, $GEDCOM;
+	// in the future these options will be set in the gedcom configuration area
 
-	// in the future these options will be set in the gedcom configuration area  
-
-	// text to watermark with 
-	$word1_text   = $gGedcom[$GEDCOM]["title"];
+	// text to watermark with
+	$word1_text   = get_gedcom_setting(PGV_GED_ID, 'title');
 	// maximum font size for "word1" ; will be automaticaly reduced to fit in the image
 	$word1_maxsize = 100;
 	// rgb color codes for text
@@ -134,7 +151,7 @@ function applyWatermark($im) {
 	$word1_font   = "";
 	// vertical position for the text to past; possible values are: top, middle or bottom, across
 	$word1_vpos   = "across";
-	// horizontal position for the text to past in media file; possible values are: left, right, top2bottom, bottom2top 
+	// horizontal position for the text to past in media file; possible values are: left, right, top2bottom, bottom2top
 	// this value is used only if $word1_vpos=across
 	$word1_hpos   = "left";
 
@@ -150,7 +167,7 @@ function applyWatermark($im) {
 
 	return ($im);
 }
- 
+
 function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 	global $useTTF;
 
@@ -163,11 +180,11 @@ function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 			$font = 'DejaVuSans.ttf'; // this font ships with PGV
 			if (!file_exists('includes/fonts/'.$font)) {
 				$useTTF = false;
-	    }
-	  }
-	} 
-  
-	# no errors if an invalid color string was passed in, just strange colors 
+			}
+		}
+	}
+
+	# no errors if an invalid color string was passed in, just strange colors
 	$col=explode(",", $color);
 	$textcolor = @imagecolorallocate($im, $col[0],$col[1],$col[2]);
 
@@ -175,12 +192,13 @@ function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 	if (!isset($vpos) || ($vpos!="top" && $vpos!="middle" && $vpos!="bottom" && $vpos!="across")) $vpos = "middle";
 	if (($vpos=="across") && (!isset($hpos) || ($hpos!="left" && $hpos!="right" && $hpos!="top2bottom" && $hpos!="bottom2top"))) $hpos = "left";
 
-	// make adjustments to settings that imagestring and imagestringup can't handle 
+	// make adjustments to settings that imagestring and imagestringup can't handle
 	if (!$useTTF) {
 		// imagestringup only writes up, can't use top2bottom
-		if ($hpos=="top2bottom") $hpos = "bottom2top";  
+		if ($hpos=="top2bottom") $hpos = "bottom2top";
 	}
 
+	$text = reverseText(stripslashes($text));
 	$height = imagesy($im);
 	$width  = imagesx($im);
 	$calc_angle=rad2deg(atan($height/$width));
@@ -199,19 +217,19 @@ function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 			$pos_y=($height+$taille)/2;
 			$pos_x=$width*0.15;
 			$rotation=0;
-			break;			
+			break;
 		case "bottom":
 			$taille=textlength($maxsize,$width,$text);
 			$pos_y=($height*.85-$taille);
 			$pos_x=$width*0.15;
 			$rotation=0;
 			break;
-		case "across": 
+		case "across":
 			switch ($hpos) {
 				case "left":
 				$taille=textlength($maxsize,$hypoth,$text);
 				$pos_y=($height*.85-$taille);
-				$taille_text=($taille-2)*(strlen(stripslashes($text)));
+				$taille_text=($taille-2)*(UTF8_strlen($text));
 				$pos_x=$width*0.15;
 				$rotation=$calc_angle;
 				break;
@@ -232,7 +250,7 @@ function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 				$pos_y = $height*0.85;
 				$pos_x = $width*0.15;
 				$rotation=90;
-				break;			
+				break;
 			}
 			break;
 		default:
@@ -242,15 +260,15 @@ function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 	if ($useTTF) {
 		// if imagettftext throws errors, catch them with a custom error handler
 		set_error_handler("imagettftextErrorHandler");
-		imagettftext($im, $taille, $rotation, $pos_x, $pos_y, $textcolor, 'includes/fonts/'.$font, stripslashes($text));
+		imagettftext($im, $taille, $rotation, $pos_x, $pos_y, $textcolor, 'includes/fonts/'.$font, $text);
 		restore_error_handler();
 	}
 	// don't use an 'else' here since imagettftextErrorHandler may have changed the value of $useTTF from true to false
 	if (!$useTTF) {
 		if ($rotation!=90) {
-			imagestring($im, 5, $pos_x, $pos_y, stripslashes($text),$textcolor);
+			imagestring($im, 5, $pos_x, $pos_y, $text,$textcolor);
 		} else {
-			imagestringup($im, 5, $pos_x, $pos_y, stripslashes($text),$textcolor);
+			imagestringup($im, 5, $pos_x, $pos_y, $text,$textcolor);
 		}
 	}
 
@@ -258,7 +276,8 @@ function embedText($im, $text, $maxsize, $color, $font, $vpos, $hpos) {
 
 function textlength($t,$mxl,$text) {
 	$taille_c = $t;
-	while (($taille_c-2)*(strlen(stripslashes($text))) > $mxl) {
+	$len = UTF8_strlen($text);
+	while (($taille_c-2)*($len) > $mxl) {
 		$taille_c--;
 		if ($taille_c == 2) break;
 	}
@@ -291,8 +310,8 @@ $useTTF = (function_exists("imagettftext")) ? true : false;
 $serverFilename = $controller->getServerFilename();
 if (!$serverFilename) {
 	// either the server is not setting the REQUEST_URI variable as we expect,
-	// or the media firewall is being used from outside the media directory 
-	$requestedfile = ( isset($_SERVER['REQUEST_URI']) ) ? $_SERVER['REQUEST_URI'] : "REQUEST_URI NOT SET"; 
+	// or the media firewall is being used from outside the media directory
+	$requestedfile = ( isset($_SERVER['REQUEST_URI']) ) ? $_SERVER['REQUEST_URI'] : "REQUEST_URI NOT SET";
 	$exp = explode("?", $requestedfile);
 	$pathinfo = pathinfo($exp[0]);
 	$ext = @strtolower($pathinfo['extension']);
@@ -301,7 +320,7 @@ if (!$serverFilename) {
 
 $isThumb = false;
 if (strpos($_SERVER['REQUEST_URI'], '/thumbs/')) {
-	// the user requested a thumbnail, but the $controller only knows how to lookup information on the main file 
+	// the user requested a thumbnail, but the $controller only knows how to lookup information on the main file
 	// display the thumbnail file instead of the main file
 	// NOTE: since this script was called when a 404 error occured, we know the requested file
 	// does not exist in the main media directory.  just check the media firewall directory
@@ -311,24 +330,24 @@ if (strpos($_SERVER['REQUEST_URI'], '/thumbs/')) {
 
 if (!file_exists($serverFilename)) {
 	// the requested file MAY be in the gedcom, but it does NOT exist on the server.  bail.
-	// Note: the 404 error status is still in effect. 
+	// Note: the 404 error status is still in effect.
 	if (!$debug_mediafirewall) sendErrorAndExit($controller->mediaobject->getFiletype(), $pgv_lang["no_media"], $serverFilename);
 }
 
 if (empty($controller->pid)) {
-	// the requested file IS NOT in the gedcom, but it exists (the check for fileExists was above) 
-	if (!userCanEdit() ) {
+	// the requested file IS NOT in the gedcom, but it exists (the check for fileExists was above)
+	if (!PGV_USER_IS_ADMIN) {
 		// only show these files to admin users
 		// bail since current user is not admin
-		// Note: the 404 error status is still in effect. 
-		if (!$debug_mediafirewall) sendErrorAndExit($controller->mediaobject->getFiletype(), $pgv_lang["media_privacy"], $serverFilename);
+		// Note: the 404 error status is still in effect.
+//		if (!$debug_mediafirewall) sendErrorAndExit($controller->mediaobject->getFiletype(), $pgv_lang["media_privacy"], $serverFilename);
 	}
 }
 
 // check PGV permissions
 if (!$controller->mediaobject->canDisplayDetails()) {
 	// if no permissions, bail
-	// Note: the 404 error status is still in effect 
+	// Note: the 404 error status is still in effect
 	if (!$debug_mediafirewall) sendErrorAndExit($controller->mediaobject->getFiletype(), $pgv_lang["media_privacy"]);
 }
 
@@ -370,7 +389,7 @@ if ($usewatermark) {
 		// generate the watermark file
 		$generatewatermark = true;
 	} else {
-		$watermarktime = filemtime($watermarkfile);  
+		$watermarktime = filemtime($watermarkfile);
 		if ($filetime > $watermarktime) {
 			// if the original image was updated after the saved file was created
 			// generate the watermark file
@@ -382,20 +401,20 @@ if ($usewatermark) {
 $mimetype = $controller->mediaobject->getMimetype();
 
 // setup the etag.  use enough info so that if anything important changes, the etag won't match
-$etag_string = basename($serverFilename).$filetime.PGV_USER_ACCESS_LEVEL.$SHOW_NO_WATERMARK; 
+$etag_string = basename($serverFilename).$filetime.PGV_USER_ACCESS_LEVEL.$SHOW_NO_WATERMARK;
 $etag = dechex(crc32($etag_string));
 
 // parse IF_MODIFIED_SINCE header from client
 $if_modified_since = 'x';
-if (@$_SERVER["HTTP_IF_MODIFIED_SINCE"]) { 
+if (@$_SERVER["HTTP_IF_MODIFIED_SINCE"]) {
 	$if_modified_since = preg_replace('/;.*$/', '', $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
-} 
+}
 
 // parse IF_NONE_MATCH header from client
 $if_none_match = 'x';
-if (@$_SERVER["HTTP_IF_NONE_MATCH"]) { 
+if (@$_SERVER["HTTP_IF_NONE_MATCH"]) {
 	$if_none_match = str_replace('\"', '', $_SERVER["HTTP_IF_NONE_MATCH"]);
-} 
+}
 
 if ($debug_mediafirewall) {
 	// this is for debugging the media firewall
@@ -403,6 +422,8 @@ if ($debug_mediafirewall) {
 	header('ETag: "'.$etag.'"');
 
 	echo  '<table border="1">';
+	echo  '<tr><td>GEDCOM</td><td>'.PGV_GEDCOM.'</td><td>&nbsp;</td></tr>';
+	echo  '<tr><td>MEDIA_DIRECTORY_LEVELS</td><td>'.$MEDIA_DIRECTORY_LEVELS.'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>$controller->pid</td><td>'.$controller->pid.'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>Requested URL</td><td>'.urldecode($_SERVER['REQUEST_URI']).'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>serverFilename</td><td>'.$serverFilename.'</td><td>&nbsp;</td></tr>';
@@ -415,7 +436,7 @@ if ($debug_mediafirewall) {
 	echo  '<tr><td>filesize</td><td>'.@filesize($serverFilename).'</td><td>this is right</td></tr>';
 	echo  '<tr><td>controller->mediaobject->getThumbnail()</td><td>'.$controller->mediaobject->getThumbnail().'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>controller->mediaobject->canDisplayDetails()</td><td>'.$controller->mediaobject->canDisplayDetails().'</td><td>&nbsp;</td></tr>';
-	echo  '<tr><td>controller->mediaobject->getTitle()</td><td>'.$controller->mediaobject->getTitle().'</td><td>&nbsp;</td></tr>';
+	echo  '<tr><td>controller->mediaobject->getFullName()</td><td>'.$controller->mediaobject->getFullName().'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>basename($serverFilename)</td><td>'.basename($serverFilename).'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>filetime</td><td>'.$filetime.'</td><td>&nbsp;</td></tr>';
 	echo  '<tr><td>filetimeHeader</td><td>'.$filetimeHeader.'</td><td>&nbsp;</td></tr>';
@@ -439,7 +460,7 @@ if ($debug_mediafirewall) {
 	echo '<pre>';
 	print_r (@getimagesize($serverFilename));
 	print_r ($controller->mediaobject);
-	print_r ($gGedcom[$GEDCOM]);
+	print_r (PGV_GEDCOM);
 	echo '</pre>';
 
 	phpinfo();
@@ -504,22 +525,22 @@ if ( $generatewatermark ) {
 		exit;
 
 	} else {
-		// this image is defective.  log it 
+		// this image is defective.  log it
 		AddToLog("Media Firewall error: >".$pgv_lang["media_broken"]."< in file >".$serverFilename."< (".getImageInfoForLog($serverFilename).") memory used: ".memory_get_usage());
 
 		// set usewatermark to false so image will simply be passed through below
-		$usewatermark = false;  
+		$usewatermark = false;
 	}
 }
 
-// pass the image through without manipulating it 
+// pass the image through without manipulating it
 
 if ( $usewatermark ) {
 	// the stored watermarked image is good, lets use it
 	$serverFilename = $watermarkfile;
 }
 
-// determine filesize of image (could be original or watermarked version) 
+// determine filesize of image (could be original or watermarked version)
 $filesize = filesize($serverFilename);
 
 // set one more header

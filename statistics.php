@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: statistics.php,v 1.5 2009/04/30 19:12:13 lsces Exp $
+ * @version $Id: statistics.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -99,6 +99,11 @@ $_SESSION[$GEDCOM."nrfemale"] = $stats->totalSexFemales();
 $params[1] = "ffffff";
 $params[2] = "84beff";
 echo '<h2 class="center">', $pgv_lang['statistics'], '</h2>';
+echo "\n";
+echo '<form method="post" name="form" action="statisticsplot.php?action=newform">';
+echo "\n";
+echo '<input type="hidden" name="action" value="update" />';
+echo "\n";
 echo "<table width=\"100%\"><tr><td class=\"facts_label\">".$pgv_lang["statnmale"]."</td>";
 echo "<td class=\"facts_label\">".$pgv_lang["statnfemale"]."</td>";
 echo "<td class=\"facts_label\">".$pgv_lang["statnfam"]."</td>";
@@ -109,15 +114,14 @@ echo "<td class=\"facts_value\" align=\"center\">".$stats->totalFamilies()."</td
 echo "<td class=\"facts_value\" align=\"center\">".$stats->totalIndividuals()."</td></tr>";
 echo "<tr><td class=\"facts_label\" colspan=\"2\">".$pgv_lang["statnnames"]."</td>";
 echo "<td class=\"facts_label\" colspan=\"2\">".$pgv_lang["statnnames"]."</td></tr>";
-echo "<tr><td class=\"facts_value\" colspan=\"2\" align=\"center\">".$stats->chartSex()."</td>";
-echo "<td class=\"facts_value\" colspan=\"2\" align=\"center\">".$stats->chartMortality()."</td></tr>";
+ echo "<tr><td class=\"facts_value statistics_chart\" colspan=\"2\" align=\"center\">".$stats->chartSex()."</td>";
+ echo "<td class=\"facts_value statistics_chart\" colspan=\"2\" align=\"center\">".$stats->chartMortality()."</td></tr>";
 echo "<tr><td class=\"facts_label\" colspan=\"2\" >".$pgv_lang["stat_surnames"]."</td>";
 echo "<td class=\"facts_label\"colspan=\"2\">".$pgv_lang["stat_media"]."</td></tr>";
-echo "<tr><td class=\"facts_value\" colspan=\"2\" align=\"center\">".$stats->chartCommonSurnames($params)."</td>";
-echo "<td class=\"facts_value\" colspan=\"2\" align=\"center\">".$stats->chartMedia($params)."</td></tr>";
+ echo "<tr><td class=\"facts_value statistics_chart\" colspan=\"2\" align=\"center\">".$stats->chartCommonSurnames($params)."</td>";
+ echo "<td class=\"facts_value statistics_chart\" colspan=\"2\" align=\"center\">".$stats->chartMedia($params)."</td></tr>";
 echo "<tr><td class=\"facts_label\" colspan=\"4\">".$pgv_lang["stat_21_nok"]."</td></tr>";
-echo "<tr><td class=\"facts_value\" colspan=\"4\" align=\"center\">".$stats->chartLargestFamilies($params)."</td></tr>";
-echo "</table>";
+ echo "<tr><td class=\"facts_value statistics_chart\" colspan=\"4\" align=\"center\">".$stats->chartLargestFamilies($params)."</td></tr>";
 
 if (!isset($plottype)) $plottype = 11;
 if (!isset($charttype)) $charttype = 1;
@@ -148,13 +152,15 @@ else {
 }
 
 ?>
-	<h3><?php print_help_link("stat_help","qm"); ?> <?php echo $pgv_lang["statvars"]; ?></h3>
-	<form method="post" name="form" action="statisticsplot.php?action=newform">
-	<input type="hidden" name="action" value="update" />
 
-	<table class="facts_table">
 	<tr>
-	<td class="descriptionbox width10 wrap"><?php print_help_link("stat_help_x","qm"); ?> <?php echo $pgv_lang["statlxa"]; ?> </td>
+		<td class="facts_label"><?php echo $pgv_lang["stat_create"] ?></td>
+		<td class="facts_value" colspan="3"><?php print_help_link("stat_help","qm","statistiek_list"); ?> <?php echo $pgv_lang["statvars"]; ?></td>
+	</tr>
+	</table>
+	<table width="100%">
+	<tr>
+	<td class="descriptionbox width25 wrap"><?php print_help_link("stat_help_x","qm","statistiek_list"); ?> <?php echo $pgv_lang["statlxa"]; ?> </td>
 	<td class="optionbox">
 	<input type="radio" id="stat_11" name="x-as" value="11"
 	<?php
@@ -229,7 +235,7 @@ else {
 	<br />
 	<div id="x_years" style="display:none;">
 	<?php
-	print_help_link("stat_help_gax","qm");
+	print_help_link("stat_help_gax","qm","statistiek_list");
 	echo $pgv_lang["statar_xgl"];
 	?>
 	<br /><select id="xas-grenzen-leeftijden" name="xas-grenzen-leeftijden">
@@ -243,7 +249,7 @@ else {
 	</div>
 	<div id="x_years_m" style="display:none;">
 	<?php
-	print_help_link("stat_help_gbx","qm");
+	print_help_link("stat_help_gbx","qm","statistiek_list");
 	echo $pgv_lang["statar_xgl"];
 	?>
 	<br /><select id="xas-grenzen-leeftijden_m" name="xas-grenzen-leeftijden_m">
@@ -255,7 +261,7 @@ else {
 	</div>
 	<div id="x_months" style="display:none;">
 	<?php
-	print_help_link("stat_help_gwx","qm");
+	print_help_link("stat_help_gwx","qm","statistiek_list");
 	echo $pgv_lang["statar_xgm"];
 	?>
 	<br /><select id="xas-grenzen-maanden" name="xas-grenzen-maanden">
@@ -267,7 +273,7 @@ else {
 	</div>
 	<div id="x_numbers" style="display:none;">
 	<?php
-	print_help_link("stat_help_gcx","qm");
+	print_help_link("stat_help_gcx","qm","statistiek_list");
 	echo $pgv_lang["statar_xga"];
 	?>
 	<br /><select id="xas-grenzen-aantallen" name="xas-grenzen-aantallen">
@@ -279,10 +285,10 @@ else {
 	<div id="map_opt" style="display:none;">
 	<div id="chart_type">
 	<?php
-	print_help_link('chart_type_help', 'qm');
+	print_help_link('chart_type_help','qm',"statistiek_list");
 	echo $pgv_lang["map_type"]
 	?>
-	<br /><select name="chart_type" onchange="statusShowSurname(this)";>
+	<br /><select name="chart_type" onchange="statusShowSurname(this);">
 		<option value="indi_distribution_chart" selected="selected">
 			<?php echo $pgv_lang["indi_distribution_chart"]; ?></option>
 		<option value="surname_distribution_chart">
@@ -292,13 +298,13 @@ else {
 	</div>
 	<div id="surname_opt" style="display:none;">
 	<?php
-	print_help_link('google_chart_surname_help', 'qm');
+	print_help_link('google_chart_surname_help','qm',"statistiek_list");
 	echo $factarray['SURN'], '<br /><input type="text" name="SURN" size="20" />';
 	?>
 	<br />
 	</div>
 	<?php
-	print_help_link('chart_area_help', 'qm');
+	print_help_link('chart_area_help','qm',"statistiek_list");
 	echo $pgv_lang["area_chart"]
 	?>
 	<br /><select id="chart_shows" name="chart_shows">
@@ -310,9 +316,9 @@ else {
 		<option value="africa"><?php echo $pgv_lang["africa_chart"]; ?></option>
 	</select>
 	</div>
-
-	<td class="descriptionbox width10 wrap" id="axes"><?php print_help_link("stat_help_z","qm"); ?> <?php echo $pgv_lang["statlza"]; ?>  </td>
-	<td class="optionbox" id="zyaxes">
+	</td>
+	<td class="descriptionbox width20 wrap" id="axes"><?php print_help_link("stat_help_z","qm","statistiek_list"); ?> <?php echo $pgv_lang["statlza"]; ?>  </td>
+	<td class="optionbox width30" id="zyaxes">
 	<input type="radio" id="z_none" name="z-as" value="300"
 	<?php
 	if ($plotshow == "300") echo " checked=\"checked\"";
@@ -326,7 +332,7 @@ else {
 	if ($plotshow == "302") echo " checked=\"checked\"";
 	echo " onclick=\"statusEnable('zas-grenzen-periode');";
 	echo "\" /><label for=\"z_time\">".$pgv_lang["stat_302_cgp"]."</label><br /><br />";
-	print_help_link("stat_help_gwz","qm");
+	print_help_link("stat_help_gwz","qm","statistiek_list");
 	echo $pgv_lang["statar_zgp"]."<br />";
 
 	// Allow special processing for different languages
@@ -360,32 +366,34 @@ else {
 	</select>
 	<br /><br />
 	<?php
-	print_help_link("stat_help_y","qm");
+	print_help_link("stat_help_y","qm","statistiek_list");
 	echo $pgv_lang["statlya"]."<br />";
 	?>
 	<input type="radio" id="y_num" name="y-as" value="201"
 	<?php
 	if ($plotnp == "201") echo " checked=\"checked\"";
-	echo "\" /><label for=\"y_num\">".$pgv_lang["stat_201_num"]."</label><br />";
+	echo " /><label for=\"y_num\">".$pgv_lang["stat_201_num"]."</label><br />";
 	echo "<input type=\"radio\" id=\"y_perc\" name=\"y-as\" value=\"202\"";
 	if ($plotnp == "202") echo " checked=\"checked\"";
-	echo "\" /><label for=\"y_perc\">".$pgv_lang["stat_202_perc"]."</label><br />";
+	echo " /><label for=\"y_perc\">".$pgv_lang["stat_202_perc"]."</label><br />";
 	?>
 	</td>
 	</tr>
-	<td></td><td>
-	<br/>
-	<input type="submit" value="<?php echo $pgv_lang["statsubmit"]; ?> " onclick="closeHelp();" />
-	<input type="reset"  value=" <?php echo $pgv_lang["statreset"]; ?> " /><br/>
-	</td>
 	</table>
-	</form>
-
+	<table width="100%">
+	<tr align="center"><td>
+		<br/>
+		<input type="submit" value="<?php echo $pgv_lang["statsubmit"]; ?> " onclick="closeHelp();" />
+		<input type="reset"  value=" <?php echo $pgv_lang["statreset"]; ?> " onclick="{statusEnable('z_sex'); statusHide('x_years'); statusHide('x_months'); statusHide('x_numbers'); statusHide('map_opt');}" /><br/>
+	</td>
+	</tr>
+</table>
+</form>
 <?php
 $_SESSION["plottype"]=$plottype;
 $_SESSION["plotshow"]=$plotshow;
 $_SESSION["plotnp"]=$plotnp;
 
-echo "<br/>";
+echo "<br/><br/>";
 print_footer();
 ?>

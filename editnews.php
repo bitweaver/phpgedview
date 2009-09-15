@@ -19,10 +19,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: editnews.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: editnews.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  */
-require("config.php");
+
+require 'config.php';
+
 $useFCK = file_exists("./modules/FCKeditor/fckeditor.php");
 if($useFCK){
 	include("./modules/FCKeditor/fckeditor.php");
@@ -35,7 +37,12 @@ if (!PGV_USER_ID) {
 	exit;
 }
 
-if (!isset($action)) $action="compose";
+$action  =safe_GET('action', array('compose', 'save', 'delete'), 'compose');
+$news_id =safe_GET('news_id');
+$username=safe_REQUEST($_REQUEST, 'username');
+$date    =safe_POST('date', PGV_REGEX_UNSAFE);
+$title   =safe_POST('title', PGV_REGEX_UNSAFE);
+$text    =safe_POST('text', PGV_REGEX_UNSAFE);
 
 print_simple_header($pgv_lang["edit_news"]);
 
@@ -63,22 +70,18 @@ if ($action=="compose") {
 		}
 	</script>
 	<?php
-	print "<br /><form name=\"messageform\" method=\"post\" onsubmit=\"return checkForm(this);";
+	print "<br /><form name=\"messageform\" method=\"post\" action=\"editnews.php?action=save&news_id=".$news_id."\" onsubmit=\"return checkForm(this);";
 	print "\">\n";
-	if (isset($news_id)) {
+	if ($news_id) {
 		$news = getNewsItem($news_id);
-	}
-	else {
-		$news_id="";
+	} else {
 		$news = array();
 		$news["username"] = $username;
 		$news["date"] = client_time();
 		$news["title"] = "";
 		$news["text"] = "";
 	}
-	print "<input type=\"hidden\" name=\"action\" value=\"save\" />\n";
 	print "<input type=\"hidden\" name=\"username\" value=\"".$news["username"]."\" />\n";
-	print "<input type=\"hidden\" name=\"news_id\" value=\"$news_id\" />\n";
 	print "<input type=\"hidden\" name=\"date\" value=\"".$news["date"]."\" />\n";
 	print "<table>\n";
 	print "<tr><td align=\"right\">".$pgv_lang["title"]."</td><td><input type=\"text\" name=\"title\" size=\"50\" value=\"".$news["title"]."\" /><br /></td></tr>\n";
@@ -105,13 +108,14 @@ if ($action=="compose") {
 	print "<tr><td></td><td><input type=\"submit\" value=\"".$pgv_lang["save"]."\" /></td></tr>\n";
 	print "</table>\n";
 	print "</form>\n";
-}
-else if ($action=="save") {
+} else if ($action=="save") {
 	$date=time()-$_SESSION["timediff"];
 	if (empty($title)) $title="No Title";
 	if (empty($text)) $text="No Text";
 	$message = array();
-	if (!empty($news_id)) $message["id"]=$news_id;
+	if ($news_id) {
+		$message["id"]=$news_id;
+	}
 	$message["username"] = $username;
 	if ($username==$GEDCOM) $_SESSION['clearcache'] = true;
 	$message["date"]=$date;
@@ -120,8 +124,7 @@ else if ($action=="save") {
 	if (addNews($message)) {
 		print $pgv_lang["news_saved"];
 	}
-}
-else if ($action=="delete") {
+} else if ($action=="delete") {
 	if (deleteNews($news_id)) print $pgv_lang["news_deleted"];
 }
 print "<center><br /><br /><a href=\"javascript:;\" onclick=\"if (window.opener.refreshpage) window.opener.refreshpage(); window.close();\">".$pgv_lang["close_window"]."</a><br /></center>";

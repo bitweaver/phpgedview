@@ -1,9 +1,9 @@
 <?php
 /**
  * Used by AJAX to load the expanded view inside person boxes
- * 
+ *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008 John Finlay and Others, all rights reserved
+ * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,77 +20,56 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: expand_view.php,v 1.2 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: expand_view.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
  */
-require_once("config.php");
 
-$pid = "";
-if (isset($_REQUEST['pid'])) $pid = $_REQUEST['pid'];
-$pid = clean_input($pid);
+require 'config.php';
+header("Content-Type: text/html; charset=$CHARACTER_SET");
+$pid = safe_GET_xref('pid');
+$person = Person::getInstance($pid);
+if (!$person->canDisplayDetails()) return $pgv_lang['private'];
 
-$indirec = find_person_record($pid);
+$nonfacts = array("SEX","FAMS","FAMC","NAME","TITL","NOTE","SOUR","SSN","OBJE","HUSB","WIFE","CHIL","ALIA","ADDR","PHON","SUBM","_EMAIL","CHAN","URL","EMAIL","WWW","RESI","_UID","_TODO","_PGV_OBJS");
+$person->add_family_facts(false);
+$subfacts = $person->getIndiFacts();
 
-$skipfacts = array("SEX","FAMS","FAMC","NAME","TITL","NOTE","SOUR","SSN","OBJE","HUSB","WIFE","CHIL","ALIA","ADDR","PHON","SUBM","_EMAIL","CHAN","URL","EMAIL","WWW","RESI","_UID","_TODO");
-$subfacts = get_all_subrecords($indirec, implode(",", $skipfacts));
-	  
-	  $f2 = 0;
-	  foreach($subfacts as $indexval => $factrec) {
-		  if (!FactViewRestricted($pid, $factrec)) {
+sort_facts($subfacts);
+
+$f2 = 0;
+/* @var $event Event */
+foreach($subfacts as $indexval => $event) {
+	if ($event->canShowDetails()) {
 			if ($f2>0) print "<br />\n";
 			$f2++;
 			// handle ASSO record
-			if (strstr($factrec, "1 ASSO")) {
-				print_asso_rela_record($pid, $factrec, false);
+		if ($event->getTag()=='ASSO') {
+			print_asso_rela_record($pid, $event->getGedComRecord(), false);
 				continue;
 			}
-			$fft = preg_match("/^1 (\w+)(.*)/m", $factrec, $ffmatch);
-			if ($fft>0) {
-					$fact = trim($ffmatch[1]);
-					$details = trim($ffmatch[2]);
-				}
-			else {
-				$fact="";
-				$details="";
-			}
-			if (($fact!="EVEN")&&($fact!="FACT")) {
-				print "<span class=\"details_label\">";
-				if (isset($factarray[$fact])) print $factarray[$fact];
-				else print $fact;
-				print "</span> ";
-			}
-			else {
-				$tct = preg_match("/2 TYPE (.*)/", $factrec, $match);
-				if ($tct>0) {
-					 $facttype = trim($match[1]);
-					 print "<span class=\"details_label\">";
-					 if (isset($factarray[$facttype])) print PrintReady($factarray[$facttype]);
-					 else print $facttype;
-					 print "</span> ";
-				}
-			}
-			if (get_sub_record(2, "2 DATE", $factrec)=="") {
-				if ($details!="Y" && $details!="N") print PrintReady($details);
-			}
-			else print PrintReady($details);
-			echo format_fact_date($factrec, false, false, $fact, $pid, $indirec);
+		$fact = $event->getTag();
+		$details = $event->getDetail();
+		print "<span class=\"details_label\">";
+		print $event->getLabel();
+		print "</span> ";
+		$details = $event->getDetail();
+		if ($details!="Y" && $details!="N") print PrintReady($details);
+		echo format_fact_date($event, false, false, $fact, $pid, $person->getGedcomRecord());
 			//-- print spouse name for marriage events
-			$ct = preg_match("/_PGVFS @(.*)@/", $factrec, $match);
-			if ($ct>0) {
-				$famid = $match[1];
-			}
-			$ct = preg_match("/_PGVS @(.*)@/", $factrec, $match);
-			if ($ct>0) {
-				$spouse=$match[1];
-				if ($spouse!=="") {
-					 print " <a href=\"individual.php?pid=$spouse&amp;ged=$GEDCOM\">";
-					 if (displayDetailsById($spouse)||showLivingNameById($spouse)) print PrintReady(get_person_name($spouse));
-					 else print $pgv_lang["private"];
-					 print "</a>";
+		$famid = $event->getFamilyId();
+		$spouseid = $event->getSpouseId();
+		if (!empty($spouseid)) {
+			$spouse = Person::getInstance($spouseid);
+			if (!is_null($spouse)) {
+				print " <a href=\"".encode_url("individual.php?pid={$spouseid}&ged=$GEDCOM")."\">";
+				print PrintReady($spouse->getFullName());
+				print "</a>";
+				print " - ";
 				}
-				if ($spouse!=="") print " - ";
+			}
+		if (!empty($famid)) {
 				print "<a href=\"family.php?famid=$famid\">[".$pgv_lang["view_family"]."]</a>\n";
 			}
-			echo format_fact_place($factrec, true, true);
+		echo format_fact_place($event, true, true);
 		}
-	 }
+	}
 ?>

@@ -129,7 +129,7 @@ class TimelineControllerRoot extends BaseController {
 						if ($date->y) {
 							$this->baseyear=min($this->baseyear, $date->y);
 							$this->topyear =max($this->topyear,  $date->y);
-	
+
 							if (!$indi->isDead())
 								$this->topyear=max($this->topyear, date('Y'));
 							$event->temp = $p;
@@ -199,7 +199,7 @@ class TimelineControllerRoot extends BaseController {
 				$year  = $date->y;
 				$month = max(1, $date->m);
 				$day   = max(1, $date->d);
-				$xoffset = $basexoffset+20;
+				$xoffset = $basexoffset+22;
 				$yoffset = $baseyoffset+(($year-$this->baseyear) * $this->scale)-($this->scale);
 				$yoffset = $yoffset + (($month / 12) * $this->scale);
 				$yoffset = $yoffset + (($day / 30) * ($this->scale/12));
@@ -303,7 +303,7 @@ class TimelineControllerRoot extends BaseController {
 					else {
 						$ct = preg_match("/2 _PGVFS @(.*)@/", $factrec, $match);
 						if ($ct>0) {
-							print " <a href=\"".encode_url("family.php?pid={$match[1]}&ged={$GEDCOM}")."\">";
+							print " <a href=\"".encode_url("family.php?famid={$match[1]}&ged={$GEDCOM}")."\">";
 							if (displayDetailsById($match[1])||showLivingNameById($match[1])) print $event->getParentObject()->getFullName();
 							else print $pgv_lang["private"];
 							print "</a>";
@@ -333,7 +333,7 @@ class TimelineControllerRoot extends BaseController {
 					}
 				}
 				//-- print the diagnal line
-				print "\n\t\t<div id=\"dbox$factcount\" style=\"position:absolute; ".($TEXT_DIRECTION =="ltr"?"left: ".($basexoffset+23):"right: ".($basexoffset+23))."px; top:".($dyoffset)."px; font-size: 8pt; height: ".(abs($tyoffset))."px; width: ".(abs($tyoffset))."px;";
+				print "\n\t\t<div id=\"dbox$factcount\" style=\"position:absolute; ".($TEXT_DIRECTION =="ltr"?"left: ".($basexoffset+25):"right: ".($basexoffset+25))."px; top:".($dyoffset)."px; font-size: 8pt; height: ".(abs($tyoffset))."px; width: ".(abs($tyoffset))."px;";
 				print " background-image: url('".$PGV_IMAGE_DIR."/".$PGV_IMAGES[$img]["other"]."');";
 				print " background-position: 0% $ypos; \" >\n";
 				print "</div>\n";

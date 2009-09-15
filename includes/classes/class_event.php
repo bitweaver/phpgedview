@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @author Joel A. Bruce
- * @version $Id: class_event.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: class_event.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
  *
  */
 
@@ -504,9 +504,15 @@ class Event {
 		//-- don't let dated after DEAT/BURI facts sort non-dated facts before DEAT/BURI
 		//-- treat dated after BURI facts as BURI instead
 		if ($a->getValue('DATE')!=NULL && $factsort[$atag]>$factsort['BURI'] && $factsort[$atag]<$factsort['CHAN']) $atag='BURI';
+		if ($b->getValue('DATE')!=NULL && $factsort[$btag]>$factsort['BURI'] && $factsort[$btag]<$factsort['CHAN']) $btag='BURI';
 		$ret = $factsort[$atag]-$factsort[$btag];
-		//-- if no sorting preference, then keep original ordering
-		if ($ret==0) $ret = $a->sortOrder - $b->sortOrder;
+		//-- if facts are the same then put dated facts before non-dated facts
+		if ($ret==0) {
+			if ($a->getValue('DATE')!=NULL && $b->getValue('DATE')==NULL) return -1;
+			if ($b->getValue('DATE')!=NULL && $a->getValue('DATE')==NULL) return 1;
+			//-- if no sorting preference, then keep original ordering
+			$ret = $a->sortOrder - $b->sortOrder;
+		}
 		return $ret;
 	}
 }

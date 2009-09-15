@@ -3,7 +3,7 @@
  * Interface to review/accept/reject changes made by editing online.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2003  John Finlay and Others
+ * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_changes.php,v 1.6 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: edit_changes.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -38,9 +38,9 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
-require "includes/functions_edit.php";
-require "includes/functions_import.php";
-require $INDEX_DIRECTORY."pgv_changes.php";
+require_once 'includes/functions/functions_edit.php';
+require_once 'includes/functions/functions_import.php';
+require $INDEX_DIRECTORY.'pgv_changes.php';
 
 if (!userCanAccept(getUserName())) {
 	header("Location: login.php?url=edit_changes.php");
@@ -139,40 +139,18 @@ else {
 			if ($i==0) {
 				$changedgedcoms[$change["gedcom"]] = true;
 				$GEDCOM=$change["gedcom"];
-				$gedrec=find_gedcom_record($change['gid']);
-				if (empty($gedrec))
-					$gedrec=$change['undo'];
-				if (preg_match("/0\s*@\w+@\s*(\w+)/", $gedrec, $match))
-					$type=$match[1];
-				else
-					$type="INDI";
-				switch ($type) {
+
+				$record=GedcomRecord::getInstance($change['gid']);
+				$output.='<b>'.PrintReady($record->getFullName()).'</b> '.getLRM().'('.$record->getXref().')'.getLRM().'<br />';
+				switch ($record->getType()) {
 				case 'INDI':
-					$names = get_indi_names($gedrec);
-					$output .= "<b>".PrintReady(check_NN($names[0][0]))."</b> " . getLRM() . "(".$change["gid"].")" . getLRM()  . "<br />";
-					$output .= "<a href=\"javascript:;\" onclick=\"return show_diff('individual.php?pid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
-					break;
 				case 'FAM':
-					$output.= "<b>".PrintReady(get_family_descriptor($change["gid"]))."</b> " . getLRM() . "(" . $change["gid"]. ")" . getLRM() . "<br />";
-					$output.= "<a href=\"javascript:;\" onclick=\"return show_diff('family.php?famid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
-					break;
 				case 'SOUR':
-					$name=get_gedcom_value("ABBR", 1, $gedrec);
-					if (empty($name))
-						$name=get_gedcom_value("TITL", 1, $gedrec);
-					$output.="<b>".PrintReady($name)."</b> " . getLRM() . "(".$change["gid"].")" . getLRM()  . "<br />";
-					$output.="<a href=\"javascript:;\" onclick=\"return show_diff('source.php?sid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
-					break;
 				case 'OBJE':
-					$name = get_gedcom_value("TITL", 1, $gedrec);
-					if (empty($name)) $name = get_gedcom_value("TITL", 2, $gedrec);
-					$output.="<b>".PrintReady($name)."</b> " . getLRM() . "(".$change["gid"].")" . getLRM()  . "<br />";
-					$output.="<a href=\"javascript:;\" onclick=\"return show_diff('mediaviewer.php?mid=".$change["gid"]."&amp;ged=".$change["gedcom"]."&amp;show_changes=yes');\">".$pgv_lang["view_change_diff"]."</a> | ";
-					break;
-				default:
-					$output.="<b>".$factarray[$type]."</b> " . getLRM() . "(".$change["gid"].")" . getLRM() ."<br />";
+					$output.='<a href="javascript:;" onclick="return show_diff(\''.encode_url($record->getLinkUrl().'&show_changes=yes').'\');">'.$pgv_lang['view_change_diff'].'</a> | ';
 					break;
 				}
+
 				$output.="<a href=\"javascript:show_gedcom_record('".$change["gid"]."');\">".$pgv_lang["view_gedcom"]."</a> | ";
 				$output.="<a href=\"javascript:;\" onclick=\"return edit_raw('".$change["gid"]."');\">".$pgv_lang["edit_raw"]."</a><br />";
 				$output.="<div class=\"indent\">\n";
@@ -187,7 +165,7 @@ else {
 				$output.="</tr>\n";
 			}
 			if ($i==count($changes)-1) {
-				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"edit_changes.php?action=accept&amp;cid=$cid\">".$pgv_lang["accept"]."</a></td>\n";
+				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"".encode_url("edit_changes.php?action=accept&cid={$cid}")."\">".$pgv_lang["accept"]."</a></td>\n";
 			} else {
 				$output .= "<td class=\"list_value $TEXT_DIRECTION\">&nbsp;</td>";
 			}
@@ -200,7 +178,7 @@ else {
  			$output .= "<td class=\"list_value $TEXT_DIRECTION\">".format_timestamp($change["time"])."</td>\n";
 			$output .= "<td class=\"list_value $TEXT_DIRECTION\">".$change["gedcom"]."</td>\n";
 			if ($i==count($changes)-1) {
-				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"edit_changes.php?action=undo&amp;cid=$cid&amp;index=$i\">".$pgv_lang["undo"]."</a></td>";
+				$output .= "<td class=\"list_value $TEXT_DIRECTION\"><a href=\"".encode_url("edit_changes.php?action=undo&cid={$cid}&index={$i}")."\">".$pgv_lang["undo"]."</a></td>";
 			} else {
 				$output .= "<td class=\"list_value $TEXT_DIRECTION\">&nbsp;</td>";
 			}
@@ -227,7 +205,7 @@ else {
 	$count = 0;
 	foreach($changedgedcoms as $ged=>$value) {
 		if ($count!=0) $output2.="<br /><br />";
-		$output2 .= "<a href=\"edit_changes.php?action=acceptall&amp;ged=$ged\">$ged - ".$pgv_lang["accept_all"]."</a>\n";
+		$output2 .= "<a href=\"".encode_url("edit_changes.php?action=acceptall&ged={$ged}")."\">$ged - ".$pgv_lang["accept_all"]."</a>\n";
 		$count ++;
 	}
 	$output2 .= "</td>";
@@ -238,7 +216,7 @@ else {
 	$count = 0;
 	foreach($changedgedcoms as $ged=>$value) {
 		if ($count!=0) $output2.="<br /><br />";
-		$output2 .= "<a href=\"edit_changes.php?action=undoall&amp;ged=$ged\" onclick=\"return confirm('".$pgv_lang["undo_all_confirm"]."');\">$ged - ".$pgv_lang["undo_all"]."</a>\n";
+		$output2 .= "<a href=\"".encode_url("edit_changes.php?action=undoall&ged={$ged}")."\" onclick=\"return confirm('".$pgv_lang["undo_all_confirm"]."');\">$ged - ".$pgv_lang["undo_all"]."</a>\n";
 		$count ++;
 	}
 	$output2 .= "</td></tr>";

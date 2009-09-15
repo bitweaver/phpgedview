@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_gedcomrecord.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
+* @version $Id: class_gedcomrecord.php,v 1.4 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -583,12 +583,6 @@ class GedcomRecord {
 			return $pgv_lang['private'];
 		}
 	}
-	function getFindName() {
-		return strtr(utf8_decode(strip_tags($this->getListName())),
-								"ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ",
-								"aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn");
-	}
-
 	// Get the fullname in an alternative character set
 	function getAddName() {
 		if ($this->canDisplayName() && $this->getPrimaryName()!=$this->getSecondaryName()) {

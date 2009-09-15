@@ -1356,6 +1356,9 @@ ul.clist {
 	width: 8em;
 }
 
-
 .statistics_chart{
+}
+
+.gchart{
+	border: solid #9ca3d4 1px;
 }

@@ -21,7 +21,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_privacy.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+* @version $Id: functions_privacy.php,v 1.2 2009/09/15 20:06:02 lsces Exp $
 * @package PhpGedView
 * @subpackage Privacy
 */
@@ -338,6 +338,28 @@ function displayDetailsById($pid, $type = "INDI") {
 	global $PRIVACY_CHECKS, $PRIVACY_BY_RESN, $SHOW_SOURCES, $SHOW_LIVING_NAMES;
 	global $GEDCOMS, $INDEX_DIRECTORY;
 
+	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
+		// Normal operation
+		$pgv_GEDCOM				= PGV_GEDCOM;
+		$pgv_GED_ID				= PGV_GED_ID;
+		$pgv_USER_ID			= PGV_USER_ID;
+		$pgv_USER_NAME			= PGV_USER_NAME;
+		$pgv_USER_GEDCOM_ADMIN	= PGV_USER_GEDCOM_ADMIN;
+		$pgv_USER_CAN_ACCESS	= PGV_USER_CAN_ACCESS;
+		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
+		$pgv_USER_GEDCOM_ID		= PGV_USER_GEDCOM_ID;
+	} else {
+		// We're in the middle of a Download -- get overriding information from cache
+		$pgv_GEDCOM				= $_SESSION["pgv_GEDCOM"];
+		$pgv_GED_ID				= $_SESSION["pgv_GED_ID"];
+		$pgv_USER_ID			= $_SESSION["pgv_USER_ID"];
+		$pgv_USER_NAME			= $_SESSION["pgv_USER_NAME"];
+		$pgv_USER_GEDCOM_ADMIN	= $_SESSION["pgv_USER_GEDCOM_ADMIN"];
+		$pgv_USER_CAN_ACCESS	= $_SESSION["pgv_USER_CAN_ACCESS"];
+		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
+		$pgv_USER_GEDCOM_ID		= $_SESSION["pgv_USER_GEDCOM_ID"];
+	}
+
 	static $privacy_cache = array();
 
 	if (!$HIDE_LIVE_PEOPLE) return true;
@@ -367,10 +389,10 @@ function displayDetailsById($pid, $type = "INDI") {
 	$cache_privacy = true;
 
 	//-- start of user specific privacy checks
-	$username = PGV_USER_NAME;
+	$username = $pgv_USER_NAME;
 	if ($username) {
 		if (isset($user_privacy[$username]["all"])) {
-			if ($user_privacy[$username]["all"] >= PGV_USER_ACCESS_LEVEL) {
+			if ($user_privacy[$username]["all"] >= $pgv_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) $privacy_cache[$pkey] = true;
 				return true;
 			} else {
@@ -379,7 +401,7 @@ function displayDetailsById($pid, $type = "INDI") {
 			}
 		}
 		if (isset($user_privacy[$username][$pid])) {
-			if ($user_privacy[$username][$pid] >= PGV_USER_ACCESS_LEVEL) {
+			if ($user_privacy[$username][$pid] >= $pgv_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) $privacy_cache[$pkey] = true;
 				return true;
 			} else {
@@ -389,7 +411,7 @@ function displayDetailsById($pid, $type = "INDI") {
 		}
 
 		if (isset($person_privacy[$pid])) {
-			if ($person_privacy[$pid]>=PGV_USER_ACCESS_LEVEL) {
+			if ($person_privacy[$pid]>=$pgv_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) $privacy_cache[$pkey] = true;
 				return true;
 			}
@@ -398,7 +420,7 @@ function displayDetailsById($pid, $type = "INDI") {
 				return false;
 			}
 		}
-		if (PGV_USER_GEDCOM_ADMIN) {
+		if ($pgv_USER_GEDCOM_ADMIN) {
 			if ($cache_privacy) $privacy_cache[$pkey] = true;
 			return true;
 		}
@@ -409,7 +431,7 @@ function displayDetailsById($pid, $type = "INDI") {
 			$resn = get_gedcom_value("RESN", 1, $gedrec);
 			if (!empty($resn)) {
 				if ($resn == "confidential") $ret = false;
-				else if ($resn=="privacy" && PGV_USER_GEDCOM_ID != $pid) $ret = false;
+				else if ($resn=="privacy" && $pgv_USER_GEDCOM_ID != $pid) $ret = false;
 				else $ret = true;
 				if (!$ret) {
 					if ($cache_privacy) $privacy_cache[$pkey] = $ret;
@@ -418,14 +440,14 @@ function displayDetailsById($pid, $type = "INDI") {
 			}
 		}
 
-		if (PGV_USER_CAN_ACCESS) {
+		if ($pgv_USER_CAN_ACCESS) {
 			if ($type=="INDI") {
 				$gedrec = find_person_record($pid);
 				$isdead = is_dead($gedrec);
 				if ($USE_RELATIONSHIP_PRIVACY || get_user_setting($username, 'relationship_privacy')=="Y") {
 					if ($isdead) {
-						if ($SHOW_DEAD_PEOPLE>=PGV_USER_ACCESS_LEVEL) {
-							if ($PRIVACY_BY_YEAR && $SHOW_DEAD_PEOPLE==PGV_USER_ACCESS_LEVEL) {
+						if ($SHOW_DEAD_PEOPLE>=$pgv_USER_ACCESS_LEVEL) {
+							if ($PRIVACY_BY_YEAR && $SHOW_DEAD_PEOPLE==$pgv_USER_ACCESS_LEVEL) {
 								if (!checkPrivacyByYear($pid)) {
 									if ($cache_privacy) $privacy_cache[$pkey] = false;
 									return false;
@@ -438,7 +460,7 @@ function displayDetailsById($pid, $type = "INDI") {
 							return false;
 						}
 					} else {
-						$my_id=PGV_USER_GEDCOM_ID;
+						$my_id=$pgv_USER_GEDCOM_ID;
 						if (empty($my_id)) {
 							if ($cache_privacy) $privacy_cache[$pkey] = false;
 							return false;
@@ -452,7 +474,7 @@ function displayDetailsById($pid, $type = "INDI") {
 						} else {
 							$path_length = $MAX_RELATION_PATH_LENGTH;
 						}
-						$relationship = get_relationship(PGV_USER_GEDCOM_ID, $pid, $CHECK_MARRIAGE_RELATIONS, $path_length);
+						$relationship = get_relationship($pgv_USER_GEDCOM_ID, $pid, $CHECK_MARRIAGE_RELATIONS, $path_length);
 						if ($relationship!==false) {
 							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
@@ -463,7 +485,7 @@ function displayDetailsById($pid, $type = "INDI") {
 					}
 				} else {
 					if ($isdead) {
-						if ($SHOW_DEAD_PEOPLE>=PGV_USER_ACCESS_LEVEL) {
+						if ($SHOW_DEAD_PEOPLE>=$pgv_USER_ACCESS_LEVEL) {
 							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
 						} else {
@@ -471,7 +493,7 @@ function displayDetailsById($pid, $type = "INDI") {
 							return false;
 						}
 					} else {
-						if ($SHOW_LIVING_NAMES>=PGV_USER_ACCESS_LEVEL) {
+						if ($SHOW_LIVING_NAMES>=$pgv_USER_ACCESS_LEVEL) {
 							if ($cache_privacy) $privacy_cache[$pkey] = true;
 							return true;
 						} else {
@@ -486,7 +508,7 @@ function displayDetailsById($pid, $type = "INDI") {
 
 	//-- check the person privacy array for an exception
 	if (isset($person_privacy[$pid])) {
-		if ($person_privacy[$pid]>=PGV_USER_ACCESS_LEVEL) {
+		if ($person_privacy[$pid]>=$pgv_USER_ACCESS_LEVEL) {
 			if ($cache_privacy) {
 				$privacy_cache[$pkey] = true;
 			}
@@ -526,7 +548,7 @@ function displayDetailsById($pid, $type = "INDI") {
 		$gedrec = find_person_record($pid);
 		$disp = is_dead($gedrec);
 		if ($disp) {
-			if ($SHOW_DEAD_PEOPLE>=PGV_USER_ACCESS_LEVEL) {
+			if ($SHOW_DEAD_PEOPLE>=$pgv_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) {
 					$privacy_cache[$pkey] = true;
 				}
@@ -544,7 +566,7 @@ function displayDetailsById($pid, $type = "INDI") {
 				}
 				return false;
 			}
-			if ($SHOW_LIVING_NAMES>PGV_USER_ACCESS_LEVEL) {
+			if ($SHOW_LIVING_NAMES>$pgv_USER_ACCESS_LEVEL) {
 				if ($cache_privacy) {
 					$privacy_cache[$pkey] = true;
 				}
@@ -565,7 +587,7 @@ function displayDetailsById($pid, $type = "INDI") {
 		return $display;
 	}
 	if ($type=="SOUR") {
-		if ($SHOW_SOURCES>=PGV_USER_ACCESS_LEVEL) {
+		if ($SHOW_SOURCES>=$pgv_USER_ACCESS_LEVEL) {
 			$disp = true;
 			$sourcerec = find_source_record($pid);
 			if (!empty($sourcerec)) {
@@ -580,7 +602,7 @@ function displayDetailsById($pid, $type = "INDI") {
 		}
 	}
 	if ($type=="REPO") {
-		if ($SHOW_SOURCES>=PGV_USER_ACCESS_LEVEL) {
+		if ($SHOW_SOURCES>=$pgv_USER_ACCESS_LEVEL) {
 			$privacy_cache[$pkey] = true;
 			return true;
 		} else {
@@ -624,27 +646,37 @@ if (!function_exists("showLivingNameById")) {
 * @return boolean return true to show the person's name, return false to keep it private
 */
 function showLivingNameById($pid) {
+	global $GEDCOM;
 	global $SHOW_LIVING_NAMES, $person_privacy, $user_privacy;
 
+	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
+		// Normal operation
+		$pgv_USER_NAME			= PGV_USER_NAME;
+		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
+	} else {
+		// We're in the middle of a Download -- get overriding information from cache
+		$pgv_USER_NAME			= $_SESSION["pgv_USER_NAME"];
+		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
+	}
+
 	if (displayDetailsById($pid)) return true;
-	$username = PGV_USER_NAME;
-	if (!empty($username)) {
-		if (isset($user_privacy[$username]["all"])) {
-			if ($user_privacy[$username]["all"] >= PGV_USER_ACCESS_LEVEL) return true;
+	if (!empty($pgv_USER_NAME)) {
+		if (isset($user_privacy[$pgv_USER_NAME]["all"])) {
+			if ($user_privacy[$pgv_USER_NAME]["all"] >= $pgv_USER_ACCESS_LEVEL) return true;
 			else return false;
 		}
-		if (isset($user_privacy[$username][$pid])) {
-			if ($user_privacy[$username][$pid] >= PGV_USER_ACCESS_LEVEL) return true;
+		if (isset($user_privacy[$pgv_USER_NAME][$pid])) {
+			if ($user_privacy[$pgv_USER_NAME][$pid] >= $pgv_USER_ACCESS_LEVEL) return true;
 			else return false;
 		}
 	}
 
 	if (isset($person_privacy[$pid])) {
-		if ($person_privacy[$pid]>=PGV_USER_ACCESS_LEVEL) return true;
+		if ($person_privacy[$pid]>=$pgv_USER_ACCESS_LEVEL) return true;
 		else return false;
 	}
 
-	if ($SHOW_LIVING_NAMES>=PGV_USER_ACCESS_LEVEL) return true;
+	if ($SHOW_LIVING_NAMES>=$pgv_USER_ACCESS_LEVEL) return true;
 	return false;
 }
 }
@@ -664,20 +696,29 @@ if (!function_exists("showFact")) {
 * @return boolean return true to show the fact, return false to keep it private
 */
 function showFact($fact, $pid, $type='INDI') {
+	global $GEDCOM;
 	global $global_facts, $person_facts, $SHOW_SOURCES;
+
+	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
+		// Normal operation
+		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
+	} else {
+		// We're in the middle of a Download -- get overriding information from cache
+		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
+	}
 
 	//-- first check the global facts array
 	if (isset($global_facts[$fact]["show"])) {
-		if (PGV_USER_ACCESS_LEVEL>$global_facts[$fact]["show"])
+		if ($pgv_USER_ACCESS_LEVEL>$global_facts[$fact]["show"])
 			return false;
 	}
 	//-- check the person facts array
 	if (isset($person_facts[$pid][$fact]["show"])) {
-		if (PGV_USER_ACCESS_LEVEL>$person_facts[$pid][$fact]["show"])
+		if ($pgv_USER_ACCESS_LEVEL>$person_facts[$pid][$fact]["show"])
 			return false;
 	}
 	if ($fact=="SOUR") {
-		if ($SHOW_SOURCES<PGV_USER_ACCESS_LEVEL)
+		if ($SHOW_SOURCES<$pgv_USER_ACCESS_LEVEL)
 			return false;
 	}
 	if ($fact!="NAME") {
@@ -706,15 +747,24 @@ if (!function_exists("showFactDetails")) {
 * @return boolean return true to show the fact details, return false to keep it private
 */
 function showFactDetails($fact, $pid) {
+	global $GEDCOM;
 	global $global_facts, $person_facts;
+
+	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
+		// Normal operation
+		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
+	} else {
+		// We're in the middle of a Download -- get overriding information from cache
+		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
+	}
 
 	//-- first check the global facts array
 	if (isset($global_facts[$fact]["details"])) {
-		if (PGV_USER_ACCESS_LEVEL>$global_facts[$fact]["details"]) return false;
+		if ($pgv_USER_ACCESS_LEVEL>$global_facts[$fact]["details"]) return false;
 	}
 	//-- check the person facts array
 	if (isset($person_facts[$pid][$fact]["details"])) {
-		if (PGV_USER_ACCESS_LEVEL>$person_facts[$pid][$fact]["details"]) return false;
+		if ($pgv_USER_ACCESS_LEVEL>$person_facts[$pid][$fact]["details"]) return false;
 	}
 
 	return showFact($fact, $pid);
@@ -809,8 +859,13 @@ function privatize_gedcom($gedrec) {
 					}
 				}
 			}
-			if ($type=="INDI") $newrec .= trim(get_sub_record(1, "1 SEX", $gedrec))."\n"; // do not privatize gender
-			$newrec .= "1 NOTE ".trim($pgv_lang["person_private"])."\n";
+			if ($type=="INDI") {
+				$newrec .= trim(get_sub_record(1, "1 SEX", $gedrec))."\n"; // do not privatize gender
+				$newrec .= "1 NOTE ".trim($pgv_lang["person_private"])."\n";
+			}
+			else if ($type=="FAM") $newrec .= "1 NOTE ".trim($pgv_lang["family_private"])."\n";
+			else if ($type=="OBJE") $newrec .= "1 NOTE ".trim($pgv_lang["media_private"])."\n";
+			else $newrec .= "1 NOTE ".trim($pgv_lang["private"])."\n";
 			//print $newrec;
 			$pgv_private_records[$gid] = $gedrec;
 			return $newrec;
@@ -927,6 +982,20 @@ function FactEditRestricted($pid, $factrec) {
 * @return int Allowed or not allowed
 */
 function FactViewRestricted($pid, $factrec) {
+	global $GEDCOM;
+
+	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
+		// Normal operation
+		$pgv_GED_ID				= PGV_GED_ID;
+		$pgv_USER_GEDCOM_ADMIN	= PGV_USER_GEDCOM_ADMIN;
+		$pgv_USER_GEDCOM_ID		= PGV_USER_GEDCOM_ID;
+	} else {
+		// We're in the middle of a Download -- get overriding information from cache
+		$pgv_GED_ID				= $_SESSION["pgv_GED_ID"];
+		$pgv_USER_GEDCOM_ADMIN	= $_SESSION["pgv_USER_GEDCOM_ADMIN"];
+		$pgv_USER_GEDCOM_ID		= $_SESSION["pgv_USER_GEDCOM_ID"];
+	}
+
 	if (PGV_USER_GEDCOM_ADMIN) {
 		return false;
 	}

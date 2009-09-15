@@ -3,7 +3,7 @@
  * Parses gedcom file and displays record for given id in raw text
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: gedrecord.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: gedrecord.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -38,11 +38,10 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
-require_once("includes/gedcomrecord.php");
+require_once("includes/classes/class_gedcomrecord.php");
 header("Content-Type: text/html; charset=$CHARACTER_SET");
 
-if (isset($_REQUEST['pid'])) $pid = $_REQUEST['pid'];
-if (!isset($pid)) $pid = "";
+$pid=safe_GET_xref('pid');
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -52,8 +51,6 @@ if (!isset($pid)) $pid = "";
 		<title><?php print "$pid Record"; ?></title>
 	</head>
 	<body><?php
-
-$pid = clean_input($pid);
 
 if (!$SHOW_GEDCOM_RECORD && !PGV_USER_CAN_ACCEPT) {
 	print "<span class=\"error\">".$pgv_lang["ged_noshow"]."</span>\n";
@@ -73,7 +70,7 @@ else  {
 	$indirec = find_updated_record($pid);
 	$indirec = privatize_gedcom($indirec);
 }
-$indirec = preg_replace("/@(\w*)@/", "@<a href=\"gedrecord.php?pid=$1\">$1</a>@", $indirec);
+$indirec = preg_replace("/@(\w+)@/", "@<a href=\"gedrecord.php?pid=$1\">$1</a>@", $indirec);
 print "<pre>$indirec</pre>";
 print "</body></html>";
 

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Module
- * @version $Id: media_reorder.php,v 1.1 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id: media_reorder.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  * @author Brian Holland
  */
 
@@ -40,11 +40,12 @@ include_once("includes/functions/functions_print_facts.php");
 
 	global $MULTI_MEDIA, $TBLPREFIX, $SHOW_ID_NUMBERS, $MEDIA_EXTERNAL;
 	global $pgv_lang, $pgv_changes, $factarray, $view;
-	global $GEDCOMS, $GEDCOM, $MEDIATYPE, $pgv_changes, $DBCONN, $DBTYPE;
+	global $GEDCOM, $MEDIATYPE, $pgv_changes;
 	global $WORD_WRAPPED_NOTES, $MEDIA_DIRECTORY, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION;
 	global $is_media, $cntm1, $cntm2, $cntm3, $cntm4, $t, $mgedrec;
-	global $typ2b, $edit, $tabno ;
+	global $edit, $tabno ;
 	global $ids, $pid, $related, $level, $gedrec, $media_data, $order, $order1, $order2, $j ;
+	global $gBitDb;
 
 	print "\n";
 
@@ -91,7 +92,6 @@ include_once("includes/functions/functions_print_facts.php");
 		else $sort_current_objes[$sort_match[$i][1]]++;
 		$sort_obje_links[$sort_match[$i][1]][] = $sort_match[$i][0];
 	}
-	$sort_media_found = false;
 	// -----------------------------------------------------------------------------------------------
 
 	// create ORDER BY list from Gedcom sorted records list  ---------------------------
@@ -117,35 +117,36 @@ include_once("includes/functions/functions_print_facts.php");
 	$media_found = false;
 
 	$sqlmm = "SELECT DISTINCT ";
-	// Adding DISTINCT is the fix for: [ 1488550 ] Family/Individual Media Duplications
-	// but it may not work for all RDBMS.
-	// $sqlmm  = "SELECT ";
-	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping where ";
+	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM {$TBLPREFIX}media, {$TBLPREFIX}media_mapping where ";
 	$sqlmm .= "mm_gid IN (";
 	$i=0;
+	$vars=array();
 	foreach ($ids as $key=>$media_id) {
 		if ($i>0) $sqlmm .= ",";
-		$sqlmm .= "'".$DBCONN->escapeSimple($media_id)."'";
+		$sqlmm .= "?";
+		$vars[]=$media_id;
 		$i++;
 	}
-	$sqlmm .= ") AND mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' AND mm_media=m_media AND mm_gedfile=m_gedfile ";
+	$sqlmm .= ") AND mm_gedfile=? AND mm_media=m_media AND mm_gedfile=m_gedfile ";
+	$vars[]=PGV_GED_ID;
 	//-- for family and source page only show level 1 obje references
-	if ($level>0) $sqlmm .= "AND mm_gedrec ".PGV_DB_LIKE." '$level OBJE%'";
+	if ($level>0) {
+		$sqlmm .= "AND mm_gedrec LIKE ?";
+		$vars[]="{$level} OBJE%";
+	}
+
 
 	if ($sort_ct>0) {
 		$sqlmm .= $orderbylist;
 	} else {
-		// $sqlmm .= " ORDER BY m_titl ";
 		$sqlmm .= " ORDER BY mm_gid DESC ";
 	}
 
-	$resmm = dbquery($sqlmm);
+	$rows = $gBitDb->query( $sqlmm, $vars );
+
 	$foundObjs = array();
 
-//      $resmm1 = mysql_query($sqlmm);
-//      $numm = mysql_num_rows($resmm1);
-
-			while ($rowm = $resmm->fetchRow(DB_FETCHMODE_ASSOC)) {
+			while ( $rowm = $rows->fetchRow() ) {
 
 				if (isset($foundObjs[$rowm['m_media']])) {
 					if (isset($current_objes[$rowm['m_media']])) $current_objes[$rowm['m_media']]--;
@@ -173,24 +174,13 @@ include_once("includes/functions/functions_print_facts.php");
 
 				$rows['normal'] = $rowm;
 				if (isset($current_objes[$rowm['m_media']])) $current_objes[$rowm['m_media']]--;
-/*
-				if (!isset($j)) {
-					$j=0;
-				} else {
-					$j=$j;
-				}
-*/
 				foreach($rows as $rtype => $rowm) {
 					// if  (FactViewRestricted($rowm['m_media'], $rowm['m_gedrec']) == "true")
 					$res = media_reorder_row($rtype, $rowm, $pid);
 					$media_found = $media_found || $res;
 					$foundObjs[$rowm['m_media']] = true;
 
-//					$media_data = $rowm['m_media'];
-//					print "<input type=\"hidden\" name=\"order1[$media_data]\" value=\"$j\" />";
 					print "\n\n";
-						//BH Debug
-						// $order2[].=$media_data;
 				$j++;
 				}
 			}
@@ -198,10 +188,6 @@ include_once("includes/functions/functions_print_facts.php");
 			?>
 			</ul>
 <?php
-// BH Debug ----------------------------------------------------------------------------------
-//			print "<br /><br /> No 2 = <br />";
-//			print_r($order2);
-//			echo "<input type=\"hidden\" name=\"order2\" value=\"$order2\" />";
 
 print "\n";
 ?>

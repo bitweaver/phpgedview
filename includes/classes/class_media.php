@@ -3,7 +3,7 @@
  * Class that defines a media object
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: class_media.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
+ * @version $Id: class_media.php,v 1.4 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -319,20 +319,13 @@ class Media extends GedcomRecord {
 	 * @param Media $obje
 	 * @return mixed  returns the ID for the for the matching media or null if not found
 	 */
-	static function in_obje_list(&$obje) {
-		global $TBLPREFIX, $GEDCOMS, $GEDCOM, $FILE, $DBCONN;
+	static function in_obje_list($obje) {
+		global $TBLPREFIX, $gBitDb;
 
-		if (is_null($obje)) return false;
-		if (empty($FILE)) $FILE = $GEDCOM;
-		$sql = "SELECT m_media FROM ".$TBLPREFIX."media WHERE m_file='".$DBCONN->escapeSimple($obje->file)."' AND m_titl ".PGV_DB_LIKE." '".$DBCONN->escapeSimple($obje->title)."' AND m_gedfile=".$GEDCOMS[$FILE]['id'];
-		$res = dbquery($sql);
-
-		if ($res->numRows()>0) {
-			$row = $res->fetchRow();
-			return $row[0];
-		}
-
-		return false;
+		return
+			$gBitDb->getOne(
+				"SELECT m_media FROM {$TBLPREFIX}media WHERE m_file=? AND m_titl LIKE ? AND m_gedfile=?"
+				, array($obje->file, $obje->title, PGV_GED_ID));
 	}
 
 	/**

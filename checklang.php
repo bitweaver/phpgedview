@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: checklang.php,v 1.5 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: checklang.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
  */
 // -- include config file
 require("config.php");
@@ -29,7 +29,7 @@ require("config.php");
 print_header("checklang");
 
 // args
-$lang=@$HTTP_GET_VARS["lang"];
+$lang=@$_GET["lang"];
 if (!isset($lang)) $lang="";
 
 // reading flags directory
@@ -129,10 +129,8 @@ function checkfile($filename) {
 	set_time_limit(0); //
 
 	// loading source data
-	//echo "<br />$filename";
 	if (!$fd = fopen($filename, 'r')) die("Cannot open $filename");
 	while ($data = @fgets($fd)) {
-		//if (substr($data, 0, 1) == "\$") $source[] = $data; //smart_utf8_decode($data);
 		if (isset($data[1]) and $data[1]!='*' and $data[1]!='?') $source[] = $data;
 	}
 	fclose($fd);
@@ -142,8 +140,8 @@ function checkfile($filename) {
 	if (!$fd = fopen($filename, 'r')) print("Cannot open $filename");
 	$header = "";
 	while ($data = @fgets($fd)) {
-	  if ($data[1]=='*' or $data[1]=='?') $header .= $data;
-		if (substr($data, 0, 1) == "\$") $target[] = $data; //smart_utf8_decode($data);
+		if ($data[1]=='*' or $data[1]=='?') $header .= $data;
+		if (substr($data, 0, 1) == "\$") $target[] = $data;
 	}
 	@fclose($fd);
 	$target[] = ""; // DO NOT DELETE THIS
@@ -199,17 +197,14 @@ function checkfile($filename) {
 		}
 	}
 	fclose($fd);
-	?>
-   <script type="text/javascript">
-		var OK = <?php print $ok;?>;
-		var TOT = <?php print ($ok + $nok);?>;
-		var ELT = "<?php print "$flag." . substr(basename($filename), 0, 1);?>";
-		//alert(ELT);
-		perc = Math.round(100*(OK / TOT));
-		progress = document.getElementById(ELT);
-		progress.innerHTML = perc+"%";
-	</script>
-	<?php
+	echo PGV_JS_START;
+	echo 'var OK = ', $ok, ';';
+	echo 'var TOT= ', $ok + $nok, ';';
+	echo 'var ELT= "', $flag, '.', substr(basename($filename), 0, 1), '";';
+	echo 'perc = Math.round(100*(OK / TOT));';
+	echo 'progress = document.getElementById(ELT);';
+	echo 'progress.innerHTML = perc+"%";';
+	echo PGV_JS_END;
 	flush();
 }
 

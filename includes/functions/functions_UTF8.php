@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_UTF8.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id: functions_UTF8.php,v 1.2 2009/09/15 20:06:02 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -268,7 +268,7 @@ function UTF8_strstr($haystack, $needle) {
 	if ($haystackLen==0 || $needleLen==0) return false;
 
 	$stringPos = UTF8_strpos($UTF8_haystack, $UTF8_needle, 0);
-	if ($stringpos===false) return false;
+	if ($stringPos===false) return false;
 
 	$result = array_slice($UTF8_haystack, $stringPos);
 
@@ -289,7 +289,7 @@ function UTF8_stristr($haystack, $needle, $offset=0) {
 	if ($haystackLen==0 || $needleLen==0) return false;
 
 	$stringPos = UTF8_strpos(UTF8_strtoupper($UTF8_haystack), UTF8_strtoupper($UTF8_needle, 0));
-	if ($stringpos===false) return false;
+	if ($stringPos===false) return false;
 
 	$result = array_slice($UTF8_haystack, $stringPos);
 
@@ -312,6 +312,7 @@ function UTF8_strpos($haystack, $needle, $offset=0) {
 
 	$lastPos = $haystackLen - $needleLen;
 
+	$found = false;
 	for ($currPos=$offset; $currPos<=$lastPos; $currPos++) {
 		$found = true;
 		for ($i=0; $i<$needleLen; $i++) {
@@ -441,5 +442,53 @@ function UTF8_strncasecmp($text1, $text2, $maxLen=0) {
 	}
 
 	return UTF8_strcmp(UTF8_strtoupper($UTF8_text1), UTF8_strtoupper($UTF8_text2));
+}
+
+
+/*
+ * Word wrap
+ */
+function UTF8_wordwrap($text, $width=75, $break="\n", $cut=FALSE) {
+	if ($width<=0) $width = 75;
+	if (is_string($text) && strlen($text)<=$width) return $text;	// Nothing to do
+	if ($break=='') $break = "\n";
+
+	$UTF8_text = UTF8_str_split($text);
+	$UTF8_break = UTF8_str_split($break);
+	$UTF8_result = array();
+
+	while (UTF8_strlen($UTF8_text)>$width) {
+		$longWord = FALSE;
+		for ($i=$width; $i>=0; $i--) {
+			if ($UTF8_text[$i]==' ') break;
+		}
+		if ($i<0) {
+			// We're dealing with a very long word
+			// Not too sure what $cut is supposed to accomplish -- we'll just chop the word
+			$longWord = TRUE;	// This means: "not wrapping at a space"
+			$i = $width;
+		}
+
+		$thisPiece = array_slice($UTF8_text, 0, $i);
+		foreach ($thisPiece as $char) {
+			// Copy front part of input string
+			$UTF8_result[] = $char;
+		}
+		foreach ($UTF8_break as $char) {
+			// Copy separator string
+			$UTF8_result[] = $char;
+		}
+
+		if (!$longWord) $i++;		// Skip space at end of piece we've just worked on
+		$UTF8_text = UTF8_substr($UTF8_text, $i);		// Remove that piece
+	}
+
+	foreach ($UTF8_text as $char) {
+		// Copy remainder of input string
+		$UTF8_result[] = $char;
+	}
+
+	if (is_array($text)) return $UTF8_result;
+	return implode('', $UTF8_result);
 }
 ?>

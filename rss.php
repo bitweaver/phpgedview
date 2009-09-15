@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: rss.php,v 1.7 2008/07/07 18:01:11 lsces Exp $
+ * $Id: rss.php,v 1.8 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage RSS
  * @TODO add Basic HTTP authentication to allow RSS aggregators to "log on"
@@ -32,10 +32,10 @@ if (!empty($lang)) {
 	$changelanguage = "yes";
 	$NEWLANGUAGE = $lang;
 }
-require("includes/feedcreator.class.php");
-require("includes/functions_rss.php");
 require("config.php");
-require("includes/index_cache.php");
+require_once 'includes/classes/class_feedcreator.php';
+require_once 'includes/functions/functions_rss.php';
+require_once 'includes/index_cache.php';
 
 $feedCacheName = "fullFeed";
 
@@ -92,8 +92,8 @@ if(!loadCachedBlock($cacheControl, $rssStyle)){
 	$author=getUserFullName($CONTACT_EMAIL);
 
 	$feed = new UniversalFeedCreator();
-	$feed->generator = "http://www.phpgedview.net v" . $VERSION . " " . $VERSION_RELEASE;
-	$feed->title = $gGedcom[$GEDCOM]["title"];
+	$feed->generator = PGV_PHPGEDVIEW_URL;
+	$feed->title = get_gedcom_setting(PGV_GED_ID, 'title');
 	$feed->language = $lang_short_cut[$LANGUAGE]; //$lang_langcode[$LANGUAGE];
 	$feed->descriptionHtmlSyndicated = true;
 	//$feed->descriptionTruncSize = 500; // does not make sense to truncate HTML since it will result in unpredictable output
@@ -102,7 +102,7 @@ if(!loadCachedBlock($cacheControl, $rssStyle)){
 	$syndURL = preg_replace("/&/", "&amp;", $syndURL);
 	$feed->syndicationURL = $syndURL;
 
-	$feedDesc = str_replace("#GEDCOM_TITLE#", $gGedcom[$GEDCOM]["title"], $pgv_lang["rss_descr"]);
+	$feedDesc = str_replace("#GEDCOM_TITLE#", $feed->title, $pgv_lang["rss_descr"]);
 	$feed->description = $feedDesc;
 	$feed->copyright = $author . " (c) " . date("Y");
 	$feed->category="genealogy";
@@ -110,7 +110,7 @@ if(!loadCachedBlock($cacheControl, $rssStyle)){
 	$image = new FeedImage();
 	$image->title = $pgv_lang["rss_logo_descr"];
 	$image->url = $SERVER_URL."images/gedview.gif";
-	$image->link = "http://www.phpgedview.net";
+	$image->link = PGV_PHPGEDVIEW_URL;
 	$image->description = $pgv_lang["rss_logo_descr"];
 	$image->descriptionHtmlSyndicated = true;
 	//$feed->descriptionTruncSize = 500; // does not make sense to truncate HTML since it will result in unpredictable output
@@ -140,7 +140,7 @@ if(!loadCachedBlock($cacheControl, $rssStyle)){
 		}*/
 
 		// determine if to show parts of feed based on their exsistance in the blocks on index.php
-		$blocks=  getBlocks($GEDCOM);
+		$blocks=  getBlocks(PGV_GEDCOM);
 		$main = $blocks["main"];
 
 		if(empty($module)) {
@@ -227,15 +227,15 @@ if(!loadCachedBlock($cacheControl, $rssStyle)){
 		}
 
 		if($printGedcomStats){
-			$gGedcomtats = getGedcomStats();
-			if (! empty($gGedcomtats[2])) {
+			$gedcomStats = getGedcomStats();
+			if (! empty($gedcomStats[2])) {
 				$item = new FeedItem();
-				$item->title = $gGedcomtats[0];
+				$item->title = $gedcomStats[0];
 				$item->link = $SERVER_URL. "index.php?ctype=gedcom#gedcom_stats";
-				$item->description = $gGedcomtats[2];
+				$item->description = $gedcomStats[2];
 				$item->descriptionHtmlSyndicated = true;
-				if (! empty($gGedcomtats[1])) {
-					$item->date = $gGedcomtats[1];
+				if (! empty($gedcomStats[1])) {
+					$item->date = $gedcomStats[1];
 				}
 				$item->source = $SERVER_URL;
 				$item->author = $author;

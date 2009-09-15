@@ -5,7 +5,7 @@
 // higher, then you can safely delete this file.
 //
 // phpGedView: Genealogy Viewer
-// Copyright (C) 2008 PhpGedView Development team, all rights reserved.
+// Copyright (C) 2008  PGV Development Team.  All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,10 +21,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
-// @version $Id: postgedview.php,v 1.6 2008/07/07 18:01:12 lsces Exp $
+// @version $Id: postgedview.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
 
-header(
-	"Location: modules/cms_interface/cms_login.php?cms_login=".urlencode($_COOKIE['post_user'])."&amp;cms_password=".urlencode($_COOKIE['def_upass'])
-);
+header("Location: ".encode_url("modules/cms_interface/cms_login.php?cms_login={$_COOKIE['post_user']}&cms_password={$_COOKIE['def_upass']}", false));
 
 ?>

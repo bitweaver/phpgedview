@@ -21,7 +21,7 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
 * @package PhpGedView
-* @version $Id: note.php,v 1.1 2009/04/30 19:12:13 lsces Exp $
+* @version $Id: note.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
 */
 
 require './config.php';
@@ -47,7 +47,12 @@ if ($MULTI_MEDIA && is_dir('./modules/lightbox')) {
 	loadLangFile('lightbox:lang');
 }
 
-if ($controller->note->isMarkedDeleted()) {
+if (!$controller->note){
+	echo "<b>".$pgv_lang["unable_to_find_record"]."</b><br /><br />";
+	print_footer();
+	exit;
+}
+else if ($controller->note->isMarkedDeleted()) {
 	echo '<span class="error">', $pgv_lang['record_marked_deleted'], '</span>';
 }
 
@@ -64,7 +69,7 @@ echo ' if (window.focus) {win04.focus();}';
 echo '}';
 echo PGV_JS_END;
 
-echo '<table class="list_table"><tr><td>';
+echo '<table class="list_table width80"><tr><td>';
 if ($controller->accept_success) {
 	echo '<b>', $pgv_lang['accept_successful'], '</b><br />';
 }
@@ -77,20 +82,37 @@ if (!$controller->isPrintPreview()) {
 	$editmenu=$controller->getEditMenu();
 	$othermenu=$controller->getOtherMenu();
 	if ($editmenu || $othermenu) {
-		echo '<table class="sublinks_table" cellspacing="4" cellpadding="0">';
-		echo '<tr><td class="list_label ', $TEXT_DIRECTION, '" colspan="2">', $pgv_lang['shared_note_menu'], '</td></tr>';
-		echo '<tr>';
+		if (!$PGV_MENUS_AS_LISTS) {
+			echo '<table class="sublinks_table" cellspacing="4" cellpadding="0">';
+			echo '<tr><td class="list_label ', $TEXT_DIRECTION, '" colspan="2">', $pgv_lang['shared_note_menu'], '</td></tr>';
+			echo '<tr>';
+		} else { 
+			echo '<div id="optionsmenu" class="sublinks_table">';
+			echo '<div class="list_label ', $TEXT_DIRECTION, '">', $pgv_lang["fams_charts"], '</div>';
+		} 
 		if ($editmenu) {
-			echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</td>';
+			if (!$PGV_MENUS_AS_LISTS) {
+				echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</td>';
+			} else { 
+				echo '<ul class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</ul>';
+			}
 		}
 		if ($othermenu) {
-			echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $othermenu->printMenu(), '</td>';
+			if (!$PGV_MENUS_AS_LISTS) {
+				echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $othermenu->printMenu(), '</td>';
+			} else { 
+				echo '<ul class="sublinks_cell ', $TEXT_DIRECTION, '">', $othermenu->printMenu(), '</ul>';
+			}
 		}
-		echo '</tr></table>';
+		if (!$PGV_MENUS_AS_LISTS) {
+			echo '</tr></table>';
+		} else { 
+			echo '</div>';
+		}
 	}
 }
-echo '</td></tr><tr><td colspan="2"><table border="0" class="facts_table width80 center">';
-
+echo '</td></tr><tr><td colspan="2"><table border="0" class="facts_table width100 center">';
+echo '<tr class="'.$TEXT_DIRECTION.'"><td><table class="width100">';
 	// Shared Note details ---------------------
 	$noterec = find_gedcom_record($controller->nid);
 	$nt = preg_match("/0 @$controller->nid@ NOTE(.*)/", $noterec, $n1match);
@@ -100,7 +122,10 @@ echo '</td></tr><tr><td colspan="2"><table border="0" class="facts_table width80
 		$note = "No Text";
 	}
 	echo '<tr><td align="left" class="descriptionbox '.$TEXT_DIRECTION.'">';
-		echo "<center>".$pgv_lang["shared_note"]."</center>";
+		echo '<center>';
+		if (!empty($PGV_IMAGES["notes"]["small"]) && $SHOW_FACT_ICONS)
+			echo '<img src="'.$PGV_IMAGE_DIR."/".$PGV_IMAGES["notes"]["small"].'" alt="'.$pgv_lang["shared_note"].'" title="'.$pgv_lang["shared_note"].'" align="middle" /> ';
+		echo $pgv_lang["shared_note"]."</center>";
 		echo '<br /><br />';
 		if (PGV_USER_CAN_EDIT) {
 			echo "<a href=\"javascript: edit_note()\"> ";
@@ -116,7 +141,7 @@ echo '</td></tr><tr><td colspan="2"><table border="0" class="facts_table width80
 	foreach ($notefacts as $fact) {
 		if ($fact && $fact->getTag()!='CONT') {
 			if ($fact->getTag()=='NOTE' ) {
-
+				print_fact($fact);
 			} else {
 				print_fact($fact);
 			}
@@ -139,7 +164,7 @@ echo '</td></tr><tr><td colspan="2"><table border="0" class="facts_table width80
 		echo '<a href="javascript:;" onclick="window.open(\'inverselink.php?linktoid='.$controller->nid.'&linkto=note\', \'_blank\', \'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1\'); return false;">'.$pgv_lang['link_to_existing_media'].'</a>';
 		echo '</td></tr>';
 	}
-
+echo '</table></td></tr>';
 echo '</table><br /><br /></td></tr><tr class="center"><td colspan="2">';
 
 

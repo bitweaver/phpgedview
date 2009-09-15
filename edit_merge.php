@@ -1,30 +1,30 @@
 <?php
 /**
- * Merge Two Gedcom Records
- *
- * This page will allow you to merge 2 gedcom records
- *
- * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  John Finlay and Others
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * @package PhpGedView
- * @subpackage Edit
- * @version $Id: edit_merge.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
- */
+* Merge Two Gedcom Records
+*
+* This page will allow you to merge 2 gedcom records
+*
+* phpGedView: Genealogy Viewer
+* Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+* @package PhpGedView
+* @subpackage Edit
+* @version $Id: edit_merge.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
+*/
 
 /**
  * Initialization
@@ -40,22 +40,26 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require("config.php");
-require("includes/functions_edit.php");
-require($factsfile["english"]);
+require_once './includes/functions/functions_edit.php';
+require_once './includes/functions/functions_import.php';
 if (file_exists($factsfile[$LANGUAGE])) require($factsfile[$LANGUAGE]);
 
-if (empty($action)) $action="choose";
-if (empty($gid1)) $gid1="";
-if (empty($gid2)) $gid2="";
-if (empty($ged2)) $ged2=$GEDCOM;
+$ged=$GEDCOM;
+$gid1=safe_POST_xref('gid1');
+$gid2=safe_POST_xref('gid2');
+$action=safe_POST('action', PGV_REGEX_ALPHA, 'choose');
+$ged2=safe_POST('ged2', PGV_REGEX_NOSCRIPT, $GEDCOM);
+$keep1=safe_POST('keep1', PGV_REGEX_UNSAFE);
+$keep2=safe_POST('keep2', PGV_REGEX_UNSAFE);
 if (empty($keep1)) $keep1=array();
 if (empty($keep2)) $keep2=array();
 
 print_header($pgv_lang["merge_records"]);
 
+if ($ENABLE_AUTOCOMPLETE) require './js/autocomplete.js.htm';
+
 //-- make sure they have accept access privileges
-$uname = getUserName();
-if (!userCanAccept($uname)) {
+if (!PGV_USER_CAN_ACCEPT) {
 	print "<span class=\"error\">".$pgv_lang["access_denied"]."</span>";
 	print_footer();
 	exit;
@@ -74,9 +78,9 @@ if ($action!="choose") {
 		else $gedrec2 = find_updated_record($gid2);
 		$GEDCOM=$ged;
 
-		// Ensure line endings are the same, otherwise we can't match records
-		$gedrec1=preg_replace('/[\r\n]+/', "\n", $gedrec1);
-		$gedrec2=preg_replace('/[\r\n]+/', "\n", $gedrec2);
+		// Fetch the original XREF - may differ in case from the supplied value
+		$tmp=new Person($gedrec1); $gid1=$tmp->getXref();
+		$tmp=new Person($gedrec2); $gid2=$tmp->getXref();
 
 		if (empty($gedrec1)) {
 			echo '<span class="error">', $pgv_lang['unable_to_find_record'], ':</span> ', $gid1, ', ', $ged;
@@ -131,7 +135,7 @@ if ($action!="choose") {
 					print "<table border=\"1\">\n";
 					foreach($facts1 as $i=>$fact1) {
 						foreach($facts2 as $j=>$fact2) {
-							if (str2upper($fact1["subrec"])==str2upper($fact2["subrec"])) {
+							if (UTF8_strtoupper($fact1["subrec"])==UTF8_strtoupper($fact2["subrec"])) {
 								$skip1[] = $i;
 								$skip2[] = $j;
 								$equal_count++;
@@ -178,78 +182,44 @@ if ($action!="choose") {
 					if ($GEDCOM==$ged2) {
 						$success = delete_gedrec($gid2);
 						if ($success) print "<br />".$pgv_lang["gedrec_deleted"]."<br />\n";
-						
-						//-- replace all the records that link to gid2
-						$sql = "SELECT i_id, i_gedcom FROM ".$TBLPREFIX."individuals WHERE i_file=".PGV_GED_ID." AND i_gedcom LIKE '%@$gid2@%'";
-						$res = dbquery($sql);
-						while($row = $res->fetchRow()) {
-							$record = $row[1];
-							$gid = $row[0];
-							if ($gid!=$gid2) {
-								if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
-								print $pgv_lang["updating_linked"]." $gid<br />\n";
-								$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
-								replace_gedrec($gid, $newrec);
+
+						//-- replace all the records that linked to gid2
+						$ids=fetch_all_links($gid2, PGV_GED_ID);
+
+						foreach ($ids as $id) {
+							if (isset($pgv_changes[$id."_".$GEDCOM])) {
+								$record=find_updated_record($id);
+							} else {
+								$record=fetch_gedcom_record($id, PGV_GED_ID);
+								$record=$record['gedrec'];
+								echo $pgv_lang["updating_linked"]." {$id}<br />\n";
+								$newrec=str_replace("@$gid2@", "@$gid1@", $record);
+								replace_gedrec($id, $newrec);
 							}
-						}
-						$sql = "SELECT f_id, f_gedcom FROM ".$TBLPREFIX."families WHERE f_file=".PGV_GED_ID." AND f_gedcom LIKE '%@$gid2@%'";
-						$res = dbquery($sql);
-						while($row = $res->fetchRow()) {
-							$record = $row[1];
-							$gid = $row[0];
-							if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
-							print $pgv_lang["updating_linked"]." $gid<br />\n";
-							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
-							//-- prevent the merge from adding duplicate children to the family
-							$ct = preg_match_all("/1 CHIL @$gid1@/", $newrec, $matches);
-							if ($ct>1) {
-								$pos1 = strpos($newrec, "1 CHIL @$gid1@");
-								$pos2 = strpos($newrec, "\n1", $pos1+1);
-								if ($pos2===false) $pos2 = strlen($newrec);
-								$newrec = substr($newrec, 0, $pos1).substr($newrec, $pos2);
-							}
-							replace_gedrec($gid, $newrec);
-						}
-						$sql = "SELECT s_id, s_gedcom FROM ".$TBLPREFIX."sources WHERE s_file=".PGV_GED_ID." AND s_gedcom LIKE '%@$gid2@%'";
-						$res = dbquery($sql);
-						while($row = $res->fetchRow()) {
-							$record = $row[1];
-							$gid = $row[0];
-							if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
-							print $pgv_lang["updating_linked"]." $gid<br />\n";
-							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
-							replace_gedrec($gid, $newrec);
-						}
-						$sql = "SELECT o_id, o_gedcom FROM ".$TBLPREFIX."other WHERE o_file=".PGV_GED_ID." AND o_gedcom LIKE '%@$gid2@%'";
-						$res = dbquery($sql);
-						while($row = $res->fetchRow()) {
-							$record = $row[1];
-							$gid = $row[0];
-							if (isset($pgv_changes[$gid."_".$GEDCOM])) $record = find_updated_record($gid);
-							print $pgv_lang["updating_linked"]." $gid<br />\n";
-							$newrec = preg_replace("/@$gid2@/", "@$gid1@", $record);
-							replace_gedrec($gid, $newrec);
 						}
 					}
-					$newgedrec = "0 @$gid1@ $type1\r\n";
+					$newgedrec = "0 @$gid1@ $type1\n";
 					for($i=0; ($i<count($facts1) || $i<count($facts2)); $i++) {
 						if (isset($facts1[$i])) {
 							if (in_array($i, $keep1)) {
-								$newgedrec .= $facts1[$i]["subrec"]."\r\n";
+								$newgedrec .= $facts1[$i]["subrec"]."\n";
 								print $pgv_lang["adding"]." ".$facts1[$i]["fact"]." ".$pgv_lang["from"]." $gid1<br />\n";
 							}
 						}
 						if (isset($facts2[$i])) {
 							if (in_array($i, $keep2)) {
-								$newgedrec .= $facts2[$i]["subrec"]."\r\n";
+								$newgedrec .= $facts2[$i]["subrec"]."\n";
 								print $pgv_lang["adding"]." ".$facts2[$i]["fact"]." ".$pgv_lang["from"]." $gid2<br />\n";
 							}
 						}
 					}
-					
+
 					replace_gedrec($gid1, $newgedrec);
 					if ($SYNC_GEDCOM_FILE) write_file();
 					write_changes();
+					$rec=GedcomRecord::getInstance($gid1);
+					$pid=$rec->getXrefLink(); // $pid is embedded in $pgv_lang['record_updated']
+					echo '<br />', print_text('record_updated', 0, 1), '<br />';
 					print "<br /><a href=\"edit_merge.php?action=choose\">".$pgv_lang["merge_more"]."</a><br />\n";
 					print "<br /><br /><br />\n";
 				}
@@ -297,7 +267,7 @@ if ($action=="choose") {
 	foreach (get_all_gedcoms() as $ged_id=>$ged_name) {
 		print "<option value=\"$ged_name\"";
 		if (empty($ged) && $ged_id==PGV_GED_ID || !empty($ged) && $ged==$ged_name) print " selected=\"selected\"";
-		print ">".get_gedcom_setting($ged_id, 'title')."</option>\n";
+		print ">".PrintReady(strip_tags(get_gedcom_setting($ged_id, 'title')))."</option>\n";
 	}
 	print "</select>\n";
 	print "<a href=\"javascript:iopen_find(document.merge.gid1, document.merge.ged);\" tabindex=\"6\"> ".$pgv_lang["find_individual"]."</a> |";
@@ -312,7 +282,7 @@ if ($action=="choose") {
 	foreach (get_all_gedcoms() as $ged_id=>$ged_name) {
 		print "<option value=\"$ged_name\"";
 		if (empty($ged2) && $ged_id==PGV_GED_ID || !empty($ged2) && $ged2==$ged_name) print " selected=\"selected\"";
-		print ">".get_gedcom_setting($ged_id, 'title')."</option>\n";
+		print ">".PrintReady(strip_tags(get_gedcom_setting($ged_id, 'title')))."</option>\n";
 	}
 	print "</select>\n";
 	print "<a href=\"javascript:iopen_find(document.merge.gid2, document.merge.ged2);\" tabindex=\"7\"> ".$pgv_lang["find_individual"]."</a> |";

@@ -6,7 +6,7 @@
  * for use in the Advanced HTML block.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2008  PGV Development Team.  All rights reserved.
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: class_stats_ui.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: class_stats_ui.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
  * @author Patrick Kellum
  * @package PhpGedView
  * @subpackage Lists
@@ -42,8 +42,7 @@ class stats_ui extends stats
 // Favorites                                                                 //
 ///////////////////////////////////////////////////////////////////////////////
 
-	static function _getFavorites($isged=true)
-	{
+	static function _getFavorites($isged=true) {
 		global $GEDCOM, $pgv_lang;
 		global $pgv_lang, $factarray, $PGV_IMAGE_DIR, $PGV_IMAGES, $GEDCOM, $ctype, $TEXT_DIRECTION, $INDEX_DIRECTORY;
 		global $show_full, $PEDIGREE_FULL_DETAILS, $BROWSERTYPE;
@@ -54,61 +53,48 @@ class stats_ui extends stats
 		$show_full = 1;
 		$PEDIGREE_FULL_DETAILS = 1;
 
-		if($isged)
-		{
+		if($isged) {
 			$userfavs = getUserFavorites($GEDCOM);
 		}
-		else
-		{
+		else {
 			$userfavs = getUserFavorites(PGV_USER_ID);
 		}
 		$content = '';
-		if(!count($userfavs))
-		{
-			if($isged)
-			{
+		if(!count($userfavs)) {
+			if($isged) {
 				if(PGV_USER_GEDCOM_ADMIN){$content .= print_text('no_favorites', 0, 1);}
 				else{$content .= print_text('no_gedcom_favorites', 0, 1);}
 			}
-			else
-			{
+			else {
 				print_text('no_favorites', 0, 1);
 			}
 		}
-		else
-		{
-			if(!$isged)
-			{
+		else {
+			if(!$isged) {
 				$mygedcom = $GEDCOM;
 				$current_gedcom = $GEDCOM;
 			}
 			$content .= "<table width=\"99%\" style=\"border:none\" cellspacing=\"3px\" class=\"center {$TEXT_DIRECTION}\">";
-			foreach($userfavs as $k=>$favorite)
-			{
+			foreach($userfavs as $k=>$favorite) {
 				if(isset($favorite['id'])){$k = $favorite['id'];}
 				$removeFavourite = "<a class=\"font9\" href=\"".encode_url("index.php?ctype={$ctype}&action=deletefav&fv_id={$k}")."\" onclick=\"return confirm('{$pgv_lang['confirm_fav_remove']}');\">{$pgv_lang['remove']}</a><br />\n";
-				if(!$isged)
-				{
+				if(!$isged) {
 					$current_gedcom = $GEDCOM;
 					$GEDCOM = $favorite['file'];
 				}
 				$content .= '<tr><td>';
-				if($favorite['type'] == 'URL')
-				{
+				if($favorite['type'] == 'URL') {
 					$content .= "<div id=\"boxurl{$k}.0\" class=\"person_box\">\n";
 					if($ctype == 'user' || PGV_USER_GEDCOM_ADMIN){$content .= $removeFavourite;}
 					$content .= "<a href=\"{$favorite['url']}\"><b>".PrintReady($favorite['title']).'</b></a>';
 					$content .= "<br />\n".PrintReady($favorite['note'], false, true);
 					$content .= "</div>\n";
 				}
-				else
-				{
-					if(displayDetailsById($favorite['gid'], $favorite['type']))
-					{
+				else {
+					if(displayDetailsById($favorite['gid'], $favorite['type'])) {
 						require "{$INDEX_DIRECTORY}{$GEDCOM}_conf.php";
 
-						switch($favorite['type'])
-						{
+						switch($favorite['type']) {
 							case 'INDI':
 							{
 								$indirec = find_person_record($favorite['gid']);
@@ -136,8 +122,7 @@ class stats_ui extends stats
 								break;
 							}
 						}
-						if(!$isged)
-						{
+						if(!$isged) {
 							$GEDCOM = $mygedcom;
 							require "{$INDEX_DIRECTORY}{$GEDCOM}_conf.php";
 						}
@@ -149,8 +134,7 @@ class stats_ui extends stats
 			}
 			$content .= "</table>\n";
 		}
-		if(($isged && PGV_USER_GEDCOM_ADMIN) || !$isged)
-		{
+		if(($isged && PGV_USER_GEDCOM_ADMIN) || !$isged) {
 			$content .= '
 				<script language="JavaScript" type="text/javascript">
 				var pastefield;
@@ -161,20 +145,18 @@ class stats_ui extends stats
 				<br />
 				';
 			$uniqueID = floor(microtime() * 1000000);
-			if($isged)
-			{
+			if($isged) {
 				$content .= print_help_link('index_add_favorites_help', 'qm', '', false, true)
-					."<b><a href=\"javascript:// {$pgv_lang['add_favorite']} \" onclick=\"expand_layer('add_ged_fav'); return false;\"><img id=\"add_ged_fav_img\" src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['plus']['other']}\" border=\"0\" alt=\"\" />&nbsp;{$pgv_lang['add_favorite']}</a></b>"
+					."<b><a href=\"javascript://{$pgv_lang['add_favorite']} \" onclick=\"expand_layer('add_ged_fav'); return false;\"><img id=\"add_ged_fav_img\" src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['plus']['other']}\" border=\"0\" alt=\"\" />&nbsp;{$pgv_lang['add_favorite']}</a></b>"
 					."<br />\n<div id=\"add_ged_fav\" style=\"display: none;\">\n"
 					."<form name=\"addgfavform\" method=\"post\" action=\"index.php\">\n"
 					."<input type=\"hidden\" name=\"favtype\" value=\"gedcom\" />\n"
 				;
 
 			}
-			else
-			{
+			else {
 				$content .= print_help_link('index_add_favorites_help', 'qm', '', false, true)
-					."<b><a href=\"javascript:// {$pgv_lang['add_favorite']} \" onclick=\"expand_layer('add_user_fav'); return false;\"><img id=\"add_user_fav_img\" src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['plus']['other']}\" border=\"0\" alt=\"\" />&nbsp;{$pgv_lang['add_favorite']}</a></b>"
+					."<b><a href=\"javascript://{$pgv_lang['add_favorite']} \" onclick=\"expand_layer('add_user_fav'); return false;\"><img id=\"add_user_fav_img\" src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['plus']['other']}\" border=\"0\" alt=\"\" />&nbsp;{$pgv_lang['add_favorite']}</a></b>"
 					."<br />\n<div id=\"add_user_fav\" style=\"display: none;\">\n"
 					."<form name=\"addufavform\" method=\"post\" action=\"index.php\">\n"
 					."<input type=\"hidden\" name=\"favtype\" value=\"user\" />\n"
@@ -189,9 +171,12 @@ class stats_ui extends stats
 				.print_findindi_link("gid{$uniqueID}", '', true)
 				.print_findfamily_link("gid{$uniqueID}", '', true)
 				.print_findsource_link("gid{$uniqueID}", '', true)
+				.print_findrepository_link("gid{$uniqueID}",'',true)
+				.print_findnote_link("gid{$uniqueID}",'',true)
+				.print_findmedia_link("gid{$uniqueID}",'1','',true)
 				."<br />\n{$pgv_lang['add_fav_or_enter_url']}"
-				."<br />\n{$pgv_lang['url']}<input type=\"text\" name=\"url\" size=\"40\" value=\"\" />"
-				."<br />\n{$pgv_lang['title']} <input type=\"text\" name=\"favtitle\" size=\"40\" value=\"\" />"
+				."<table><tr><td>{$pgv_lang['url']}</td><td><input type=\"text\" name=\"url\" size=\"40\" value=\"\" /></td></tr>"
+				."<tr><td>{$pgv_lang['title']}</td><td><input type=\"text\" name=\"favtitle\" size=\"40\" value=\"\" /></td></tr></table>"
 				."\n</td><td>"
 				."\n{$pgv_lang['add_fav_enter_note']}"
 				."<br />\n<textarea name=\"favnote\" rows=\"6\" cols=\"50\"></textarea>"
@@ -219,26 +204,22 @@ class stats_ui extends stats
 // Messages                                                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-	static function userMessages()
-	{
+	static function userMessages() {
 		global $pgv_lang, $PGV_IMAGE_DIR, $TEXT_DIRECTION, $PGV_STORE_MESSAGES, $PGV_IMAGES;
 
 		$usermessages = getUserMessages(PGV_USER_NAME);
 
 		$content = "<form name=\"messageform\" action=\"\" onsubmit=\"return confirm('{$pgv_lang['confirm_message_delete']}');\">";
-		if(count($usermessages) == 0)
-		{
+		if(count($usermessages) == 0) {
 			$content .= "{$pgv_lang['no_messages']}<br />\n";
 		}
-		else
-		{
+		else {
 			$content .= '
 				<script language="JavaScript" type="text/javascript">
 				<!--
 					function select_all() {
 			';
-			foreach($usermessages as $k=>$message)
-			{
+			foreach($usermessages as $k=>$message) {
 				if(isset($message['id'])){$k = $message['id'];}
 				$content .= '
 					var cb = document.getElementById("cb_message'.$k.'");
@@ -260,34 +241,26 @@ class stats_ui extends stats
 				."<td class=\"list_label\">{$pgv_lang['message_subject']}</td>\n"
 				."<td class=\"list_label\">{$pgv_lang['date_created']}</td>\n"
 				."<td class=\"list_label\">{$pgv_lang['message_from']}</td>\n"
-				."</tr>\n"
-			;
-			foreach($usermessages as $k=>$message)
-			{
+				."</tr>\n";
+			foreach($usermessages as $k=>$message) {
 				if(isset($message['id'])){$k = $message['id'];}
 				$content .= "<tr>\n<td class=\"list_value_wrap\"><input type=\"checkbox\" id=\"cb_message{$k}\" name=\"message_id[]\" value=\"{$k}\" /></td>\n";
 				$showmsg = preg_replace("/(\w)\/(\w)/","\$1/<span style=\"font-size:1px;\"> </span>\$2", PrintReady($message['subject']));
 				$showmsg = preg_replace("/@/","@<span style=\"font-size:1px;\"> </span>", $showmsg);
 				$content .= "<td class=\"list_value_wrap\"><a href=\"javascript:;\" onclick=\"expand_layer('message{$k}'); return false;\"><b>{$showmsg}</b> <img id=\"message{$k}_img\" src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['plus']['other']}\" border=\"0\" alt=\"\" title=\"\" /></a></td>\n";
 				if(!empty($message['created'])){$t = strtotime($message['created']);}else{$t = time();}
-				$content .= '<td class="list_value_wrap">'.format_timestamp($t)."</td>\n"
-					.'<td class="list_value_wrap">'
-				;
+				$content .= '<td class="list_value_wrap">'.format_timestamp($t)."</td>\n".'<td class="list_value_wrap">';
 				$user_id = get_user_id($message['from']);
-				if($user_id)
-				{
+				if($user_id) {
 					$content .= PrintReady(getUserFullName($user_id));
-					if($TEXT_DIRECTION == 'ltr')
-					{
+					if($TEXT_DIRECTION == 'ltr') {
 						$content .= ' '.getLRM().' - '.htmlspecialchars($user_id,ENT_COMPAT,'UTF-8').getLRM();
 					}
-					else
-					{
+					else {
 						$content .= ' '.getRLM().' - '.htmlspecialchars($user_id,ENT_COMPAT,'UTF-8').getRLM();
 					}
 				}
-				else
-				{
+				else {
 					$content .= "<a href=\"mailto:{$user_id}\">".preg_replace("/@/","@<span style=\"font-size:1px;\"> </span>", $user_id).'</a>';
 				}
 				$content .= "</td>\n"
@@ -296,12 +269,10 @@ class stats_ui extends stats
 				;
 				$message['body'] = expand_urls(nl2br(htmlspecialchars($message['body'],ENT_COMPAT,'UTF-8')));
 				$content .= PrintReady($message['body'])."<br />\n<br />\n";
-				if(preg_match("/RE:/", $message["subject"]) == 0)
-				{
+				if(preg_match("/RE:/", $message["subject"]) == 0) {
 					$message['subject'] = "RE:{$message['subject']}";
 				}
-				if($user_id)
-				{
+				if($user_id) {
 					$content .= "<a href=\"javascript:;\" onclick=\"reply('{$user_id}', '{$message['subject']}'); return false;\">{$pgv_lang['reply']}</a> | ";
 				}
 				$content .= "<a href=\"".encode_url("index.php?action=deletemessage&message_id={$k}")."\" onclick=\"return confirm('{$pgv_lang['confirm_message_delete']}');\">{$pgv_lang['delete']}</a></div></td>\n</tr>\n";
@@ -310,27 +281,21 @@ class stats_ui extends stats
 				."<input type=\"submit\" value=\"{$pgv_lang['delete_selected_messages']}\" /><br />\n<br />\n"
 			;
 		}
-		if(get_user_count() > 1)
-		{
+		if(get_user_count() > 1) {
 			$content .= "{$pgv_lang['message']} <select name=\"touser\">";
-			if(PGV_USER_IS_ADMIN)
-			{
+			if(PGV_USER_IS_ADMIN) {
 				$content .= "<option value=\"all\">{$pgv_lang['broadcast_all']}</option>\n"
 					."<option value=\"never_logged\">{$pgv_lang['broadcast_never_logged_in']}</option>\n"
 					."<option value=\"last_6mo\">{$pgv_lang['broadcast_not_logged_6mo']}</option>\n"
 				;
 			}
-			foreach(get_all_users() as $user_id=>$user_name)
-			{
-				if($user_id != PGV_USER_ID && get_user_setting($user_id, 'verified_by_admin') == 'yes')
-				{
+			foreach(get_all_users() as $user_id=>$user_name) {
+				if($user_id != PGV_USER_ID && get_user_setting($user_id, 'verified_by_admin') == 'yes') {
 					$content .= "<option value=\"{$user_id}\">".PrintReady(getUserFullName($user_id)).' ';
-					if($TEXT_DIRECTION == 'ltr')
-					{
+					if($TEXT_DIRECTION == 'ltr') {
 						$content .= getLRM()." - {$user_id}".getLRM();
 					}
-					else
-					{
+					else {
 						$content .= getRLM()." - {$user_id}".getRLM();
 					}
 					$content .= "</option>\n";
@@ -348,48 +313,38 @@ class stats_ui extends stats
 // Journal                                                                //
 ///////////////////////////////////////////////////////////////////////////////
 
-	static function userJournal()
-	{
+	static function userJournal() {
 		global $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION, $ctype;
 
 		$usernews = getUserNews(PGV_USER_ID);
 		$content = '';
-		if(count($usernews) == 0)
-		{
+		if(count($usernews) == 0) {
 			$content .= "{$pgv_lang['no_journal']} ";
 		}
-		foreach($usernews as $k=>$news)
-		{
+		foreach($usernews as $k=>$news) {
 			$day = date('j', $news['date']);
 			$mon = date('M', $news['date']);
 			$year = date('Y', $news['date']);
 			$content .= "<div class=\"person_box\">";
 			$ct = preg_match("/#(.+)#/", $news['title'], $match);
-			if($ct > 0)
-			{
-				if(isset($pgv_lang[$match[1]]))
-				{
+			if($ct > 0) {
+				if(isset($pgv_lang[$match[1]])) {
 					$news['title'] = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $news['title']);
 				}
 			}
 			$content .= '<span class="news_title">'.PrintReady($news['title'])."</span><br />\n"
 				.'<span class="news_date">'.format_timestamp($news['date'])."</span><br />\n<br />\n"
 			;
-			if(preg_match("/#(.+)#/", $news['text'], $match))
-			{
-				if(isset($pgv_lang[$match[1]]))
-				{
+			if(preg_match("/#(.+)#/", $news['text'], $match)) {
+				if(isset($pgv_lang[$match[1]])) {
 					$news['text'] = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $news['text']);
 				}
 			}
-			if(preg_match("/#(.+)#/", $news['text'], $match))
-			{
-				if(isset($pgv_lang[$match[1]]))
-				{
+			if(preg_match("/#(.+)#/", $news['text'], $match)) {
+				if(isset($pgv_lang[$match[1]])) {
 					$news['text'] = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $news['text']);
 				}
-				if(isset($$match[1]))
-				{
+				if(isset($$match[1])) {
 					$news['text'] = preg_replace("/$match[0]/", $$match[1], $news['text']);
 				}
 			}
@@ -401,8 +356,7 @@ class stats_ui extends stats
 				."</div><br />\n"
 			;
 		}
-		if(PGV_USER_ID)
-		{
+		if(PGV_USER_ID) {
 			$content .= "<br />\n<a href=\"javascript:;\" onclick=\"addnews('".PGV_USER_ID."'); return false;\">{$pgv_lang['add_journal']}</a>";
 		}
 		return $content;
@@ -414,8 +368,7 @@ class stats_ui extends stats
 // News                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-	static function gedcomNews($params=null)
-	{
+	static function gedcomNews($params=null) {
 		global $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES, $TEXT_DIRECTION, $GEDCOM, $ctype, $PGV_BLOCKS;
 
 		if($params === null){$params = array();}
@@ -423,8 +376,7 @@ class stats_ui extends stats
 		if(isset($params[1]) && $params[1] != ''){$flag = strtolower($params[0]);}else{$flag = 5;} // News postings
 
 		if($flag == 0){$limit = 'nolimit';}
-		if(isset($_REQUEST['gedcom_news_archive']))
-		{
+		if(isset($_REQUEST['gedcom_news_archive'])) {
 			$limit = 'nolimit';
 			$flag = 0;
 		}
@@ -432,21 +384,17 @@ class stats_ui extends stats
 		$usernews = getUserNews($GEDCOM);
 
 		$content = '';
-		if(count($usernews) == 0)
-		{
+		if(count($usernews) == 0) {
 			$content .= "{$pgv_lang['no_news']}<br />\n";
 		}
 		$c = 0;
 		$td = time();
-		foreach($usernews as $k=>$news)
-		{
-			if($limit == 'count')
-			{
+		foreach($usernews as $k=>$news) {
+			if($limit == 'count') {
 				if($c >= $flag){break;}
 				$c++;
 			}
-			if($limit == 'date')
-			{
+			if($limit == 'date') {
 				if(floor(($td - $news['date']) / 86400) > $flag){break;}
 			}
 			$content .= "<div class=\"news_box\" id=\"{$news['anchor']}\">\n";
@@ -454,10 +402,8 @@ class stats_ui extends stats
 			// Look for $pgv_lang, $factarray, and $GLOBALS substitutions in the News title
 			$newsTitle = print_text($news['title'], 0, 2);
 			$ct = preg_match("/#(.+)#/", $newsTitle, $match);
-			if($ct > 0)
-			{
-				if(isset($pgv_lang[$match[1]]))
-				{
+			if($ct > 0) {
+				if(isset($pgv_lang[$match[1]])) {
 					$newsTitle = preg_replace("/$match[0]/", $pgv_lang[$match[1]], $newsTitle);
 				}
 			}
@@ -467,36 +413,27 @@ class stats_ui extends stats
 			// Look for $pgv_lang, $factarray, and $GLOBALS substitutions in the News text
 			$newsText = print_text($news['text'], 0, 2);
 			$ct = preg_match("/#(.+)#/", $newsText, $match);
-			if($ct > 0)
-			{
-				if(isset($pgv_lang[$match[1]]))
-				{
+			if($ct > 0) {
+				if(isset($pgv_lang[$match[1]])) {
 					$newsText = preg_replace("/{$match[0]}/", $pgv_lang[$match[1]], $newsText);
 				}
 			}
 			$ct = preg_match("/#(.+)#/", $newsText, $match);
-			if($ct > 0)
-			{
+			if($ct > 0) {
 				$varname = $match[1];
-				if(isset($pgv_lang[$varname]))
-				{
+				if(isset($pgv_lang[$varname])) {
 					$newsText = preg_replace("/{$match[0]}/", $pgv_lang[$varname], $newsText);
 				}
-				else
-				{
-					if(defined('PGV_'.$varname))
-					{
+				else {
+					if(defined('PGV_'.$varname)) {
 						// e.g. global $VERSION is now constant PGV_VERSION
 						$varname='PGV_'.$varname;
 					}
-					if(defined($varname))
-					{
+					if(defined($varname)) 	{
 						$newsText = preg_replace("/{$match[0]}/", constant($varname), $newsText);
 					}
-					else
-					{
-						if(isset($$varname))
-						{
+					else {
+						if(isset($$varname)) {
 							$newsText = preg_replace("/{$match[0]}/", $$varname, $newsText);
 						}
 					}
@@ -509,8 +446,7 @@ class stats_ui extends stats
 			$content .= PrintReady($newsText)."<br />\n";
 
 			// Print Admin options for this News item
-			if(PGV_USER_GEDCOM_ADMIN)
-			{
+			if(PGV_USER_GEDCOM_ADMIN) {
 				$content .= "<hr size=\"1\" />"
 					."<a href=\"javascript:;\" onclick=\"editnews('{$k}'); return false;\">{$pgv_lang['edit']}</a> | "
 					."<a href=\"".encode_url("index.php?action=deletenews&news_id={$k}&ctype={$ctype}")."\" onclick=\"return confirm('{$pgv_lang['confirm_news_delete']}');\">{$pgv_lang['delete']}</a><br />"
@@ -519,13 +455,11 @@ class stats_ui extends stats
 			$content .= "</div>\n";
 		}
 		$printedAddLink = false;
-		if(PGV_USER_GEDCOM_ADMIN)
-		{
+		if(PGV_USER_GEDCOM_ADMIN) {
 			$content .= "<a href=\"javascript:;\" onclick=\"addnews('".preg_replace("/'/", "\'", $GEDCOM)."'); return false;\">{$pgv_lang['add_news']}</a>";
 			$printedAddLink = true;
 		}
-		if($limit == 'date' || $limit == 'count')
-		{
+		if($limit == 'date' || $limit == 'count') {
 			if($printedAddLink){$content .= '&nbsp;&nbsp;|&nbsp;&nbsp;';}
 			$content .= print_help_link('gedcom_news_archive_help', 'qm', '', false, true);
 			$content .= "<a href=\"".encode_url("index.php?gedcom_news_archive=yes&ctype={$ctype}")."\">{$pgv_lang['gedcom_news_archive']}</a><br />\n";
@@ -539,8 +473,7 @@ class stats_ui extends stats
 // Block                                                                     //
 ///////////////////////////////////////////////////////////////////////////////
 
-	static function callBlock($params=null)
-	{
+	static function callBlock($params=null) {
 		if($params === null){return '';}
 		if(isset($params[0]) && $params[0] != ''){$block = strtolower($params[0]);}else{return '';}
 
@@ -550,8 +483,7 @@ class stats_ui extends stats
 		// Build the config array
 		array_shift($params);
 		$cfg = array();
-		foreach($params as $config)
-		{
+		foreach($params as $config) {
 			$bits = explode('=', $config);
 			if(count($bits) < 2){continue;}
 			$v = array_shift($bits);
@@ -571,8 +503,7 @@ class stats_ui extends stats
 // Only allowed in GEDCOM Welcome page, not user portals for security.       //
 ///////////////////////////////////////////////////////////////////////////////
 
-	static function includeFile($params=null)
-	{
+	static function includeFile($params=null) {
 		if(!isset($_GET['ctype']) || $_GET['ctype'] != 'gedcom'){return '';}
 		if($params === null){$params = array();}
 		if(isset($params[0]) && $params[0] != ''){$fn = $params[0];}else{return '';}

@@ -8,7 +8,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: sorttable.js,v 1.3 2009/04/30 17:50:27 lsces Exp $
+ * @version $Id: sorttable.js,v 1.4 2009/09/15 20:06:03 lsces Exp $
  */
 
 addEvent(window, "load", sortables_init);

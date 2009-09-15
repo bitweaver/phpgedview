@@ -95,9 +95,9 @@ class FamilyRoot extends BaseController {
 
 		$show_famlink = $this->view!='preview';
 
-		$this->famid       =safe_GET_xref('famid');
+		$this->famid = safe_GET_xref('famid');
 
-		$this->family      =Family::getInstance($this->famid);
+		$this->family = Family::getInstance($this->famid);
 
 		if (empty($this->famrec)) {
 			$ct = preg_match("/(\w+):(.+)/", $this->famid, $match);
@@ -111,13 +111,15 @@ class FamilyRoot extends BaseController {
 					$this->famrec = $newrec;
 				}
 			}
+			//-- if no record was found create a default empty one
+			if (isset($pgv_changes[$this->famid."_".$GEDCOM])){
+				$this->famrec = "0 @".$this->famid."@ FAM\n";
+				$this->family = new Family($this->famrec);
+			} else if (empty($this->family)){
+				return false;
+			}
 		}
 
-		//-- if no record was found create a default empty one
-		if (empty($this->family)) {
-			$this->famrec = "0 @".$this->famid."@ FAM\n";
-			$this->family = new Family($this->famrec);
-		}
 		$this->famrec = $this->family->getGedcomRecord();
 		$this->display = displayDetailsById($this->famid, 'FAM');
 
@@ -233,7 +235,13 @@ class FamilyRoot extends BaseController {
 	}
 
 	function getPageTitle() {
-		return PrintReady($this->title);
+		global $pgv_lang;
+		if ($this->family) {
+			return PrintReady($this->title);
+		}
+		else {
+			return $pgv_lang["unable_to_find_record"];
+		}
 	}
 
 	/**
@@ -338,10 +346,20 @@ class FamilyRoot extends BaseController {
 
 		// edit_fam menu
 		$menu = new Menu($pgv_lang['edit_fam']);
+		$menu->addOnclick("return edit_family('".$this->getFamilyID()."');");
 		if (!empty($PGV_IMAGES["edit_fam"]["small"])) {
 			$menu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
 		}
 		$menu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}", "submenu{$ff}");
+
+		// edit_fam / edit_fam
+		$submenu = new Menu($pgv_lang['edit_fam']);
+		$submenu->addOnclick("return edit_family('".$this->getFamilyID()."');");
+		if (!empty($PGV_IMAGES["edit_fam"]["small"])) {
+			$submenu->addIcon("{$PGV_IMAGE_DIR}/{$PGV_IMAGES['edit_fam']['small']}");
+		}
+		$submenu->addClass("submenuitem{$ff}", "submenuitem_hover{$ff}");
+		$menu->addSubmenu($submenu);
 
 		// edit_fam / members
 		$submenu = new Menu($pgv_lang['change_family_members']);

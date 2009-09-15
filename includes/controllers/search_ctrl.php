@@ -412,6 +412,7 @@ class SearchControllerRoot extends BaseController {
 					search_fams($query_terms, $ged_ids, 'AND', $this->tagfilter=='on'),
 					search_fams_names($query_terms, $ged_ids, 'AND')
 				);
+				$this->myfamlist=array_unique($this->myfamlist);
 			} else {
 				$this->myfamlist=array();
 			}
@@ -626,8 +627,6 @@ class SearchControllerRoot extends BaseController {
 	 *
 	 */
 	function SoundexSearch() {
-		global $GEDCOM, $GEDCOMS;
-
 		if (((!empty ($this->lastname)) || (!empty ($this->firstname)) || (!empty ($this->place))) && (count($this->sgeds) > 0)) {
 			$logstring = "Type: Soundex<br />";
 			if (!empty ($this->lastname))

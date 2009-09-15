@@ -22,7 +22,7 @@
 * @package PhpGedView
 * @subpackage Edit
 * @see functions_places.php
-* @version $Id: functions_edit.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+* @version $Id: functions_edit.php,v 1.3 2009/09/15 20:06:02 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -45,8 +45,8 @@ $emptyfacts = array("_HOL", "_NMR", "_SEPR", "ADOP", "ANUL", "BAPL", "BAPM", "BA
 "PROB", "RESI", "RETI", "SLGC", "SLGS", "WIFE", "WILL");
 $templefacts = array("SLGC","SLGS","BAPL","ENDL","CONL");
 $nonplacfacts = array("ENDL","NCHI","SLGC","SLGS");
-$nondatefacts = array("ABBR","ADDR","AFN","AUTH","EMAIL","FAX","NAME","NCHI","NOTE","OBJE",
-"PHON","PUBL","REFN","REPO","SEX","SOUR","SSN","TEXT","TITL","WWW","_EMAIL");
+$nondatefacts = array("ABBR","ADDR","AFN","AUTH","CHIL","EMAIL","FAX","HUSB","NAME","NCHI","NOTE","OBJE",
+"PHON","PUBL","REFN","REPO","SEX","SOUR","SSN","TEXT","TITL","WIFE","WWW","_EMAIL");
 $typefacts = array(); //-- special facts that go on 2 TYPE lines
 
 // Next two vars used by insert_missing_subtags()
@@ -217,7 +217,7 @@ function append_gedrec($gedrec, $chan=true, $linkpid='') {
 	global $fcontents, $GEDCOM, $pgv_changes, $manual_save;
 
 	if (($gedrec = check_gedcom($gedrec, $chan))!==false) {
-		$ct = preg_match("/0 @(.*)@ (.*)/", $gedrec, $match);
+		$ct = preg_match("/0 @(".PGV_REGEX_XREF.")@ (".PGV_REGEX_TAG.")/", $gedrec, $match);
 		$gid = $match[1];
 		$type = trim($match[2]);
 
@@ -769,9 +769,11 @@ function print_indi_form($nextaction, $famid, $linenum="", $namerec="", $famtag=
 	if ($nextaction=='update') { // GEDCOM 5.5.1 spec says NAME doesn't get a OBJE
 		print_add_layer('SOUR');
 		print_add_layer('NOTE');
+		print_add_layer('SHARED_NOTE');
 	} else {
 		print_add_layer('SOUR', 1);
 		print_add_layer('NOTE', 1);
+		print_add_layer('SHARED_NOTE', 1);
 		print_add_layer('OBJE', 1);
 	}
 	echo "<input type=\"submit\" value=\"".$pgv_lang["save"]."\" />\n";
@@ -1031,11 +1033,10 @@ function print_addnewnote_link($element_id) {
 }
 
 /**
-* @todo add comments
+* // Used in GEDFact CENS assistant =====================
 */
 function print_addnewnote_assisted_link($element_id) {
 	global $pgv_lang, $PGV_IMAGE_DIR, $PGV_IMAGES, $pid;
-	
 	$text = $pgv_lang["create_shared_note_assisted"];
 	if (isset($PGV_IMAGES["addnote"]["button"])) $Link = "<img src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["addnote"]["button"]."\" alt=\"".$text."\" title=\"".$text."\" border=\"0\" align=\"middle\" />";
 	else $Link = $text;
@@ -1055,7 +1056,7 @@ function print_editnote_link($note_id) {
 	else $Link = $text;
 	echo "<a href=\"javascript: var win02=window.open('edit_interface.php?action=editnote&pid=$note_id', 'win02', 'top=70, left=70, width=620, height=500, resizable=1, scrollbars=1 ' )\">";
 	echo $Link;
-	echo "</a><br />";
+	echo "</a>";
 }
 
 /**
@@ -1621,17 +1622,24 @@ function add_simple_tag($tag, $upperlevel="", $label="", $readOnly="", $noClose=
 		}
 
 		// Shared Notes Icons ========================================
+		// $record=GedcomRecord::getInstance($value);
 		if ($fact=="NOTE" && $islink) {
 			print_findnote_link($element_id);
 			print_addnewnote_link($element_id);
-			if (file_exists('modules/GEDFact_assistant/CENS/census_1_ctrl.php')) {
-				print_addnewnote_assisted_link($element_id);
+			 if ($value!="") {
+				echo "&nbsp;&nbsp;&nbsp;";
+				print_editnote_link($value);
 			}
-			echo "&nbsp;&nbsp;&nbsp;";
-			$record=GedcomRecord::getInstance($value);
-		}
-		if ($fact=="NOTE" && $islink && $value!="") {
-			print_editnote_link($value);
+			// If GEDFAct_assistant/_CENS/ module exists && we are on the INDI page 
+			// Then show the add Shared note assisted icon, if not  ... do not show 
+			if ($pid) {
+				$type_pid=GedcomRecord::getInstance($pid);
+				if (file_exists('modules/GEDFact_assistant/_CENS/census_1_ctrl.php') && $type_pid->getType()=="INDI" ) { 
+					echo "&nbsp;&nbsp;&nbsp;";
+					print_addnewnote_assisted_link($element_id);
+				}
+			}
+		echo "<br />";
 		}
 		// ===========================================================
 
@@ -1641,18 +1649,20 @@ function add_simple_tag($tag, $upperlevel="", $label="", $readOnly="", $noClose=
 			$value = "new";
 		}
 	}
-
+	
 	// current value
 	if ($TEXT_DIRECTION=="ltr") {
 		if ($fact=="DATE") {
 			$date=new GedcomDate($value);
 			echo $date->Display(false);
 		}
-		// if (($fact=="ASSO" || $fact=="SOUR") && $value) {
-		if (($fact=="ASSO" || $fact=="SOUR" || ($fact=="NOTE" && $islink)) && $value) {
+		if (($fact=="ASSO" || $fact=="SOUR" || $fact=="OBJE" || ($fact=="NOTE" && $islink)) && $value) {
 			$record=GedcomRecord::getInstance($value);
 			if ($record) {
 				echo ' ', PrintReady($record->getFullName()), ' (', $value, ')';
+			}
+			else if ($value!="new") {
+				echo ' ', $value;
 			}
 		}
 	} else {
@@ -1660,14 +1670,28 @@ function add_simple_tag($tag, $upperlevel="", $label="", $readOnly="", $noClose=
 			$date=new GedcomDate($value);
 			echo getRLM(), $date->Display(false), getRLM();
 		}
-		if (($fact=="ASSO" || $fact=="SOUR") && $value) {
+		if (($fact=="ASSO" || $fact=="SOUR" || $fact=="OBJE" || ($fact=="NOTE" && $islink)) && $value) {
 			$record=GedcomRecord::getInstance($value);
 			if ($record) {
-				echo ' ', PrintReady($record->getFullName()), ' ', getLRM(), '(', $value, ')', getLRM();
+				echo getRLM(), PrintReady($record->getFullName()), ' ', getLRM(), '(', $value, ') ', getLRM(), getRLM();
+			}
+			else if ($value!="new") {
+				echo getRLM(), $value, ' ', getRLM();
 			}
 		}
 	}
-
+/*
+	if ($fact=="NOTE" && $islink && $value!="") {
+		include('includes/functions/functions_print_lists.php'); 
+		echo "<tr><td class=\"descriptionbox ".$TEXT_DIRECTION." wrap width25\">";
+				print_help_link("edit_add_SHARED_NOTE_help", "qm");
+			//	echo $pgv_lang["admin_override"];
+			echo "Shared Note Links<br /><br />";
+		echo "</td><td class=\"optionbox wrap\">\n";
+			print_indi_list(fetch_linked_indi($value, "NOTE", "1"));
+		echo "</td></tr>\n";
+	}
+*/
 	// pastable values
 	if ($readOnly=="") {
 		if ($fact=="SPFX") print_autopaste_link($element_id, $SPFX_accept);
@@ -2125,7 +2149,7 @@ function handle_updates($newged, $levelOverride="no") {
 			$k=$j+1;
 			$pass=false;
 			while(($k<count($glevels))&&($glevels[$k]>$glevels[$j])) {
-				if (!empty($text[$k])) {
+				if ($text[$k]!='') {
 					if (($tag[$j]!="OBJE")||($tag[$k]=="FILE")) {
 						$pass=true;
 						break;
@@ -2150,7 +2174,7 @@ function handle_updates($newged, $levelOverride="no") {
 		if ($pass==true) {
 			$newline = $glevels[$j]+$levelAdjust." ".$tag[$j];
 			//-- check and translate the incoming dates
-			if ($tag[$j]=="DATE" && !empty($text[$j])) {
+			if ($tag[$j]=="DATE" && $text[$j]!='') {
 				$text[$j] = check_input_date($text[$j]);
 			}
 			// echo $newline;
@@ -2205,7 +2229,6 @@ function print_quick_resn($name) {
 	}
 }
 
-
 /**
 * Link Media ID to Indi, Family, or Source ID
 *
@@ -2214,14 +2237,13 @@ function print_quick_resn($name) {
 * @param  string  $mediaid Media ID to be linked
 * @param string $linktoid Indi, Family, or Source ID that the Media ID should link to
 * @param int $level Level where the Media Object reference should be created
+* @param boolean $chan Whether or not to update/add the CHAN record
 * @return  bool success or failure
 */
-function linkMedia($mediaid, $linktoid, $level=1) {
+function linkMedia($mediaid, $linktoid, $level=1, $chan=true) {
 	global $GEDCOM, $pgv_lang, $pgv_changes;
 
 	if (empty($level)) $level = 1;
-	//-- Make sure we only add new links to the media object
-	if (exists_db_link($mediaid, $linktoid, $GEDCOM)) return false;
 	if ($level!=1) return false; // Level 2 items get linked elsewhere
 	// find Indi, Family, or Source record to link to
 	if (isset($pgv_changes[$linktoid."_".$GEDCOM])) {
@@ -2235,19 +2257,56 @@ function linkMedia($mediaid, $linktoid, $level=1) {
 	if ($ct>0) return false;
 
 	if ($gedrec) {
-		// Changed to match format of all other data adds.
-		//$mediarec = "1 OBJE @".$mediaid."@\n";
-		//$newrec = trim($gedrec."\n".$mediarec);
 		$newrec = $gedrec."\n1 OBJE @".$mediaid."@";
-
-		replace_gedrec($linktoid, $newrec);
-
+		replace_gedrec($linktoid, $newrec, $chan);
 		return true;
 	} else {
 		echo "<br /><center>".$pgv_lang["invalid_id"]."</center>";
 		return false;
 	}
 }
+
+/**
+* unLink Media ID to Indi, Family, or Source ID
+*
+* @param  string  $mediaid Media ID to be unlinked.
+* @param string $linktoid Indi, Family, or Source ID that the Media ID should be unlinked from.
+* @param $linenum should be ALWAYS set to 'OBJE'.
+* @param int $level Level where the Media Object reference should be removed from (not used)
+* @param boolean $chan Whether or not to update/add the CHAN record
+* 
+* @return  bool success or failure
+*/
+function unlinkMedia($linktoid, $linenum, $mediaid, $level=1, $chan=true) {
+	global $GEDCOM, $pgv_lang, $pgv_changes;
+
+	if (empty($level)) $level = 1;
+	if ($level!=1) return false; // Level 2 items get unlinked elsewhere (maybe ??)
+	// find Indi, Family, or Source record to unlink from
+	if (isset($pgv_changes[$linktoid."_".$GEDCOM])) {
+		$gedrec = find_updated_record($linktoid);
+	} else {
+		$gedrec = find_gedcom_record($linktoid);
+	}
+	
+	//-- when deleting/umlinking a media link
+	//-- $linenum comes is an OBJE and the $mediaid to delete should be set
+	if (!is_numeric($linenum)) {
+		$newged = remove_subrecord($gedrec, $linenum, $mediaid);
+	}else{
+		$newged = remove_subline($gedrec, $linenum);
+	}
+	// $success = (replace_gedrec($pid, $newged));
+	$success = (replace_gedrec($linktoid, $newged, $chan));
+	if ($success) {
+		//echo "<br />".$pgv_lang["gedrec_deleted"];
+		//echo '<br>';
+	}
+	
+}
+
+
+
 
 /**
 * builds the form for adding new facts
@@ -2296,7 +2355,8 @@ function create_add_form($fact) {
 function create_edit_form($gedrec, $linenum, $level0type) {
 	global $WORD_WRAPPED_NOTES, $pgv_lang, $factarray;
 	global $pid, $tags, $ADVANCED_PLAC_FACTS, $date_and_time, $templefacts;
-	global $lang_short_cut, $LANGUAGE, $FULL_SOURCES;
+	global $lang_short_cut, $LANGUAGE, $FULL_SOURCES, $TEXT_DIRECTION;
+	// global $TEXT_DIRECTION, $TBLPREFIX, $DBHOST, $DBUSER, $DBPASS, $DBNAME, $SERVER_URL;
 
 	$tags=array();
 	$gedlines = split("\n", $gedrec); // -- find the number of lines in the record
@@ -2317,6 +2377,13 @@ function create_edit_form($gedrec, $linenum, $level0type) {
 
 	$type = trim($fields[1]);
 	$level1type = $type;
+	
+	// GEDFact_assistant ================================================
+	if ($type=="CENS" && file_exists('modules/GEDFact_assistant/_CENS/census_query_2a.php') ) {
+			include ('modules/GEDFact_assistant/_CENS/census_query_2a.php');
+	}
+	// ==================================================================
+	
 	if (count($fields)>2) {
 		$ct = preg_match("/@.*@/",$fields[2]);
 		$levellink = $ct > 0;
@@ -2344,7 +2411,7 @@ function create_edit_form($gedrec, $linenum, $level0type) {
 	if (preg_match_all('/('.PGV_REGEX_TAG.')/', $ADVANCED_PLAC_FACTS, $match)) {
 		$expected_subtags['PLAC']=array_merge($match[1], $expected_subtags['PLAC']);
 	}
-
+	
 	$stack=array(0=>$level0type);
 	// Loop on existing tags :
 	while (true) {
@@ -2460,7 +2527,7 @@ function create_edit_form($gedrec, $linenum, $level0type) {
 */
 function insert_missing_subtags($level1tag, $add_date=false)
 {
-	global $tags, $date_and_time, $templefacts, $level2_tags, $ADVANCED_PLAC_FACTS, $factarray;
+	global $tags, $date_and_time, $templefacts, $level2_tags, $ADVANCED_PLAC_FACTS, $ADVANCED_NAME_FACTS, $factarray;
 	global $nondatefacts, $nonplacfacts;
 
 	// handle  MARRiage TYPE
@@ -2481,7 +2548,9 @@ function insert_missing_subtags($level1tag, $add_date=false)
 				add_simple_tag("2 ".$key." ".strtoupper(date('d F Y')));
 			} elseif ($level1tag=='_TODO' && $key=='_PGVU') {
 				add_simple_tag("2 ".$key." ".PGV_USER_NAME);
-			} else {
+			} else if ($level1tag=='TITL' && strstr($ADVANCED_NAME_FACTS, $key)!==false) {
+				add_simple_tag("2 ".$key);
+			} else if ($level1tag!='TITL') {
 				add_simple_tag("2 ".$key);
 			}
 			switch ($key) { // Add level 3/4 tags as appropriate

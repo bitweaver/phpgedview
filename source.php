@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: source.php,v 1.6 2009/04/30 19:12:13 lsces Exp $
+ * @version $Id: source.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -58,8 +58,12 @@ if ($MULTI_MEDIA && file_exists('./modules/lightbox.php')) {
 	include './modules/lightbox/functions/lb_call_js.php';
 	loadLangFile('lightbox:lang');
 }
-
-if ($controller->source->isMarkedDeleted()) {
+if (!$controller->source){
+	echo "<b>".$pgv_lang["unable_to_find_record"]."</b><br /><br />";
+	print_footer();
+	exit;
+}
+else if ($controller->source->isMarkedDeleted()) {
 	echo '<span class="error">', $pgv_lang['record_marked_deleted'], '</span>';
 }
 
@@ -85,16 +89,33 @@ if (!$controller->isPrintPreview()) {
 	$editmenu=$controller->getEditMenu();
 	$othermenu=$controller->getOtherMenu();
 	if ($editmenu || $othermenu) {
-		echo '<table class="sublinks_table" cellspacing="4" cellpadding="0">';
-		echo '<tr><td class="list_label ', $TEXT_DIRECTION, '" colspan="2">', $pgv_lang['source_menu'], '</td></tr>';
-		echo '<tr>';
+		if (!$PGV_MENUS_AS_LISTS) {
+			echo '<table class="sublinks_table" cellspacing="4" cellpadding="0">';
+			echo '<tr><td class="list_label ', $TEXT_DIRECTION, '" colspan="2">', $pgv_lang['source_menu'], '</td></tr>';
+			echo '<tr>';
+		} else { 
+			echo '<div id="optionsmenu" class="sublinks_table">';
+			echo '<div class="list_label ', $TEXT_DIRECTION, '">', $pgv_lang["source_menu"], '</div>';
+		} 
 		if ($editmenu) {
-			echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</td>';
+			if (!$PGV_MENUS_AS_LISTS) {
+				echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</td>';
+			} else { 
+				echo '<ul class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</ul>';
+			}
 		}
 		if ($othermenu) {
-			echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $othermenu->printMenu(), '</td>';
+			if (!$PGV_MENUS_AS_LISTS) {
+				echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $othermenu->printMenu(), '</td>';
+			} else { 
+				echo '<ul class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</ul>';
+			}
 		}
-		echo '</tr></table>';
+		if (!$PGV_MENUS_AS_LISTS) {
+			echo '</tr></table>';
+		} else { 
+			echo '</div>';
+		}
 	}
 }
 echo '</td></tr><tr><td colspan="2"><table class="facts_table">';
@@ -133,7 +154,7 @@ if (file_exists('./modules/research_assistant/research_assistant.php') && $SHOW_
 	include_once './modules/research_assistant/research_assistant.php';
 	$mod=new ra_functions();
 	$mod->Init();
-	echo $mod->getSourceTasks($controller->sid), '</td></tr><tr class="center"><td colspan="2">';
+	echo $mod->getSourceTasks($controller->sid, $controller->source->getFullName());
 }
 
 // Individuals linked to this source

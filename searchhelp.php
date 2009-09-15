@@ -22,7 +22,7 @@
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
  * @package PhpGedView
- * @version $Id: searchhelp.php,v 1.3 2008/07/07 18:01:10 lsces Exp $
+ * @version $Id: searchhelp.php,v 1.4 2009/09/15 20:06:00 lsces Exp $
  */
 
 require "config.php";
@@ -42,10 +42,12 @@ if (!PGV_USER_GEDCOM_ADMIN) {
 }
 
 // Initialize variables
-if (!isset($searchtext)) $searchtext = "";
-if (!isset($searchuser)) $searchuser = "no";
-if (!isset($searchconfig)) $searchconfig = "no";
-if (!isset($searchmodules)) $searchmodules = "no";
+$searchtext   =safe_POST('searchtext');
+$searchuser   =safe_POST('searchuser',    'yes', 'no');
+$searchconfig =safe_POST('searchconfig',  'yes', 'no');
+$searchmodules=safe_POST('searchmodules', 'yes', 'no');
+$searchhow	  =safe_POST('searchhow');
+$searchintext =safe_POST('searchintext');
 $found = 0;
 
 ?>
@@ -132,12 +134,12 @@ if ((!empty($searchtext)) && strlen($searchtext)>1)  {
 	if (PGV_USER_CAN_EDIT) $langFiles .= "pgv_editor, ";
 	if ($searchuser == "yes") $langFiles .= "pgv_help, ";
 	if ($searchconfig == "yes") $langFiles .= "pgv_confighelp, ";
-	if ($searchmodules == "yes") $langFiles .= "ra_lang, ra_help, gm_lang, gm_help, sm_lang, sm_help, ";
-	if (substr($langFiles, -2)==", ") $langFiles = substr($langFiles, 0, -2);
-	
+	if ($searchmodules == "yes") $langFiles .= "research_assistant:lang, research_assistant:help_text, googlemap:lang, googlemap:help_text, sitemap:lang, sitemap:help_text, ";
+	$langFiles = substr($langFiles, 0, -2);		// Trim last ", "
+
 	$helpvarnames = array();
 	unset($pgv_lang);
-	
+
 	loadLangFile($langFiles);
 
 	// Find all helpvars, so we know what vars to check after the lang.xx file has been reloaded
@@ -149,11 +151,10 @@ if ((!empty($searchtext)) && strlen($searchtext)>1)  {
 	// Split the search criteria if all or any is chosen. Otherwise, just fill the array with the sentence
 	$criteria = array();
 	if ($searchhow == "sentence") $criteria[] = $searchtext;
-	else $criteria = preg_split("/ /", $searchtext);
-	
+	else $criteria = explode(' ', $searchtext);
+
 	// Search in the previously stored vars for a hit and print it
 	foreach ($helpvarnames as $key => $value) {
-		$repeat = 0;
 		$helptxt = print_text($value,0,1);
 		// Remove hyperlinks
 		$helptxt = preg_replace("/<a[^<>]+>/", "", $helptxt);
@@ -167,7 +168,7 @@ if ((!empty($searchtext)) && strlen($searchtext)>1)  {
 		$cnotfound = 0;
 		foreach ($criteria as $ckey => $criterium) {
 			// See if there is a case insensitive hit
-			if (strpos(str2upper($helptxtorg), str2upper($criterium))) {
+			if (strpos(UTF8_strtoupper($helptxtorg), UTF8_strtoupper($criterium))) {
 				// Set the search string for preg_replace, case insensitive
 				$srch = "/$criterium/i";
 				// The \\0 is for wrapping the existing string in the text with the span

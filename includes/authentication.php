@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.21 2009/04/30 18:32:43 lsces Exp $
+ * $Id: authentication.php,v 1.22 2009/09/15 20:06:00 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
@@ -50,8 +50,6 @@ define('PGV_AUTHENTICATION_PHP', '');
  * @return the user_id if sucessful, false otherwise
  */
 function authenticateUser($user_name, $password, $basic=false) {
-//	checkTableExists();
-
 	// If we were already logged in, log out first
 	if (PGV_USER_ID) {
 		userLogout(PGV_USER_ID);
@@ -159,7 +157,7 @@ function getUserName() {
 }
 
 function getUserId() {
-	global $ALLOW_REMEMBER_ME, $DBCONN, $logout, $SERVER_URL;
+	global $ALLOW_REMEMBER_ME, $logout, $SERVER_URL, $gBitDb;
 	//-- this section checks if the session exists and uses it to get the username
 	if (isset($_SESSION) && !empty($_SESSION['pgv_user'])) {
 		return $_SESSION['pgv_user'];
@@ -170,7 +168,7 @@ function getUserId() {
 		if ((isset($_SERVER['HTTP_REFERER'])) && !empty($tSERVER_URL) && (stristr($_SERVER['HTTP_REFERER'],$tSERVER_URL)!==false))
 			$referrer_found=true;
 		if (!empty($_COOKIE["pgv_rem"])&& (empty($referrer_found)) && empty($logout)) {
-			if (!is_object($DBCONN)) {
+			if ( empty( $gBitDb->mDb ) ) {
 				return $_COOKIE["pgv_rem"];
 			} else {
 				$session_time=get_user_setting($_COOKIE['pgv_rem'], 'sessiontime');
@@ -299,314 +297,17 @@ function userAutoAccept($user_id=PGV_USER_ID) {
  * @return boolean true if an admin user has been defined
  */
 function adminUserExists() {
-	static $PGV_ADMIN_EXISTS=null;
-
-	if (!is_null($PGV_ADMIN_EXISTS))
-		return $PGV_ADMIN_EXISTS;
-
-//	if (checkTableExists()) {
-		$PGV_ADMIN_EXISTS=admin_user_exists();
-		return $PGV_ADMIN_EXISTS;
-//	}
-	return false;
+	return admin_user_exists();
 }
 
 /**
  * check if the user database tables exist
  *
- * If the tables don't exist then create them
- * If the tables do exist check if they need to be upgraded
- * to the latest version of the database schema.
+ * This is called after PGV creates/updates the user/message settings.
+ * This allows a custom authentication module to alter/replace them,
+ * create views, etc.
  */
 function checkTableExists() {
-	global $TBLPREFIX, $DBCONN, $DBTYPE;
-
-	$has_users = false;
-	$has_gedcomid = false;
-	$has_email = false;
-	$has_messages = false;
-	$has_favorites = false;
-	$has_sessiontime = false;
-	$has_blocks = false;
-	$has_contactmethod = false;
-	$has_news = false;
-	$has_visible = false;
-	$has_account = false;
-	$has_defaulttab = false;
-	$has_blockconfig = false;
-	$has_comment = false;
-	$has_comment_exp = false;
-	$has_sync_gedcom = false;
-	$has_first_name = false;
-	$has_relation_privacy = false;
-	$has_fav_note = false;
-	$has_auto_accept = false;
-	$has_mutex = false;
-
-	$sqlite = ($DBTYPE == 'sqlite');
-
-	if (DB::isError($DBCONN))
-		return false;
-	$data = $DBCONN->getListOf('tables');
-	foreach($data as $indexval => $table) {
-		if (empty($TBLPREFIX) || strpos($table, $TBLPREFIX) === 0) {
-			switch(substr($table, strlen($TBLPREFIX))) {
-				case "users":
-					$has_users = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX."users");
-					foreach($info as $indexval => $field) {
-						switch ($field["name"]) {
-							case "u_gedcomid":
-								$has_gedcomid = true;
-								break;
-							case "u_email":
-								$has_email = true;
-								break;
-							case "u_sessiontime":
-								$has_sessiontime = true;
-								break;
-							case "u_contactmethod":
-								$has_contactmethod = true;
-								break;
-							case "u_visibleonline":
-								$has_visible = true;
-								break;
-							case "u_editaccount":
-								$has_account = true;
-								break;
-							case "u_defaulttab":
-								$has_defaulttab = true;
-								break;
-							case "u_comment":
-								$has_comment = true;
-								break;
-							case "u_comment_exp":
-								$has_comment_exp = true;
-								break;
-							case "u_sync_gedcom":
-								$has_sync_gedcom = true;
-								break;
-							case "u_firstname":
-								$has_first_name = true;
-								break;
-							case "u_relationship_privacy":
-								$has_relation_privacy = true;
-								break;
-							case "u_auto_accept":
-								$has_auto_accept = true;
-								break;
-						}
-					}
-					break;
-				case "messages":
-					$has_messages = true;
-					break;
-				case "favorites":
-					$has_favorites = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX."favorites");
-					foreach($info as $indexval => $field) {
-						switch ($field["name"]) {
-							case "fv_note":
-								$has_fav_note = true;
-								break;
-						}
-					}
-					break;
-				case "blocks":
-					$has_blocks = true;
-					$info = $DBCONN->tableInfo($TBLPREFIX."blocks");
-					foreach($info as $indexval => $field) {
-						switch ($field["name"]) {
-							case "b_config":
-								$has_blockconfig = true;
-								break;
-						}
-					}
-					break;
-				case "news":
-					$has_news = true;
-					break;
-				case "mutex":
-					$has_mutex = true;
-					break;
-			}
-		}
-	}
-	if (!$has_users || !$has_gedcomid ||$DBTYPE == "mssql" && !$has_first_name ||
-			$sqlite && (!$has_email || !$has_sessiontime || !$has_contactmethod || !$has_visible || !$has_account || !$has_defaulttab || !$has_comment || !$has_sync_gedcom || !$has_first_name || !$has_relation_privacy || !$has_auto_accept)) {
-
-		dbquery("DROP TABLE {$TBLPREFIX}users", false);
-		dbquery(
-			"CREATE TABLE {$TBLPREFIX}users (".
-			" u_username             VARCHAR(30) NOT NULL,".
-			" u_password             VARCHAR(255)    NULL,".
-			" u_firstname            VARCHAR(255)    NULL,".
-			" u_lastname             VARCHAR(255)    NULL,".
-			" u_gedcomid             TEXT            NULL,".
-			" u_rootid               TEXT            NULL,".
-			" u_canadmin             VARCHAR(2)      NULL,".
-			" u_canedit              TEXT            NULL,".
-			" u_email                TEXT            NULL,".
-			" u_verified             VARCHAR(20)     NULL,".
-			" u_verified_by_admin    VARCHAR(20)     NULL,".
-			" u_language             VARCHAR(50)     NULL,".
-			" u_pwrequested          VARCHAR(20)     NULL,".
-			" u_reg_timestamp        VARCHAR(50)     NULL,".
-			" u_reg_hashcode         VARCHAR(255)    NULL,".
-			" u_theme                VARCHAR(50)     NULL,".
-			" u_loggedin             VARCHAR(2)      NULL,".
-			" u_sessiontime          INT             NULL,".
-			" u_contactmethod        VARCHAR(20)     NULL,".
-			" u_visibleonline        VARCHAR(2)      NULL,".
-			" u_editaccount          VARCHAR(2)      NULL,".
-			" u_defaulttab           INT             NULL,".
-			" u_comment              VARCHAR(255)    NULL,".
-			" u_comment_exp          VARCHAR(20)     NULL,".
-			" u_sync_gedcom          VARCHAR(2)      NULL,".
-			" u_relationship_privacy VARCHAR(2)      NULL,".
-			" u_max_relation_path    INT             NULL,".
-			" u_auto_accept          VARCHAR(2)      NULL,".
-			" PRIMARY KEY (u_username)".
-			") ".PGV_DB_UTF8_TABLE
-		);
-	} else {
-		if (!$has_email) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_email             TEXT         NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_verified          VARCHAR(20)  NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_verified_by_admin VARCHAR(20)  NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_language          VARCHAR(50)  NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_pwrequested       VARCHAR(20)  NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_reg_timestamp     VARCHAR(50)  NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_reg_hashcode      VARCHAR(255) NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_theme             VARCHAR(50)  NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_loggedin          VARCHAR(1)   NULL");
-		}
-		if (!$has_sessiontime) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_sessiontime INT NULL");
-		}
-		if (!$has_contactmethod) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_contactmethod VARCHAR(20) NULL");
-		}
-		if (!$has_visible) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_visibleonline VARCHAR(2) NULL");
-		}
-		if (!$has_account) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_editaccount VARCHAR(2) NULL");
-		}
-		if (!$has_defaulttab) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_defaulttab INT NULL");
-		}
-		if (!$has_comment) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_comment     VARCHAR(255) NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_comment_exp VARCHAR(20)  NULL");
-		}
-		if (!$has_sync_gedcom) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_sync_gedcom VARCHAR(2) NULL");
-		}
-		if (!$has_first_name) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_firstname VARCHAR(255) NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_lastname  VARCHAR(255) NULL");
-			dbquery(
-				"UPDATE {$TBLPREFIX}users SET".
-				" u_lastname =SUBSTRING_INDEX(u_fullname, ' ', -1), ".
-				" u_firstname=SUBSTRING_INDEX(u_fullname, ' ', 1)"
-			);
-			dbquery("ALTER TABLE {$TBLPREFIX}users DROP COLUMN u_fullname");
-		}
-		if (!$has_relation_privacy) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_relationship_privacy VARCHAR(2) NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_max_relation_path    INT        NULL");
-		}
-		if (!$has_auto_accept) {
-			dbquery("ALTER TABLE {$TBLPREFIX}users ADD u_auto_accept VARCHAR(2) NULL");
-			dbquery("UPDATE {$TBLPREFIX}users SET u_auto_accept='N'");
-		}
-	}
-	if (!$has_messages) {
-		$res = dbquery("DROP TABLE {$TBLPREFIX}messages", false);
-		dbquery(
-			"CREATE TABLE {$TBLPREFIX}messages (".
-			" m_id      INT          NOT NULL,".
-			" m_from    VARCHAR(255)     NULL,".
-			" m_to      VARCHAR(30)      NULL,".
-			" m_subject VARCHAR(255)     NULL,".
-			" m_body    TEXT             NULL,".
-			" m_created VARCHAR(255)     NULL,".
-			" PRIMARY KEY (m_id)".
-			") ".PGV_DB_UTF8_TABLE
-		);
-		dbquery("CREATE INDEX {$TBLPREFIX}messages_to ON {$TBLPREFIX}messages (m_to)");
-	}
-	if (!$has_favorites || $sqlite && (!$has_fav_note)) {
-		dbquery("DROP TABLE {$TBLPREFIX}favorites", false);
-		dbquery(
-			"CREATE TABLE {$TBLPREFIX}favorites (".
-			" fv_id       INT               NOT NULL,".
-		 	" fv_username VARCHAR(30)       NULL,".
-			" fv_gid    ".PGV_DB_COL_XREF." NULL,".
-			" fv_type   ".PGV_DB_COL_TAG."  NULL,".
-			" fv_file     VARCHAR(100)      NULL,".
-			" fv_url      VARCHAR(255)      NULL,".
-		 	" fv_title    VARCHAR(255)      NULL,".
-			" fv_note     TEXT,".
-			" PRIMARY KEY (fv_id)".
-			") ".PGV_DB_UTF8_TABLE
-		);
-		dbquery("CREATE INDEX {$TBLPREFIX}favorites_username ON {$TBLPREFIX}favorites (fv_username)");
-	} else {
-		if (!$has_fav_note) {
-			dbquery("ALTER TABLE {$TBLPREFIX}favorites ADD fv_url   VARCHAR(255) NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}favorites ADD fv_title VARCHAR(255) NULL");
-			dbquery("ALTER TABLE {$TBLPREFIX}favorites ADD fv_note  TEXT         NULL");
-		}
-	}
-	if (!$has_blocks || $sqlite && (!$has_blockconfig)) {
-		dbquery("DROP TABLE {$TBLPREFIX}blocks", false);
-		dbquery(
-			"CREATE TABLE {$TBLPREFIX}blocks (".
-			" b_id       INT          NOT NULL,".
-			" b_username VARCHAR(100)     NULL,".
-			" b_location VARCHAR(30)      NULL,".
-		 	" b_order    INT              NULL,".
-			" b_name     VARCHAR(255)     NULL,".
-			" b_config   TEXT             NULL,".
-			" PRIMARY KEY (b_id)".
-			") ".PGV_DB_UTF8_TABLE
-		);
-		dbquery("CREATE INDEX {$TBLPREFIX}blocks_username ON {$TBLPREFIX}blocks (b_username)");
-	} else {
-		if (!$has_blockconfig) {
-			dbquery("ALTER TABLE {$TBLPREFIX}blocks ADD b_config TEXT NOT NULL");
-		}
-	}
-	if (!$has_news) {
-		dbquery("DROP TABLE {$TBLPREFIX}news", false);
-		dbquery(
-			"CREATE TABLE {$TBLPREFIX}news (".
-			" n_id       INT          NOT NULL,".
-			" n_username VARCHAR(100)     NULL,".
-			" n_date     INT              NULL,".
-			" n_title    VARCHAR(255)     NULL,".
-			" n_text     TEXT             NULL,".
-			" PRIMARY KEY (n_id)".
-			") ".PGV_DB_UTF8_TABLE
-		);
-		dbquery("CREATE INDEX {$TBLPREFIX}news_username ON {$TBLPREFIX}news (n_username)");
-	}
-	if (!$has_mutex) {
-		dbquery("DROP TABLE {$TBLPREFIX}mutex", false);
-		dbquery(
-			"CREATE TABLE {$TBLPREFIX}mutex (".
-			" mx_id     INT          NOT NULL,".
-			" mx_name   VARCHAR(255)     NULL,".
-		 	" mx_thread VARCHAR(255)     NULL,".
-			" mx_time   INT              NULL,".
-			" PRIMARY KEY (mx_id)".
-			") ".PGV_DB_UTF8_TABLE
-		);
-		dbquery("CREATE INDEX {$TBLPREFIX}mutex_name ON {$TBLPREFIX}mutex (mx_name)");
-	}
-	return true;
 }
 
 // Get the full name for a user
@@ -765,7 +466,7 @@ function AddToChangeLog($LogString, $ged="") {
 //----------------------------------- addMessage
 //-- stores a new message in the database
 function addMessage($message) {
-	global $TBLPREFIX, $CONTACT_METHOD, $pgv_lang,$CHARACTER_SET, $LANGUAGE, $PGV_STORE_MESSAGES, $SERVER_URL, $PGV_SIMPLE_MAIL, $WEBMASTER_EMAIL, $DBCONN;
+	global $TBLPREFIX, $CONTACT_METHOD, $pgv_lang,$CHARACTER_SET, $LANGUAGE, $PGV_STORE_MESSAGES, $SERVER_URL, $PGV_SIMPLE_MAIL, $WEBMASTER_EMAIL;
 	global $TEXT_DIRECTION, $TEXT_DIRECTION_array, $DATE_FORMAT, $DATE_FORMAT_array, $TIME_FORMAT, $TIME_FORMAT_array, $WEEK_START, $WEEK_START_array;
 	global $PHPGEDVIEW_EMAIL;
 
@@ -851,13 +552,11 @@ function addMessage($message) {
 		$message["body"] .= "DNS LOOKUP: ".gethostbyaddr($_SERVER['REMOTE_ADDR'])."\r\n";
 		$message["body"] .= "LANGUAGE: $LANGUAGE\r\n";
 	}
-	if (!isset($message["created"]))
-		$message["created"] = gmdate ("M d Y H:i:s");
+	if (empty($message["created"]))
+		$message["created"] = gmdate ("D, d M Y H:i:s T");
 	if ($PGV_STORE_MESSAGES && ($message["method"]!="messaging3" && $message["method"]!="mailto" && $message["method"]!="none")) {
-		$newid = get_next_id("messages", "m_id");
-		$sql = "INSERT INTO {$TBLPREFIX}messages VALUES ($newid, '".$DBCONN->escapeSimple($message["from"])."','".$DBCONN->escapeSimple($message["to"])."','".$DBCONN->escapeSimple($message["subject"])."','".$DBCONN->escapeSimple($message["body"])."','".$DBCONN->escapeSimple($message["created"])."')";
-		$res = dbquery($sql);
-
+		PGV_DB::prepare("INSERT INTO {$TBLPREFIX}messages (m_id, m_from, m_to, m_subject, m_body, m_created) VALUES (?, ? ,? ,? ,? ,?)")
+			->execute(array(get_next_id("messages", "m_id"), $message["from"], $message["to"], $message["subject"], $message["body"], $message["created"]));
 	}
 	if ($message["method"]!="messaging") {
 		$subject1 = "[".$pgv_lang["phpgedview_message"].($TEXT_DIRECTION=="ltr"?"] ":" [").stripslashes($message["subject"]);
@@ -894,15 +593,9 @@ function addMessage($message) {
 //----------------------------------- deleteMessage
 //-- deletes a message in the database
 function deleteMessage($message_id) {
-	global $TBLPREFIX;
+	global $TBLPREFIX, $gBitDb;
 
-	$sql = "DELETE FROM {$TBLPREFIX}messages WHERE m_id=".$message_id;
-	$res = dbquery($sql);
-
-	if ($res)
-		return true;
-	else
-		return false;
+	return (bool)$gBitDb->query("DELETE FROM {$TBLPREFIX}messages WHERE m_id=?")->execute(array($message_id));
 }
 
 //----------------------------------- getUserMessages
@@ -910,20 +603,20 @@ function deleteMessage($message_id) {
 function getUserMessages($username) {
 	global $TBLPREFIX;
 
-	$messages = array();
-	$sql = "SELECT * FROM {$TBLPREFIX}messages WHERE m_to='$username' ORDER BY m_id DESC";
-	$res = dbquery($sql);
+	$rows=
+		$gBitDb->query("SELECT * FROM {$TBLPREFIX}messages WHERE m_to=? ORDER BY m_id DESC"
+			, array($username));
 
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$message = array();
-		$message["id"] = $row["m_id"];
-		$message["to"] = $row["m_to"];
-		$message["from"] = $row["m_from"];
-		$message["subject"] = stripslashes($row["m_subject"]);
-		$message["body"] = stripslashes($row["m_body"]);
-		$message["created"] = $row["m_created"];
-		$messages[] = $message;
+	$messages=array();
+	while ( $row = $rows->fetchRow() ) {
+		$messages[]=array(
+			"id"=>$row[m_id],
+			"to"=>$row[m_to],
+			"from"=>$row[m_from],
+			"subject"=>$row[m_subject],
+			"body"=>$row[m_body],
+			"created"=>$row[m_created]
+		);
 	}
 	return $messages;
 }
@@ -933,39 +626,33 @@ function getUserMessages($username) {
  * @param array $favorite	the favorite array of the favorite to add
  */
 function addFavorite($favorite) {
-	global $TBLPREFIX, $DBCONN;
+	global $TBLPREFIX;
 
 	// -- make sure a favorite is added
 	if (empty($favorite["gid"]) && empty($favorite["url"]))
 		return false;
 
 	//-- make sure this is not a duplicate entry
-	$sql = "SELECT * FROM {$TBLPREFIX}favorites WHERE ";
-	if (!empty($favorite["gid"]))
-		$sql .= "fv_gid='".$DBCONN->escapeSimple($favorite["gid"])."' ";
-	if (!empty($favorite["url"]))
-		$sql .= "fv_url='".$DBCONN->escapeSimple($favorite["url"])."' ";
-	$sql .= "AND fv_file='".$DBCONN->escapeSimple($favorite["file"])."' AND fv_username='".$DBCONN->escapeSimple($favorite["username"])."'";
-	$res =& dbquery($sql);
-	if ($res->numRows()>0)
-		return false;
+	$sql = "SELECT 1 FROM {$TBLPREFIX}favorites WHERE";
+	if (!empty($favorite["gid"])) {
+		$sql.=" fv_gid=?";
+		$vars=array($favorite["gid"]);
+	} else {
+		$sql.=" fv_url=?";
+		$vars=array($favorite["url"]);
+	}
+	$sql.="AND fv_file=? AND fv_username=?";
+	$vars[]=$favorite["file"];
+	$vars[]=$favorite["username"];
 
-	//-- get the next favorite id number for the primary key
-	$newid = get_next_id("favorites", "fv_id");
+	if (PGV_DB::prepare($sql)->execute($vars)->fetchOne()) {
+		return false;
+	}
 
 	//-- add the favorite to the database
-	$sql = "INSERT INTO {$TBLPREFIX}favorites VALUES ($newid, '".$DBCONN->escapeSimple($favorite["username"])."'," .
-			"'".$DBCONN->escapeSimple($favorite["gid"])."','".$DBCONN->escapeSimple($favorite["type"])."'," .
-			"'".$DBCONN->escapeSimple($favorite["file"])."'," .
-			"'".$DBCONN->escapeSimple($favorite["url"])."'," .
-			"'".$DBCONN->escapeSimple($favorite["title"])."'," .
-			"'".$DBCONN->escapeSimple($favorite["note"])."')";
-	$res = dbquery($sql);
-
-	if ($res)
-		return true;
-	else
-		return false;
+	return (bool)
+		PGV_DB::prepare("INSERT INTO {$TBLPREFIX}favorites (fv_id, fv_username, fv_gid, fv_type, fv_file, fv_url, fv_title, fv_note) VALUES (?, ? ,? ,? ,? ,? ,? ,?)")
+			->execute(array(get_next_id("favorites", "fv_id"), $favorite["username"], $favorite["gid"], $favorite["type"], $favorite["file"], $favorite["url"], $favorite["title"], $favorite["note"]));
 }
 
 /**
@@ -976,13 +663,9 @@ function addFavorite($favorite) {
 function deleteFavorite($fv_id) {
 	global $TBLPREFIX;
 
-	$sql = "DELETE FROM {$TBLPREFIX}favorites WHERE fv_id=".$fv_id;
-	$res = dbquery($sql);
-
-	if ($res)
-		return true;
-	else
-		return false;
+	return (bool)
+		PGV_DB::prepare("DELETE FROM {$TBLPREFIX}favorites WHERE fv_id=?")
+		->execute(array($fv_id));
 }
 
 /**
@@ -991,34 +674,28 @@ function deleteFavorite($fv_id) {
  * @param string $username		the username to get the favorites for
  */
 function getUserFavorites($username) {
-	global $TBLPREFIX, $DBCONN, $CONFIGURED;
+	global $TBLPREFIX, $gBitDb;
+
+	$rows=
+		$gBitDb->getAll(
+			"SELECT * FROM {$TBLPREFIX}favorites WHERE fv_username=?"
+			, array($username));
 
 	$favorites = array();
-	//-- make sure we don't try to look up favorites for unconfigured sites
-	if (!$CONFIGURED || DB::isError($DBCONN))
-		return $favorites;
-
-	$sql = "SELECT * FROM {$TBLPREFIX}favorites WHERE fv_username='".$DBCONN->escapeSimple($username)."'";
-	$res = dbquery($sql);
-
-	if (DB::isError($res))
-		return $favorites;
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		if (get_id_from_gedcom($row["fv_file"])) { // If gedcom exists
-			$favorite = array();
-			$favorite["id"] = $row["fv_id"];
-			$favorite["username"] = $row["fv_username"];
-			$favorite["gid"] = $row["fv_gid"];
-			$favorite["type"] = $row["fv_type"];
-			$favorite["file"] = $row["fv_file"];
-			$favorite["title"] = $row["fv_title"];
-			$favorite["note"] = $row["fv_note"];
-			$favorite["url"] = $row["fv_url"];
-			$favorites[] = $favorite;
+	foreach ($rows as $row) {
+		if (get_id_from_gedcom($row->fv_file)) { // If gedcom exists
+			$favorites[]=array(
+				"id"=>$row->fv_id,
+				"username"=>$row->fv_username,
+				"gid"=>$row->fv_gid,
+				"type"=>$row->fv_type,
+				"file"=>$row->fv_file,
+				"title"=>$row->fv_title,
+				"note"=>$row->fv_note,
+				"url"=>$row->fv_url
+			);
 		}
 	}
-	$res->free();
 	return $favorites;
 }
 
@@ -1032,49 +709,43 @@ function getUserFavorites($username) {
  * @return array	an array of the blocks.  The two main indexes in the array are "main" and "right"
  */
 function getBlocks($username) {
-	global $TBLPREFIX, $DBCONN;
+	global $TBLPREFIX, $gBitDb;
 
 	$blocks = array();
 	$blocks["main"] = array();
 	$blocks["right"] = array();
-	$sql = "SELECT * FROM {$TBLPREFIX}blocks WHERE b_username='".$DBCONN->escapeSimple($username)."' ORDER BY b_location, b_order";
-	$res = dbquery($sql);
-	if (DB::isError($res))
-		return $blocks;
-	if ($res->numRows() > 0) {
-		while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-			$row = db_cleanup($row);
-			if (!isset($row["b_config"]))
-				$row["b_config"]="";
-			if ($row["b_location"]=="main")
-				// Were earlier versions of wrongly adding slashes to quotes in serialized data?
-				// Unfortunately, we can't use stripslashes() as this breaks valid data.
-				// Instead, use @unserialize to skip any errors.
-				// TODO: try both with and without stripslashes and see which works ???
-				$blocks["main"][$row["b_order"]] = array($row["b_name"], @unserialize($row["b_config"]));
-			if ($row["b_location"]=="right")
-				$blocks["right"][$row["b_order"]] = array($row["b_name"], @unserialize($row["b_config"]));
+
+	$rows =
+		$gBitDb->getAll(
+			"SELECT * FROM {$TBLPREFIX}blocks WHERE b_username=? ORDER BY b_location, b_order"
+			, array($username));
+
+	if ($rows) {
+		foreach ($rows as $row) {
+			if (!isset($row->b_config))
+				$row->b_config="";
+			if ($row->b_location=="main")
+				$blocks["main"][$row->b_order] = array($row->b_name, @unserialize($row->b_config));
+			if ($row->b_location=="right")
+				$blocks["right"][$row->b_order] = array($row->b_name, @unserialize($row->b_config));
 		}
 	} else {
 		if (get_user_id($username)) {
 			//-- if no blocks found, check for a default block setting
-			$sql = "SELECT * FROM {$TBLPREFIX}blocks WHERE b_username='defaultuser' ORDER BY b_location, b_order";
-			$res2 = dbquery($sql);
-			if (DB::isError($res2))
-				return $blocks;
-			while ($row =& $res2->fetchRow(DB_FETCHMODE_ASSOC)){
-				$row = db_cleanup($row);
-				if (!isset($row["b_config"]))
-					$row["b_config"]="";
-				if ($row["b_location"]=="main")
-					$blocks["main"][$row["b_order"]] = array($row["b_name"], @unserialize($row["b_config"]));
-				if ($row["b_location"]=="right")
-					$blocks["right"][$row["b_order"]] = array($row["b_name"], @unserialize($row["b_config"]));
+			$rows =
+				$gBitDb->getAll("SELECT * FROM {$TBLPREFIX}blocks WHERE b_username=? ORDER BY b_location, b_order"
+				, array('defaultuser'));
+
+			foreach ($rows as $row) {
+				if (!isset($row->b_config))
+					$row->b_config="";
+				if ($row->b_location=="main")
+					$blocks["main"][$row->b_order] = array($row->b_name, @unserialize($row->b_config));
+				if ($row->b_location=="right")
+					$blocks["right"][$row->b_order] = array($row->b_name, @unserialize($row->b_config));
 			}
-			$res2->free();
 		}
 	}
-	$res->free();
 	return $blocks;
 }
 
@@ -1088,33 +759,30 @@ function getBlocks($username) {
  * @param boolean $setdefault	if true tells the program to also set these blocks as the blocks for the defaultuser
  */
 function setBlocks($username, $ublocks, $setdefault=false) {
-	global $TBLPREFIX, $DBCONN;
+	global $TBLPREFIX;
 
-	$sql = "DELETE FROM {$TBLPREFIX}blocks WHERE b_username='".$DBCONN->escapeSimple($username)."' AND b_name!='faq'";
-	$res = dbquery($sql);
+	PGV_DB::prepare("DELETE FROM {$TBLPREFIX}blocks WHERE b_username=? AND b_name!=?")
+		->execute(array($username, 'faq'));
+
+	if ($setdefault) {
+		PGV_DB::prepare("DELETE FROM {$TBLPREFIX}blocks WHERE b_username=?")
+			->execute(array('defaultuser'));
+	}
+
+	$statement=PGV_DB::prepare("INSERT INTO {$TBLPREFIX}blocks (b_id, b_username, b_location, b_order, b_name, b_config) VALUES (?, ?, ?, ?, ?, ?)");
 
 	foreach($ublocks["main"] as $order=>$block) {
-		$newid = get_next_id("blocks", "b_id");
-		$sql = "INSERT INTO {$TBLPREFIX}blocks VALUES ($newid, '".$DBCONN->escapeSimple($username)."', 'main', '$order', '".$DBCONN->escapeSimple($block[0])."', '".$DBCONN->escapeSimple(serialize($block[1]))."')";
-		$res = dbquery($sql);
+		$statement->execute(array(get_next_id("blocks", "b_id"), $username, 'main', $order, $block[0], serialize($block[1])));
 
 		if ($setdefault) {
-			$newid = get_next_id("blocks", "b_id");
-			$sql = "INSERT INTO {$TBLPREFIX}blocks VALUES ($newid, 'defaultuser', 'main', '$order', '".$DBCONN->escapeSimple($block[0])."', '".$DBCONN->escapeSimple(serialize($block[1]))."')";
-			$res = dbquery($sql);
-
+			$statement->execute(array(get_next_id("blocks", "b_id"), 'defaultuser', 'main', $order, $block[0], serialize($block[1])));
 		}
 	}
 	foreach($ublocks["right"] as $order=>$block) {
-		$newid = get_next_id("blocks", "b_id");
-		$sql = "INSERT INTO {$TBLPREFIX}blocks VALUES ($newid, '".$DBCONN->escapeSimple($username)."', 'right', '$order', '".$DBCONN->escapeSimple($block[0])."', '".$DBCONN->escapeSimple(serialize($block[1]))."')";
-		$res = dbquery($sql);
+		$statement->execute(array(get_next_id("blocks", "b_id"), $username, 'right', $order, $block[0], serialize($block[1])));
 
 		if ($setdefault) {
-			$newid = get_next_id("blocks", "b_id");
-			$sql = "INSERT INTO {$TBLPREFIX}blocks VALUES ($newid, 'defaultuser', 'right', '$order', '".$DBCONN->escapeSimple($block[0])."', '".$DBCONN->escapeSimple(serialize($block[1]))."')";
-			$res = dbquery($sql);
-
+			$statement->execute(array(get_next_id("blocks", "b_id"), 'defaultuser', 'right', $order, $block[0], serialize($block[1])));
 		}
 	}
 }
@@ -1130,32 +798,32 @@ function setBlocks($username, $ublocks, $setdefault=false) {
  * @param array $news a news item array
  */
 function addNews($news) {
-	global $TBLPREFIX, $DBCONN;
+	global $TBLPREFIX;
 
 	if (!isset($news["date"]))
 		$news["date"] = client_time();
 	if (!empty($news["id"])) {
 		// In case news items are added from usermigrate, it will also contain an ID.
 		// So we check first if the ID exists in the database. If not, insert instead of update.
-		$sql = "SELECT * FROM {$TBLPREFIX}news where n_id=".$news["id"];
-		$res = dbquery($sql);
+		$exists=
+			PGV_DB::prepare("SELECT 1 FROM {$TBLPREFIX}news where n_id=?")
+			->execute(array($news["id"]))
+			->fetchOne();
 
-		if ($res->numRows() == 0) {
-			$sql = "INSERT INTO {$TBLPREFIX}news VALUES (".$news["id"].", '".$DBCONN->escapeSimple($news["username"])."','".$DBCONN->escapeSimple($news["date"])."','".$DBCONN->escapeSimple($news["title"])."','".$DBCONN->escapeSimple($news["text"])."')";
+		if (!$exists) {
+			return (bool)
+				PGV_DB::prepare("INSERT INTO {$TBLPREFIX}news (n_id, n_username, n_date, n_title, n_text) VALUES (?, ? ,? ,? ,?)")
+				->execute(array($news["id"], $news["username"], $news["date"], $news["title"], $news["text"]));
 		} else {
-			$sql = "UPDATE {$TBLPREFIX}news SET n_date='".$DBCONN->escapeSimple($news["date"])."', n_title='".$DBCONN->escapeSimple($news["title"])."', n_text='".$DBCONN->escapeSimple($news["text"])."' WHERE n_id=".$news["id"];
+			return (bool)
+				PGV_DB::prepare("UPDATE {$TBLPREFIX}news SET n_date=?, n_title=? , n_text=? WHERE n_id=?")
+				->execute(array($news["date"], $news["title"], $news["text"], $news["id"]));
 		}
-		$res->free();
 	} else {
-		$newid = get_next_id("news", "n_id");
-		$sql = "INSERT INTO {$TBLPREFIX}news VALUES ($newid, '".$DBCONN->escapeSimple($news["username"])."','".$DBCONN->escapeSimple($news["date"])."','".$DBCONN->escapeSimple($news["title"])."','".$DBCONN->escapeSimple($news["text"])."')";
+		return (bool)
+			PGV_DB::prepare("INSERT INTO {$TBLPREFIX}news (n_id, n_username, n_date, n_title, n_text) VALUES (?, ? ,? ,? ,?)")
+			->execute(array(get_next_id("news", "n_id"), $news["username"], $news["date"], $news["title"], $news["text"]));
 	}
-	$res = dbquery($sql);
-
-	if ($res)
-		return true;
-	else
-		return false;
 }
 
 /**
@@ -1167,13 +835,7 @@ function addNews($news) {
 function deleteNews($news_id) {
 	global $TBLPREFIX;
 
-	$sql = "DELETE FROM {$TBLPREFIX}news WHERE n_id=".$news_id;
-	$res = dbquery($sql);
-
-	if ($res)
-		return true;
-	else
-		return false;
+	return (bool)PGV_DB::prepare("DELETE FROM {$TBLPREFIX}news WHERE n_id=?")->execute(array($news_id));
 }
 
 /**
@@ -1182,24 +844,24 @@ function deleteNews($news_id) {
  * @param String $username the username or gedcom file name to get news items for
  */
 function getUserNews($username) {
-	global $TBLPREFIX, $DBCONN;
+	global $TBLPREFIX;
 
-	$news = array();
-	$sql = "SELECT * FROM {$TBLPREFIX}news WHERE n_username='".$DBCONN->escapeSimple($username)."' ORDER BY n_date DESC";
-	$res = dbquery($sql);
+	$rows=
+		PGV_DB::prepare("SELECT * FROM {$TBLPREFIX}news WHERE n_username=? ORDER BY n_date DESC")
+		->execute(array($username))
+		->fetchAll();
 
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$n = array();
-		$n["id"] = $row["n_id"];
-		$n["username"] = $row["n_username"];
-		$n["date"] = $row["n_date"];
-		$n["title"] = stripslashes($row["n_title"]);
-		$n["text"] = stripslashes($row["n_text"]);
-		$n["anchor"] = "article".$row["n_id"];
-		$news[$row["n_id"]] = $n;
+	$news=array();
+	foreach ($rows as $row) {
+		$news[$row->n_id]=array(
+			"id"=>$row->n_id,
+			"username"=>$row->n_username,
+			"date"=>$row->n_date,
+			"title"=>$row->n_title,
+			"text"=>$row->n_text,
+			"anchor"=>"article".$row->n_id
+		);
 	}
-	$res->free();
 	return $news;
 }
 
@@ -1211,21 +873,22 @@ function getUserNews($username) {
 function getNewsItem($news_id) {
 	global $TBLPREFIX;
 
-	$news = array();
-	$sql = "SELECT * FROM {$TBLPREFIX}news WHERE n_id='$news_id'";
-	$res = dbquery($sql);
+	$row=
+		PGV_DB::prepare("SELECT * FROM {$TBLPREFIX}news WHERE n_id=?")
+		->execute(array($news_id))
+		->fetchOneRow();
 
-	while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-		$row = db_cleanup($row);
-		$n = array();
-		$n["id"] = $row["n_id"];
-		$n["username"] = $row["n_username"];
-		$n["date"] = $row["n_date"];
-		$n["title"] = stripslashes($row["n_title"]);
-		$n["text"] = stripslashes($row["n_text"]);
-		$n["anchor"] = "article".$row["n_id"];
-		$res->free();
-		return $n;
+	if ($row) {
+		return array(
+			"id"=>$row->n_id,
+			"username"=>$row->n_username,
+			"date"=>$row->n_date,
+			"title"=>$row->n_title,
+			"text"=>$row->n_text,
+			"anchor"=>"article".$row->n_id
+		);
+	} else {
+		return null;
 	}
 }
 

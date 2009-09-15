@@ -23,7 +23,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id: remotelink_ctrl.php,v 1.1 2009/04/30 19:09:48 lsces Exp $
+* @version $Id: remotelink_ctrl.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -204,12 +204,12 @@ class RemoteLinkController extends BaseController {
 	// @param string $gedcom_id
 	// @return mixed the serverID of the server to link to
 	function addLocalServer($title, $gedcom_id) {
-		global $SERVER_URL, $GEDCOMS;
+		global $SERVER_URL;
 		$serverID = $this->checkExistingServer($SERVER_URL, $gedcom_id);
 		if ($serverID===false) {
 			$gedcom_string = "0 @new@ SOUR\n";
 			if (empty($title)) {
-				$title = $GEDCOMS[$gedcom_id]["title"];
+				$title=get_gedcom_setting(get_id_from_gedcom($gedcom_id), 'title');
 			}
 			$gedcom_string.= "1 TITL ".$title."\n";
 			$gedcom_string.= "1 URL ".$SERVER_URL."\n";

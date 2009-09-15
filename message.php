@@ -21,23 +21,25 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: message.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: message.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  */
 require("config.php");
 
 loadLangFile("pgv_confighelp");
 
-if (!isset($action)) $action="compose";
-
 print_simple_header($pgv_lang["phpgedview_message"]);
 
-if (!isset($subject)) $subject = "";
-if (!isset($url)) $url = "";
-if (!isset($method)) $method="messaging2";
-if (isset($body)) $body = stripslashes($body);
-else $body = "";
-if (!isset($from_name)) $from_name="";
-if (!isset($from_email)) $from_email="";
+$subject   =isset($_REQUEST['subject'   ]) ? $_REQUEST['subject'   ] : '';
+$url       =isset($_REQUEST['url'       ]) ? $_REQUEST['url'       ] : '';
+$method    =isset($_REQUEST['method'    ]) ? $_REQUEST['method'    ] : 'messaging2';
+$body      =isset($_REQUEST['body'      ]) ? $_REQUEST['body'      ] : '';
+$from_email=isset($_REQUEST['from_email']) ? $_REQUEST['from_email'] : '';
+$from_name =isset($_REQUEST['from_name' ]) ? $_REQUEST['from_name' ] : '';
+$to        =isset($_REQUEST['to'        ]) ? $_REQUEST['to'        ] : '';
+$action    =isset($_REQUEST['action'    ]) ? $_REQUEST['action'    ] : 'compose';
+$from      =isset($_REQUEST['from'      ]) ? $_REQUEST['from'      ] : '';
+$time      =isset($_REQUEST['time'      ]) ? $_REQUEST['time'      ] : '';
+$method    =isset($_REQUEST['method'    ]) ? $_REQUEST['method'    ] : '';
 
 if (empty($to)) {
 	print "<span class=\"error\">".$pgv_lang["no_to_user"]."</span><br />";
@@ -126,7 +128,7 @@ if (($action=="send")&&(isset($_SESSION["good_to_send"]))&&($_SESSION["good_to_s
 			$message["body"] = $body;
 			$message["created"] = $time;
 			$message["method"] = $method;
-			$message["url"] = $url;
+			$message["url"] = $url.'&amp;ged='.$GEDCOM;
 			if ($i>0) $message["no_from"] = true;
 			if (addMessage($message)){
 				if (get_user_id($to)) {

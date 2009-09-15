@@ -25,17 +25,20 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: hourglass_ajax.php,v 1.1 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: hourglass_ajax.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
+require 'config.php';
+
+require_once 'includes/controllers/hourglass_ctrl.php';
 
 /*
  * The purpose of this page is to build the left half of the Hourglass chart via Ajax.
- * This page only produces a husband and wife with the connecting lines to unite and 
+ * This page only produces a husband and wife with the connecting lines to unite and
  * 	label the pair as a pair.
  */
 
-require_once("includes/controllers/hourglass_ctrl.php");
+$controller = new HourglassController();
 $controller->init();
 
 // -- print html header information

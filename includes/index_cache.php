@@ -3,7 +3,7 @@
  * Index caching functions
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2007  PGV Development Team
+ * Copyright (C) 2002 to 2009 PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_cache.php,v 1.4 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id: index_cache.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -38,7 +38,7 @@ define('PGV_INDEX_CACHE_PHP', '');
  * @return boolean  returns false if the block could not be loaded from cache
  */
 function loadCachedBlock($block, $index) {
-	global $PGV_BLOCKS, $INDEX_DIRECTORY, $lang_short_cut, $LANGUAGE, $GEDCOM;
+	global $PGV_BLOCKS, $INDEX_DIRECTORY, $theme_name, $lang_short_cut, $LANGUAGE, $GEDCOM;
 
 	//-- ignore caching when DEBUG is set
 	//-- ignore caching for logged in users
@@ -54,7 +54,7 @@ function loadCachedBlock($block, $index) {
 	}
 	if ($cacheLife==0) return false;
 
-	$fname = $INDEX_DIRECTORY."/cache/".$lang_short_cut[$LANGUAGE]."/".$GEDCOM."/".$index."_".$block[0];
+	$fname = "{$INDEX_DIRECTORY}/cache/{$theme_name}/{$lang_short_cut[$LANGUAGE]}/{$GEDCOM}/{$index}_{$block[0]}";
 	if (file_exists($fname)) {
 		// Check for expired cache (<0: no expiry), 0: immediate, >0: expires in x days)  Zero already checked
 		if ($cacheLife > 0) {
@@ -78,7 +78,7 @@ function loadCachedBlock($block, $index) {
  * @return boolean  returns false if the block could not be saved to cache
  */
 function saveCachedBlock($block, $index, $content) {
-	global $PGV_BLOCKS, $INDEX_DIRECTORY, $lang_short_cut, $LANGUAGE, $GEDCOM;
+	global $PGV_BLOCKS, $INDEX_DIRECTORY, $theme_name, $lang_short_cut, $LANGUAGE, $GEDCOM;
 
 	//-- ignore caching when DEBUG is set
 	//-- ignore caching for logged in users
@@ -94,18 +94,15 @@ function saveCachedBlock($block, $index, $content) {
 
 	$fname = $INDEX_DIRECTORY."/cache";
 	@mkdir($fname);
-	//--many people are not going to like automatically setting the permissions
-	//--777 is considered a security risk, if we can create the directory we should be able to write to it
-	//--do we need a windows specific check here instead?
-	//@chmod($fname, 0777);	// Make SURE this dir. has 0777 perm. (so Admin can delete it without "root" access)
+
+	$fname .= "/".$theme_name;
+	@mkdir($fname);
 
 	$fname .= "/".$lang_short_cut[$LANGUAGE];
 	@mkdir($fname);
-	//@chmod($fname, 0777);
 
 	$fname .= "/".$GEDCOM;
 	@mkdir($fname);
-	//@chmod($fname, 0777);
 
 	$fname .= "/".$index."_".$block[0];
 	$fp = @fopen($fname, "wb");
@@ -115,24 +112,43 @@ function saveCachedBlock($block, $index, $content) {
 	return true;
 }
 
+/*
+ * Re-worked copy of a similar function in dir_editor.php
+ *
+ * This function, called recursively, deletes all subdirectories and files in those subdirectories
+ *
+ * Note:  This function should really be in one of the other "includes/functions/..." scripts.
+ */
+function removeDir($dir) {
+	if (!is_writable($dir)) {
+		if (!@chmod($dir, 0777)) return FALSE;
+	}
+
+	$d = dir($dir);
+	while (FALSE !== ($entry = $d->read())) {
+		if ($entry == '.' || $entry == '..') continue;
+		$entry = $dir . '/' . $entry;
+		if (is_dir($entry)) {
+			if (!removeDir($entry)) return FALSE;
+			continue;
+		}
+		if (!@unlink($entry)) {
+			$d->close();
+			return FALSE;
+		}
+	}
+
+	$d->close();
+	rmdir($dir);
+	return TRUE;
+}
+
 /**
  * clears the cache files
  */
 function clearCache() {
 	global $PGV_BLOCKS, $INDEX_DIRECTORY, $lang_short_cut, $LANGUAGE, $GEDCOM;
 
-	foreach($lang_short_cut as $key=>$value) {
-		$fname = $INDEX_DIRECTORY."/cache/".$value."/".$GEDCOM;
-		if (file_exists($fname)) {
-			$dir = dir($fname);
-			while (false !== ($entry = $dir->read())) {
-			   if ($entry!="." && $entry!="..") @unlink($fname."/".$entry);
-			}
-		}
-	}
-
-	if (file_exists($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php")) {
-		@unlink($INDEX_DIRECTORY."/".$GEDCOM."_upcoming.php");
-	}
+	removeDir("{$INDEX_DIRECTORY}/cache");
 }
 ?>

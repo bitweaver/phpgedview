@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage DataModel
- * @version $Id: class_family.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: class_family.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -436,9 +436,32 @@ class Family extends GedcomRecord {
 		if (is_null($this->_getAllNames)) {
 			$husb=$this->husb ? $this->husb : new Person('1 SEX M');
 			$wife=$this->wife ? $this->wife : new Person('1 SEX F');
-			foreach ($husb->getAllNames() as $husb_name) {
-				foreach ($wife->getAllNames() as $wife_name) {
-					if ($husb_name['type']!='_MARNM' && $wife_name['type']!='_MARNM') {
+			// Check the script used by each name, so we can match cyrillic with cyrillic, greek with greek, etc.
+			$husb_names=$husb->getAllNames();
+			foreach ($husb_names as $n=>$husb_name) {
+				$husb_names[$n]['lang']=whatLanguage($husb_name['surn']);
+			}
+			$wife_names=$wife->getAllNames();
+			foreach ($wife_names as $n=>$wife_name) {
+				$wife_names[$n]['lang']=whatLanguage($wife_name['surn']);
+			}
+			// Add the matched names first
+			foreach ($husb_names as $husb_name) {
+				foreach ($wife_names as $wife_name) {
+					if ($husb_name['type']!='_MARNM' && $wife_name['type']!='_MARNM' && $husb_name['lang']==$wife_name['lang']) {
+						$this->_getAllNames[]=array(
+							'type'=>$husb_name['type'],
+							'full'=>$husb_name['full'].' + '.$wife_name['full'],
+							'list'=>$husb_name['list'].$husb->getSexImage().'<br />'.$wife_name['list'].$wife->getSexImage(),
+							'sort'=>$husb_name['sort'].' + '.$wife_name['sort'],
+						);
+					}
+				}
+			}
+			// Add the unmatched names second (there may be no matched names)
+			foreach ($husb_names as $husb_name) {
+				foreach ($wife_names as $wife_name) {
+					if ($husb_name['type']!='_MARNM' && $wife_name['type']!='_MARNM'  && $husb_name['lang']!=$wife_name['lang']) {
 						$this->_getAllNames[]=array(
 							'type'=>$husb_name['type'],
 							'full'=>$husb_name['full'].' + '.$wife_name['full'],

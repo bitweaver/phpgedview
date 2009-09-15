@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.3 2009/04/30 23:23:31 lsces Exp $
+ * @version $Id: functions.php,v 1.4 2009/09/15 20:06:02 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -37,104 +37,6 @@ require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_mutex.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/classes/class_media.php');
 require_once(PHPGEDVIEW_PKG_PATH.'includes/functions/functions_UTF8.php');
 
-// ************************************************* START OF INITIALIZATION FUNCTIONS ********************************* //
-/**
- * initialize and check the database
- *
- * this function will create a database connection and return false if any errors occurred
- * @param boolean $ignore_previous	whether or not to ignore a previous connection , this parameter is used mainly for the install.php page when setting everything up
- * @return boolean true if database successfully connected, false if there was an error
- */
-function check_db($ignore_previous=false) {
-	global $DBTYPE, $DBHOST, $DBPORT, $DBUSER, $DBPASS, $DBNAME, $DBCONN, $TOTAL_QUERIES, $PHP_SELF, $DBPERSIST, $CONFIGURED;
-	global $INDEX_DIRECTORY, $DB_UTF8_COLLATION;
-
-	if (!$ignore_previous) {
-		if (is_object($DBCONN) && !DB::isError($DBCONN)) {
-			return true;
-		}
-		if (DB::isError($DBCONN)) {
-			return false;
-		}
-	} else {
-		//-- if we are not configured then try to connect with the updated values
-		if (!$CONFIGURED || userIsAdmin()) {
-			if (isset($_POST['NEW_DBTYPE'])) $DBTYPE = $_POST['NEW_DBTYPE'];
-			if (isset($_POST['NEW_DBUSER'])) $DBUSER = $_POST['NEW_DBUSER'];
-			if (isset($_POST['NEW_DBPASS'])) $DBPASS = $_POST['NEW_DBPASS'];
-			if (isset($_POST['NEW_DBHOST'])) $DBHOST = $_POST['NEW_DBHOST'];
-			if (isset($_POST['NEW_DBPORT'])) $DBPORT = $_POST['NEW_DBPORT'];
-			if (isset($_POST['NEW_DBNAME'])) $DBNAME = $_POST['NEW_DBNAME'];
-			if (isset($_POST['NEW_DBPERSIST'])) $DBPERSIST = $_POST['NEW_DBPERSIST'];
-			if (isset($_POST['NEW_DB_UTF8_COLLATION'])) $DBPERSIST = $_POST['NEW_DB_UTF8_COLLATION'];
-		}
-	}
-	//-- initialize query counter
-	$TOTAL_QUERIES = 0;
-	if (!isset($DBPORT)) {
-		$DBPORT="";
-	}
-
-	$dsn = array(
-		'phptype'  => $DBTYPE,
-		'username' => $DBUSER,
-		'password' => $DBPASS,
-		'hostspec' => $DBHOST,
-		'database' => $DBNAME
-	);
-
-	if (!empty($DBPORT)) {
-		$dsn['port'] = $DBPORT;
-	}
-
-	if ($ignore_previous) {
-		$dsn['new_link'] = true;
-	}
-
-	$options = array(
-		'debug'       => 3,
-		'portability' => DB_PORTABILITY_ALL,
-		'persistent'  => $DBPERSIST
-	);
-
-	$DBCONN = DB::connect($dsn, $options);
-	if (DB::isError($DBCONN)) {
-		//die($DBCONN->getMessage());
-		return false;
-	}
-
-	// Perform any database-specific initialisation
-	// Note that due to sequence of events in install.php, we can't
-	// use dbquery(), as it won't run until after we are configured.
-	switch ($DBTYPE) {
-	case 'mysql':
-	case 'mysqli':
-		if ($DB_UTF8_COLLATION) {
-			$DBCONN->query("SET NAMES UTF8");
-		}
-		break;
-	case 'pgsql':
-		if ($DB_UTF8_COLLATION) {
-			$DBCONN->query("SET NAMES 'UTF8'");
-		}
-		break;
-	case 'sqlite':
-		if ($DB_UTF8_COLLATION) {
-			$DBCONN->query('PRAGMA encoding = "UTF-8"');
-		}
-		break;
-	case 'mssql':
-		break;
-	default:
-	}
-
-	//-- protect the username and password on pages other than the Configuration page
-	if (strpos($_SERVER["PHP_SELF"], "install.php") === false) {
-		$DBUSER = "";
-		$DBPASS = "";
-	}
-	return true;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Extract, sanitise and validate FORM (POST), URL (GET) and COOKIE variables.
@@ -449,7 +351,7 @@ function load_privacy_file($ged_id=PGV_GED_ID) {
  * @see session.php
  */
 function store_gedcoms() {
-	global $GEDCOMS, $pgv_lang, $INDEX_DIRECTORY, $DEFAULT_GEDCOM, $COMMON_NAMES_THRESHOLD, $GEDCOM, $CONFIGURED;
+	global $GEDCOMS, $pgv_lang, $INDEX_DIRECTORY, $COMMON_NAMES_THRESHOLD, $GEDCOM, $CONFIGURED;
 	global $IN_STORE_GEDCOMS;
 
 	if (!$CONFIGURED) {
@@ -460,8 +362,8 @@ function store_gedcoms() {
 		return false;
 	}
 	$IN_STORE_GEDCOMS = true;
-	$mutex = new Mutex("gedcoms.php");
-	$mutex->Wait();
+//	$mutex = new Mutex("gedcoms.php");
+//	$mutex->Wait();
 	uasort($GEDCOMS, "gedcomsort");
 	$gedcomtext = "<?php\n//--START GEDCOM CONFIGURATIONS\n";
 	$gedcomtext .= "\$GEDCOMS = array();\n";
@@ -525,7 +427,6 @@ function store_gedcoms() {
 		$gedcomtext .= "\$GEDCOMS[\"".$GED["gedcom"]."\"] = \$gedarray;\n";
 	}
 	$GEDCOMS = $geds;
-	$gedcomtext .= "\n\$DEFAULT_GEDCOM = \"$DEFAULT_GEDCOM\";\n";
 	$gedcomtext .= "\n?".">";
 	$fp = @fopen($INDEX_DIRECTORY."gedcoms.php", "wb");
 	if (!$fp) {
@@ -537,7 +438,7 @@ function store_gedcoms() {
 		fclose($fp);
 		check_in("store_gedcoms() ->" . getUserName() ."<-", "gedcoms.php", $INDEX_DIRECTORY, true);
 	}
-	$mutex->Release();
+//	$mutex->Release();
 	$IN_STORE_GEDCOMS = false;
 	return true;
 }
@@ -1420,7 +1321,7 @@ function exists_pending_change($user_id=PGV_USER_ID, $ged_id=PGV_GED_ID) {
  */
 function find_highlighted_object($pid, $indirec) {
 	global $MEDIA_DIRECTORY, $MEDIA_DIRECTORY_LEVELS, $PGV_IMAGE_DIR, $PGV_IMAGES, $MEDIA_EXTERNAL;
-	global $GEDCOMS, $GEDCOM, $TBLPREFIX, $DBCONN;
+	global $GEDCOMS, $GEDCOM, $TBLPREFIX, $gBitDb;
 
 	if (!showFactDetails("OBJE", $pid)) {
 		return false;
@@ -1448,48 +1349,43 @@ function find_highlighted_object($pid, $indirec) {
 	}
 
 	//-- find all of the media items for a person
-	$sql = "SELECT m_media, m_file, m_gedrec, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile='".$GEDCOMS[$GEDCOM]["id"]."' AND mm_gid='".$DBCONN->escapeSimple($pid)."' ORDER BY mm_order";
-	$res = dbquery($sql);
-	if (!DB::isError($res)) {
-		while ($row = $res->fetchRow()) {
-			$media[] = $row;
-		}
-		$res->free();
-	}
+	$media = $gBitDb->query(
+		"SELECT m_media, m_file, m_gedrec, mm_gedrec FROM {$TBLPREFIX}media, {$TBLPREFIX}media_mapping WHERE m_media=mm_media AND m_gedfile=mm_gedfile AND m_gedfile=? AND mm_gid=? ORDER BY mm_order"
+		, array($GEDCOMS[$GEDCOM]["id"], $pid));
 
-	foreach ($media as $i=>$row) {
-		if (displayDetailsById($row[0], 'OBJE') && !FactViewRestricted($row[0], $row[2])) {
+	while ( $row = $media->fetchRow() ) {
+		if (displayDetailsById($row['m_media'], 'OBJE') && !FactViewRestricted($row['m_media'], $row['m_gedrec'])) {
 			$level=0;
-			$ct = preg_match("/(\d+) OBJE/", $row[3], $match);
+			$ct = preg_match("/(\d+) OBJE/", $row['mm_gedrec'], $match);
 			if ($ct>0) {
 				$level = $match[1];
 			}
-			if (strstr($row[3], "_PRIM ")) {
-				$thum = get_gedcom_value('_THUM', $level+1, $row[3]);
-				$prim = get_gedcom_value('_PRIM', $level+1, $row[3]);
+			if (strstr($row['mm_gedrec'], "_PRIM ")) {
+				$thum = get_gedcom_value('_THUM', $level+1, $row['mm_gedrec']);
+				$prim = get_gedcom_value('_PRIM', $level+1, $row['mm_gedrec']);
 			} else {
-				$thum = get_gedcom_value('_THUM', 1, $row[2]);
-				$prim = get_gedcom_value('_PRIM', 1, $row[2]);
+				$thum = get_gedcom_value('_THUM', 1, $row['m_gedrec']);
+				$prim = get_gedcom_value('_PRIM', 1, $row['m_gedrec']);
 			}
 			if ($prim=='N') continue;		// Skip _PRIM N objects
 			if ($prim=='Y') {
 				// Take the first _PRIM Y object
-				$object["file"] = check_media_depth($row[1]);
-				$object["thumb"] = thumbnail_file($row[1], true, false, $pid);
+				$object["file"] = check_media_depth($row['m_file']);
+				$object["thumb"] = thumbnail_file($row['m_file'], true, false, $pid);
 //				$object["_PRIM"] = $prim;	// Not sure whether this is needed.
 				$object["_THUM"] = $thum;	// This overrides GEDCOM's "Use main image as thumbnail" option
 				$object["level"] = $level;
-				$object["mid"] = $row[0];
+				$object["mid"] = $row['m_media'];
 				break;		// Stop looking: we found a suitable image
 			}
 			if ($level==1 && empty($object)) {
 				// Take the first level 1 object, but keep looking for an overriding _PRIM Y
-				$object["file"] = check_media_depth($row[1]);
-				$object["thumb"] = thumbnail_file($row[1], true, false, $pid);
+				$object["file"] = check_media_depth($row['m_file']);
+				$object["thumb"] = thumbnail_file($row['m_file'], true, false, $pid);
 //				$object["_PRIM"] = $prim;	// Not sure whether this is needed.
 				$object["_THUM"] = $thum;	// This overrides GEDCOM's "Use main image as thumbnail" option
 				$object["level"] = $level;
-				$object["mid"] = $row[0];
+				$object["mid"] = $row['m_media'];
 			}
 		}
 	}
@@ -1851,6 +1747,19 @@ function compareStrings($aName, $bName, $ignoreCase=true) {
 // Sort a list events for the today/upcoming blocks
 ////////////////////////////////////////////////////////////////////////////////
 function event_sort($a, $b) {
+	if ($a['jd']==$b['jd']) {
+		if ($a['anniv']==$b['anniv']) {
+			return compareStrings($a['fact'], $b['fact']);
+		}
+		else {
+			return compareStrings($a['anniv'], $b['anniv']);
+		}
+	} else {
+		return $a['jd']-$b['jd'];
+	}
+}
+
+function event_sort_name($a, $b) {
 	if ($a['jd']==$b['jd']) {
 		return compareStrings($a['name'], $b['name']);
 	} else {
@@ -2534,14 +2443,20 @@ function get_relationship($pid1, $pid2, $followspouse=true, $maxlength=0, $ignor
 // This is a new/experimental version of get_relationship().  It is not used by any live
 // code.  It is here to allow certain users to test it.
 function get_relationship1($pid1, $pid2, $followspouse=true, $maxlength=0) {
-	global $pgv_changes, $GEDCOM, $TBLPREFIX, $DBCONN;
+	global $pgv_changes, $GEDCOM, $TBLPREFIX, $gBitDb;
 	static $RELA=null;
 	static $PATHS=null;
 
 	// Read all the relationships into a memory cache
 	if (is_null($RELA)) {
 		$RELA=array();
-		$families=&$DBCONN->getAssoc("SELECT f_id, f_husb, f_wife, TRIM(TRAILING ';' FROM f_chil) as f_chil FROM {$TBLPREFIX}families WHERE f_file=".PGV_GED_ID);
+		$rows = $gBitDb->query(
+			"SELECT f_id, f_husb, f_wife, TRIM(TRAILING ? FROM f_chil) AS f_chil FROM {$TBLPREFIX}families WHERE f_file=?"
+			, array(';', PGV_GED_ID));
+		$families=array();
+		while ( $row = $rows->fetchRow() ) {
+			$families[$row['f_id']] = array( $row['f_husb'], $row['f_wife'], $row['f_chil'] );
+		}
 		foreach ($families as $f_id=>$family) {
 			// Include pending changes
 			if (PGV_USER_CAN_EDIT && isset($pgv_changes[$f_id."_".$GEDCOM])) {
@@ -2637,14 +2552,20 @@ function get_relationship1($pid1, $pid2, $followspouse=true, $maxlength=0) {
 }
 
 function get_relationship2($pid1, $pid2, $followspouse=true, $maxlength=0, $ignore_cache=false, $path_to_find=0) {
-	global $pgv_changes, $GEDCOM, $TBLPREFIX, $DBCONN;
+	global $pgv_changes, $GEDCOM, $TBLPREFIX, $gBitDb;
 	static $RELA=null;
 	static $PATHS=null;
 
 	// Read all the relationships into a memory cache
 	if (is_null($RELA)) {
 		$RELA=array();
-		$families=&$DBCONN->getAssoc("SELECT f_id, f_husb, f_wife, TRIM(TRAILING ';' FROM f_chil) as f_chil FROM {$TBLPREFIX}families WHERE f_file=".PGV_GED_ID);
+		$rows = $gBitDb->query(
+			"SELECT f_id, f_husb, f_wife, TRIM(TRAILING ? FROM f_chil) AS f_chil FROM {$TBLPREFIX}families WHERE f_file=?"
+			, array(';', PGV_GED_ID));
+		$families=array();
+		while ( $row = $rows->fetchRow() ) {
+			$families[$row['f_id']]=array($row['f_husb'], $row['f_wife'], $row['f_chil']);
+		}
 		foreach ($families as $f_id=>$family) {
 			// Include pending changes
 			if (PGV_USER_CAN_EDIT && isset($pgv_changes[$f_id."_".$GEDCOM])) {
@@ -2767,8 +2688,8 @@ function write_changes() {
 	global $pgv_changes, $INDEX_DIRECTORY, $CONTACT_EMAIL, $LAST_CHANGE_EMAIL;
 
 	//-- only allow 1 thread to write changes at a time
-	$mutex = new Mutex("pgv_changes");
-	$mutex->Wait();
+//	$mutex = new Mutex("pgv_changes");
+//	$mutex->Wait();
 	//-- what to do if file changed while waiting
 	if (!isset($LAST_CHANGE_EMAIL))
 		$LAST_CHANGE_EMAIL = time();
@@ -2808,7 +2729,7 @@ function write_changes() {
 	fclose($fp);
 
 	//-- release the mutex acquired above
-	$mutex->Release();
+//	$mutex->Release();
 
 	$logline = AddToLog("pgv_changes.php updated");
 	check_in($logline, "pgv_changes.php", $INDEX_DIRECTORY);
@@ -2985,32 +2906,10 @@ function get_report_list($force=false) {
 	$fp = @fopen($INDEX_DIRECTORY."/reports.dat", "w");
 	@fwrite($fp, serialize($files));
 	@fclose($fp);
-	if (function_exists('AddToLog')) {
-		$logline = AddToLog("reports.dat updated");
-		check_in($logline, "reports.dat", $INDEX_DIRECTORY);
-	}
+	$logline = AddToLog("reports.dat updated");
+ 	check_in($logline, "reports.dat", $INDEX_DIRECTORY);
 
 	return $files;
-}
-
-/**
- * remove any custom PGV tags from the given gedcom record
- * custom tags include _PGVU and _THUM
- * @param string $gedrec	the raw gedcom record
- * @return string		the updated gedcom record
- */
-function remove_custom_tags($gedrec, $remove="no") {
-	if ($remove=="yes") {
-		//-- remove _PGVU
-		$gedrec = preg_replace("/\d _PGVU .*/", "", $gedrec);
-		//-- remove _THUM
-		$gedrec = preg_replace("/\d _THUM .*/", "", $gedrec);
-	}
-	//-- cleanup so there are not any empty lines
-	$gedrec = preg_replace(array("/(\r\n)+/", "/\r+/", "/\n+/"), array("\r\n", "\r", "\n"), $gedrec);
-	//-- make downloaded file DOS formatted
-	$gedrec = preg_replace("/([^\r])\n/", "$1\n", $gedrec);
-	return $gedrec;
 }
 
 function getfilesize($bytes) {
@@ -3287,8 +3186,9 @@ function CheckPageViews() {
  */
 function get_new_xref($type='INDI', $use_cache=false) {
 	global $fcontents, $SOURCE_ID_PREFIX, $REPO_ID_PREFIX, $pgv_changes, $GEDCOM, $TBLPREFIX, $GEDCOMS;
-	global $MEDIA_ID_PREFIX, $FAM_ID_PREFIX, $GEDCOM_ID_PREFIX, $FILE, $DBCONN, $MAX_IDS;
-
+	global $MEDIA_ID_PREFIX, $FAM_ID_PREFIX, $GEDCOM_ID_PREFIX, $FILE, $MAX_IDS;
+	global $gBitDb;
+	
 	//-- during online updates $FILE comes through as an array for some odd reason
 	if (!empty($FILE) && !is_array($FILE)) {
 		$gedid = $GEDCOMS[$FILE]["id"];
@@ -3304,12 +3204,10 @@ function get_new_xref($type='INDI', $use_cache=false) {
 		$MAX_IDS[$type] = $num+1;
 	} else {
 		//-- check for the id in the nextid table
-		$sql = "SELECT ni_id FROM ".$TBLPREFIX."nextid WHERE ni_type='".$DBCONN->escapeSimple($type)."' AND ni_gedfile='".$DBCONN->escapeSimple($gedid)."'";
-		$res =& dbquery($sql);
-		if ($res->numRows() > 0) {
-			$row = $res->fetchRow();
-			$num = $row[0];
-		}
+		$num = $gBitDb->getOne(
+			"SELECT ni_id FROM {$TBLPREFIX}nextid WHERE ni_type=? AND ni_gedfile=?"
+			, array($type, $gedid));
+
 		//-- the id was not found in the table so try and find it in the file
 		if (is_null($num) && !empty($fcontents)) {
 			$ct = preg_match_all("/0 @(.*)@ $type/", $fcontents, $match, PREG_SET_ORDER);
@@ -3328,8 +3226,9 @@ function get_new_xref($type='INDI', $use_cache=false) {
 		//-- type wasn't found in database or in file so make a new one
 		if (is_null($num)) {
 			$num = 1;
-			$sql = "INSERT INTO ".$TBLPREFIX."nextid VALUES('".$DBCONN->escapeSimple($num+1)."', '".$DBCONN->escapeSimple($type)."', '".$gedid."')";
-			$res = dbquery($sql);
+			$gBitDb->query(
+				"INSERT INTO {$TBLPREFIX}nextid VALUES(?, ?, ?)"
+				, array($num+1, $type, $gedid));
 		}
 	}
 
@@ -3372,10 +3271,10 @@ function get_new_xref($type='INDI', $use_cache=false) {
 	if ($use_cache && isset($MAX_IDS[$type])) {
 		return $key;
 	}
-	$num++;
 	//-- update the next id number in the DB table
-	$sql = "UPDATE ".$TBLPREFIX."nextid SET ni_id='".$DBCONN->escapeSimple($num)."' WHERE ni_type='".$DBCONN->escapeSimple($type)."' AND ni_gedfile='".$DBCONN->escapeSimple($gedid)."'";
-	$res = dbquery($sql);
+	$gBitDb->query(
+		"UPDATE {$TBLPREFIX}nextid SET ni_id=? WHERE ni_type=? AND ni_gedfile=?"
+		, array($num+1, $type, $gedid));
 	return $key;
 }
 
@@ -3559,8 +3458,8 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 	global $DICTIONARY_SORT, $UCDiacritWhole, $UCDiacritStrip, $UCDiacritOrder, $LCDiacritWhole, $LCDiacritStrip, $LCDiacritOrder;
 	global $unknownNN, $unknownPN;
 	global $JEWISH_ASHKENAZ_PRONUNCIATION, $CALENDAR_FORMAT;
-	global $DBCONN;
 	global $DBTYPE, $DB_UTF8_COLLATION, $COLLATION, $DBCOLLATE;
+	global $gBitDb;
 
 	// Need to change the collation sequence each time we change language
 	if ($DB_UTF8_COLLATION) {
@@ -3606,14 +3505,14 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 		// load admin lang keys
 		$file = $adminfile[$LANGUAGE];
 		if (file_exists($file)) {
-			if (!$CONFIGURED || DB::isError($DBCONN) || !adminUserExists() || PGV_USER_GEDCOM_ADMIN) {
+			if (!$CONFIGURED || !empty( $gBitDb->mDb ) || !adminUserExists() || PGV_USER_GEDCOM_ADMIN) {
 				include($file);
 			}
 		}
 		// load the edit lang keys
 		$file = $editorfile[$LANGUAGE];
 		if (file_exists($file)) {
-			if (DB::isError($DBCONN) || !adminUserExists() || PGV_USER_GEDCOM_ADMIN || PGV_USER_CAN_EDIT) {
+			if (!empty( $gBitDb->mDb ) || !adminUserExists() || PGV_USER_GEDCOM_ADMIN || PGV_USER_CAN_EDIT) {
 				include($file);
 			}
 		}
@@ -3645,14 +3544,14 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 		// load admin lang keys
 		$file = $adminfile[$LANGUAGE];
 		if (file_exists($file)) {
-			if (!$CONFIGURED || DB::isError($DBCONN) || !adminUserExists() || PGV_USER_GEDCOM_ADMIN) {
+			if (!$CONFIGURED || empty($gBitDb->mDb) || !adminUserExists() || PGV_USER_GEDCOM_ADMIN) {
 				include($file);
 			}
 		}
 		// load the edit lang keys
 		$file = $editorfile[$LANGUAGE];
 		if (file_exists($file)) {
-			if (DB::isError($DBCONN) || !adminUserExists() || PGV_USER_CAN_EDIT) {
+			if ( empty($gBitDb->mDb) || !adminUserExists() || PGV_USER_CAN_EDIT) {
 				include($file);
 			}
 		}
@@ -3861,7 +3760,7 @@ function mediaFileInfo($fileName, $thumbName, $mid, $name='', $notes='', $obeyVi
 		$type .= "picasa";
 	} else if (eregi("\.(jpg|jpeg|gif|png)$", $fileName)) {
 		$type .= "image";
-	} else if (eregi("\.(pdf|avi)$", $fileName)) {
+	} else if (eregi("\.(pdf|avi|txt)$", $fileName)) {
 		$type .= "page";
 	} else if (eregi("\.mp3$", $fileName)) {
 		$type .= "audio";
@@ -3955,32 +3854,36 @@ function mediaFileInfo($fileName, $thumbName, $mid, $name='', $notes='', $obeyVi
 	$width = '';
 	switch ($type) {
 		case 'url_flv':
-			$thumb = 'images/flashrem.png';
+			$thumb = isset($PGV_IMAGES["media"]["flashrem"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["flashrem"] : 'images/media/flashrem.png';
 			break;
 		case 'local_flv':
-			$thumb = 'images/flash.png';
+			$thumb = isset($PGV_IMAGES["media"]["flash"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["flash"] : 'images/media/flash.png';
 			break;
 		case 'url_wmv':
-			$thumb = 'images/wmvrem.png';
+			$thumb = isset($PGV_IMAGES["media"]["wmvrem"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["wmvrem"] : 'images/media/wmvrem.png';
 			break;
 		case 'local_wmv':
-			$thumb = 'images/wmv.png';
+			$thumb = isset($PGV_IMAGES["media"]["wmv"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["wmv"] : 'images/media/wmv.png';
 			break;
 		case 'url_picasa':
-			$thumb = 'images/picasa.png';
+			$thumb = isset($PGV_IMAGES["media"]["picasa"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["picasa"] : 'images/media/picasa.png';
 			break;
 		case 'url_page':
 		case 'url_other':
+			$thumb = isset($PGV_IMAGES["media"]["globe"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["globe"] : 'images/media/globe.png';
+			break;
 		case 'local_page':
-			$thumb = "images/globe.png";
+			$thumb = ($PGV_IMAGES["media"]["doc"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["doc"] : 'images/media/doc.gif';
 			break;
 		case 'url_audio':
 		case 'local_audio':
-			$thumb = "images/audio.png";
+			$thumb = isset($PGV_IMAGES["media"]["audio"]) ? $PGV_IMAGE_DIR.'/'.$PGV_IMAGES["media"]["audio"] : 'images/media/audio.png';
 			break;
 		default:
 			$thumb = $thumbName;
-			if (substr($type,0,4)=='url_') $width = ' width="'.$THUMBNAIL_WIDTH.'"';
+			if (substr($type,0,4)=='url_') {
+				$width = ' width="'.$THUMBNAIL_WIDTH.'"';
+			}
 	}
 
 	// -- Use an overriding thumbnail if one has been provided
@@ -4034,7 +3937,7 @@ function pathinfo_utf($path) {
 		$dirname = substr($path, 0, strlen($path) - strlen($basename) - 1);
 	} else {
 		$basename = $path;		// We have just a file name
-		$dirname = '';
+		$dirname = '.';       // For compatibility with pathinfo()
 	}
 
 	if (strpos($basename, '.')!==false) {
@@ -4046,7 +3949,7 @@ function pathinfo_utf($path) {
 	}
 
 	return array('dirname'=>$dirname, 'basename'=>$basename, 'extension'=>$extension, 'filename'=>$filename);
-} 
+}
 
 // optional extra file
 if (file_exists('includes/functions.extra.php')) {

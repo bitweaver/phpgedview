@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: editconfig_help.php,v 1.4 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: editconfig_help.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage Admin
  */
@@ -29,6 +29,15 @@ require $confighelpfile[$LANGUAGE];
 require $helptextfile["english"];
 if (file_exists($helptextfile[$LANGUAGE])) require $helptextfile[$LANGUAGE];
 require ("includes/help_text_vars.php");
+
+$help = safe_GET('help');		// Make sure this input variable isn't a script
+if (empty($help)) exit;			// Quit if this isn't a legitimate request for help
+if (substr($help,-5)!="_help") {
+	if (substr($help,0,5)!='help_' || substr($help,-4)!='.php') {
+		exit;
+	}
+}
+
 print_simple_header($pgv_lang["config_help"]);
 print '<span class="helpheader">';
 print_text("config_help");

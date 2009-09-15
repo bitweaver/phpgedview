@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_serviceclient.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+* @version $Id: class_serviceclient.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -617,17 +617,18 @@ class ServiceClient extends GedcomRecord {
 	* @param string $remote the remote id that matches the $local id
 	*/
 	static function setSameId($local, $remote) {
-		global $TBLPREFIX, $DBCONN, $GEDCOMS, $GEDCOM;
+		global $TBLPREFIX, $GEDCOMS, $GEDCOM, $gBitDb;
 
 		if ($local == $remote) {
 			debug_print_backtrace();
 			return;
 		}
 		//-- check if the link already exists
-		$gid = get_remote_id($remote);
+		$gid=get_remote_id($remote);
 		if (empty($gid)) {
-			$sql = "INSERT INTO ".$TBLPREFIX."remotelinks VALUES ('".$DBCONN->escapeSimple($local)."','".$DBCONN->escapeSimple($remote)."','".$DBCONN->escapeSimple($GEDCOMS[$GEDCOM]["id"])."')";
-			$res = dbquery($sql);
+			$gBitDb->query(
+				"INSERT INTO {$TBLPREFIX}remotelinks (r_gid, r_linkid, r_file) VALUES (? ,? ,?)"
+				, array($local, $remote, $GEDCOMS[$GEDCOM]["id"]));
 		}
 	}
 
@@ -706,8 +707,8 @@ class ServiceClient extends GedcomRecord {
 			$id = trim($match[$i][1]);
 			if (isset($ids_checked[$id])) continue;
 			$ids_checked[$id]=true;
-			$gid = get_remote_id($id);
-			if ($gid!==false)
+			$gid=get_remote_id($id);
+			if ($gid)
 				$gedrec = preg_replace("/@".$id."@/", "@".$gid."@", $gedrec);
 			}
 			return $gedrec;
@@ -721,7 +722,7 @@ class ServiceClient extends GedcomRecord {
 	* @param boolean $firstLink is this the first time this record is being linked
 	*/
 	function mergeGedcomRecord($xref, $localrec, $isStub=false, $firstLink=false) {
-		global $FILE, $GEDCOM, $sourcelist, $otherlist;
+		global $FILE, $GEDCOM;
 		global $TBLPREFIX, $pgv_changes;
 		$FILE = $GEDCOM;
 		if (!$isStub) {

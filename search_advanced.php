@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: search_advanced.php,v 1.1 2009/04/30 19:12:13 lsces Exp $
+ * @version $Id: search_advanced.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
 require './config.php';
@@ -48,14 +48,14 @@ print_header($pgv_lang["advanced_search"]);
 	 * add a row to the table of fields
 	 */
 	function addFields() {
-		//-- get the table
+		// get the table
 		var tbl = document.getElementById('field_table').tBodies[0];
-		//-- create the new row
+		// create the new row
 		var trow = document.createElement('tr');
-		//-- create the new label cell
+		// create the new label cell
 		var label = document.createElement('td');
 		label.className='list_label';
-		//-- create a select for the user to choose the field
+		// create a select for the user to choose the field
 		var sel = document.createElement('select');
 		sel.name = 'fields['+numfields+']';
 		sel.rownum = numfields;
@@ -63,7 +63,7 @@ print_header($pgv_lang["advanced_search"]);
 			showDate(this, this.rownum);
 		};
 
-		//-- all of the field options
+		// all of the field options
 		<?php foreach($controller->getOtherFields() as $field) { ?>
 		opt = document.createElement('option');
 		opt.value='<?php print $field; ?>';
@@ -72,7 +72,7 @@ print_header($pgv_lang["advanced_search"]);
 		<?php } ?>
 		label.appendChild(sel);
 		trow.appendChild(label);
-		//-- create the new value cell
+		// create the new value cell
 		var val = document.createElement('td');
 		val.id = 'vcell'+numfields;
 		val.className='list_value';
@@ -97,11 +97,11 @@ print_header($pgv_lang["advanced_search"]);
 		var type = sel.options[sel.selectedIndex].value;
 		var pm = document.getElementById('plusminus'+row);
 		if (!type.match("DATE$")) {
-			//-- if it is not a date do not show the date
+			// if it is not a date do not show the date
 			if (pm) pm.parentNode.removeChild(pm);
 			return;
 		}
-		//-- if it is a date and the plusminus is already show, then leave
+		// if it is a date and the plusminus is already show, then leave
 		if (pm) return;
 		var elm = document.getElementById('vcell'+row);
 		var sel = document.createElement('select');
@@ -154,7 +154,7 @@ print_header($pgv_lang["advanced_search"]);
 			<?php print $controller->getLabel($controller->getField($i)); ?>
 		</td>
 		<td id="vcell<?php print $i; ?>" class="list_value">
-			<?php 
+			<?php
 			$currentFieldSearch = $controller->getField($i);		// Get this field's name and the search criterion
 			$currentField = substr($currentFieldSearch, 0, strrpos($currentFieldSearch, ':'));		// Get the actual field name
 			?>
@@ -282,13 +282,12 @@ print_header($pgv_lang["advanced_search"]);
 								<option value="FAMC:WIFE:NAME:SURN:SDX"<?php if ($motherSurnOption == 'SDX') print " selected=\"selected\""; ?>><?php print $pgv_lang["sounds_like"]; ?></option>
 							</select>
 						</td>
-						</td>
 						<?php $j++; ?>
 					</tr>
 					<!-- spouse -->
-					<tr>
+					<!--tr-->
 					<?php $j++; ?>
-					</tr>
+					<!--/tr-->
 				</table>
 			</td>
 		<?php } ?>

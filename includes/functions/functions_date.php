@@ -20,7 +20,7 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
 * @package PhpGedView
-* @version $Id: functions_date.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+* @version $Id: functions_date.php,v 1.3 2009/09/15 20:06:02 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -263,9 +263,8 @@ function format_timestamp($time) {
 	global $DATE_FORMAT, $TIME_FORMAT;
 
 	return
-		strip_tags(timestamp_to_gedcom_date($time)->Display(false, $DATE_FORMAT)).
-		' - '.
-		date($TIME_FORMAT, $time);
+		PrintReady(timestamp_to_gedcom_date($time)->Display(false, $DATE_FORMAT).
+		'<span class="date"> - '.date($TIME_FORMAT, $time).'</span>');
 }
 
 ////////////////////////////////////////////////////////////////////////////////

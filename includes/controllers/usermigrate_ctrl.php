@@ -5,7 +5,7 @@
  * authenticate.php and xxxxxx.dat files (MySQL mode).
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * @author Boudewijn Sjouke	sjouke@users.sourceforge.net
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: usermigrate_ctrl.php,v 1.2 2009/04/30 19:09:48 lsces Exp $
+ * @version $Id: usermigrate_ctrl.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -127,8 +127,9 @@ class UserMigrateControllerRoot extends BaseController {
 	 *
 	 */
 	function backup() {
-		global $INDEX_DIRECTORY, $GEDCOMS, $GEDCOM, $MEDIA_DIRECTORY, $SYNC_GEDCOM_FILE;
-		global $USE_MEDIA_FIREWALL, $MEDIA_FIREWALL_ROOTDIR;
+		global $INDEX_DIRECTORY, $GEDCOMS, $GEDCOM;
+		global $MEDIA_DIRECTORY, $USE_MEDIA_FIREWALL, $MEDIA_FIREWALL_ROOTDIR;
+
 		$this->flist = array();
 
 		// Backup user information
@@ -157,27 +158,55 @@ class UserMigrateControllerRoot extends BaseController {
 			$this->flist[] = "config.php";
 		}
 
-		// Backup gedcoms
-		if (isset($_POST["um_gedcoms"])) {
+		// Backup gedcoms and media
+		if (isset($_POST["um_gedcoms"]) || isset($_POST["um_media"])) {
+
+			$exportOptions = array();
+			$exportOptions['privatize'] = 'none';
+			$exportOptions['toANSI'] = 'no';
+			$exportOptions['noCustomTags'] = 'no';
+			$exportOptions['slashes'] = 'forward';
+
 			foreach($GEDCOMS as $key=>$gedcom) {
 				//-- load the gedcom configuration settings
 				require(get_config_file($key));
-				//-- backup the original gedcom file
-				if (file_exists($gedcom["path"])) $this->flist[] = $gedcom["path"];
-				//else {
+
+				if (isset($_POST["um_gedcoms"])) {
+					//-- backup the original gedcom file
+					if (file_exists($gedcom["path"])) $this->flist[] = $gedcom["path"];
+
 					//-- recreate the GEDCOM file from the DB
 					//-- backup the DB in case of GEDCOM corruption
-					$oldged = $GEDCOM;
-					$GEDCOM = $key;
 					$gedname = $INDEX_DIRECTORY.$key.".bak";
 					$gedout = fopen(filename_decode($gedname), "wb");
-					print_gedcom('no', 'no', 'no', 'no', $gedout);
+
+					$exportOptions['path'] = $MEDIA_DIRECTORY;
+
+					export_gedcom($key, $gedout, $exportOptions);
 					fclose($gedout);
-					$GEDCOM = $oldged;
 					$this->flist[] = $gedname;
-				//}
+				}
+
+				if (isset($_POST["um_media"])) {
+					// backup media files
+					$dir = dir($MEDIA_DIRECTORY);
+					while(false !== ($entry = $dir->read())) {
+						if ($entry{0} != ".") {
+							if ($entry != "thumbs") $this->flist[] = $MEDIA_DIRECTORY.$entry;
+						}
+					}
+					if ($USE_MEDIA_FIREWALL) {
+						$dir = dir($MEDIA_FIREWALL_ROOTDIR.$MEDIA_DIRECTORY);
+						while(false !== ($entry = $dir->read())) {
+							if ($entry{0} != ".") {
+								if ($entry != "thumbs" && $entry != "watermark") $this->flist[] = $MEDIA_FIREWALL_ROOTDIR.$MEDIA_DIRECTORY.$entry;
+							}
+						}
+					}
+				}
 			}
-			//-- load up the old configuration file
+
+			//-- restore the old configuration file
 			require(get_config_file($GEDCOM));
 			$this->flist[] = $INDEX_DIRECTORY."pgv_changes.php";
 		}
@@ -208,7 +237,7 @@ class UserMigrateControllerRoot extends BaseController {
 				// Gedcom searchlogs and changelogs
 				$dir_var = opendir ($INDEX_DIRECTORY);
 				while ($file = readdir ($dir_var)) {
-					if ((strpos($file, ".log") > 0) && ((strstr($file, "srch-".$gedcom["gedcom"]) !== false ) || (strstr($file, "ged-".$gedcom["gedcom"]) !== false ))) $this->flist[] = $INDEX_DIRECTORY.$file;
+					if (strpos($file, ".log") > 0 && (strstr($file, "srch-".$gedcom["gedcom"]) !== false || strstr($file, "ged-".$gedcom["gedcom"]) !== false)) $this->flist[] = $INDEX_DIRECTORY.$file;
 				}
 				closedir($dir_var);
 			}
@@ -216,27 +245,9 @@ class UserMigrateControllerRoot extends BaseController {
 			// PhpGedView logfiles
 			$dir_var = opendir ($INDEX_DIRECTORY);
 			while ($file = readdir ($dir_var)) {
-				if ((strpos($file, ".log") > 0) && (strstr($file, "pgv-") !== false )) $this->flist[] = $INDEX_DIRECTORY.$file;
+				if (strpos($file, ".log") > 0 && strstr($file, "pgv-") !== false) $this->flist[] = $INDEX_DIRECTORY.$file;
 			}
 			closedir($dir_var);
-		}
-
-		// backup media files
-		if (isset($_POST["um_media"])) {
-			$dir = dir($MEDIA_DIRECTORY);
-			while(false !== ($entry = $dir->read())) {
-				if ($entry{0} != ".") {
-					if ($entry != "thumbs") $this->flist[] = $MEDIA_DIRECTORY.$entry;
-				}
-			}
-			if ($USE_MEDIA_FIREWALL) {
-				$dir = dir($MEDIA_FIREWALL_ROOTDIR.$MEDIA_DIRECTORY);
-				while(false !== ($entry = $dir->read())) {
-					if ($entry{0} != ".") {
-						if ( ($entry != "thumbs") && ($entry != "watermark") ) $this->flist[] = $MEDIA_FIREWALL_ROOTDIR.$MEDIA_DIRECTORY.$entry;
-					}
-				}
-			}
 		}
 
 		// Make the zip
@@ -268,8 +279,7 @@ class UserMigrateControllerRoot extends BaseController {
 	 *
 	 */
 	function import() {
-		global $INDEX_DIRECTORY, $TBLPREFIX, $pgv_lang, $DBCONN;
-		global $GEDCOMS, $GEDCOM;
+		global $INDEX_DIRECTORY, $TBLPREFIX, $pgv_lang, $GEDCOMS, $GEDCOM, $gBitDb;
 
 		if ((file_exists($INDEX_DIRECTORY."authenticate.php")) == false) {
 			$this->impSuccess = false;
@@ -277,13 +287,7 @@ class UserMigrateControllerRoot extends BaseController {
 		} else {
 			require $INDEX_DIRECTORY."authenticate.php";
 			$countold = count($users);
-			$sql = "DELETE FROM ".$TBLPREFIX."users";
-			$res = dbquery($sql);
-			if (!$res || DB::isERROR($res)) {
-				$this->errorMsg = "<span class=\"error\">Unable to update <i>Users</i> table.</span><br />\n";
-				$this->impSuccess = false;
-				return;
-			}
+			$gBitDb->query("DELETE FROM {$TBLPREFIX}users");
 			foreach($users as $username=>$user) {
 				if ($user["editaccount"] == "1") $user["editaccount"] = "Y";
 				else $user["editaccount"] = "N";
@@ -352,26 +356,15 @@ class UserMigrateControllerRoot extends BaseController {
 			$this->msgSuccess = false;
 		}
 		else {
-			$sql = "DELETE FROM ".$TBLPREFIX."messages";
-			$res = dbquery($sql);
-			if (!$res || DB::isError($res)) {
-				$this->errorMsg = "<span class=\"error\">Unable to update <i>Messages</i> table.</span><br />\n";
-				$this->msgSuccess = false;
-				return;
-			}
+			$gBitDb->query("DELETE FROM {$TBLPREFIX}messages");
 			$messages = array();
 			$fp = fopen($INDEX_DIRECTORY."messages.dat", "rb");
 			$mstring = fread($fp, filesize($INDEX_DIRECTORY."messages.dat"));
 			fclose($fp);
 			$messages = unserialize($mstring);
 			foreach($messages as $newid => $message) {
-				$sql = "INSERT INTO ".$TBLPREFIX."messages VALUES ($newid, '".$DBCONN->escapeSimple($message["from"])."','".$DBCONN->escapeSimple($message["to"])."','".$DBCONN->escapeSimple($message["subject"])."','".$DBCONN->escapeSimple($message["body"])."','".$DBCONN->escapeSimple($message["created"])."')";
-				$res = dbquery($sql);
-				if (!$res || DB::isError($res)) {
-					$this->errorMsg = "<span class=\"error\">Unable to update <i>Messages</i> table.</span><br />\n";
-					$this->msgSuccess = false;
-					return;
-				}
+				$gBitDb->query("INSERT INTO {$TBLPREFIX}messages (m_id, m_from, m_to, m_subject, m_body, m_created) VALUES (?, ? ,? ,? ,? ,?)"
+					, array($newid, $message["from"], $message["to"], $message["subject"], $message["body"], $message["created"]));
 			}
 			$this->msgSuccess = true;
 		}
@@ -381,12 +374,7 @@ class UserMigrateControllerRoot extends BaseController {
 			print $pgv_lang["um_nofav"]."<br /><br />";
 		}
 		else {
-			$sql = "DELETE FROM ".$TBLPREFIX."favorites";
-			$res = dbquery($sql);
-			if (!$res || DB::isError($res)) {
-				$this->errorMsg = "<span class=\"error\">Unable to update <i>Favorites</i> table.</span><br />\n";
-				return;
-			}
+			$gBitDb->query("DELETE FROM {$TBLPREFIX}favorites");
 			$favorites = array();
 			$fp = fopen($INDEX_DIRECTORY."favorites.dat", "rb");
 			$mstring = fread($fp, filesize($INDEX_DIRECTORY."favorites.dat"));
@@ -407,13 +395,7 @@ class UserMigrateControllerRoot extends BaseController {
 			$this->newsSuccess = false;
 		}
 		else {
-			$sql = "DELETE FROM ".$TBLPREFIX."news";
-			$res = dbquery($sql);
-			if (!$res) {
-				$this->errorMsg = "<span class=\"error\">Unable to update <i>News</i> table.</span><br />\n";
-				$this->newsSuccess = false;
-				return;
-			}
+			$gBitDb->query("DELETE FROM {$TBLPREFIX}news");
 			$allnews = array();
 			$fp = fopen($INDEX_DIRECTORY."news.dat", "rb");
 			$mstring = fread($fp, filesize($INDEX_DIRECTORY."news.dat"));
@@ -433,12 +415,7 @@ class UserMigrateControllerRoot extends BaseController {
 			$this->blockSuccess = false;
 		}
 		else {
-			$sql = "DELETE FROM ".$TBLPREFIX."blocks";
-			$res = dbquery($sql);
-			if (!$res) {
-				$this->errorMsg = "<span class=\"error\">Unable to update <i>Blocks</i> table.</span><br />\n";
-				exit;
-			}
+			$gBitDb->query("DELETE FROM {$TBLPREFIX}blocks");
 			$allblocks = array();
 			$fp = fopen($INDEX_DIRECTORY."blocks.dat", "rb");
 			$mstring = fread($fp, filesize($INDEX_DIRECTORY."blocks.dat"));
@@ -446,12 +423,8 @@ class UserMigrateControllerRoot extends BaseController {
 			$allblocks = unserialize($mstring);
 			foreach($allblocks as $bid => $blocks) {
 				$username = $blocks["username"];
-				$sql = "INSERT INTO ".$TBLPREFIX."blocks VALUES ($bid, '".$DBCONN->escapeSimple($blocks["username"])."', '".$blocks["location"]."', '".$blocks["order"]."', '".$DBCONN->escapeSimple($blocks["name"])."', '".$DBCONN->escapeSimple(serialize($blocks["config"]))."')";
-				$res = dbquery($sql);
-				if (!$res || DB::isError($res)) {
-					$this->errorMsg = "<span class=\"error\">Unable to update <i>Blocks</i> table.</span><br />\n";
-					return;
-				}
+				$gBitDb->query("INSERT INTO {$TBLPREFIX}blocks (b_id, b_username, b_location, b_order, b_name, b_config) VALUES (?, ? ,? , ?, ?, ?)"
+					, array($bid, $blocks["username"], $blocks["location"], $blocks["order"], $blocks["name"], serialize($blocks["config"])));
 			}
 			$this->blockSuccess = true;
 		}

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: functions_print_facts.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id: functions_print_facts.php,v 1.2 2009/09/15 20:06:02 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -48,12 +48,13 @@ function expand_urls($text) {
 	// This matches far too much while a "precise" regex is several pages long.
 	// This is a compromise.
 	$URL_REGEX='((https?|ftp]):)(//([^\s/?#<>]*))?([^\s?#<>]*)(\?([^\s#<>]*))?(#[^\s?#<>]+)?';
-
+	
 	return preg_replace_callback(
 		'/'.addcslashes("(?!>)$URL_REGEX(?!</a>)", '/').'/i',
 		create_function( // Insert <wbr/> codes into the replaced string
 			'$m',
-			'return "<a href=\"".$m[0]."\" target=\"blank\">".preg_replace("/\b/", "<wbr/>", $m[0])."</a>";'
+//			'return "<a href=\"".$m[0]."\" target=\"blank\">".preg_replace("/\b/", "<wbr/>", $m[0])."</a>";'
+			'return "<a href=\"".$m[0]."\" target=\"blank\">".preg_replace("/\b/", "&shy;", $m[0])."</a>";'
 		),
 		preg_replace("/<(?!br)/i", "&lt;", $text) // no html except br
 	);
@@ -69,7 +70,7 @@ function expand_urls($text) {
 function print_fact(&$eventObj, $noedit=false) {
 	global $factarray;
 	global $nonfacts;
-	global $PGV_IMAGE_DIR;
+	global $PGV_IMAGE_DIR, $PGV_MENUS_AS_LISTS;
 	global $pgv_lang, $GEDCOM;
 	global $lang_short_cut, $LANGUAGE;
 	global $WORD_WRAPPED_NOTES;
@@ -164,59 +165,43 @@ function print_fact(&$eventObj, $noedit=false) {
 			if ($fact=="_BIRT_GCHI" and isset($n_gchi)) print "<br />".$pgv_lang["number_sign"].$n_gchi++;
 			if ($fact=="_BIRT_GGCH" and isset($n_ggch)) print "<br />".$pgv_lang["number_sign"].$n_ggch++;
 			if (!$noedit && PGV_USER_CAN_EDIT && $styleadd!="change_old" && $linenum>0 && $view!="preview" && !FactEditRestricted($pid, $factrec)) {
-				$menu = array();
-				$menu["label"] = $pgv_lang["edit"];
-				$menu["labelpos"] = "right";
-				$menu["icon"] = "";
+				$menu = new Menu($pgv_lang["edit"], "#", "right", "down");
 				if (empty($taskid)) {
-					$menu["onclick"] = "return edit_record('$pid', $linenum);";
-					$menu["link"] = "#";
+					$menu->addOnclick("return edit_record('$pid', $linenum);");
 				}
 				else {
-					$menu['onclick'] = "";
-					$menu["link"] = encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}");
+					$menu->addLink(encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}"));
 				}
-				$menu["class"] = "";
-				$menu["hoverclass"] = "";
-				$menu["flyout"] = "down";
-				$menu["submenuclass"] = "submenu";
-				$menu["items"] = array();
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["edit"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
+				$menu->addClass("", "", "submenu");
+				$submenu = new Menu($pgv_lang["edit"], "#", "right");
 				if (empty($taskid)) {
-					$submenu["onclick"] = "return edit_record('$pid', $linenum);";
-					$submenu["link"] = "#";
+					$submenu->addOnclick("return edit_record('$pid', $linenum);");
 				}
 				else {
-					$submenu['onclick'] = "";
-					$submenu["link"] = encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}");
+					$submenu->addLink(encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}"));
 				}
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["copy"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return copy_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["delete"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return delete_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				print " <div style=\"width:25px;\">";
-				print_menu($menu);
-				print "</div>";
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				$submenu = new Menu($pgv_lang["copy"], "#", "right");
+				$submenu->addOnclick("return copy_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				$submenu = new Menu($pgv_lang["delete"], "#", "right");
+				$submenu->addOnclick("return delete_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				if (!$PGV_MENUS_AS_LISTS) {
+					echo " <div style=\"width:25px;\">";
+					$menu->printMenu();
+					echo "</div>";
+				} else { 
+					echo " <ul>";
+					$menu->printMenu();
+					echo "</ul>";					
+				}
 			}
 			print "</td>";
 		} else {
@@ -238,60 +223,37 @@ function print_fact(&$eventObj, $noedit=false) {
 				print $eventObj->Icon().' ';
 			print $label;
 			if (!$noedit && PGV_USER_CAN_EDIT && $styleadd!="change_old" && $linenum>0 && $view!="preview" && !FactEditRestricted($pid, $factrec)) {
-				$menu = array();
-				$menu["label"] = $pgv_lang["edit"];
-				$menu["labelpos"] = "right";
-				$menu["icon"] = "";
-				$menu["link"] = "#";
+				$menu = new Menu($pgv_lang["edit"], "#", "right", "down");
 				if (empty($taskid)) {
-					$menu["onclick"] = "return edit_record('$pid', $linenum);";
-					$menu["link"] = "#";
+					$menu->addOnclick("return edit_record('$pid', $linenum);");
 				}
 				else {
-					$menu['onclick'] = "";
-					$menu["link"] = encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}");
+					$menu->addLink(encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}"));
 				}
-				$menu["class"] = "";
-				$menu["hoverclass"] = "";
-				$menu["flyout"] = "down";
-				$menu["submenuclass"] = "submenu";
-				$menu["items"] = array();
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["edit"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
+				$menu->addClass("", "", "submenu");
+
+				$submenu = new Menu($pgv_lang["edit"], "#", "right");
 				if (empty($taskid)) {
-					$submenu["onclick"] = "return edit_record('$pid', $linenum);";
-					$submenu["link"] = "#";
+					$submenu->addOnclick("return edit_record('$pid', $linenum);");
 				}
 				else {
-					$submenu['onclick'] = "";
-					$submenu["link"] = encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}");
+					$submenu->addLink(encode_url("module.php?mod=research_assistant&action=editfact&taskid={$taskid}"));
 				}
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["delete"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return delete_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["copy"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return copy_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				$submenu = new Menu($pgv_lang["delete"], "#", "right");
+				$submenu->addOnclick("return delete_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				$submenu = new Menu($pgv_lang["copy"], "#", "right");
+				$submenu->addOnclick("return copy_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
 				print " <div style=\"width:25px;\">";
-				print_menu($menu);
+				$menu->printMenu();
 				print "</div>";
 			}
 			print "</td>";
@@ -318,8 +280,6 @@ function print_fact(&$eventObj, $noedit=false) {
 					print "<br />";
 				}
 			}
-			// -- find date for each fact
-			echo format_fact_date($eventObj, true, true);
 			//-- print spouse name for marriage events
 			$ct = preg_match("/_PGVS @(.*)@/", $factrec, $match);
 			if ($ct>0) {
@@ -342,20 +302,25 @@ function print_fact(&$eventObj, $noedit=false) {
 					if ($SHOW_ID_NUMBERS) print " " . getLRM() . "($pid)" . getLRM();
 					if ($TEXT_DIRECTION == "ltr") print getLRM() . "]</a>\n";
 					else print getRLM() . "]</a>\n";
+					print "<br />";
 				}
 			}
+			// -- find date for each fact
+			echo format_fact_date($eventObj, true, true);
 			//-- print other characterizing fact information
 			if ($event!="" && $fact!="ASSO") {
 				print " ";
 				$ct = preg_match("/@(.*)@/", $event, $match);
 				if ($ct>0) {
 					$gedrec=GedcomRecord::getInstance($match[1]);
-					if ($gedrec->getType()=='INDI') {
-						echo '<a href="', encode_url($gedrec->getLinkUrl()), '">', $gedrec->getFullName(), '</a><br />';
-					} elseif ($fact=='REPO') {
-						print_repository_record($match[1]);
-					} else {
-						print_submitter_info($match[1]);
+					if (is_object($gedrec)) {
+						if ($gedrec->getType()=='INDI') {
+							echo '<a href="', encode_url($gedrec->getLinkUrl()), '">', $gedrec->getFullName(), '</a><br />';
+						} elseif ($fact=='REPO') {
+							print_repository_record($match[1]);
+						} else {
+							print_submitter_info($match[1]);
+						}
 					}
 				}
 				else if ($fact=="ALIA") {
@@ -445,22 +410,29 @@ function print_fact(&$eventObj, $noedit=false) {
 				}
 			}
 			// 0 SOUR/1 DATA/2 EVEN/3 DATE/3 PLAC
-			for ($even_num=1; $even_rec=get_sub_record(2, "2 EVEN", $factrec, $even_num); ++$even_num) {
-				$tmp1=get_gedcom_value('EVEN', 2, $even_rec, $truncate='', $convert=false);
-				$tmp2=new GedcomDate(get_gedcom_value('DATE', 3, $even_rec, $truncate='', $convert=false));
-				$tmp3=get_gedcom_value('PLAC', 3, $even_rec, $truncate='', $convert=false);
-				if ($even_num>1)
-					print "<br />";
-				print "<b>";
-				foreach (preg_split('/\W+/', $tmp1) as $key=>$value) {
-					if ($key>0)
-						print ", ";
-					if (empty($factarray[$value]))
-						print htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
-					else
-						print $factarray[$value];
+			$data_rec = get_sub_record(1, "1 DATA", $factrec, 1);
+			if (!empty($data_rec)) {
+				for ($even_num=1; $even_rec=get_sub_record(2, "2 EVEN", $data_rec, $even_num); ++$even_num) {
+					$tmp1=get_gedcom_value('EVEN', 2, $even_rec, $truncate='', $convert=false);
+					$tmp2=new GedcomDate(get_gedcom_value('DATE', 3, $even_rec, $truncate='', $convert=false));
+					$tmp3=get_gedcom_value('PLAC', 3, $even_rec, $truncate='', $convert=false);
+					$fact_string = "";
+					if ($even_num>1)
+						$fact_string .= "<br />";
+					$fact_string .= "<b>";
+					foreach (preg_split('/\W+/', $tmp1) as $key=>$value) {
+						if ($key>0)
+							$fact_string .= ", ";
+						if (empty($factarray[$value]))
+							$fact_string .= htmlspecialchars($value, ENT_COMPAT, 'UTF-8');
+						else
+							$fact_string .= $factarray[$value];
+					}
+					$fact_string .= "</b>";
+					if ($tmp2->Display(false, '', array())!="&nbsp;") $fact_string .= " - ".$tmp2->Display(false, '', array());
+					if ($tmp3!='') $fact_string .= " - ".$tmp3;
+					print $fact_string;
 				}
-				print "</b> - ".$tmp2->Display(false, '', array())." - {$tmp3}";
 			}
 			if ($fact!="ADDR") {
 				//-- catch all other facts that could be here
@@ -638,10 +610,10 @@ function print_fact_sources($factrec, $level, $return=false) {
 
 //-- Print the links to multi-media objects
 function print_media_links($factrec, $level,$pid='') {
-	global $MULTI_MEDIA, $TEXT_DIRECTION, $TBLPREFIX, $GEDCOMS;
+	global $MULTI_MEDIA, $TEXT_DIRECTION, $TBLPREFIX;
 	global $pgv_lang, $factarray, $SEARCH_SPIDER, $view;
 	global $THUMBNAIL_WIDTH, $USE_MEDIA_VIEWER;
-	global $GEDCOM, $SHOW_ID_NUMBERS;
+	global $GEDCOM, $SHOW_ID_NUMBERS, $gBitDb;
 	if (!$MULTI_MEDIA) return;
 	$nlevel = $level+1;
 	if ($level==1) $size=50;
@@ -651,13 +623,12 @@ function print_media_links($factrec, $level,$pid='') {
 	while ($objectNum < count($omatch)) {
 		$media_id = preg_replace("/@/", "", trim($omatch[$objectNum][1]));
 		if (displayDetailsById($media_id, "OBJE")) {
-			$sql = "SELECT m_titl, m_file, m_gedrec FROM {$TBLPREFIX}media where m_media='{$media_id}' AND m_gedfile={$GEDCOMS[$GEDCOM]['id']}";
-			$tempsql = dbquery($sql);
-			$res =& $tempsql;
-			if ($res->numRows()>0) {
-			$row =& $res->fetchRow(DB_FETCHMODE_ASSOC);
-			}
-			else if (PGV_USER_CAN_EDIT) {
+			$row = $gBitDb->getAssoc(
+				"SELECT m_titl, m_file, m_gedrec FROM {$TBLPREFIX}media where m_media=? AND m_gedfile=?"
+				, array($media_id, PGV_GED_ID));
+
+			// A new record, pending acceptance?
+			if (!$row && PGV_USER_CAN_EDIT) {
 				$mediarec = find_updated_record($media_id);
 				$row["m_file"] = get_gedcom_value("FILE", 1, $mediarec);
 				$row["m_titl"] = get_gedcom_value("TITL", 1, $mediarec);
@@ -682,12 +653,22 @@ function print_media_links($factrec, $level,$pid='') {
 					//LBox --------  change for Lightbox Album --------------------------------------------
 					if (file_exists("modules/lightbox/album.php") && eregi("\.(jpe?g|gif|png)$",$mainMedia)) {
 						$name = trim($row["m_titl"]);
-							print "<a href=\"" . $mainMedia . "\" rel=\"clearbox[general_1]\" rev=\"" . $media_id . "::" . $GEDCOM . "::" . PrintReady(htmlspecialchars($name, ENT_COMPAT, 'UTF-8')) . "\">" . "\n";
-					// ---------------------------------------------------------------------------------------------
+						print "<a href=\"" . $mainMedia . "\" rel=\"clearbox[general_1]\" rev=\"" . $media_id . "::" . $GEDCOM . "::" . PrintReady(htmlspecialchars($name, ENT_COMPAT, 'UTF-8')) . "\">" . "\n";
+					} else if (file_exists("modules/lightbox/album.php") && eregi("\.(pdf|avi|txt)$",$mainMedia)) {
+						if (file_exists("modules/lightbox/lb_config.php")) {
+							include ('modules/lightbox/lb_config.php');
+						} else {
+							include ('modules/lightbox/lb_defaultconfig.php');
+						}
+						$name = trim($row["m_titl"]);
+						print "<a href=\"" . $mainMedia . "\" rel='clearbox({$LB_URL_WIDTH},{$LB_URL_HEIGHT},click)' rev=\"" . $media_id . "::" . $GEDCOM . "::" . PrintReady(htmlspecialchars($name,ENT_COMPAT,'UTF-8')) . "\">" . "\n";
+					// --------------------------------------------------------------------------------------
 					} else if ($USE_MEDIA_VIEWER) {
 						print "<a href=\"".encode_url("mediaviewer.php?mid={$media_id}")."\">";
-					} else {
+					} else if (eregi("\.(jpe?g|gif|png)$",$mainMedia)) {
 						print "<a href=\"javascript:;\" onclick=\"return openImage('".rawurlencode($mainMedia)."',$imgwidth, $imgheight);\">";
+					} else {
+						print "<a href=\"".encode_url("mediaviewer.php?mid={$media_id}")."\">";
 					}
 
 					print "<img src=\"".$thumbnail."\" border=\"0\" align=\"" . ($TEXT_DIRECTION== "rtl"?"right": "left") . "\" class=\"thumbnail\"";
@@ -720,6 +701,11 @@ function print_media_links($factrec, $level,$pid='') {
 					if($imgsize[2]!==false) {
 						print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["image_size"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imgsize[0] . ($TEXT_DIRECTION =="rtl"?(" " . getRLM() . "x" . getRLM() . " ") : " x ") . $imgsize[1] . "</span>";
 					}
+				}
+				if (preg_match('/2 DATE (.+)/', get_sub_record("FILE", 1, $row["m_gedrec"]), $match)) {
+					$media_date=new GedcomDate($match[1]);
+					$print = $media_date->Display(true);
+					echo "\n\t\t\t<br /><span class=\"label\">".$factarray["DATE"].": </span> ".$print;
 				}
 				$ttype = preg_match("/".($nlevel+1)." TYPE (.*)/", $row["m_gedrec"], $match);
 				if ($ttype>0) {
@@ -926,46 +912,27 @@ function print_main_sources($factrec, $level, $pid, $linenum, $noedit=false) {
 			$temp = preg_match("/^\d (\w*)/", $factrec, $factname);
 			echo $factarray[$factname[1]];
 			if (!$noedit && PGV_USER_CAN_EDIT && !FactEditRestricted($pid, $factrec) && $styleadd!="red" && $view!="preview") {
-				$menu = array();
-				$menu["label"] = $pgv_lang["edit"];
-				$menu["labelpos"] = "right";
-				$menu["icon"] = "";
-				$menu["link"] = "#";
-				$menu["onclick"] = "return edit_record('$pid', $linenum);";
-				$menu["class"] = "";
-				$menu["hoverclass"] = "";
-				$menu["flyout"] = "down";
-				$menu["submenuclass"] = "submenu";
-				$menu["items"] = array();
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["edit"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return edit_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["delete"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return delete_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
-				$submenu = array();
-				$submenu["label"] = $pgv_lang["copy"];
-				$submenu["labelpos"] = "right";
-				$submenu["icon"] = "";
-				$submenu["onclick"] = "return copy_record('$pid', $linenum);";
-				$submenu["link"] = "#";
-				$submenu["class"] = "submenuitem";
-				$submenu["hoverclass"] = "submenuitem_hover";
-				$menu["items"][] = $submenu;
+				$menu = new Menu($pgv_lang["edit"], "#", "right", "down");
+				$menu->addOnclick("return edit_record('$pid', $linenum);");
+				$menu->addClass("", "", "submenu");
+
+				$submenu = new Menu($pgv_lang["edit"], "#", "right");
+				$submenu->addOnclick("return edit_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				$submenu = new Menu($pgv_lang["delete"], "#", "right");
+				$submenu->addOnclick("return delete_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
+				$submenu = new Menu($pgv_lang["copy"], "#", "right");
+				$submenu->addOnclick("return copy_record('$pid', $linenum);");
+				$submenu->addClass("submenuitem", "submenuitem_hover");
+				$menu->addSubMenu($submenu);
+
 				print " <div style=\"width:25px;\">";
-				print_menu($menu);
+				$menu->printMenu();
 				print "</div>";
 			}
 			print "</td>";
@@ -998,7 +965,13 @@ function print_main_sources($factrec, $level, $pid, $linenum, $noedit=false) {
 					print printSourceStructure(getSourceStructure($srec));
 					print "<div class=\"indent\">";
 					print_media_links($srec, $nlevel);
+					if ($nlevel==2) {
+						print_media_links($source->getGedcomRecord(), 1);
+					}
 					print_fact_notes($srec, $nlevel);
+					if ($nlevel==2) {
+						print_fact_notes($source->getGedcomRecord(), 1);
+					}
 					print "</div>";
 				}
 			}
@@ -1169,7 +1142,8 @@ function print_main_notes($factrec, $level, $pid, $linenum, $noedit=false) {
 			$factwords = explode(" ", $factlines[0]); // 1 BIRT Y
 			$factname = $factwords[1]; // BIRT
 			if ($factname == "EVEN") {
-				$factwords = explode(" ", $factlines[1]); // 1 EVEN\n2 TYPE MDCL\n2 NOTE
+				// Add ' EVEN' to provide sensible output for an event with an empty TYPE record
+				$factwords = explode(" ", $factlines[1].' EVEN'); // 1 EVEN\n2 TYPE MDCL\n2 NOTE
 				$factname = $factwords[2]; // MDCL
 			}
 			if (isset($factarray[$factname])) {
@@ -1179,46 +1153,27 @@ function print_main_notes($factrec, $level, $pid, $linenum, $noedit=false) {
 			}
 		}
 		if (!$noedit && PGV_USER_CAN_EDIT && !FactEditRestricted($pid, $factrec) && $styleadd!="change_old" && $view!="preview") {
-			$menu = array();
-			$menu["label"] = $pgv_lang["edit"];
-			$menu["labelpos"] = "right";
-			$menu["icon"] = "";
-			$menu["link"] = "#";
-			$menu["onclick"] = "return edit_record('$pid', $linenum);";
-			$menu["class"] = "";
-			$menu["hoverclass"] = "";
-			$menu["flyout"] = "down";
-			$menu["submenuclass"] = "submenu";
-			$menu["items"] = array();
-			$submenu = array();
-			$submenu["label"] = $pgv_lang["edit"];
-			$submenu["labelpos"] = "right";
-			$submenu["icon"] = "";
-			$submenu["onclick"] = "return edit_record('$pid', $linenum);";
-			$submenu["link"] = "#";
-			$submenu["class"] = "submenuitem";
-			$submenu["hoverclass"] = "submenuitem_hover";
-			$menu["items"][] = $submenu;
-			$submenu = array();
-			$submenu["label"] = $pgv_lang["delete"];
-			$submenu["labelpos"] = "right";
-			$submenu["icon"] = "";
-			$submenu["onclick"] = "return delete_record('$pid', $linenum);";
-			$submenu["link"] = "#";
-			$submenu["class"] = "submenuitem";
-			$submenu["hoverclass"] = "submenuitem_hover";
-			$menu["items"][] = $submenu;
-			$submenu = array();
-			$submenu["label"] = $pgv_lang["copy"];
-			$submenu["labelpos"] = "right";
-			$submenu["icon"] = "";
-			$submenu["onclick"] = "return copy_record('$pid', $linenum);";
-			$submenu["link"] = "#";
-			$submenu["class"] = "submenuitem";
-			$submenu["hoverclass"] = "submenuitem_hover";
-			$menu["items"][] = $submenu;
+			$menu = new Menu($pgv_lang["edit"], "#", "right", "down");
+			$menu->addOnclick("return edit_record('$pid', $linenum);");
+			$menu->addClass("", "", "submenu");
+
+			$submenu = new Menu($pgv_lang["edit"], "#", "right");
+			$submenu->addOnclick("return edit_record('$pid', $linenum);");
+			$submenu->addClass("submenuitem", "submenuitem_hover");
+			$menu->addSubMenu($submenu);
+
+			$submenu = new Menu($pgv_lang["delete"], "#", "right");
+			$submenu->addOnclick("return delete_record('$pid', $linenum);");
+			$submenu->addClass("submenuitem", "submenuitem_hover");
+			$menu->addSubMenu($submenu);
+
+			$submenu = new Menu($pgv_lang["copy"], "#", "right");
+			$submenu->addOnclick("return copy_record('$pid', $linenum);");
+			$submenu->addClass("submenuitem", "submenuitem_hover");
+			$menu->addSubMenu($submenu);
+
 			print " <div style=\"width:25px;\">";
-			print_menu($menu);
+			$menu->printMenu();
 			print "</div>";
 		}
 		if ($nt==0) {
@@ -1232,14 +1187,27 @@ function print_main_notes($factrec, $level, $pid, $linenum, $noedit=false) {
 			//-- print linked note records
 			if (isset($pgv_changes[$nid."_".$GEDCOM]) && $styleadd=="change_new") $noterec = find_updated_record($nid);
 			else $noterec = find_gedcom_record($nid);
-
 			$nt = preg_match("/0 @$nid@ NOTE (.*)/", $noterec, $n1match);
 			$text ="";
-			if ($nt>0) $text = preg_replace("/~~/", "<br />", trim($n1match[1]));
+			if ($nt>0) {
+				// If Census assistant installed, enable hotspot link on shared note title ---------------------
+				if (file_exists("modules/GEDFact_assistant/_CENS/census_note_decode.php")) {
+					$centitl  = str_replace("~~", "", trim($n1match[1]));
+					$centitl  = str_replace("<br />", "", $centitl);
+					$centitl  = "<a href=\"note.php?nid=$nid\">".$centitl."</a>";
+				}else{
+					$text = preg_replace("/~~/", "<br />", trim($n1match[1]));
+				}
+			}
 			$text .= get_cont(1, $noterec);
 			$text = expand_urls($text);
 			$text = PrintReady($text)." <br />\n";
+			// If Census assistant installed, and if Formatted Shared Note (using pipe "|" as delimiter) -------
+			if ( strstr($text, "|") && file_exists("modules/GEDFact_assistant/_CENS/census_note_decode.php") ) {
+				require 'modules/GEDFact_assistant/_CENS/census_note_decode.php';
+			}
 		}
+		
 		$align = "";
 		if (!empty($text)) {
 			if ($TEXT_DIRECTION=="rtl" && !hasRTLText($text) && hasLTRText($text)) $align=" align=\"left\"";
@@ -1271,9 +1239,7 @@ function print_main_notes($factrec, $level, $pid, $linenum, $noedit=false) {
  * @param boolean $related	Whether or not to grab media from related records
  */
 function print_main_media($pid, $level=1, $related=false, $noedit=false) {
-	global $TBLPREFIX;
-	global $pgv_changes;
-	global $GEDCOMS, $GEDCOM, $MEDIATYPE, $pgv_changes, $DBCONN;
+	global $TBLPREFIX, $GEDCOM, $MEDIATYPE, $pgv_changes, $gBitDb;
 
 	if (!showFact("OBJE", $pid)) return false;
 	if (!isset($pgv_changes[$pid."_".$GEDCOM])) $gedrec = find_gedcom_record($pid);
@@ -1298,7 +1264,6 @@ function print_main_media($pid, $level=1, $related=false, $noedit=false) {
 		else $sort_current_objes[$sort_match[$i][1]]++;
 		$sort_obje_links[$sort_match[$i][1]][] = $sort_match[$i][0];
 	}
-	$sort_media_found = false;
 	// -----------------------------------------------------------------------------------------------
 
 	// create ORDER BY list from Gedcom sorted records list  ---------------------------
@@ -1321,21 +1286,24 @@ function print_main_media($pid, $level=1, $related=false, $noedit=false) {
 	}
 
 	$media_found = false;
-	// $sqlmm = "SELECT DISTINCT ";
-	// Adding DISTINCT is the fix for: [ 1488550 ] Family/Individual Media Duplications
-	// but it may not work for all RDBMS.
 	$sqlmm = "SELECT ";
-	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM ".$TBLPREFIX."media, ".$TBLPREFIX."media_mapping where ";
+	$sqlmm .= "m_media, m_ext, m_file, m_titl, m_gedfile, m_gedrec, mm_gid, mm_gedrec FROM {$TBLPREFIX}media, {$TBLPREFIX}media_mapping where ";
 	$sqlmm .= "mm_gid IN (";
+	$vars=array();
 	$i=0;
 	foreach($ids as $key=>$id) {
 		if ($i>0) $sqlmm .= ",";
-		$sqlmm .= "'".$DBCONN->escapeSimple($id)."'";
+		$sqlmm .= "?";
+		$vars[]=$id;
 		$i++;
 	}
-	$sqlmm .= ") AND mm_gedfile = '".$GEDCOMS[$GEDCOM]["id"]."' AND mm_media=m_media AND mm_gedfile=m_gedfile ";
+	$sqlmm .= ") AND mm_gedfile=? AND mm_media=m_media AND mm_gedfile=m_gedfile ";
+	$vars[]=PGV_GED_ID;
 	//-- for family and source page only show level 1 obje references
-	if ($level>0) $sqlmm .= "AND mm_gedrec ".PGV_DB_LIKE." '$level OBJE%'";
+	if ($level>0) {
+		$sqlmm .= "AND mm_gedrec LIKE ?";
+		$vars[]="{$level} OBJE%";
+	}
 
 	// LBox --- media sort -------------------------------------
 	if ($sort_ct>0) {
@@ -1345,9 +1313,10 @@ function print_main_media($pid, $level=1, $related=false, $noedit=false) {
 	}
 	// ---------------------------------------------------------------
 
-	$resmm = dbquery($sqlmm);
+	$result = $gBitDb->query( $sqlmm, $vars );
+
 	$foundObjs = array();
-	while($rowm = $resmm->fetchRow(DB_FETCHMODE_ASSOC)) {
+	while ( $rowm = $result->fetchRow() ) {
 		if (isset($foundObjs[$rowm['m_media']])) {
 			if (isset($current_objes[$rowm['m_media']])) $current_objes[$rowm['m_media']]--;
 			continue;
@@ -1489,50 +1458,27 @@ function print_main_media_row($rtype, $rowm, $pid) {
 	$linenum = 0;
 	print "\n\t\t<tr><td class=\"descriptionbox $styleadd center width20\"><img class=\"icon\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["media"]["small"]."\" alt=\"\" /><br />".$factarray["OBJE"];
 	if ($rowm['mm_gid']==$pid && PGV_USER_CAN_EDIT && (!FactEditRestricted($rowm['m_media'], $rowm['m_gedrec'])) && ($styleadd!="change_old") && ($view!="preview")) {
-		$menu = array();
-		$menu["label"] = $pgv_lang["edit"];
-		$menu["labelpos"] = "right";
-		$menu["icon"] = "";
-		$menu["link"] = "#";
-		// $menu["onclick"] = "return edit_record('$pid', $linenum);";
-		// $menu["onclick"] = "return window.open('addmedia.php?action=editmedia&pid={$rowm['m_media']}&filename={$rowm['m_file']}&linktoid={$rowm['mm_gid']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');";
-		$menu["onclick"] = "return window.open('addmedia.php?action=editmedia&pid={$rowm['m_media']}&linktoid={$rowm['mm_gid']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');";
-		$menu["class"] = "";
-		$menu["hoverclass"] = "";
-		$menu["flyout"] = "down";
-		$menu["submenuclass"] = "submenu";
-		$menu["items"] = array();
-		$submenu = array();
-		$submenu["label"] = $pgv_lang["edit"];
-		$submenu["labelpos"] = "right";
-		$submenu["icon"] = "";
-		// $submenu["onclick"] = "return window.open('addmedia.php?action=editmedia&pid={$rowm['m_media']}&filename={$rowm['m_file']}&linktoid={$rowm['mm_gid']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');";
-		$submenu["onclick"] = "return window.open('addmedia.php?action=editmedia&pid={$rowm['m_media']}&linktoid={$rowm['mm_gid']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');";
-		$submenu["link"] = "#";
-		$submenu["class"] = "submenuitem";
-		$submenu["hoverclass"] = "submenuitem_hover";
-		$menu["items"][] = $submenu;
-		$submenu = array();
-		$submenu["label"] = $pgv_lang["delete"];
-		$submenu["labelpos"] = "right";
-		$submenu["icon"] = "";
-		$submenu["onclick"] = "return delete_record('$pid', 'OBJE', '".$rowm['m_media']."');";
-		//$submenu["onclick"] = "return window.open('addmedia.php?action=delete&pid={$rowm['m_media']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');";
-		$submenu["link"] = "#";
-		$submenu["class"] = "submenuitem";
-		$submenu["hoverclass"] = "submenuitem_hover";
-		$menu["items"][] = $submenu;
-		$submenu = array();
-		$submenu["label"] = $pgv_lang["copy"];
-		$submenu["labelpos"] = "right";
-		$submenu["icon"] = "";
-		$submenu["onclick"] = "return copy_record('".$rowm['m_media']."', 'media');";
-		$submenu["link"] = "#";
-		$submenu["class"] = "submenuitem";
-		$submenu["hoverclass"] = "submenuitem_hover";
-		$menu["items"][] = $submenu;
+		$menu = new Menu($pgv_lang["edit"], "#", "right", "down");
+		$menu->addOnclick("return window.open('addmedia.php?action=editmedia&pid={$rowm['m_media']}&linktoid={$rowm['mm_gid']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');");
+		$menu->addClass("", "", "submenu");
+
+		$submenu = new Menu($pgv_lang["edit"], "#", "right");
+		$submenu->addOnclick("return window.open('addmedia.php?action=editmedia&pid={$rowm['m_media']}&linktoid={$rowm['mm_gid']}', '_blank', 'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1');");
+		$submenu->addClass("submenuitem", "submenuitem_hover");
+		$menu->addSubMenu($submenu);
+
+		$submenu = new Menu($pgv_lang["delete"], "#", "right");
+		$submenu->addOnclick("return delete_record('$pid', 'OBJE', '".$rowm['m_media']."');");
+		$submenu->addClass("submenuitem", "submenuitem_hover");
+		$menu->addSubMenu($submenu);
+
+		$submenu = new Menu($pgv_lang["copy"], "#", "right");
+		$submenu->addOnclick("return copy_record('".$rowm['m_media']."', 'media');");
+		$submenu->addClass("submenuitem", "submenuitem_hover");
+		$menu->addSubMenu($submenu);
+
 		print " <div style=\"width:25px;\">";
-		print_menu($menu);
+		$menu->printMenu();
 		print "</div>";
 	}
 
@@ -1601,6 +1547,11 @@ function print_main_media_row($rtype, $rowm, $pid) {
 			if(isset($imgsize) and $imgsize[2]!==false) {
 				print "\n\t\t\t<span class=\"label\"><br />".$pgv_lang["image_size"].": </span> <span class=\"field\" style=\"direction: ltr;\">" . $imgsize[0] . ($TEXT_DIRECTION =="rtl"?(" " . getRLM() . "x" . getRLM(). " ") : " x ") . $imgsize[1] . "</span>";
 			}
+		}
+		if (preg_match('/2 DATE (.+)/', get_sub_record("FILE", 1, $rowm["m_gedrec"]), $match)) {
+			$media_date=new GedcomDate($match[1]);
+			$print = $media_date->Display(true);
+			echo "\n\t\t\t<br /><span class=\"label\">".$factarray["DATE"].": </span> ".$print;
 		}
 		$ttype = preg_match("/\d TYPE (.*)/", $rowm["m_gedrec"], $match);
 		if ($ttype>0) {

@@ -11,15 +11,15 @@
  * authenticated users to view the details of living people.  It also allows Admins to change
  * privacy settings for specific gedcom records or individuals.
  *
- * This privacy file also acts as a module allowing programmers to extend the functionality of 
- * the privacy settings or implement a different privacy model for each gedcom. To provide your own 
- * privacy module simply implement the functions in this file and configure phpGedview to use your 
+ * This privacy file also acts as a module allowing programmers to extend the functionality of
+ * the privacy settings or implement a different privacy model for each gedcom. To provide your own
+ * privacy module simply implement the functions in this file and configure phpGedview to use your
  * new file.
- * 
+ *
  * See http://www.phpgedview.net/modules.html for more information on modules in PhpGedView
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005 PGV Development Team
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: privacy.php,v 1.3 2008/07/07 18:01:12 lsces Exp $
+ * $Id: privacy.php,v 1.4 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage Privacy
  */
@@ -59,7 +59,7 @@ $PRIVACY_VERSION = "3.2";
 /**
  * Set the access level for dead people
  *
- * Sets the access level required to view the information of dead people.  
+ * Sets the access level required to view the information of dead people.
  * Can be one of the PRIV access levels: <var>$PRIV_HIDE</var>, <var>$PRIV_PUBLIC</var>, <var>$PRIV_USER</var>, <var>$PRIV_NONE</var>
  * The default value is <var>$PRIV_PUBLIC</var>.
  * @global integer $SHOW_DEAD_PEOPLE
@@ -69,19 +69,19 @@ $SHOW_DEAD_PEOPLE = $PRIV_PUBLIC;
 /**
  * Set the access level for the names of private people
  *
- * Sets the access level required to view the names of private people.  
+ * Sets the access level required to view the names of private people.
  * Can be one of the PRIV access levels: <var>$PRIV_HIDE</var>, <var>$PRIV_PUBLIC</var>, <var>$PRIV_USER</var>, <var>$PRIV_NONE</var>
  * The default value is <var>$PRIV_PUBLIC</var>.  Setting this to <var>$PRIV_USER</var> would mean that only
  * authenticated users can view names of private people and public visitors would only see the name
  * private.
  * @global integer $SHOW_LIVING_NAMES
  */
-$SHOW_LIVING_NAMES = $PRIV_USER;
+$SHOW_LIVING_NAMES = $PRIV_PUBLIC;
 
 /**
  * Set the access level for sources
  *
- * Sets the access level required to view sources.  
+ * Sets the access level required to view sources.
  * Can be one of the PRIV access levels: <var>$PRIV_HIDE</var>, <var>$PRIV_PUBLIC</var>, <var>$PRIV_USER</var>, <var>$PRIV_NONE</var>
  * The default value is <var>$PRIV_PUBLIC</var>.  Setting this to <var>$PRIV_USER</var> would mean that only
  * authenticated users can view sources.
@@ -101,7 +101,7 @@ $MAX_ALIVE_AGE      = "120";
 /**
  * Set the access level for the research assistant add-on module
  *
- * Sets the access level required to view the research assistant add-on module.  
+ * Sets the access level required to view the research assistant add-on module.
  * Can be one of the PRIV access levels:
  *		- <var>$PRIV_HIDE</var>
  *		- <var>$PRIV_PUBLIC</var>
@@ -114,7 +114,7 @@ $SHOW_RESEARCH_ASSISTANT = $PRIV_USER;
 /**
  * Set the access level for the clippings cart
  *
- * Sets the access level required to view the clippings cart.  
+ * Sets the access level required to view the clippings cart.
  * Can be one of the PRIV access levels:
  *		- <var>$PRIV_HIDE</var>
  *		- <var>$PRIV_PUBLIC</var>
@@ -127,7 +127,7 @@ $ENABLE_CLIPPINGS_CART = $PRIV_PUBLIC;
 /**
  * Set the access level for the multi-site search
  *
- * Sets the access level required to use the multi-site search feature.  
+ * Sets the access level required to use the multi-site search feature.
  * Can be one of the PRIV access levels:
  *		- <var>$PRIV_HIDE</var>
  *		- <var>$PRIV_PUBLIC</var>
@@ -155,8 +155,8 @@ $USE_RELATIONSHIP_PRIVACY = false;
  * Maximum path to allow when using relationship privacy
  *
  * This setting is the maximum path length to allow users to view.  The path length is defined as
- * the number of steps it takes to get from 1 individual to another.  The default value is 3, which 
- * would allow someone to access up to their second cousins 
+ * the number of steps it takes to get from 1 individual to another.  The default value is 3, which
+ * would allow someone to access up to their second cousins
  * @global integer $MAX_RELATION_PATH_LENGTH
  */
 $MAX_RELATION_PATH_LENGTH = 3;
@@ -199,7 +199,7 @@ $SHOW_PRIVATE_RELATIONSHIPS = false;
  * Person Privacy array
  *
  * The person_privacy array provides users with the ability to override default
- * privacy settings for individuals, families, and sources in the gedcom.  Each index in the array 
+ * privacy settings for individuals, families, and sources in the gedcom.  Each index in the array
  * is a GEDCOM XRef ID and the value is a privacy level setting.
  *
  * For example, setting <samp>$person_privacy["I3"] = $PRIV_NONE;</samp> would mean that only
@@ -217,8 +217,8 @@ $person_privacy = array();
  * of the person attempting to access the record.  The first index in the array is the username that
  * the settings should apply to.  The second index is the GEDCOM XRef ID to apply the setting to.
  *
- * For example, setting <code>$user_privacy["john"]["I100"] = $PRIV_NONE;</code> would prevent the 
- * user with username "john" from accessing the gedcom record for "I100" unless "john" is an admin 
+ * For example, setting <code>$user_privacy["john"]["I100"] = $PRIV_NONE;</code> would prevent the
+ * user with username "john" from accessing the gedcom record for "I100" unless "john" is an admin
  * user.
  * @global array $user_privacy
  */
@@ -249,9 +249,9 @@ $global_facts["SSN"]["details"] = $PRIV_NONE;
  * Person Facts Array
  *
  * The person_facts array defines facts that are hidden for specific individuals, families, or sources
- * in the gedcom and the level at which they are hidden. The first element is the ID of the person, 
- * the second element is the GEDCOM fact tag. The ["show"] element determines at what access level 
- * the fact is shown. The ["details"] element determins at what access level the details of a fact 
+ * in the gedcom and the level at which they are hidden. The first element is the ID of the person,
+ * the second element is the GEDCOM fact tag. The ["show"] element determines at what access level
+ * the fact is shown. The ["details"] element determins at what access level the details of a fact
  * are shown.
  *
  * Setting the "details" element without setting the "show" element would mean that users can view

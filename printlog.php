@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: printlog.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: printlog.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -46,6 +46,8 @@ loadLangFile("pgv_confighelp");
 
 print_simple_header("Print logfile");
 
+$logfile=safe_GET('logfile');
+
 // Check for logtype
 if (!isset($logfile)) exit;
 if (substr($logfile,-4) != ".log") exit;
@@ -67,7 +69,7 @@ if ($logtype == "searchlog") {
 //-- make sure that they have admin status before they can use this page
 $auth = false;
 if (($logtype == "syslog") && PGV_USER_IS_ADMIN) $auth = true;
-if ((($logtype == "gedlog") || ($logtype == "searchlog"))  && (userGedcomAdmin(PGV_USER_ID, $gedname))) $auth = true;
+if ((($logtype == "gedlog") || ($logtype == "searchlog")) && (userGedcomAdmin(PGV_USER_ID, get_gedcom_from_id($gedname)))) $auth = true;
 
 if ($auth) {
 
@@ -86,7 +88,7 @@ if ($auth) {
 		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width80\">".$pgv_lang["log_message"]."</td></tr>";
 		for ($i = 0; $i < $num ; $i++)	{
 			print "<tr>";
-			$result = preg_split("/ - /", $lines[$i], 3);
+			$result = explode(' - ', $lines[$i], 3);
 			//-- properly handle lines that may not have the correct format
 			if (count($result)<3) {
 				print "<td class=\"optionbox\" colspan=\"3\" dir=\"ltr\">".PrintReady($lines[$i])."</td>";
@@ -109,8 +111,8 @@ if ($auth) {
 		print "<tr><td class=\"list_label width10\">".$pgv_lang["date_time"]."</td><td class=\"list_label width10\">".$pgv_lang["ip_address"]."</td><td class=\"list_label width10\">".$pgv_lang["user_name"]."</td><td class=\"list_label width10\">".$pgv_lang["searchtype"]."</td><td class=\"list_label width10\">".$pgv_lang["type"]."</td><td class=\"list_label width50\">".$pgv_lang["query"]."</td></tr>";
 		for ($i = 0; $i < $num ; $i++)	{
 			print "<tr>";
-			$result1 = preg_split("/<br \/>/", $lines[$i], 4);
-			$result2 = preg_split("/ - /", $result1[0], 3);
+			$result1 = explode('<br />', $lines[$i], 4);
+			$result2 = explode(' - ', $result1[0], 3);
 			print "<td class=\"optionbox\" dir=\"ltr\">".substr($result2[0],13)."</td>";
 			print "<td class=\"optionbox\" dir=\"ltr\">".substr($result2[1], 4)."</td>";
 			print "<td class=\"optionbox\" dir=\"ltr\">";

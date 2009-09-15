@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id: repository_ctrl.php,v 1.1 2009/04/30 19:09:48 lsces Exp $
+* @version $Id: repository_ctrl.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -62,10 +62,15 @@ class RepositoryControllerRoot extends BaseController {
 	function init() {
 		global $pgv_lang, $CONTACT_EMAIL, $GEDCOM, $pgv_changes;
 
-		$this->rid         =safe_GET_xref('rid');
+		$this->rid = safe_GET_xref('rid');
 
 		$repositoryrec = find_other_record($this->rid);
-		if (!$repositoryrec) $repositoryrec = "0 @".$this->rid."@ REPO\n";
+
+		if (isset($pgv_changes[$this->rid."_".$GEDCOM])){
+			$repositoryrec = "0 @".$this->rid."@ REPO\n";
+		} else if (!$repositoryrec) {
+			return false;
+		}
 
 		$this->repository = new Repository($repositoryrec);
 		$this->repository->ged_id=PGV_GED_ID; // This record is from a file
@@ -159,7 +164,12 @@ class RepositoryControllerRoot extends BaseController {
 	*/
 	function getPageTitle() {
 		global $pgv_lang;
-		return $this->repository->getFullName()." - ".$this->rid." - ".$pgv_lang["repo_info"];
+		if ($this->repository) {
+			return $this->repository->getFullName()." - ".$this->rid." - ".$pgv_lang["repo_info"];
+		}
+		else {
+			return $pgv_lang["unable_to_find_record"];
+		}
 	}
 	/**
 	* check if use can edit this person

@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: individual.php,v 1.10 2008/08/11 14:18:24 lsces Exp $
+ * @version $Id: individual.php,v 1.11 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -40,8 +40,11 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 require_once("themes/bitweaver/theme.php");
-require_once("includes/controllers/individual_ctrl.php");
+require_once 'includes/controllers/individual_ctrl.php';
 require_once("languages/facts.en.php");
+
+$controller=new IndividualController();
+$controller->init();
 
 global $USE_THUMBS_MAIN, $mediacnt, $tabno;
 global $linkToID;

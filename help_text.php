@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.6 2008/07/07 18:01:11 lsces Exp $
+ * @version $Id: help_text.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -44,28 +44,35 @@ require "config.php";
 
 loadLangFile("pgv_help, pgv_admin, pgv_editor, ra_lang, gm_lang, gm_help, sm_lang, sm_help");	// Load language keys
 
-if (!isset($help)) $help = "";
+require 'includes/help_text_vars.php';
 
-require ("includes/help_text_vars.php");
-print_simple_header($pgv_lang["help_header"]);
-print "<a name=\"top\"></a><span class=\"helpheader\">".$pgv_lang["help_header"]."</span><br /><br />\n<div class=\"helptext\">\n";
-$actione = "";
-if (isset($action)) $actione = $action;
-if (($help == "help_useradmin.php")&& ($actione == "edituser")) $help = "edit_useradmin_help";
-if (($help == "help_login_register.php")&& ($actione == "pwlost")) $help = "help_login_lost_pw.php";
-if ($help == "help_contents_help") {
-	global $gBitUser;
-	if ( $gBitUser->IsAdmin() ) {
-		$help = "admin_help_contents_help";
-		print $pgv_lang["admin_help_contents_head_help"];
-	}
-	else print $pgv_lang["help_contents_head_help"];
-	print_help_index($help);
+print_simple_header($pgv_lang['help_header']);
+
+echo '<a name="top"></a><span class="helpheader">', $pgv_lang['help_header'], '</span><br /><br /><div class="helptext">';
+
+$help =safe_GET('help');
+$action=safe_GET('action');
+
+if ($help=='help_useradmin.php' && $action=='edituser') {
+	$help='edit_useradmin_help';
 }
-else print_text($help);
-print "\n</div>\n<br /><br /><br />";
-print "<a href=\"#top\" title=\"".$pgv_lang["move_up"]."\">$UpArrow</a><br />";
-print "<a href=\"help_text.php?help=help_contents_help\"><b>".$pgv_lang["help_contents"]."</b></a><br />";
-print "<a href=\"javascript:;\" onclick=\"window.close();\"><b>".$pgv_lang["close_window"]."</b></a>";
+if ($help=='help_login_register.php' && $action=='pwlost') {
+	$help='help_login_lost_pw.php';
+}
+if ($help=='help_contents_help') {
+	if (PGV_USER_IS_ADMIN) {
+		$help='admin_help_contents_help';
+		echo $pgv_lang['admin_help_contents_head_help'];
+	} else {
+		echo $pgv_lang['help_contents_head_help'];
+	}
+	print_help_index($help);
+} else {
+	print_text($help);
+}
+echo '</div><br /><br /><br />';
+echo '<a href="#top" title="', $pgv_lang['move_up'], '">', $UpArrow, '</a><br />';
+echo '<a href="help_text.php?help=help_contents_help"><b>', $pgv_lang['help_contents'], '</b></a><br />';
+echo '<a href="javascript:;" onclick="window.close();"><b>', $pgv_lang['close_window'], '</b></a>';
 print_simple_footer();
 ?>

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage admin
- * @version $Id: session_spider.php,v 1.1 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id: session_spider.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -76,23 +76,33 @@ function gen_spider_session_name($bot_name, $bot_language) {
 if (file_exists($INDEX_DIRECTORY."banned.php")) {
 	require($INDEX_DIRECTORY."banned.php");
 	//loops through each ip in banned.php
-	foreach($banned as $key=>$value) {
+	foreach($banned as $value) {
 		//creates a regex foreach ip
 		$ipRegEx = '';
-		$arrayIP = explode('*', $value);
+		if (is_array($value)) {
+			// New style: aa.bb.cc.dd,comment
+			$arrayIP = explode('*', $value[0]);
+			$comment = $value[1];
+		} else {
+			// Old style: aa.bb.cc.dd
+			$arrayIP = explode('*', $value);
+			$comment = '';
+		}
 		$ipRegEx .= $arrayIP[0];
 		if (count($arrayIP) > 1) {
 			for($i=1; $i < count($arrayIP); $i++) {
-				if($i == (count($arrayIP)))
-		 			$ipRegEx .= "\d{0,3}";
-	 			else
-	 				$ipRegEx .= "\d{0,3}".$arrayIP[$i];
+				if($i == (count($arrayIP))) $ipRegEx .= "\d{0,3}";
+	 			else $ipRegEx .= "\d{0,3}".$arrayIP[$i];
 			}
 		}
 		//checks the remote ip address against each ip regex
 		if (preg_match('/^'.$ipRegEx.'/', $_SERVER['REMOTE_ADDR'])) {
 			//adds a message to the log and exits with an Access Denied header
-			AddToLog("genservice.php blocked IP Address: ".$_SERVER['REMOTE_ADDR']." by regex: ".$ipRegEx);
+			if (empty($comment)) {
+				AddToLog("genservice.php blocked IP Address: ".$_SERVER['REMOTE_ADDR']." by regex: ".$ipRegEx);
+			} else {
+				AddToLog("genservice.php blocked IP Address: ".$_SERVER['REMOTE_ADDR']." by regex: ".$ipRegEx.' ('.$comment.')');
+			}
 			header("HTTP/1.1 403 Access Denied");
 			exit;
 		}
@@ -110,7 +120,10 @@ $SEARCH_SPIDER = false;		// set empty at start
 $ua = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "";
 
 $worms = array(
+	'oBot',
+	'Indy Library',
 	'XXX',
+//	'robotgenius',
 	'Super_Ale',
 	'Wget',
 	'DataCha',
@@ -118,12 +131,20 @@ $worms = array(
 	'LWP::Simple',
 	'lwp-trivial',
 	'MJ.*bot',
-	'ru.*rv',
+//	'ru.*rv',
 	'DotBot',
 	'HTTrack',
 	'AISearchBot',
 	'panscient.com',
+	'Plonebot',
 //	'Mozilla([^\/])|(\/[\D])',	// legitimate Mozilla-based browsers have something like "Mozilla/5.0"
+	'Mozilla[^\/]',		// legitimate Mozilla-based browsers have something like "Mozilla/5.0"
+	'Mozilla\/[^456]',	// legitimate Mozilla-based browsers have something like "Mozilla/5.0"
+	'^Mozilla\/[456]\.0$',	// legitimate Mozilla-based browsers have something following "Mozilla/5.0"
+	'Speedy.*Spider',
+	'KaloogaBot',		// Image search engines have no business searching a Genealogy site
+	'DBLBot',
+	'TurnitinBot',		// Plagiarism detectors have no business searching a Genealogy site
 	'(Microsoft)|(Internet)|(Explorer)'		// Internet Explorer self-identifies with "MSIE"
 	);
 
@@ -335,23 +356,31 @@ if (!empty($SEARCH_SPIDER)) {
 if (file_exists($INDEX_DIRECTORY."search_engines.php")) {
 	require($INDEX_DIRECTORY."search_engines.php");
 	//loops through each ip in search_engines.php
-	foreach($search_engines as $key=>$value) {
+	foreach($search_engines as $value) {
 		//creates a regex foreach ip
 		$ipRegEx = '';
-		$arrayIP = explode('*', $value);
+		if (is_array($value)) {
+			// New style: aa.bb.cc.dd,comment
+			$arrayIP = explode('*', $value[0]);
+			$comment = $value[1];
+		} else {
+			// Old style: aa.bb.cc.dd
+			$arrayIP = explode('*', $value);
+			$comment = '';
+		}
 		$ipRegEx .= $arrayIP[0];
 		if (count($arrayIP) > 1) {
 			for($i=1; $i < count($arrayIP); $i++) {
-				if($i == (count($arrayIP)))
-				$ipRegEx .= "\d{0,3}";
- 			else
- 			$ipRegEx .= "\d{0,3}".$arrayIP[$i];
+				if ($i == (count($arrayIP))) $ipRegEx .= "\d{0,3}";
+ 				else $ipRegEx .= "\d{0,3}".$arrayIP[$i];
 			}
 		}
 		//checks the remote ip address against each ip regex
 		if (preg_match('/^'.$ipRegEx.'/', $_SERVER['REMOTE_ADDR'])) {
-			if(empty($SEARCH_SPIDER))
-			$SEARCH_SPIDER = "Manual Search Engine entry of ".$_SERVER['REMOTE_ADDR'];
+			if (empty($SEARCH_SPIDER)) {
+				if (empty($comment)) $SEARCH_SPIDER = "Manual Search Engine entry of ".$_SERVER['REMOTE_ADDR'];
+				else $SEARCH_SPIDER = "Manual Search Engine entry of ".$_SERVER['REMOTE_ADDR'].' ('.$comment.')';
+			}
 			$bot_name = "MAN".$_SERVER['REMOTE_ADDR'];
 			$bot_session = gen_spider_session_name($bot_name, "");
 			session_id($bot_session);
@@ -384,6 +413,8 @@ if(!empty($SEARCH_SPIDER)) {
 			//adds a message to the log that a new spider session is starting
 			require_once("includes/authentication.php");      // -- Loaded early so AddToLog works
 			AddToLog("New search engine encountered: ->".$outstr."<-");
+			AddToLog("UA>{$ua}<");
+			AddToLog("URI>{$_SERVER["REQUEST_URI"]}<");
 		}
 	}
 	if(isset($_SESSION['last_spider_date'])) {

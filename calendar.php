@@ -5,7 +5,7 @@
  * Displays events on a daily, monthly, or yearly calendar.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2007 to 2008  Greg Roach and others, all rights reserved
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.10 2009/04/30 19:12:13 lsces Exp $
+ * $Id: calendar.php,v 1.11 2009/09/15 20:06:00 lsces Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -205,24 +205,24 @@ if ($view!='preview') {
 	print $pgv_lang["sex"].":&nbsp;</td>";
 	print "<td class=\"optionbox vmiddle\">";
 	if ($filtersx=="") {
-		echo Person::sexImage('M', 'large', 'align="middle"', $pgv_lang['all']);
-		echo Person::sexImage('F', 'large', 'align="middle"', $pgv_lang['all']), ' | ';
+		echo Person::sexImage('M', 'large', 'vertical-align: middle', $pgv_lang['all']);
+		echo Person::sexImage('F', 'large', 'vertical-align: middle', $pgv_lang['all']), ' | ';
 	} else {
 		print "<a href=\"".encode_url("calendar.php?cal={$cal}&day={$cal_date->d}&month={$cal_month}&year={$cal_date->y}&filterev={$filterev}&filterof={$filterof}&filtersx=&action={$action}")."\">";
-		echo Person::sexImage('M', 'small', 'align="middle"', $pgv_lang['all']);
-		echo Person::sexImage('F', 'small', 'align="middle"', $pgv_lang['all']), '</a> | ';
+		echo Person::sexImage('M', 'small', 'vertical-align: middle', $pgv_lang['all']);
+		echo Person::sexImage('F', 'small', 'vertical-align: middle', $pgv_lang['all']), '</a> | ';
 	}
 	if ($filtersx=="M") {
-		echo Person::sexImage('M', 'large', 'align="middle"', $pgv_lang['male']), ' | ';
+		echo Person::sexImage('M', 'large', 'vertical-align: middle', $pgv_lang['male']), ' | ';
 	} else {
 		echo "<a href=\"".encode_url("calendar.php?cal={$cal}&day={$cal_date->d}&month={$cal_month}&year={$cal_date->y}&filterev={$filterev}&filterof={$filterof}&filtersx=M&action={$action}")."\">";
-		echo Person::sexImage('M', 'small', 'align="middle"', $pgv_lang['male']), '</a> | ';
+		echo Person::sexImage('M', 'small', 'vertical-align: middle', $pgv_lang['male']), '</a> | ';
 	}
 	if ($filtersx=="F")
-		echo Person::sexImage('F', 'large', 'align="middle"', $pgv_lang['female']), ' | ';
+		echo Person::sexImage('F', 'large', 'vertical-align: middle', $pgv_lang['female']), ' | ';
 	else {
 		echo "<a href=\"".encode_url("calendar.php?cal={$cal}&day={$cal_date->d}&month={$cal_month}&year={$cal_date->y}&filterev={$filterev}&filterof={$filterof}&filtersx=F&action={$action}")."\">";
-		echo Person::sexImage('F', 'small', 'align="middle"', $pgv_lang['female']), '</a>';
+		echo Person::sexImage('F', 'small', 'vertical-align: middle', $pgv_lang['female']), '</a>';
 	}
 	print "</td>";
 	print "<td class=\"descriptionbox vmiddle\">";
@@ -435,10 +435,10 @@ case 'today':
 	print "<td class=\"descriptionbox\">{$pgv_lang['total_indis']} ";
 	print count($indis);
 	print "<br />";
-	echo Person::sexImage('M', 'small', 'align="middle"', $pgv_lang['all']), "&nbsp;{$males}&nbsp;&nbsp;&nbsp;&nbsp;";
-	echo Person::sexImage('F', 'small', 'align="middle"', $pgv_lang['all']), "&nbsp;{$females}&nbsp;&nbsp;&nbsp;&nbsp;";
+	echo Person::sexImage('M', 'small', 'vertical-align: middle', $pgv_lang['all']), "&nbsp;{$males}&nbsp;&nbsp;&nbsp;&nbsp;";
+	echo Person::sexImage('F', 'small', 'vertical-align: middle', $pgv_lang['all']), "&nbsp;{$females}&nbsp;&nbsp;&nbsp;&nbsp;";
 	if (count($indis)!=$males+$females)
-		echo Person::sexImage('U', 'small', 'align="middle"', $pgv_lang['all']), '&nbsp;', count($indis)-$males-$females;
+		echo Person::sexImage('U', 'small', 'vertical-align: middle', $pgv_lang['all']), '&nbsp;', count($indis)-$males-$females;
 	print "</td>";
 	print "<td class=\"descriptionbox\">{$pgv_lang['total_fams']} ".count($fams)."</td>";
 	print "</tr></table>";
@@ -598,15 +598,15 @@ function calendar_list_text($list, $tag1, $tag2, $show_sex_symbols) {
 		if ($show_sex_symbols && $tmp->getType()=='INDI')
 			switch ($tmp->getSex()) {
 			case 'M':
-				echo Person::sexImage('M', 'small', 'align="middle"', $pgv_lang['all']);
+				echo Person::sexImage('M', 'small', 'vertical-align: middle', $pgv_lang['all']);
 				++$males;
 				break;
 			case 'F':
-				echo Person::sexImage('F', 'small', 'align="middle"', $pgv_lang['all']);
+				echo Person::sexImage('F', 'small', 'vertical-align: middle', $pgv_lang['all']);
 				++$females;
 				break;
 			default:
-				echo Person::sexImage('U', 'small', 'align="middle"', $pgv_lang['all']);
+				echo Person::sexImage('U', 'small', 'vertical-align: middle', $pgv_lang['all']);
 				break;
 			}
 			print "<div class=\"indent\">".$facts."</div>{$tag2}";

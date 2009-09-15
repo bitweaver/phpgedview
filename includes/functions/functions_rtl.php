@@ -6,7 +6,7 @@
  * routines and sorting functions.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_rtl.php,v 1.2 2009/04/30 21:39:51 lsces Exp $
+ * @version $Id: functions_rtl.php,v 1.3 2009/09/15 20:06:02 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -70,6 +70,40 @@ function stripLRMRLM($inputText) {
 	return str_replace(array(PGV_UTF8_LRM, PGV_UTF8_RLM, "&lrm;", "&rlm;", "&LRM;", "&RLM;"), "", $inputText);
 }
 
+/**
+ * This function encapsulates all RTL texts in the input with <span dir='rtl'> and </span>
+ *
+ * @param 	string	Raw input
+ * @param	string	Directionality
+ * @return	string	The string with all texts encapsulated as required
+ */
+function spanRTL($inputText, $direction="RTL") {
+	switch ($direction) {
+	case 'LTR':
+		break;
+	case 'BOTH':
+		break;
+	DEFAULT:
+		break;
+	}
+	// Specifications haven't been finalized:  do nothing for now
+	return $inputText;
+}
+
+
+/**
+ * This function:
+ *		encapsulates all LTR texts in the input with <span dir='ltr'> and </span>
+ *		encapsulates all RTL texts in the input with <span dir='rtl'> and </span>
+ *
+ * @param 	string	Raw input
+ * @return	string	The string with all texts encapsulated as required
+ */
+function spanLTRRTL($inputText) {
+	// Specifications haven't been finalized:  do nothing for now
+	// Not sure if this will actually be needed
+	return $inputText;
+}
 
 /**
  * Determine alphabet of input character
@@ -153,15 +187,14 @@ function whatLanguage($string) {
  * @see http://www.php.net/manual/en/function.get-html-translation-table.php
  * @param string $string	the string to remove the entities from
  * @return string	the string with entities converted
-
+ */
 function unhtmlentities($string)  {
 	$trans_tbl=array_flip(get_html_translation_table (HTML_ENTITIES));
 	$trans_tbl['&lrm;']=PGV_UTF8_LRM;
 	$trans_tbl['&rlm;']=PGV_UTF8_RLM;
 	return preg_replace('/&#(\d+);/e', "chr(\\1)", strtr($string, $trans_tbl));
 }
- */
- 
+
 /**
  * process a string according to bidirectional rules
  *

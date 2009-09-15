@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @author Greg Roach
- * @version $Id: class_date.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id: class_date.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  *
  * NOTE: Since different calendars start their days at different times, (civil
  * midnight, solar midnight, sunset, sunrise, etc.), we convert on the basis of
@@ -1248,12 +1248,9 @@ class GedcomDate {
 	// Static function to compare two dates.
 	// return <0 if $a<$b
 	// return >0 if $b>$a
-	// return  0 if dates same/overlap/invalid
+	// return  0 if dates same/overlap
 	// BEF/AFT sort as the day before/after.
 	static function Compare(&$a, &$b) {
-		// Incomplete dates can't be sorted
-		if (!is_object($a) || !is_object($b) || !$a->isOK() || !$b->isOK())
-			return 0;
 		// Get min/max JD for each date.
 		switch ($a->qual1) {
 		case 'bef':
@@ -1286,13 +1283,13 @@ class GedcomDate {
 		if ($amax<$bmin)
 			return -1;
 		else
-			if ($amin>$bmax)
+			if ($amin>$bmax && $bmax>0)
 				return 1;
 			else
 				if ($amin<$bmin && $amax<=$bmax)
 					return -1;
 				else
-					if ($amin>$bmin && $amax>=$bmax)
+					if ($amin>$bmin && $amax>=$bmax && $bmax>0)
 						return 1;
 				else return 0;
 	}

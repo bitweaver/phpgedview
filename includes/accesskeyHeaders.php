@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: accesskeyHeaders.php,v 1.1 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id: accesskeyHeaders.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -34,9 +34,9 @@ if (empty($SEARCH_SPIDER)) {
 	?>
 	<div class="accesskeys">
 	<a class="accesskeys" href="#content" title="<?php print $pgv_lang["accesskey_skip_to_content_desc"]; ?>" tabindex="-1" accesskey="<?php print $pgv_lang["accesskey_skip_to_content"]; ?>"><?php print $pgv_lang["accesskey_skip_to_content_desc"]; ?></a>
-	<a class="accesskeys" href="javascript:// accesskey_viewing_advice_help" onfocus="this.onclick" onclick="return helpPopup('accesskey_viewing_advice_help');" title="<?php print $pgv_lang["accesskey_viewing_advice_desc"]; ?>" accesskey="<?php print $pgv_lang["accesskey_viewing_advice"]; ?>"><?php print $pgv_lang["accesskey_viewing_advice_desc"]; ?></a>
-	<a href="javascript:// help_<?php print basename($SCRIPT_NAME); ?>" onclick="return helpPopup('help_<?php print basename($SCRIPT_NAME); ?>&amp;action=<?php print $action;?>');" accesskey="<?php print $pgv_lang["accesskey_help_current_page"]; ?>"> </a>
-	<a href="javascript:// help_contents_help" onclick="return helpPopup('help_contents_help');" accesskey="<?php print $pgv_lang["accesskey_help_content"]; ?>"> </a>
+	<a class="accesskeys" href="javascript://accesskey_viewing_advice_help" onfocus="this.onclick" onclick="return helpPopup('accesskey_viewing_advice_help');" title="<?php print $pgv_lang["accesskey_viewing_advice_desc"]; ?>" accesskey="<?php print $pgv_lang["accesskey_viewing_advice"]; ?>"><?php print $pgv_lang["accesskey_viewing_advice_desc"]; ?></a>
+	<a href="javascript://help_<?php print basename($SCRIPT_NAME); ?>" onclick="return helpPopup('help_<?php print basename($SCRIPT_NAME); ?>&amp;action=<?php print $action;?>');" accesskey="<?php print $pgv_lang["accesskey_help_current_page"]; ?>"> </a>
+	<a href="javascript://help_contents_help" onclick="return helpPopup('help_contents_help');" accesskey="<?php print $pgv_lang["accesskey_help_content"]; ?>"> </a>
 	</div>
 	<?php
 }

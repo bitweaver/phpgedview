@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repolist.php,v 1.6 2008/07/07 20:00:26 lsces Exp $
+ * @version $Id: repolist.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -36,7 +36,7 @@ $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
 //require("config.php");
-require_once("includes/functions_print_lists.php");
+require_once 'includes/functions/functions_print_lists.php';
 $repolist = get_repo_list();               //-- array of regular repository titles
 $addrepolist = get_repo_add_title_list();  //-- array of additional repository titlesadd
 

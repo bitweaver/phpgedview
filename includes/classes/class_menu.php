@@ -20,7 +20,7 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *
 * @package PhpGedView
-* @version $Id: class_menu.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+* @version $Id: class_menu.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -42,6 +42,7 @@ class Menu {
 	var $class = '';
 	var $hoverclass = '';
 	var $submenuclass = '';
+	var $iconclass = '';
 	var $accesskey = null;
 	var $target = null;
 	var $parentmenu = null;
@@ -96,11 +97,12 @@ class Menu {
 		$this->flyout = $flyout;
 	}
 
-	function addClass($class, $hoverclass='', $submenuclass='')
+	function addClass($class, $hoverclass='', $submenuclass='', $iconclass='icon_general')
 	{
 		$this->class = $class;
 		$this->hoverclass = $hoverclass;
 		$this->submenuclass = $submenuclass;
+		$this->iconclass = $iconclass;
 	}
 
 	function addAccesskey($accesskey)
@@ -126,27 +128,39 @@ class Menu {
 
 	// Get the menu as a simple list - for accessible interfaces, search engines and CSS menus
 	function getMenuAsList() {
+		$link = '';
 		if ($this->separator) {
-			return '<div class="hr"></div>'; // The <hr/> tag is difficult to style
+			return "\t".'<li class="separator"><span></span></li>'."\n";
 		}
 		if ($this->link) {
+			if ($this->accesskey !== null) {
+				$link = ' accesskey="'.$this->accesskey.'"';
+			}
+			if ($this->target !== null)	{
+				$link .= ' target="'.$this->target.'"';
+			}
 			if ($this->link=='#') {
-				$html=$this->label;
+				$this->link = "javascript:;";
+				if ($this->onclick !== null) {
+					$link .= ' onclick="'.$this->onclick.'"';
+				}
+					$html='<a class="'.$this->iconclass.'" href="'.$this->link.'"'.$link.'>'.$this->label.'</a>';
 			} else {
-				$html='<a href="'.$this->link.'">'.$this->label.'</a>';
+					$html='<a class="'.$this->iconclass.'" href="'.$this->link.'">'.$this->label.'</a>';
 			}
 		} else {
 			return '';
 		}
 		if ($this->submenus) {
-			$html.='<ul>';
+			$html.="\n\t".'<ul>'."\n";
 			foreach ($this->submenus as $submenu) {
-				$html.=$submenu->getMenuAsList();
+				$html.="\t".$submenu->getMenuAsList();
 			}
-			$html.='</ul>';
+			$html.="\t".'</ul>';
+			return '<li class="node">'.$html.'</li>'."\n";
 		}
 
-		return '<li>'.$html.'</li>';
+		return '<li>'.$html.'</li>'."\n";
 	}
 
 	// Get the menu as a dropdown form element
@@ -202,12 +216,13 @@ class Menu {
 		$id = $menucount.rand();
 		if ($this->separator)
 		{
-			$output = "<div id=\"menu{$id}\" class=\"menu_separator\" style=\"clear: both;\">"
-			."<img src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['hline']['other']}\" style=\"width:8em;height:3px\" alt=\"\" /></div>";
+			$output = "<div id=\"menu{$id}\" class=\"menu_separator\">"
+			."<img src=\"{$PGV_IMAGE_DIR}/{$PGV_IMAGES['hline']['other']}\" alt=\"\" />"
+			."</div>";
 			return $output;
 		}
 		$c = count($this->submenus);
-		$output = "<div id=\"menu{$id}\" style=\"clear: both;\" class=\"{$this->class}\">\n";
+		$output = "<div id=\"menu{$id}\" class=\"{$this->class}\">\n";
 		if ($this->link=="#") $this->link = "javascript:;";
 		$link = "<a href=\"{$this->link}\" onmouseover=\"";
 		if ($c >= 0)
@@ -253,38 +268,20 @@ class Menu {
 			$MenuIcon = "<img id=\"menu{$id}_icon\" src=\"{$this->icon}\" class=\"icon\" alt=\"{$tempTitle}\" title=\"{$tempTitle}\" />";
 			switch ($this->labelpos) {
 			case "right":
-				$output .= "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">";
-				$output .= "<tr>";
-				$output .= "<td valign=\"middle\">";
 				$output .= $link;
 				$output .= $MenuIcon;
 				$output .= "</a>";
-				$output .= "</td>";
-				$output .= "<td align=\"";
-				if ($TEXT_DIRECTION=="rtl") $output .= "right";
-				else $output .= "left";
-				$output .= "\" valign=\"middle\" style=\"white-space: nowrap;\">";
 				$output .= $link;
 				$output .= $this->label;
-				$output .= "</a></td>";
-				$output .= "</tr></table>";
+				$output .= "</a>";
 				break;
 			case "left":
-				$output .= "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">";
-				$output .= "<tr>";
-				$output .= "<td align=\"";
-				if ($TEXT_DIRECTION=="rtl") $output .= "left";
-				else $output .= "right";
-				$output .= "\" valign=\"middle\" style=\"white-space: nowrap;\">";
 				$output .= $link;
 				$output .= $this->label;
-				$output .= "</a></td>";
-				$output .= "<td valign=\"middle\">";
+				$output .= "</a>";
 				$output .= $link;
 				$output .= $MenuIcon;
 				$output .= "</a>";
-				$output .= "</td>";
-				$output .= "</tr></table>";
 				break;
 			case "down":
 				$output .= $link;
@@ -348,9 +345,14 @@ class Menu {
 		return $output;
 	}
 
-	function printMenu()
-	{
-		print $this->getMenu();
+	function printMenu() {
+		global $PGV_MENUS_AS_LISTS;
+
+		if ($PGV_MENUS_AS_LISTS) {
+			echo $this->getMenuAsList();
+		} else {
+			echo $this->getMenu();
+		}
 	}
 
 	/**

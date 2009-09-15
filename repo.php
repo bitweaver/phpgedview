@@ -22,12 +22,12 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: repo.php,v 1.4 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id: repo.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
  */
 
-require("config.php");
-require_once 'includes/functions_print_facts.php';
-require_once("includes/functions_print_lists.php");
+require 'config.php';
+require_once 'includes/controllers/repository_ctrl.php';
+require_once 'includes/functions/functions_print_lists.php';
 
 if ($SHOW_SOURCES<PGV_USER_ACCESS_LEVEL) {
 	header("Location: index.php");
@@ -37,226 +37,122 @@ if ($SHOW_SOURCES<PGV_USER_ACCESS_LEVEL) {
 //-- keep the time of this access to help with concurrent edits
 $_SESSION['last_access_time'] = time();
 
-if (empty($action)) $action="";
-if (empty($show_changes)) $show_changes = "yes";
-if (empty($rid)) $rid = " ";
-$rid = clean_input($rid);
+$controller=new RepositoryController();
+$controller->init();
 
-global $PGV_IMAGES;
+// Tell addmedia.php what to link to
+$linkToID=$controller->rid;
 
-$accept_success=false;
-if (PGV_USER_CAN_ACCEPT) {
-	if ($action=="accept") {
-		require_once("includes/functions_import.php");
-		if (accept_changes($rid."_".$GEDCOM)) {
-			$show_changes="no";
-			$accept_success=true;
-		}
+print_header($controller->getPageTitle());
+
+// LightBox
+if ($MULTI_MEDIA && file_exists('./modules/lightbox.php')) {
+	include './modules/lightbox/lb_defaultconfig.php';
+	if (file_exists('modules/lightbox/lb_config.php')) {
+		include './modules/lightbox/lb_config.php';
 	}
+	include './modules/lightbox/functions/lb_call_js.php';
+	loadLangFile('lightbox:lang');
 }
 
-$nonfacts = array();
-
-$repo = find_repo_record($rid);
-//-- make sure we have the true id from the record
-$ct = preg_match("/0 @(.*)@/", $repo, $match);
-if ($ct>0) $rid = trim($match[1]);
-
-$name = get_repo_descriptor($rid);
-$add_descriptor = get_add_repo_descriptor($rid);
-if ($add_descriptor) $name .= " - ".$add_descriptor;
-
-
-print_header("$name - $rid - ".$pgv_lang["repo_info"]);
-
-?>
-<script language="JavaScript" type="text/javascript">
-<!--
-	function show_gedcom_record() {
-		var recwin = window.open("gedrecord.php?pid=<?php print $rid ?>", "_blank", "top=50,left=50,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");
-	}
-	function showchanges() {
-		window.location = '<?php print $SCRIPT_NAME.normalize_query_string($QUERY_STRING."&show_changes=yes"); ?>';
-	}
-//-->
-</script>
-<table class="list_table"><tr><td>
-<?php
-if ($accept_success) print "<b>".$pgv_lang["accept_successful"]."</b><br />";
-print "\n\t<span class=\"name_head\">".PrintReady($name);
-
-if ($SHOW_ID_NUMBERS) print " " . getLRM() . "($rid)" . getLRM();
-print "</span><br />";
-if (PGV_USER_CAN_EDIT) {
-	if ($view!="preview") {
-		if (isset($pgv_changes[$rid."_".$GEDCOM])) {
-			if (!isset($show_changes)) {
-				print "<a href=\"repo.php?rid=$rid&amp;show_changes=yes\">".$pgv_lang["show_changes"]."</a>"."  ";
-			}
-			else {
-				if (PGV_USER_CAN_ACCEPT) print "<a href=\"repo.php?rid=$rid&amp;action=accept\">".$pgv_lang["accept_all"]."</a> | ";
-				print "<a href=\"repo.php?rid=$rid\">".$pgv_lang["hide_changes"]."</a>"."  ";
-			}
-			print_help_link("show_changes_help", "qm");
-			print "<br />";
-		}
-		if ($SHOW_GEDCOM_RECORD || PGV_USER_IS_ADMIN) {
-			print "<a href=\"javascript:;\" onclick=\"return edit_raw('$rid');\">".$pgv_lang["edit_raw"]."</a>";
-			print_help_link("edit_raw_gedcom_help", "qm");
-			print " | ";
-		}
-		print "<a href=\"javascript:;\" onclick=\"return deleterepository('$rid');\">".$pgv_lang["delete_repo"]."</a>";
-		print_help_link("delete_repo_help", "qm");
-		print "<br />\n";
-	}
-	if (isset($show_changes)) {
-		$newrepo = trim(find_updated_record($rid));
-	}
-}
-print "<br />";
-
-$repo = array();
-if (isset($repo_id_list[$rid])) $repo = $repo_id_list[$rid];
-else {
-	print "&nbsp;&nbsp;&nbsp;<span class=\"warning\"><i>".$pgv_lang["no_results"]."</i></span>";
-	print "<br /><br /><br /><br /><br /><br />\n";
+if (!$controller->repository){
+	echo "<b>".$pgv_lang["unable_to_find_record"]."</b><br /><br />";
 	print_footer();
 	exit;
 }
-$repofacts = array();
-$gedlines = preg_split("/\n/", $repo["gedcom"]);
-$lct = count($gedlines);
-$factrec = "";	// -- complete fact record
-$line = "";	// -- temporary line buffer
-$linenum = 1;
-for($i=1; $i<=$lct; $i++) {
-	if ($i<$lct) $line = $gedlines[$i];
-	else $line=" ";
-	if (empty($line)) $line=" ";
-	if (($i==$lct)||($line{0}==1)) {
-		if (!empty($factrec) ) {
-			$repofacts[] = array($factrec, $linenum);
-		}
-		$factrec = $line;
-		$linenum = $i;
-	}
-	else $factrec .= "\n".$line;
+else if ($controller->repository->isMarkedDeleted()) {
+	echo '<span class="error">', $pgv_lang['record_marked_deleted'], '</span>';
 }
 
-//-- get new repo records
-if (!empty($newrepo)) {
-	$newrepofacts = array();
-	$gedlines = preg_split("/\n/", $newrepo);
-	$lct = count($gedlines);
-	$factrec = "";	// -- complete fact record
-	$line = "";	// -- temporary line buffer
-	$linenum = 0;
-	for($i=1; $i<=$lct; $i++) {
-		if ($i<$lct) $line = $gedlines[$i];
-		else $line=" ";
-		if (empty($line)) $line=" ";
-		if (($i==$lct)||($line{0}==1)) {
-			$newrepofacts[] = array($factrec, $linenum);
-			$factrec = $line;
-			$linenum = $i;
-		}
-		else $factrec .= "\n".$line;
-	}
+echo PGV_JS_START;
+echo 'function show_gedcom_record() {';
+echo ' var recwin=window.open("gedrecord.php?pid=', $controller->rid, '", "_blank", "top=0,left=0,width=600,height=400,scrollbars=1,scrollable=1,resizable=1");';
+echo '}';
+echo 'function showchanges() {';
+echo ' window.location="repo.php?rid=', $controller->rid, '&show_changes=yes"';
+echo '}';
+echo PGV_JS_END;
 
-	if (!empty($show_changes)) {
-		//-- update old facts
-		foreach($repofacts as $key=>$fact) {
-			$found = false;
-			foreach($newrepofacts as $indexval => $newfact) {
-				if (trim($newfact[0])==trim($fact[0])) {
-					$found = true;
-					break;
-				}
-			}
-			if (!$found) {
-				$repofacts[$key][0].="\nPGV_OLD\n";
+echo '<table class="list_table"><tr><td>';
+if ($controller->accept_success) {
+	echo '<b>', $pgv_lang['accept_successful'], '</b><br />';
+}
+echo '<span class="name_head">', PrintReady($controller->repository->getFullName());
+if ($SHOW_ID_NUMBERS) {
+	echo ' ', getLRM(), '(', $controller->rid, ')', getLRM(); 
+}
+echo '</span><br /></td><td valign="top" class="noprint">';
+if (!$controller->isPrintPreview()) {
+	$editmenu=$controller->getEditMenu();
+	$othermenu=$controller->getOtherMenu();
+	if ($editmenu || $othermenu) {
+		if (!$PGV_MENUS_AS_LISTS) {
+			echo '<table class="sublinks_table" cellspacing="4" cellpadding="0">';
+			echo '<tr><td class="list_label ', $TEXT_DIRECTION, '" colspan="2">', $pgv_lang['repo_menu'], '</td></tr>';
+			echo '<tr>';
+		} else { 
+			echo '<div id="optionsmenu" class="sublinks_table">';
+			echo '<div class="list_label ', $TEXT_DIRECTION, '">', $pgv_lang["repo_menu"], '</div>';
+		} 
+		if ($editmenu) {
+			if (!$PGV_MENUS_AS_LISTS) {
+				echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</td>';
+			} else { 
+				echo '<ul class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</ul>';
 			}
 		}
-		//-- look for new facts
-		foreach($newrepofacts as $key=>$newfact) {
-			$found = false;
-			foreach($repofacts as $indexval => $fact) {
-				if (trim($newfact[0])==trim($fact[0])) {
-					$found = true;
-					break;
-				}
+		if ($othermenu) {
+			if (!$PGV_MENUS_AS_LISTS) {
+				echo '<td class="sublinks_cell ', $TEXT_DIRECTION, '">', $othermenu->printMenu(), '</td>';
+			} else { 
+				echo '<ul class="sublinks_cell ', $TEXT_DIRECTION, '">', $editmenu->printMenu(), '</ul>';
 			}
-			if (!$found) {
-				$newfact[0].="\nPGV_NEW\n";
-				$repofacts[]=$newfact;
-			}
+		}
+		if (!$PGV_MENUS_AS_LISTS) {
+			echo '</tr></table>';
+		} else { 
+			echo '</div>';
 		}
 	}
 }
-print "\n<table class=\"facts_table\">";
-foreach($repofacts as $indexval => $fact) {
-	$factrec = $fact[0];
-	$linenum = $fact[1];
-//	$ft = preg_match("/1\s(_?\w+)\s(.*)/", $factrec, $match);
-	$ft = preg_match("/1\s(\w+)\s(.*)/", $factrec, $match);
-	if ($ft>0) $fact = $match[1];
-	else $fact="";
-	$fact = trim($fact);
-	if (!empty($fact)) {
-		if (showFact($fact, $rid)) {
-			if ($fact=="OBJE") {
-				print_main_media($rid);
-			}
-			else if ($fact=="NOTE") {
-				print_main_notes($factrec, 1, $rid, $linenum);
-			}
-			else {
-				print_fact($factrec, $rid, $linenum);
-			}
+echo '</td></tr><tr><td colspan="2"><table class="facts_table">';
+
+$repositoryfacts=$controller->repository->getFacts();
+foreach ($repositoryfacts as $fact) {
+	if ($fact) {
+		if ($fact->getTag()=='NOTE') {
+			print_main_notes($fact->getGedcomRecord(), 1, $controller->rid, $fact->getLineNumber());
+		} else {
+			print_fact($fact);
 		}
 	}
 }
-//-- new fact link
-if (($view!="preview") && PGV_USER_CAN_EDIT) {
-	print_add_new_fact($rid, $repofacts, "REPO");
+
+// Print media
+print_main_media($controller->rid);
+
+// new fact link
+if (!$controller->isPrintPreview() && $controller->userCanEdit()) {
+	print_add_new_fact($controller->rid, $repositoryfacts, 'REPO');
+	// new media
+	echo '<tr><td class="descriptionbox">';
+	print_help_link('add_media_help', 'qm', 'add_media_lbl');
+	echo $pgv_lang['add_media_lbl'] . '</td>';
+	echo '<td class="optionbox">';
+	echo '<a href="javascript: ', $pgv_lang['add_media_lbl'], '" onclick="window.open(\'addmedia.php?action=showmediaform&linktoid=', $controller->rid, '\', \'_blank\', \'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1\'); return false;">', $pgv_lang['add_media'], '</a>';
+	echo '<br />';
+	echo '<a href="javascript:;" onclick="window.open(\'inverselink.php?linktoid='.$controller->rid.'&linkto=repository\', \'_blank\', \'top=50,left=50,width=600,height=500,resizable=1,scrollbars=1\'); return false;">'.$pgv_lang['link_to_existing_media'].'</a>';
+	echo '</td></tr>';
 }
-print "</table>\n\n";
-//print "\n\t\t<br /><br /><span class=\"label\">".$pgv_lang["other_repo_records"]."</span>";
-flush();
+echo '</table><br /><br /></td></tr><tr class="center"><td colspan="2">';
 
-$query = "REPO @$rid@";
-// -- array of sources
-$mysourcelist = array();
 
-$mysourcelist = search_sources($query);
-uasort($mysourcelist, "itemsort");
-$cs=count($mysourcelist);
-
-print_sour_table($mysourcelist, PrintReady($name));  //@@@@@
-
-print "<br /><br /></td><td valign=\"top\" class=\"noprint\">";
-
-if ($view!="preview" &&(empty($SEARCH_SPIDER))) {
-	print "\n\t<table cellspacing=\"10\" align=\"right\"><tr>";
-	if ($SHOW_GEDCOM_RECORD) {
-		print "\n\t\t<td align=\"center\" valign=\"top\"><span class=\"link\"><a href=\"javascript:show_gedcom_record();\"><img class=\"icon\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["gedcom"]["small"]."\" border=\"0\" alt=\"\" /><br />".$pgv_lang["view_gedcom"]."</a>";
-		print_help_link("show_repo_gedcom_help", "qm");
-		print "</span></td>";
-	}
-	if ($SHOW_GEDCOM_RECORD && $ENABLE_CLIPPINGS_CART>=PGV_USER_ACCESS_LEVEL){
-		print "</tr>\n\t\t<tr>";
-	}
-	if ($ENABLE_CLIPPINGS_CART>=PGV_USER_ACCESS_LEVEL) {
-		print "<td align=\"center\" valign=\"top\"><span class=\"link\"><a href=\"clippings.php?action=add&amp;id=$rid&amp;type=repository\"><img class=\"icon\" src=\"".$PGV_IMAGE_DIR."/".$PGV_IMAGES["clippings"]["small"]."\" border=\"0\" alt=\"\" /><br />".$pgv_lang["add_to_cart"]."</a>";
-		print_help_link("add_repository_clip_help", "qm");
-		print "</span></td>";
-	}
-	if(!$SHOW_GEDCOM_RECORD && ($ENABLE_CLIPPINGS_CART<PGV_USER_ACCESS_LEVEL)){
-		print "<td>&nbsp;</td>";
-	}
-	print "</tr></table>";
+// Sources linked to this repository
+if ($controller->repository->countLinkedSources()) {
+	print_sour_table($controller->repository->fetchLinkedSources(), $controller->repository->getFullName());
 }
-print "&nbsp;</td></tr></table>\n";
+
+echo '</td></tr></table>';
+
 print_footer();
-
 ?>

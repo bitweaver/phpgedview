@@ -3,7 +3,7 @@
 * Controller for the Clippings Page
 *
 * phpGedView: Genealogy Viewer
-* Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
+* Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id: clippings_ctrl.php,v 1.4 2009/04/30 19:09:48 lsces Exp $
+* @version $Id: clippings_ctrl.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -52,10 +52,8 @@ function same_group($a, $b) {
 }
 
 function id_in_cart($id) {
-	global $cart, $GEDCOM,$whole_gramps;
+	global $cart, $GEDCOM;
 	$ct = count($cart);
-	if(isset($whole_grams))
-	return true;
 	for ($i = 0; $i < $ct; $i++) {
 		$temp = $cart[$i];
 		if ($temp['id'] == $id && $temp['gedcom'] == $GEDCOM) {
@@ -77,6 +75,9 @@ class ClippingsControllerRoot extends BaseController {
 	var $type="";
 	var $id="";
 	var $IncludeMedia;
+	var $conv_path;
+	var $conv_slashes;
+	var $privatize_export;
 	var $Zip;
 	var $filetype;
 	var $level1;  // number of levels of ancestors
@@ -103,12 +104,18 @@ class ClippingsControllerRoot extends BaseController {
 			exit;
 		}
 
+		if (!isset($_SESSION['exportConvPath'])) $_SESSION['exportConvPath'] = $MEDIA_DIRECTORY;
+		if (!isset($_SESSION['exportConvSlashes'])) $_SESSION['exportConvSlashes'] = 'forward';
+
 		$this->action = safe_GET("action");
 		$this->id = safe_GET('id');
 		$remove = safe_GET('remove',"","no");
 		$convert = safe_GET('convert',"","no");
 		$this->Zip = safe_GET('Zip');
 		$this->IncludeMedia = safe_GET('IncludeMedia');
+		$this->conv_path = safe_GET('conv_path', PGV_REGEX_NOSCRIPT, $_SESSION['exportConvPath']);
+		$this->conv_slashes = safe_GET('conv_slashes', array('forward', 'backward'), $_SESSION['exportConvSlashes']);
+		$this->privatize_export = safe_GET('privatize_export', array('none', 'visitor', 'user', 'gedadmin', 'admin'));
 		$this->filetype = safe_GET('filetype');
 		$this->level1 = safe_GET('level1');
 		$this->level2 = safe_GET('level2');
@@ -118,6 +125,10 @@ class ClippingsControllerRoot extends BaseController {
 		$item = safe_GET('item');
 		if (!isset($cart)) $cart = $_SESSION['cart'];
 		$this->type = safe_GET('type');
+
+		$this->conv_path = stripLRMRLM($this->conv_path);
+		$_SESSION['exportConvPath'] = $this->conv_path;		// remember this for the next Download
+		$_SESSION['exportConvSlashes'] = $this->conv_slashes;
 
 		if ($this->action == 'add') {
 			if (empty($this->type) && !empty($this->id)) {
@@ -143,10 +154,16 @@ class ClippingsControllerRoot extends BaseController {
 			if ($ret) {
 				if ($this->type == 'sour') {
 					if ($others == 'linked') {
-						foreach (search_indis(" SOUR @$this->id@", array(PGV_GED_ID), 'AND', true) as $indi=>$dummy)
-						$ret=$this->add_clipping(array('type'=>'indi', 'id'=>$indi));
-						foreach (search_fams(" SOUR @$this->id@", array(PGV_GED_ID), 'AND', true) as $fam=>$dummy)
-						$ret=$this->add_clipping(array('type'=>'fam', 'id'=>$fam));
+						foreach (fetch_linked_indi($this->id, 'SOUR', PGV_GED_ID) as $indi) {
+							if ($indi->canDisplayName()) {
+								$this->add_clipping(array('type'=>'indi', 'id'=>$indi->getXref()));
+							}
+						}
+						foreach (fetch_linked_fam($this->id, 'SOUR', PGV_GED_ID) as $fam) {
+							if ($fam->canDisplayName()) {
+								$this->add_clipping(array('type'=>'fam', 'id'=>$fam->getXref()));
+							}
+						}
 					}
 				}
 				if ($this->type == 'fam') {
@@ -255,15 +272,28 @@ class ClippingsControllerRoot extends BaseController {
 					$filetext = utf8_decode($filetext);
 				}
 
+				$tempUserID = '#ExPoRt#';
+				if ($this->privatize_export!='none') {
+					// Create a temporary userid
+					$export_user_id = createTempUser($tempUserID, $this->privatize_export, $GEDCOM);	// Create a temporary userid
+
+					// Temporarily become this user
+					$_SESSION["org_user"]=$_SESSION["pgv_user"];
+					$_SESSION["pgv_user"]=$tempUserID;
+				}
+
 				for ($i = 0; $i < $ct; $i++) {
 					$clipping = $cart[$i];
 					if ($clipping['gedcom'] == $GEDCOM) {
 						$record = find_gedcom_record($clipping['id']);
+						$savedRecord = $record;		// Save this for the "does this file exist" check
+						if ($clipping['type']=='obje') $record = convert_media_path($record, $this->conv_path, $this->conv_slashes);
 						$record = privatize_gedcom($record);
 						$record = remove_custom_tags($record, $remove);
 						if ($convert == "yes")
 						$record = utf8_decode($record);
-						if ($clipping['type'] == 'indi') {
+						switch ($clipping['type']) {
+						case 'indi':
 							$ft = preg_match_all("/1 FAMC @(.*)@/", $record, $match, PREG_SET_ORDER);
 							for ($k = 0; $k < $ft; $k++) {
 								if (!id_in_cart($match[$k][1])) {
@@ -276,14 +306,14 @@ class ClippingsControllerRoot extends BaseController {
 									$record = preg_replace("/1 FAMS @" . $match[$k][1] . "@.*/", "", $record);
 								}
 							}
-							$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
+							$ft = preg_match_all("/\d FILE (.*)/", $savedRecord, $match, PREG_SET_ORDER);
 							for ($k = 0; $k < $ft; $k++) {
 								$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
 								if (file_exists($filename)) {
 									$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
 									$mediacount++;
 								}
-								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
+//								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
 							}
 							$filetext .= trim($record) . "\n";
 							$filetext .= "1 SOUR @SPGV1@\n";
@@ -291,8 +321,9 @@ class ClippingsControllerRoot extends BaseController {
 							$filetext .= "2 DATA\n";
 							$filetext .= "3 TEXT " . $pgv_lang["indi_downloaded_from"] . "\n";
 							$filetext .= "4 CONT " . $dSERVER_URL . "/individual.php?pid=" . $clipping['id'] . "\n";
-						} else
-						if ($clipping['type'] == 'fam') {
+							break;
+
+						case 'fam':
 							$ft = preg_match_all("/1 CHIL @(.*)@/", $record, $match, PREG_SET_ORDER);
 							for ($k = 0; $k < $ft; $k++) {
 								if (!id_in_cart($match[$k][1])) {
@@ -317,14 +348,14 @@ class ClippingsControllerRoot extends BaseController {
 								}
 							}
 
-							$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
+							$ft = preg_match_all("/\d FILE (.*)/", $savedRecord, $match, PREG_SET_ORDER);
 							for ($k = 0; $k < $ft; $k++) {
 								$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
 								if (file_exists($filename)) {
 									$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
 									$mediacount++;
 								}
-								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
+//								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
 							}
 
 							$filetext .= trim($record) . "\n";
@@ -333,25 +364,45 @@ class ClippingsControllerRoot extends BaseController {
 							$filetext .= "2 DATA\n";
 							$filetext .= "3 TEXT " . $pgv_lang["family_downloaded_from"] . "\n";
 							$filetext .= "4 CONT " . $dSERVER_URL . "/family.php?famid=" . $clipping['id'] . "\n";
-						} else
-						if ($clipping['type'] == "source") {
-							$filetext .= trim($record) . "\n";
-							$filetext .= "1 NOTE " . $pgv_lang["source_downloaded_from"] . "\n";
-							$filetext .= "2 CONT " . $dSERVER_URL . "/source.php?sid=" . $clipping['id'] . "\n";
-						} else {
-							$ft = preg_match_all("/\d FILE (.*)/", $record, $match, PREG_SET_ORDER);
+							break;
+
+						case 'source':
+							$ft = preg_match_all("/\d FILE (.*)/", $savedRecord, $match, PREG_SET_ORDER);
 							for ($k = 0; $k < $ft; $k++) {
 								$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
 								if (file_exists($filename)) {
 									$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
 									$mediacount++;
 								}
-								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
+//								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
 							}
 							$filetext .= trim($record) . "\n";
+							$filetext .= "1 NOTE " . $pgv_lang["source_downloaded_from"] . "\n";
+							$filetext .= "2 CONT " . $dSERVER_URL . "/source.php?sid=" . $clipping['id'] . "\n";
+							break;
+
+						default:
+							$ft = preg_match_all("/\d FILE (.*)/", $savedRecord, $match, PREG_SET_ORDER);
+							for ($k = 0; $k < $ft; $k++) {
+								$filename = $MEDIA_DIRECTORY.extract_filename(trim($match[$k][1]));
+								if (file_exists($filename)) {
+									$media[$mediacount] = array (PCLZIP_ATT_FILE_NAME => $filename);
+									$mediacount++;
+								}
+//								$record = preg_replace("|(\d FILE )" . addslashes($match[$k][1]) . "|", "$1" . $filename, $record);
+							}
+							$filetext .= trim($record) . "\n";
+							break;
 						}
 					}
 				}
+
+				if ($this->privatize_export!='none') {
+					$_SESSION["pgv_user"]=$_SESSION["org_user"];
+					delete_user($export_user_id);
+					AddToLog("deleted dummy user -> {$tempUserID} <-");
+				}
+
 				if($this->IncludeMedia == "yes")
 				{
 					$this->media_list = $media;
@@ -381,20 +432,31 @@ class ClippingsControllerRoot extends BaseController {
 				for ($i = 0; $i < $ct; $i++) {
 					$clipping = $cart[$i];
 
-					if ($clipping["type"] == "indi") {
-						$indirec = find_person_record($clipping["id"]);
-						$gramps_Exp->create_person($indirec, $clipping["id"]);
-					}
-					if ($clipping["type"] == "fam") {
-						$famrec = find_family_record($clipping["id"]);
-						$gramps_Exp->create_family($famrec, $clipping["id"]);
+					switch ($clipping['type']) {
+					case 'indi':
+						$rec = find_person_record($clipping['id']);
+						$rec = remove_custom_tags($rec, $remove);
+						if ($this->privatize_export!='none') $rec = privatize_gedcom($rec);
+						$gramps_Exp->create_person($rec, $clipping['id']);
+						break;
+
+					case 'fam':
+						$rec = find_family_record($clipping['id']);
+						$rec = remove_custom_tags($rec, $remove);
+						if ($this->privatize_export!='none') $rec = privatize_gedcom($rec);
+						$gramps_Exp->create_family($rec, $clipping['id']);
+						break;
+
+					case 'source':
+						$rec = find_source_record($clipping['id']);
+						$rec = remove_custom_tags($rec, $remove);
+						if ($this->privatize_export!='none') $rec = privatize_gedcom($rec);
+						$gramps_Exp->create_source($rec, $clipping['id']);
+						break;
 					}
 				}
 				$this->download_data = $gramps_Exp->dom->saveXML();
-				if($convert)
-				{
-					$this->download_data = utf8_decode($this->download_data);
-				}
+				if ($convert) $this->download_data = utf8_decode($this->download_data);
 				$this->media_list = $gramps_Exp->get_all_media();
 				$this->download_clipping();
 			}
@@ -408,13 +470,13 @@ class ClippingsControllerRoot extends BaseController {
 		global $INDEX_DIRECTORY,$pgv_lang;
 
 		switch ($this->filetype) {
-			case 'gedcom':
-				$tempFileName = 'clipping'.rand().'.ged';
-				break;
+		case 'gedcom':
+			$tempFileName = 'clipping'.rand().'.ged';
+			break;
 
-			case 'gramps':
-				$tempFileName = 'clipping'.rand().'.gramps';
-				break;
+		case 'gramps':
+			$tempFileName = 'clipping'.rand().'.gramps';
+			break;
 		}
 		$fp = fopen($INDEX_DIRECTORY.$tempFileName, "wb");
 		if($fp)

@@ -5,7 +5,7 @@
  * You must supply a $famid value with the identifier for the family.
  *
  * phpGedView: Genealogy Viewer
- * Copyright (C) 2002 to 2005  PGV Development Team
+ * Copyright (C) 2002 to 2009  PGV Development Team.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: family.php,v 1.5 2008/08/10 11:46:26 lsces Exp $
+ * @version $Id: family.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -41,13 +41,33 @@ $gGedcom = new BitGEDCOM();
 // leave manual config until we can move it to bitweaver table 
 require_once 'includes/controllers/family_ctrl.php';
 
+$controller = new FamilyController();
+$controller->init();
+
 print_header($controller->getPageTitle());
 // completely prevent display if privacy dictates so
-if (!$controller->family->disp) {
+if (!$controller->family){
+	echo "<b>".$pgv_lang["unable_to_find_record"]."</b><br /><br />";
+	print_footer();
+	exit;
+}
+else if (!$controller->family->canDisplayDetails()) {
 	print_privacy_error($CONTACT_EMAIL);
 	print_footer();
 	exit;
 }
+
+// LB added for Lightbox viewer ==============================================================
+if ($MULTI_MEDIA && file_exists("modules/lightbox/album.php")) {
+	include('modules/lightbox/lb_defaultconfig.php');
+	if (file_exists('modules/lightbox/lb_config.php')) include('modules/lightbox/lb_config.php');
+	include_once('modules/lightbox/functions/lb_call_js.php');
+}
+// LB ======================================================================================
+
+$PEDIGREE_FULL_DETAILS = "1";		// Override GEDCOM configuration
+$show_full = "1";
+
 ?>
 <?php if ($controller->family->isMarkedDeleted()) print "<span class=\"error\">".$pgv_lang["record_marked_deleted"]."</span>"; ?>
 <script language="JavaScript" type="text/javascript">
@@ -83,8 +103,8 @@ if (!$controller->family->disp) {
 		<td valign="top" class="noprint">
 			<div class="accesskeys">
 			<?php
-                        if (empty($SEARCH_SPIDER)) {
-                        ?>
+				if (empty($SEARCH_SPIDER)) {
+				?>
 				<a class="accesskeys" href="<?php print 'timeline.php?pids[0]=' . $controller->parents['HUSB'].'&amp;pids[1]='.$controller->parents['WIFE'];?>" title="<?php print $pgv_lang['parents_timeline'] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_parents_timeline']; ?>"><?php print $pgv_lang['parents_timeline'] ?></a>
 				<a class="accesskeys" href="<?php print 'timeline.php?' . $controller->getChildrenUrlTimeline();?>" title="<?php print $pgv_lang["children_timeline"] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_children_timeline']; ?>"><?php print $pgv_lang['children_timeline'] ?></a>
 				<a class="accesskeys" href="<?php print 'timeline.php?pids[0]=' .$controller->getHusband().'&amp;pids[1]='.$controller->getWife().'&amp;'.$controller->getChildrenUrlTimeline(2);?>" title="<?php print $pgv_lang['family_timeline'] ?>" tabindex="-1" accesskey="<?php print $pgv_lang['accesskey_family_timeline']; ?>"><?php print $pgv_lang['family_timeline'] ?></a>
@@ -94,46 +114,53 @@ if (!$controller->family->disp) {
 			<?php } ?>
 			</div>
 			<?php
-			if (empty($SEARCH_SPIDER) && ($_REQUEST['view'] != 'preview')) :
+			if (empty($SEARCH_SPIDER) && !$controller->isPrintPreview()) :
 			?>
+		<?php if (!$PGV_MENUS_AS_LISTS) {?>
 			<table class="sublinks_table" cellspacing="4" cellpadding="0">
 				<tr>
 					<td class="list_label <?php print $TEXT_DIRECTION?>" colspan="4"><?php print $pgv_lang['fams_charts']?></td>
 				</tr>
 				<tr>
 					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
-					<?php $menu = $controller->getChartsMenu(); $menu->printMenu();
+		<?php } else { ?>
+		<div id="optionsmenu" class="sublinks_table">
+			<div class="list_label <?php echo $TEXT_DIRECTION; ?>"><?php echo $pgv_lang["fams_charts"]; ?></div>
+				<ul class="sublinks_cell <?php echo $TEXT_DIRECTION; ?>">
+		<?php } 
+					$menu = $controller->getChartsMenu(); $menu->printMenu();
 					if (file_exists('reports/familygroup.xml')) :
 					?>
-					</td>
-					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
+				</<?php if (!$PGV_MENUS_AS_LISTS) {?>td><td<?php } else { ?>ul><ul<?php }?> class="sublinks_cell <?php echo $TEXT_DIRECTION; ?>">
 					<?php
 					//-- get reports menu from menubar
 					$menubar = new MenuBar(); $menu = $menubar->getReportsMenu("", $controller->getFamilyID()); $menu->printMenu();
 					//$menu = $controller->getReportsMenu();
 					//$menu->printMenu();
 					endif; // reports
-					if (userCanEdit() && ($controller->display)) :
+					if (PGV_USER_CAN_EDIT && ($controller->display)) :
 					?>
-					</td>
-					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
+				</<?php if (!$PGV_MENUS_AS_LISTS) {?>td><td<?php } else { ?>ul><ul<?php }?> class="sublinks_cell <?php echo $TEXT_DIRECTION; ?>">
 					<?php
 					$menu = $controller->getEditMenu();
 					$menu->printMenu();
 					endif; // edit_fam
 					if ($controller->display && ($SHOW_GEDCOM_RECORD || $ENABLE_CLIPPINGS_CART >= PGV_USER_ACCESS_LEVEL)) :
 					?>
-					</td>
-					<td class="sublinks_cell <?php print $TEXT_DIRECTION?>">
+				</<?php if (!$PGV_MENUS_AS_LISTS) {?>td><td<?php } else { ?>ul><ul<?php }?> class="sublinks_cell <?php echo $TEXT_DIRECTION; ?>">
 					<?php
 					$menu = $controller->getOtherMenu();
 					$menu->printMenu();
 					endif; // other
 					?>
+		<?php if (!$PGV_MENUS_AS_LISTS) {?>
 					</td>
 				</tr>
 			</table>
-			<?php
+		<?php } else { ?>
+				</ul>
+		</div>
+		<?php } 
 				if ($controller->accept_success)
 				{
 					print "<b>".$pgv_lang["accept_successful"]."</b><br />";
@@ -149,16 +176,16 @@ if (!$controller->family->disp) {
 			<?php print_family_children($controller->getFamilyID());?>
 		</td>
 		<td valign="top">
-			<?php print_family_facts($controller->getFamilyID());?>
+			<?php print_family_facts($controller->family);?>
 		</td>
 	</tr>
 </table>
 <br />
 <?php
 if(empty($SEARCH_SPIDER))
-        print_footer();
+	print_footer();
 else {
-        if($SHOW_SPIDER_TAGLINE)
-                print $pgv_lang["label_search_engine_detected"].": ".$SEARCH_SPIDER;
-        print "\n</div>\n\t</body>\n</html>";
+	if($SHOW_SPIDER_TAGLINE)
+		print $pgv_lang["label_search_engine_detected"].": ".$SEARCH_SPIDER;
+	print "\n</div>\n\t</body>\n</html>";
 }

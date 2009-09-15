@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadbackup.php,v 1.5 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: downloadbackup.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
  */
 
 /**
@@ -35,7 +35,7 @@ include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 $gGedcom = new BitGEDCOM();
 
 // leave manual config until we can move it to bitweaver table 
-require "config.php";
+require 'config.php';
 
 if ((!userGedcomAdmin(getUserName()))||(empty($fname))||(preg_match("/\.zip$/", $fname)==0)) {
 	print $pgv_lang['access_denied'];
@@ -44,14 +44,14 @@ if ((!userGedcomAdmin(getUserName()))||(empty($fname))||(preg_match("/\.zip$/", 
 
 if(ini_get('zlib.output_compression')) @ini_set('zlib.output_compression', 'Off');
 
-header("Pragma: public"); // required
-header("Expires: 0");
-header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-header("Cache-Control: private",false); // required for certain browsers 
-header("Content-Type: application/zip");
-header("Content-Disposition: attachment; filename=$fname");
-header("Content-length: ".filesize($INDEX_DIRECTORY.$fname));
-header("Content-Transfer-Encoding: binary");
+header('Pragma: public'); // required
+header('Expires: 0');
+header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+header('Cache-Control: private',false); // required for certain browsers
+header('Content-Type: application/zip');
+header('Content-Disposition: attachment; filename="'.$fname.'"');
+header('Content-length: '.filesize($INDEX_DIRECTORY.$fname));
+header('Content-Transfer-Encoding: binary');
 readfile($INDEX_DIRECTORY.basename($fname));
 exit();
 ?>

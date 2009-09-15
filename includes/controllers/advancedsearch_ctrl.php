@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: advancedsearch_ctrl.php,v 1.1 2009/04/30 19:09:48 lsces Exp $
+ * @version $Id: advancedsearch_ctrl.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -193,8 +193,7 @@ class AdvancedSearchController extends SearchController {
 	}
 
 	function advancedSearch($justSql=false, $table="individuals", $prefix="i") {
-		global $TBLPREFIX, $DBCONN, $DBTYPE;
-		global $gedcom_record_cache;
+		global $TBLPREFIX, $gedcom_record_cache;
 
 		DMsoundex("", "opencache");
 		$this->myindilist = array ();
@@ -208,7 +207,7 @@ class AdvancedSearchController extends SearchController {
 		$famcTable = false;
 
 		$sql = '';
-		if ($justSql) $sqlfields = "SELECT DISTINCT ".$prefix."_id, ".$prefix."_file";
+		if ($justSql) $sqlfields = "SELECT DISTINCT {$prefix}_id, {$prefix}_file";
 		else $sqlfields = "SELECT i_id, i_gedcom, i_isdead, i_file, i_sex";
 		$sqltables = " FROM ".$TBLPREFIX.$table;
 		$sqlwhere = " WHERE ".$prefix."_file=".PGV_GED_ID;
@@ -224,7 +223,7 @@ class AdvancedSearchController extends SearchController {
 			if ($parts[0]=="NAME") {
 				// The pgv_name table contains both names and soundex values
 				if (!$namesTable) {
-					$sqltables.=" JOIN ".$TBLPREFIX."name ON (i_file=n_file AND i_id=n_id) ";
+					$sqltables.=" JOIN {$TBLPREFIX}name ON (i_file=n_file AND i_id=n_id) ";
 					$namesTable = true;
 				}
 				switch (end($parts)) {
@@ -232,9 +231,9 @@ class AdvancedSearchController extends SearchController {
 					$sdx=explode(':', soundex_std($value));
 					foreach ($sdx as $k=>$v) {
 						if ($parts[1]=='GIVN') {
-							$sdx[$k]='n_soundex_givn_std '.PGV_DB_LIKE." '%{$v}%'";
+							$sdx[$k]='n_soundex_givn_std '.PGV_DB::$LIKE." '%{$v}%'";
 						} else {
-							$sdx[$k]='n_soundex_surn_std '.PGV_DB_LIKE." '%{$v}%'";
+							$sdx[$k]='n_soundex_surn_std '.PGV_DB::$LIKE." '%{$v}%'";
 						}
 					}
 					$sqlwhere.=' AND ('.implode(' OR ', $sdx).')';
@@ -245,9 +244,9 @@ class AdvancedSearchController extends SearchController {
 					$sdx=explode(':', soundex_dm($value));
 					foreach ($sdx as $k=>$v) {
 						if ($parts[1]=='GIVN') {
-							$sdx[$k]='n_soundex_givn_dm '.PGV_DB_LIKE." '%{$v}%'";
+							$sdx[$k]='n_soundex_givn_dm '.PGV_DB::$LIKE." '%{$v}%'";
 						} else {
-							$sdx[$k]='n_soundex_surn_dm '.PGV_DB_LIKE." '%{$v}%'";
+							$sdx[$k]='n_soundex_surn_dm '.PGV_DB::$LIKE." '%{$v}%'";
 						}
 					}
 					$sqlwhere.=' AND ('.implode(' OR ', $sdx).')';
@@ -257,13 +256,13 @@ class AdvancedSearchController extends SearchController {
 					switch ($parts[1]) {
 					case 'GIVN':
 						// Allow for exact match on multiple given names.
-						$sqlwhere.=' AND (n_givn '.PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)."' OR n_givn ".PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)." %' OR n_givn ".PGV_DB_LIKE." '% ".$DBCONN->escapeSimple($value)."' OR n_givn ".PGV_DB_LIKE." '% ".$DBCONN->escapeSimple($value)." %')";
+						$sqlwhere.=' AND (n_givn '.PGV_DB::$LIKE." ".PGV_DB::quote($value)." OR n_givn ".PGV_DB::$LIKE." ".PGV_DB::quote("{$value} %")." OR n_givn ".PGV_DB::$LIKE." ".PGV_DB::quote("% {$value}")." OR n_givn ".PGV_DB::$LIKE." ".PGV_DB::quote("% {$value} %").")";
 						break;
 					case 'SURN':
-						$sqlwhere.=' AND n_surname '.PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)."'";
+						$sqlwhere.=' AND n_surname '.PGV_DB::$LIKE." ".PGV_DB::quote($value);
 						break;
 					default:
-						$sqlwhere.=' AND n_full '.PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)."'";
+						$sqlwhere.=' AND n_full '.PGV_DB::$LIKE." ".PGV_DB::quote($value);
 						break;
 					}
 					break;
@@ -272,13 +271,13 @@ class AdvancedSearchController extends SearchController {
 					switch ($parts[1]) {
 					case 'GIVN':
 						// Allow for match on start of multiple given names
-						$sqlwhere.=' AND (n_givn '.PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)."%' OR n_givn ".PGV_DB_LIKE." '% ".$DBCONN->escapeSimple($value)."%')";
+						$sqlwhere.=' AND (n_givn '.PGV_DB::$LIKE." ".PGV_DB::quote("{$value}%")." OR n_givn ".PGV_DB::$LIKE." ".PGV_DB::quote("% {$value}%").")";
 						break;
 					case 'SURN':
-						$sqlwhere.=' AND n_surname '.PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)."%'";
+						$sqlwhere.=' AND n_surname '.PGV_DB::$LIKE." ".PGV_DB::quote("{$value}%");
 						break;
 					default:
-						$sqlwhere.=' AND n_full '.PGV_DB_LIKE." '".$DBCONN->escapeSimple($value)."%'";
+						$sqlwhere.=' AND n_full '.PGV_DB::$LIKE." ".PGV_DB::quote("{$value}%");
 						break;
 					}
 					break;
@@ -287,13 +286,13 @@ class AdvancedSearchController extends SearchController {
 					// Partial match.
 					switch ($parts[1]) {
 					case 'GIVN':
-						$sqlwhere.=' AND n_givn '.PGV_DB_LIKE." '%".$DBCONN->escapeSimple($value)."%'";
+						$sqlwhere.=' AND n_givn '.PGV_DB::$LIKE." ".PGV_DB::quote("%{$value}%");
 						break;
 					case 'SURN':
-						$sqlwhere.=' AND n_surname '.PGV_DB_LIKE." '%".$DBCONN->escapeSimple($value)."%'";
+						$sqlwhere.=' AND n_surname '.PGV_DB::$LIKE." ".PGV_DB::quote("%{$value}%");
 						break;
 					default:
-						$sqlwhere.=' AND n_full '.PGV_DB_LIKE." '%".$DBCONN->escapeSimple($value)."%'";
+						$sqlwhere.=' AND n_full '.PGV_DB::$LIKE." ".PGV_DB::quote("%{$value}%");
 						break;
 					}
 					break;
@@ -344,7 +343,7 @@ class AdvancedSearchController extends SearchController {
 							if ($fnc>0)
 								$sqlwhere .= " OR ";
 							$fnc++;
-							$sqlwhere .= $field." ".PGV_DB_LIKE." '%".$DBCONN->escapeSimple($name1)."%'";
+							$sqlwhere .= $field." ".PGV_DB::$LIKE." ".PGV_DB::quote("%{$name1}%");
 						}
 					}
 					$sqlwhere .= ") ";
@@ -393,7 +392,7 @@ class AdvancedSearchController extends SearchController {
 					}
 					else $this->fields[$j] = preg_replace("/^".$parts[0].":/","", $this->fields[$j]);
 				}
-				$sqlwhere .= " AND (FAMC.f_chil ".PGV_DB_LIKE." CONCAT('%',i_id,';%'))";
+				$sqlwhere .= " AND (FAMC.f_chil ".PGV_DB::$LIKE." CONCAT('%',i_id,';%'))";
 				$subsql = $this->advancedSearch(true,"families","f");
 				$sqlwhere .= " AND ROW(FAMC.f_id, FAMC.f_file) IN (".$subsql.")";
 				$this->fields = $oldfields;
@@ -434,53 +433,52 @@ class AdvancedSearchController extends SearchController {
 			}
 			//-- handle everything else
 			else {
-				$sqlwhere .= " AND i_gedcom ".PGV_DB_LIKE." '";
+				$sqlwhere .= " AND i_gedcom ".PGV_DB::$LIKE." ";
 
 				$ct = count($parts);
+				$liketmp='';
 				for($j=0; $j<$ct; $j++) {
-					 $sqlwhere .= "%".($j+1)." ".$parts[$j]." %";
+					 $liketmp.= "%".($j+1)." ".$parts[$j]." %";
 //					 if ($j<$ct-1) {
 //					 	$sqlwhere .= "%";
 //					 } else {
-					 	$sqlwhere .= "%".$DBCONN->escapeSimple($value)."%";
+					 	$liketmp .= "%{$value}%";
 //					 }
 				}
-				$sqlwhere .= "'";
+				$sqlwhere .= PGV_DB::quote($liketmp);
 			}
 		}
 		$sql = $sqlfields.$sqltables.$sqlwhere;
 //		print $sql;
 		if ($justSql) return $sql;
-		$res = dbquery($sql);
-		if (!DB::isError($res)) {
-			while ($row =& $res->fetchRow(DB_FETCHMODE_ASSOC)){
-				$row['xref']=$row['i_id'];
-				$row['ged_id']=$row['i_file'];
-				$row['type'] = 'INDI';
-				$row['gedrec'] = $row['i_gedcom'];
-				$object = Person::getInstance($row);
-				$this->myindilist[$row['i_id']] = $object;
-			}
-			$res->free();
+		$rows=PGV_DB::prepare($sql)->fetchAll(PDO::FETCH_ASSOC);
+		foreach ($rows as $row){
+			$row['xref']=$row['i_id'];
+			$row['ged_id']=$row['i_file'];
+			$row['type'] = 'INDI';
+			$row['gedrec'] = $row['i_gedcom'];
+			$object = Person::getInstance($row);
+			$this->myindilist[$row['i_id']] = $object;
 		}
 		$this->fields = $keepfields;
 	}
 
 	function PrintResults() {
-		global $pgv_lang, $GEDCOMS;
+		global $pgv_lang;
 
-		include_once ("includes/functions/functions_print_lists.php");
+		require_once 'includes/functions/functions_print_lists.php';
 		$ret = true;
 		if (count($this->myindilist)>0) {
-			print "<br />";
-			print "\n\t<div class=\"center\">\n";
-			uasort($this->myindilist, array("GedcomRecord","Compare"));
-			print_indi_table($this->myindilist, $pgv_lang["individuals"]." @ ".PrintReady($GEDCOMS[PGV_GEDCOM]["title"], true));
+			echo '<br /><div class="center">';
+			uasort($this->myindilist, array('GedcomRecord', 'Compare'));
+			print_indi_table($this->myindilist, $pgv_lang["individuals"]." @ ".PrintReady(get_gedcom_setting(PGV_GEDCOM, 'title'), true));
 			print "</div>";
 		}
 		else {
 			$ret = false;
-			if ($this->isPostBack) print "<br /><div class=\"warning\" style=\" text-align: center;\"><i>".$pgv_lang["no_results"]."</i><br /></div>\n\t\t";
+			if ($this->isPostBack) {
+				echo '<br /><div class="warning" style=" text-align: center;"><i>', $pgv_lang['no_results'], '</i><br /></div>';
+			}
 		}
 		return $ret;
 	}
