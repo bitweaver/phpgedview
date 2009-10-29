@@ -11,9 +11,14 @@ PHPGEDVIEW_DB_PREFIX.'gedcom' => "
 	g_commonsurnames X
 ",
 
+PHPGEDVIEW_DB_PREFIX.'site_setting' => "
+	site_setting_name C(32) PRIMARY,
+	site_setting_value C(250) NOT NULL
+",
+
 PHPGEDVIEW_DB_PREFIX.'individuals' => "
-	i_id C(32) PRIMARY,
-	i_file I4 PRIMARY,
+	i_id C(20) PRIMARY,
+	i_file I2 PRIMARY,
 	i_rin C(250),
 	i_isdead I1 DEFAULT 1,
 	i_GEDCOM X,
@@ -21,8 +26,8 @@ PHPGEDVIEW_DB_PREFIX.'individuals' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'families' => "
-	f_id C(32) PRIMARY,
-	f_file I4 PRIMARY,
+	f_id C(20) PRIMARY,
+	f_file I2 PRIMARY,
 	f_husb C(250),
 	f_wife C(250),
 	f_chil X,
@@ -32,34 +37,34 @@ PHPGEDVIEW_DB_PREFIX.'families' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'sources' => "
-	s_id C(32) PRIMARY,
-	s_file I4 PRIMARY,
+	s_id C(20) PRIMARY,
+	s_file I2 PRIMARY,
 	s_name C(250),
 	s_dbid V(1),
 	s_GEDCOM X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'other' => "
-	o_id C(32) PRIMARY,
-	o_file I4 PRIMARY,
+	o_id C(20) PRIMARY,
+	o_file I2 PRIMARY,
 	o_type C(32),
 	o_GEDCOM X
 ",
 
 PHPGEDVIEW_DB_PREFIX.'link' => "
-	l_file I4 NOT NULL,
-	l_from C(32) NOT NULL,
-	l_type C(32) NOT NULL,
-	l_to C(32) NOT NULL
+	l_file I2	 NOT NULL,
+	l_from C(20) NOT NULL,
+	l_type C(15) NOT NULL,
+	l_to C(20)	 NOT NULL
 ",
 
 PHPGEDVIEW_DB_PREFIX.'name' => "
-	n_file I4 PRIMARY,
-	n_id C(32) PRIMARY,
-	n_num I4,
-	n_type C(15),
-	n_sort C(250),
-	n_full C(250),
+	n_file I2		PRIMARY,
+	n_id C(20)		PRIMARY,
+	n_num I4		NOT NULL,
+	n_type C(15)	NOT NULL,
+	n_sort C(250)	NOT NULL,
+	n_full C(250)	NOT NULL,
 	n_list C(250),
 	n_surname C(250),
 	n_surn C(250),
@@ -71,18 +76,16 @@ PHPGEDVIEW_DB_PREFIX.'name' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'dates' => "
-	d_day I,
+	d_day I			NOT NULL,
 	d_month C(5),
-	d_mon I,
-	d_year I,
-	d_year I,
-	d_datestamp I,
-	d_julianday1 I,
-	d_julianday2 I,
-	d_fact C(10),
-	d_gid C(180),
-	d_file I4,
-	d_type C(13)
+	d_mon I			NOT NULL,
+	d_year I		NOT NULL,
+	d_julianday1 I	NOT NULL,
+	d_julianday2 I	NOT NULL,
+	d_fact C(10)	NOT NULL,
+	d_gid C(20)		NOT NULL,
+	d_file I4		NOT NULL,
+	d_type C(13)	NOT NULL
 ",
 
 PHPGEDVIEW_DB_PREFIX.'favorites' => "
@@ -132,9 +135,9 @@ PHPGEDVIEW_DB_PREFIX.'media_mapping' => "
 ",
 
 PHPGEDVIEW_DB_PREFIX.'remotelinks' => " 
-	r_gid		C(250) NOT NULL,
+	r_gid		C(20) NOT NULL,
 	r_linkid	C(250),
-	r_file		I4 NOT NULL
+	r_file		I2 NOT NULL
 ",
 
 PHPGEDVIEW_DB_PREFIX.'temple_code' => "
