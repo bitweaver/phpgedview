@@ -22,7 +22,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_db.php,v 1.3 2009/09/15 20:06:02 lsces Exp $
+* @version $Id: functions_db.php,v 1.4 2009/10/29 08:16:52 lsces Exp $
 * @package PhpGedView
 * @subpackage DB
 */
@@ -758,7 +758,7 @@ function fetch_linked_indi($xref, $link, $ged_id) {
 	global $TBLPREFIX, $gBitDb;
 
 	$rows =
-		$gBitDb->getAssoc(
+		$gBitDb->getAll(
 			"SELECT 'INDI' AS type, i_id AS xref, i_file AS ged_id, i_gedcom AS gedrec, i_isdead, i_sex FROM {$TBLPREFIX}link, {$TBLPREFIX}individuals WHERE i_file=l_file AND i_id=l_from AND l_file=? AND l_type=? AND l_to=?"
 			, array( $ged_id, $link, $xref));
 
@@ -773,7 +773,7 @@ function fetch_linked_fam($xref, $link, $ged_id) {
 	global $TBLPREFIX, $gBitDb;
 
 	$rows =
-		$gBitDb->getAssoc(
+		$gBitDb->getAll(
 			"SELECT 'FAM' AS type, f_id AS xref, f_file AS ged_id, f_gedcom AS gedrec, f_husb, f_wife, f_chil, f_numchil FROM {$TBLPREFIX}link, {$TBLPREFIX}families f WHERE f_file=l_file AND f_id=l_from AND l_file=? AND l_type=? AND l_to=?"
 			, array( $ged_id, $link, $xref));
 
@@ -788,7 +788,7 @@ function fetch_linked_note($xref, $link, $ged_id) {
 	global $TBLPREFIX, $gBitDb;
 
 	$rows =
-		$gBitDb->getAssoc(
+		$gBitDb->getAll(
 			"SELECT 'NOTE' AS type, o_id AS xref, o_file AS ged_id, o_gedcom AS gedrec FROM {$TBLPREFIX}link, {$TBLPREFIX}other o WHERE o_file=l_file AND o_id=l_from AND l_file=? AND l_type=? AND l_to=?"
 			, array( $ged_id, $link, $xref));
 
@@ -803,7 +803,7 @@ function fetch_linked_sour($xref, $link, $ged_id) {
 	global $TBLPREFIX, $gBitDb;
 
 	$rows=
-		$gBitDb->getAssoc(
+		$gBitDb->getAll(
 			"SELECT 'SOUR' AS type, s_id AS xref, s_file AS ged_id, s_gedcom AS gedrec FROM {$TBLPREFIX}link, {$TBLPREFIX}sources s WHERE s_file=l_file AND s_id=l_from AND l_file=? AND l_type=? AND l_to=?"
 			, array( $ged_id, $link, $xref));
 
@@ -818,7 +818,7 @@ function fetch_linked_obje($xref, $link, $ged_id) {
 	global $TBLPREFIX, $gBitDb;
 
 	$rows=
-		$gBitDb->getAssoc(
+		$gBitDb->getAll(
 			"SELECT 'OBJE' AS type, m_media AS xref, m_gedfile AS ged_id, m_gedrec AS gedrec, m_titl, m_file FROM {$TBLPREFIX}link, {$TBLPREFIX}media m WHERE m_gedfile=l_file AND m_media=l_from AND l_file=? AND l_type=? AND l_to=?"
 			, array( $ged_id, $link, $xref));
 
@@ -1929,11 +1929,11 @@ function get_top_surnames($num) {
 			, $num+1);
 	while ( $row = $result->fetchRow() )
 	{
-		if (isset($surnames[$row[n_surn]]['match'])) {
-			$surnames[$row[n_surn]]['match'] += $row->count;
+		if (isset($surnames[$row['n_surn']]['match'])) {
+			$surnames[$row['n_surn']]['match'] += $row['count'];
 		} else {
-			$surnames[$row[n_surn]]['name'] = $row->n_surn;
-			$surnames[$row[n_surn]]['match'] = $row->count;
+			$surnames[$row['n_surn']]['name'] = $row['n_surn'];
+			$surnames[$row['n_surn']]['match'] = $row['count'];
 		}
 	}
 	return $surnames;
@@ -1973,13 +1973,13 @@ function get_server_list(){
 		$rows = $gBitDb->getAll(
 			"SELECT s_id, s_name, s_gedcom, s_file FROM {$TBLPREFIX}sources WHERE s_file=? AND s_dbid=? ORDER BY s_name"
 			, array(PGV_GED_ID, 'Y'));
-		foreach ($rows as $row) {
+		foreach ( $rows as $row ) {
 			$source = array();
-			$source["name"] = $row->s_name;
-			$source["gedcom"] = $row->s_gedcom;
-			$source["gedfile"] = $row->s_file;
-			$source["url"] = get_gedcom_value("URL", 1, $row->s_gedcom);
-			$sitelist[$row->s_id] = $source;
+			$source["name"] = $row['s_name'];
+			$source["gedcom"] = $row['s_gedcom'];
+			$source["gedfile"] = $row['s_file'];
+			$source["url"] = get_gedcom_value("URL", 1, $row['s_gedcom']);
+			$sitelist[$row['s_id']] = $source;
 		}
 	}
 
@@ -2007,9 +2007,9 @@ function get_faq_data($id='') {
 	$rows = $gBitDb->getAll( $sql, $vars );
 
 	foreach ($rows as $row) {
-		$faqs[$row->b_order][$row->b_location]["text"  ]=unserialize($row->b_config);
-		$faqs[$row->b_order][$row->b_location]["pid"   ]=$row->b_id;
-		$faqs[$row->b_order][$row->b_location]["gedcom"]=$row->b_username;
+		$faqs[$row['b_order']][$row['b_location']]["text"  ]=unserialize($row['b_config']);
+		$faqs[$row['b_order']][$row['b_location']]["pid"   ]=$row['b_id'];
+		$faqs[$row['b_order']][$row['b_location']]["gedcom"]=$row['b_username'];
 	}
 	return $faqs;
 }
