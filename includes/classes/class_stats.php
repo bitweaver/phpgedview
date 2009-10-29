@@ -22,7 +22,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: class_stats.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
+* @version $Id: class_stats.php,v 1.4 2009/10/29 08:15:48 lsces Exp $
 * @author Patrick Kellum
 * @package PhpGedView
 * @subpackage Lists
@@ -593,7 +593,7 @@ class stats {
 		}
 		$sql.=' AND d_fact NOT IN ('.implode(', ', array_fill(0, count($no_types), '?')).')';
 		$vars=array_merge($vars, $no_types);
-		return $gBirDb->getOne( $sql, $vars );
+		return $gBitDb->getOne( $sql, $vars );
 	}
 
 	function totalEventsBirth() {
