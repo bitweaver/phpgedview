@@ -22,7 +22,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_db.php,v 1.5 2009/11/01 20:57:02 lsces Exp $
+* @version $Id: functions_db.php,v 1.6 2009/11/01 21:38:18 lsces Exp $
 * @package PhpGedView
 * @subpackage DB
 */
@@ -2445,18 +2445,19 @@ function get_all_gedcoms() {
 	return $gedcoms;
 }
 
-function get_gedcom_from_id($ged_id) {
-	global $GEDCOMS;
+function get_gedcom_from_id( $ged_id ) {
+/*	global $GEDCOMS, $gGedcom;
 
 	if (isset($GEDCOMS[$ged_id])) {
 		return $ged_id;
 	}
 	foreach ($GEDCOMS as $ged=>$gedarray) {
-		if ($gedarray['id']==$ged_id) {
+		if ( $gedarray['id'] == $ged_id ) {
 			return $ged;
 		}
 	}
 
+*/
 	return $ged_id;
 }
 

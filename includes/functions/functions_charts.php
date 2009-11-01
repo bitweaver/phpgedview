@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: functions_charts.php,v 1.3 2009/09/15 20:06:02 lsces Exp $
+ * @version $Id: functions_charts.php,v 1.4 2009/11/01 21:38:18 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -569,20 +569,21 @@ function print_sosa_family($famid, $childid, $sosa, $label="", $parid="", $gpari
  * @param string $rootid root ID
  * @return string $rootid validated root ID
  */
-function check_rootid($rootid) {
-	global $PEDIGREE_ROOT_ID, $USE_RIN;
+function check_rootid( $rootid ) {
+	global $PEDIGREE_ROOT_ID, $USE_RIN, $gGedcom;
 	// -- if the $rootid is not already there then find the first person in the file and make him the root
-	if (!find_person_record($rootid)) {
-		if (find_person_record(PGV_USER_ROOT_ID)) {
-			$rootid=PGV_USER_ROOT_ID;
+	if ( !find_person_record( $rootid ) ) {
+		if ( find_person_record( $gGedcom->mRootId ) ) {
+			$rootid = $gGedcom->mRootId;
 		} else {
-			if (find_person_record(PGV_USER_GEDCOM_ID)) {
-				$rootid=PGV_USER_GEDCOM_ID;
+			// TODO - Add options for user gedcom id's'
+			if ( find_person_record( $gGedcom->mRootId ) ) {
+				$rootid = $gGedcom->mRootId;
 			} else {
-				if (find_person_record(trim($PEDIGREE_ROOT_ID))) {
-					$rootid=trim($PEDIGREE_ROOT_ID);
+				if ( find_person_record( trim($PEDIGREE_ROOT_ID) ) ) {
+					$rootid = trim($PEDIGREE_ROOT_ID);
 				} else {
-					$rootid=get_first_xref('INDI', PGV_GED_ID);
+					$rootid = get_first_xref('INDI', PGV_GED_ID);
 					// If there are no users in the gedcom, do something.
 					if (!$rootid) {
 						$rootid='I1';
@@ -593,8 +594,8 @@ function check_rootid($rootid) {
 	}
 
 	if ($USE_RIN) {
-		$indirec = find_person_record($rootid);
-		if ($indirec == false) $rootid = find_rin_id($rootid);
+		$indirec = find_person_record( $rootid );
+		if ($indirec == false) $rootid = find_rin_id( $rootid );
 	}
 
 	return $rootid;

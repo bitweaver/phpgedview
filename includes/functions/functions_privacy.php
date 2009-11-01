@@ -21,7 +21,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_privacy.php,v 1.3 2009/11/01 20:57:02 lsces Exp $
+* @version $Id: functions_privacy.php,v 1.4 2009/11/01 21:38:18 lsces Exp $
 * @package PhpGedView
 * @subpackage Privacy
 */
@@ -920,7 +920,8 @@ function getUserAccessLevel($user_id=PGV_USER_ID, $ged_id=PGV_GED_ID) {
 * @return int Allowed or not allowed
 */
 function FactEditRestricted($pid, $factrec) {
-	if (PGV_USER_GEDCOM_ADMIN) {
+	global $gGedcom;
+	if ( $gGedcom->isAdminable() ) {
 		return false;
 	}
 
@@ -953,14 +954,14 @@ function FactEditRestricted($pid, $factrec) {
 * @return int Allowed or not allowed
 */
 function FactViewRestricted($pid, $factrec) {
-	global $GEDCOM;
+	global $GEDCOM, $gGedcom;
 
 	// Normal operation
 	$pgv_GED_ID				= $gGedcom->mGEDCOMId;
 	$pgv_USER_GEDCOM_ADMIN	= $gGedcom->isAdminable();
 	$pgv_USER_GEDCOM_ID		= 1; //PGV_USER_GEDCOM_ID;
 
-	if (PGV_USER_GEDCOM_ADMIN) {
+	if ($gGedcom->isAdminable()) {
 		return false;
 	}
 
