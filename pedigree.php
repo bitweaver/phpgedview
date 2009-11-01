@@ -24,7 +24,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 22 August 2005
  *
- * $Id: pedigree.php,v 1.8 2009/09/15 20:06:00 lsces Exp $
+ * $Id: pedigree.php,v 1.9 2009/11/01 21:40:25 lsces Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -34,7 +34,10 @@
  */ 
 require_once( "../bit_setup_inc.php" );
 
+// Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
+
+require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
@@ -42,12 +45,13 @@ $gGedcom = new BitGEDCOM();
 if (isset($_REQUEST['rootid'])) $gGedcom->rootId($_REQUEST['rootid']);
 else $gGedcom->rootId();
 
-require_once 'includes/controllers/pedigree_ctrl.php';
+require_once ( PHPGEDVIEW_PKG_PATH.'includes/controllers/pedigree_ctrl.php' );
 
 $controller = new PedigreeController();
 $controller->init();
 
 // -- echo html header information
+require_once( PHPGEDVIEW_PKG_PATH.'includes/functions/functions_print.php' );
 print_header($controller->getPageTitle());
 
 if ($ENABLE_AUTOCOMPLETE) require './js/autocomplete.js.htm';
