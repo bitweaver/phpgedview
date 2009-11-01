@@ -61,7 +61,7 @@ PHPGEDVIEW_DB_PREFIX.'link' => "
 PHPGEDVIEW_DB_PREFIX.'name' => "
 	n_file I2		PRIMARY,
 	n_id C(20)		PRIMARY,
-	n_num I4		NOT NULL,
+	n_num I4		PRIMARY,
 	n_type C(15)	NOT NULL,
 	n_sort C(250)	NOT NULL,
 	n_full C(250)	NOT NULL,
