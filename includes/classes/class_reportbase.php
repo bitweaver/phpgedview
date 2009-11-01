@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: class_reportbase.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: class_reportbase.php,v 1.3 2009/11/01 12:11:27 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -494,7 +494,7 @@ class PGVRElement {
 		$t = trim($t, "\r\n\t");
 		$t = str_replace(array('<br />', '&nbsp;'), array("\n", ' '), $t);
 		$t = strip_tags($t);
-		$t = unhtmlentities($t);
+		$t = unhtmlentitiesrtl($t);
 		// Tested by Meliza, and it works
 		// Disabling this breaks nothing, I'll clean it up later when we are absolutly sure
 /*		if ($embed_fonts) {
@@ -1020,7 +1020,7 @@ class PGVRFootnote extends PGVRElement {
 		$t = trim($t, "\r\n\t");
 		$t = str_replace(array('<br />', '&nbsp;'), array("\n", ' '), $t);
 		$t = strip_tags($t);
-		$t = unhtmlentities($t);
+		$t = unhtmlentitiesrtl($t);
 /*		if ($embed_fonts) {
 			$t = bidi_text($t);
 		}

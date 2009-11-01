@@ -287,7 +287,7 @@ function getIcalFooter(){
  */
 function formatIcalData($data){
 	$data = strip_tags($data);
-	$data = unhtmlentities($data); //convert html entities to chars (&quot; &lrm; etc)
+	$data = unhtmlentitiesrtl($data); //convert html entities to chars (&quot; &lrm; etc)
 	$data = strtr($data, array("\n" => '\\n', '\\' => '\\\\', ',' => '\\,', ';' => '\\;')); //escape special chars as per RFC 2445 spec
 	return rfc2445Fold($data);
 }

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: fanchart.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: fanchart.php,v 1.7 2009/11/01 12:11:27 lsces Exp $
  */
 
 /**
@@ -249,7 +249,7 @@ function print_fan_chart($treeid, $fanw=640, $fandeg=270) {
 					if ($ct>0) $text.= "-".trim($match[1]);
 				}
 
-				$text = unhtmlentities($text);
+				$text = unhtmlentitiesrtl($text);
 				$text = strip_tags($text);
 //Do we still need?
 
