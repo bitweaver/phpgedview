@@ -14,42 +14,6 @@
  * required setup
  */
 require_once( LIBERTY_PKG_PATH.'LibertyContent.php' );
-define('PGV_PHPGEDVIEW',      'PhpGedView');
-define('PGV_VERSION',         '4.2.2');
-
-// Regular expressions for validating user input, etc.
-define('PGV_REGEX_XREF',     '[A-Za-z0-9:_-]+');
-define('PGV_REGEX_TAG',      '[_A-Z][_A-Z0-9]*');
-define('PGV_REGEX_INTEGER',  '-?\d+');
-define('PGV_REGEX_ALPHA',    '[a-zA-Z]+');
-define('PGV_REGEX_ALPHANUM', '[a-zA-Z0-9]+');
-define('PGV_REGEX_BYTES',    '[0-9]+[bBkKmMgG]?');
-define('PGV_REGEX_USERNAME', '[^<>"%{};]+');
-define('PGV_REGEX_PASSWORD', '.{6,}');
-define('PGV_REGEX_NOSCRIPT', '[^<>"&%{};]+');
-define('PGV_REGEX_URL',      '[\/0-9A-Za-z_!~*\'().;?:@&=+$,%#-]+'); // Simple list of valid chars
-define('PGV_REGEX_EMAIL',    '[^\s<>"&%{};@]+@[^\s<>"&%{};@]+');
-define('PGV_REGEX_UNSAFE',   '[\x00-\xFF]*'); // Use with care and apply additional validation!
-
-// UTF8 representation of various characters
-define('PGV_UTF8_BOM',    "\xEF\xBB\xBF"); // U+FEFF
-define('PGV_UTF8_LRM',    "\xE2\x80\x8E"); // U+200E
-define('PGV_UTF8_RLM',    "\xE2\x80\x8F"); // U+200F
-define('PGV_UTF8_MALE',   "\xE2\x99\x82"); // U+2642
-define('PGV_UTF8_FEMALE', "\xE2\x99\x80"); // U+2640
-
-// Alternatives to BMD events for lists, charts, etc.
-define('PGV_EVENTS_BIRT', 'BIRT|CHR|BAPM|_BRTM|ADOP');
-define('PGV_EVENTS_DEAT', 'DEAT|BURI|CREM');
-define('PGV_EVENTS_MARR', 'MARR|MARB');
-define('PGV_EVENTS_DIV',  'DIV|ANUL|_SEPR');
-
-require_once('includes/functions/functions.php');
-require_once('includes/functions/functions_import.php');
-require_once('includes/bit_print.php');
-$THEME_DIR = "themes/bitweaver/";
-require_once('themes/bitweaver/theme.php');
-require_once('languages/lang.en.php');
 
 class BitGEDCOM extends LibertyContent {
 	var $mGEDCOMId;
@@ -229,7 +193,7 @@ if(!isset($GEDCOM)) {
 						LEFT JOIN `".BIT_DB_PREFIX."users_users` uuc ON (uuc.`user_id` = lc.`user_id`)
 					WHERE ged.`g_$lookupColumn`=? $whereSql";
 
-			if( $rs = $this->mDb->query($sql, array( '1' )) ) {
+			if( $rs = $this->mDb->query($sql, $bindVars) ) {
 				$this->mInfo = $rs->fields;
 
 				$this->mGEDCOMId = $this->mInfo['g_id'];
@@ -581,9 +545,9 @@ function importGedcom() {
 
 			//-- import anything that is not a blob
 			if (preg_match("/\n1 BLOB/", $indirec) == 0) {
-				import_record(trim($indirec));
-				$place_count += update_places($gid, $indirec);
-				$date_count += update_dates($gid, $indirec);
+				import_record( trim($indirec), false );
+//				$place_count += update_places( $gid, $this->mGEDCOMId, $indirec );
+//				$date_count += update_dates( $gid, $this->mGEDCOMId, $indirec );
 			}
 
 			//-- move the cursor to the start of the next record
