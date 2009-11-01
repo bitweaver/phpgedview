@@ -1,6 +1,8 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.6 2008/07/07 17:26:43 lsces Exp $
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.7 2009/11/01 20:53:55 lsces Exp $
 require_once( '../../bit_setup_inc.php' );
+
+require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 if ( isset($_REQUEST['g_id']) ) {
@@ -10,6 +12,11 @@ if ( isset($_REQUEST['g_id']) ) {
 }
 else 
 	$gGedcom = new BitGEDCOM();
+
+// Define some constants to save calculating the same value repeatedly.
+// To be replaced with GGedcom object inside PGV
+define('PGV_GEDCOM', $gGedcom->mGedcomName);
+define('PGV_GED_ID', $gGedcom->mGEDCOMId);
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
@@ -27,7 +34,7 @@ if( isset( $_REQUEST['fSubmitAddGedcom'] ) ) {
 } elseif( !empty( $_REQUEST['fRemoveGedcom'] )&& $gGedcom ) {
 	$gGedcom->expunge();
 } elseif( !empty( $_REQUEST['fUpload'] )&& $gGedcom ) {
-	$gGedcom->expungeGedcom($_REQUEST['g_id']);
+	$gGedcom->expungeGedcom( 1 ); //$_REQUEST['g_id']);
 	$gGedcom->importGedcom();
 }
 
