@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.php,v 1.4 2009/09/15 20:06:02 lsces Exp $
+ * @version $Id: functions.php,v 1.5 2009/11/01 20:58:30 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -292,16 +292,16 @@ function get_privacy_file() {
 	global $GEDCOMS, $GEDCOM;
 
 	$privfile = "privacy.php";
-	if (count($GEDCOMS)==0) {
+	if ( count($GEDCOMS)==0 ) {
 		$privfile = "privacy.php";
 	}
-	if (!empty($GEDCOM) && isset($GEDCOMS[$GEDCOM])) {
+	if ( !empty($GEDCOM) && isset($GEDCOMS[$GEDCOM])) {
 		if (isset($GEDCOMS[$GEDCOM]["privacy"]) && file_exists($GEDCOMS[$GEDCOM]["privacy"])) {
 			$privfile = $GEDCOMS[$GEDCOM]["privacy"];
 		} else {
 			$privfile = "privacy.php";
 		}
-	} else {
+	} else if ( !empty($GEDCOMS) ) {
 		foreach ($GEDCOMS as $GEDCOM=>$gedarray) {
 			$_SESSION["GEDCOM"] = $GEDCOM;
 			if (isset($gedarray["privacy"]) && file_exists($gedarray["privacy"])) {
@@ -329,7 +329,7 @@ function load_privacy_file($ged_id=PGV_GED_ID) {
 	global $person_privacy, $user_privacy, $global_facts, $person_facts;
 
 	// Load default settings
-	require 'privacy.php';
+	require '../../privacy.php';
 
 	// Load settings for the specified gedcom
 	$privacy_file=get_gedcom_setting($ged_id, 'privacy');
@@ -1332,7 +1332,7 @@ function find_highlighted_object($pid, $indirec) {
 	//-- handle finding the media of remote objects
 	$ct = preg_match("/(.*):(.*)/", $pid, $match);
 	if ($ct>0) {
-		require_once 'includes/classes/class_serviceclient.php';
+		require_once '../classes/class_serviceclient.php';
 		$client = ServiceClient::getInstance($match[1]);
 		if (!is_null($client)) {
 			$mt = preg_match_all('/\n\d OBJE @('.PGV_REGEX_XREF.')@/', $indirec, $matches, PREG_SET_ORDER);
@@ -2867,7 +2867,7 @@ function get_report_list($force=false) {
 	}
 	$d->close();
 
-	require_once("includes/reportheader.php");
+	require_once("../reportheader.php");
 	$report_array = array();
 	if (!function_exists("xml_parser_create"))
 		return $report_array;
@@ -3488,8 +3488,8 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 
 	if ($forceLoad) {
 		$LANGUAGE = "english";
-		require($pgv_language[$LANGUAGE]);			// Load English
-		require($factsfile[$LANGUAGE]);
+		require( PHPGEDVIEW_PKG_PATH.$pgv_language[$LANGUAGE] );			// Load English
+		require( PHPGEDVIEW_PKG_PATH.$factsfile[$LANGUAGE] );
 
 		$TEXT_DIRECTION = $TEXT_DIRECTION_array[$LANGUAGE];
 		$DATE_FORMAT	= $DATE_FORMAT_array[$LANGUAGE];
@@ -3498,7 +3498,7 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
 		$NAME_REVERSE	= $NAME_REVERSE_array[$LANGUAGE];
 
 		// Load functions that are specific to the active language
-		$file = "./includes/extras/functions.".$lang_short_cut[$LANGUAGE].".php";
+		$file = PHPGEDVIEW_PKG_PATH."includes/extras/functions.".$lang_short_cut[$LANGUAGE].".php";
 		if (file_exists($file)) {
 			include_once($file);
 		}
@@ -3679,7 +3679,7 @@ function loadLanguage($desiredLanguage="english", $forceLoad=false) {
  *	have 52 different UTF8 characters all mapping to the same base character.  This will
  *	handle Vietnamese, which is by far the richest language in terms of diacritic marks.
  */
- 	require_once "includes/sort_tables_utf8.php";
+ 	require_once PHPGEDVIEW_PKG_PATH."/includes/sort_tables_utf8.php";
 }
 
 /**
