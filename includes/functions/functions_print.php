@@ -23,7 +23,7 @@
 *
 * @package PhpGedView
 * @subpackage Display
-* @version $Id: functions_print.php,v 1.2 2009/09/15 20:06:02 lsces Exp $
+* @version $Id: functions_print.php,v 1.3 2009/11/01 21:39:44 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -52,7 +52,7 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 	global $PGV_IMAGE_DIR, $PGV_IMAGES, $ABBREVIATE_CHART_LABELS, $USE_MEDIA_VIEWER;
 	global $chart_style, $box_width, $generations, $show_spouse, $show_full;
 	global $CHART_BOX_TAGS, $SHOW_LDS_AT_GLANCE, $PEDIGREE_SHOW_GENDER;
-	global $SEARCH_SPIDER;
+	global $SEARCH_SPIDER, $gBitUser;
 
 	if ($style != 2) $style=1;
 	if (empty($show_full)) $show_full = 0;
@@ -108,9 +108,9 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 				else $title = $pid." :".$pgv_lang["descend_chart"];
 				$personlinks .= "<br /><a href=\"".encode_url("descendancy.php?pid={$pid}&show_full={$PEDIGREE_FULL_DETAILS}&generations={$generations}&box_width={$box_width}&ged={$GEDCOM}")."\" title=\"$title\" $mouseAction1><b>".$pgv_lang["descend_chart"]."</b></a><br />";
 
-				$username = PGV_USER_NAME;
+				$username = $gBitUser->getDisplayName();
 				if (!empty($username)) {
-					$myid=PGV_USER_GEDCOM_ID;
+					$myid=$gBitUser->mUserId;
 					if ($myid) {
 						if ($TEXT_DIRECTION=="ltr") $title = $pgv_lang["relationship_chart"].": ".$pid;
 						else $title = $pid." :".$pgv_lang["relationship_chart"];
@@ -377,7 +377,7 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 			}
 		}
 	global $THEME_DIR;
-	include($THEME_DIR."templates/personbox_template.php");
+	include(PHPGEDVIEW_PKG_PATH."themes/bitweaver/templates/personbox_template.php");
 }
 
 /**
@@ -394,7 +394,7 @@ function print_pedigree_person($pid, $style=1, $show_famlink=true, $count=0, $pe
 * @param boolean $use_alternate_styles
 */
 function print_header($title, $head="", $use_alternate_styles=true) {
-	global $pgv_lang, $bwidth;
+	global $pgv_lang, $bwidth, $gGedcom;
 	global $HOME_SITE_URL, $HOME_SITE_TEXT, $SERVER_URL;
 	global $BROWSERTYPE, $SEARCH_SPIDER;
 	global $view, $cart;
@@ -430,7 +430,7 @@ function print_header($title, $head="", $use_alternate_styles=true) {
 
 	$title = PrintReady(stripLRMRLM(strip_tags($title.$metaTitle), TRUE));
 
-	$GEDCOM_TITLE = get_gedcom_setting(PGV_GED_ID, 'title');
+	$GEDCOM_TITLE = $gGedcom->mGedcomName;
 	if ($ENABLE_RSS){
 		$applicationType = "application/rss+xml";
 		if ($RSS_FORMAT == "ATOM" || $RSS_FORMAT == "ATOM0.3"){
@@ -551,7 +551,7 @@ $META_SURNAME_KEYWORDS = false;
 		arrows[3] = new Image();
 		arrows[3].src = "'.$PGV_IMAGE_DIR."/".$PGV_IMAGES["darrow2"]["other"].'";
 	';
-	if (PGV_USER_CAN_EDIT) {
+	if ( $gGedcom->isEditable() ) {
 
 	$javascript .= 'function delete_record(pid, linenum, mediaid) {
 		if (!mediaid) mediaid="";
@@ -598,7 +598,6 @@ $META_SURNAME_KEYWORDS = false;
 	}
 	$bodyOnLoad .= "\"";
 	if ($view!="preview") {
-		include($headerfile);
 		$META_AUTHOR = $old_META_AUTHOR;
 		$META_PUBLISHER = $old_META_PUBLISHER;
 		$META_COPYRIGHT = $old_META_COPYRIGHT;
@@ -607,7 +606,6 @@ $META_SURNAME_KEYWORDS = false;
 	}
 	else {
 		//include($print_headerfile); // this not use CSS styles
-		include($headerfile);
 	}
 }
 
@@ -640,7 +638,6 @@ function print_footer() {
 	else $footer_count++;
 	echo "<!-- begin footer -->";
 	if ($view!="preview") {
-		include($footerfile);
 		echo "<br />";
 	}
 	else {
@@ -1327,7 +1324,7 @@ function print_help_link($help, $helpText, $show_desc="", $use_print_text=false,
 loadLangFile('pgv_help');
 
 	$output='';
-	if (!$SEARCH_SPIDER && $view!='preview' && $_SESSION['show_context_help']) {
+	if (!$SEARCH_SPIDER && $view!='preview') { // TODO && $_SESSION['show_context_help']) {
 		$output.=' <a class="help" tabindex="0" title="';
 		if ($show_desc) {
 			$output.=$pgv_lang["help_header"].' '.$pgv_lang[$show_desc].'" href="javascript:// ';
