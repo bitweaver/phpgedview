@@ -20,7 +20,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_import.php,v 1.3 2009/09/15 20:06:02 lsces Exp $
+* @version $Id: functions_import.php,v 1.4 2009/11/01 20:57:02 lsces Exp $
 * @package PhpGedView
 * @subpackage DB
 */
@@ -573,9 +573,9 @@ function reformat_record_import($rec) {
 function import_record($gedrec, $update) {
 	global $xtype, $TBLPREFIX, $GEDCOM_FILE, $FILE, $pgv_lang, $USE_RIN;
 	global $place_id, $WORD_WRAPPED_NOTES, $GEDCOMS, $MAX_IDS, $fpnewged, $GEDCOM, $GENERATE_UIDS;
-	global $gBitDb;
+	global $gBitDb, $gGedcom;
 
-	$FILE=$GEDCOM;
+	$FILE=$gGedcom->mGedcomName;
 
 	// Escaped @ signs (only if importing from file)
 	if (!$update) {
@@ -654,8 +654,8 @@ function import_record($gedrec, $update) {
 	$record->dispname=true;
 
 	// Update the cross-reference/index tables.
-	$ged_id=$GEDCOMS[$GEDCOM]["id"];
-	$xref  =$gid;
+	$ged_id = $gGedcom->mGEDCOMId;
+	$xref   = $gid;
 
 	update_places($xref, $ged_id, $gedrec);
 	update_dates ($xref, $ged_id, $gedrec);

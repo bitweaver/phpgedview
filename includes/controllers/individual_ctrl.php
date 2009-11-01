@@ -110,7 +110,7 @@ class IndividualControllerRoot extends BaseController {
 	function init() {
 		global $USE_RIN, $MAX_ALIVE_AGE, $GEDCOM, $GEDCOM_DEFAULT_TAB, $pgv_changes, $pgv_lang, $CHARACTER_SET;
 		global $USE_QUICK_UPDATE, $pid;
-		global $Fam_Navigator;
+		global $Fam_Navigator, $gBitUser, $gGedcom;
 
 		$this->sexarray["M"] = $pgv_lang["male"];
 		$this->sexarray["F"] = $pgv_lang["female"];
@@ -147,8 +147,8 @@ class IndividualControllerRoot extends BaseController {
 			}
 		}
 		//-- check for the user
-		if (PGV_USER_ID) {
-			$this->default_tab=get_user_setting(PGV_USER_ID, 'defaulttab');
+		if ( $gBitUser->isRegistered() ) {
+			$this->default_tab = get_user_setting( $gBitUser->mUserId, 'defaulttab');
 		}
 
 		//-- check for a cookie telling what the last tab was when they were last
@@ -174,7 +174,7 @@ class IndividualControllerRoot extends BaseController {
 		if ($this->default_tab<-2 || $this->default_tab>9) $this->default_tab=0;
 
 		$this->indi = new Person($indirec, false);
-		$this->indi->ged_id=PGV_GED_ID; // This record is from a file
+		$this->indi->ged_id = $gGedcom->mGEDCOMId; // This record is from a file
 
 		//-- if the person is from another gedcom then forward to the correct site
 		/*
@@ -202,7 +202,7 @@ class IndividualControllerRoot extends BaseController {
 		}
 
 		//-- if the user can edit and there are changes then get the new changes
-		if ($this->show_changes && PGV_USER_CAN_EDIT) {
+		if ($this->show_changes && $gGedcom->isEditable() ) {
 			if (isset($pgv_changes[$this->pid."_".$GEDCOM])) {
 				//-- get the changed record from the file
 				$newrec = find_updated_record($this->pid);
@@ -247,7 +247,7 @@ class IndividualControllerRoot extends BaseController {
 
 		//-- only allow editors or users who are editing their own individual or their immediate relatives
 		if ($this->indi->canDisplayDetails()) {
-			$this->canedit = PGV_USER_CAN_EDIT;
+			$this->canedit = $gGedcom->isEditable();
 /* Disable self-editing completely until we have a GEDCOM config option to control this
 			if (!$this->canedit && $USE_QUICK_UPDATE) {
 				$my_id=PGV_USER_GEDCOM_ID;

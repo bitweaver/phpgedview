@@ -22,7 +22,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_db.php,v 1.4 2009/10/29 08:16:52 lsces Exp $
+* @version $Id: functions_db.php,v 1.5 2009/11/01 20:57:02 lsces Exp $
 * @package PhpGedView
 * @subpackage DB
 */
@@ -414,9 +414,9 @@ function get_indilist_surns($surn, $salpha, $marnm, $fams, $ged_id) {
 	if ($fams) {
 		$sql.=" JOIN {$TBLPREFIX}link ON (i_id=l_from AND i_file=l_file AND l_type='FAMS')";
 	}
-	$where=array("n_file={$ged_id}");
+	$where = array("n_file = $ged_id ");
 	if (!$marnm) {
-		$where[]="n_type!='_MARNM'";
+		$where[]="n_type != '_MARNM'";
 	}
 
 	list($s_incl, $s_excl)=db_collation_alternatives($salpha);
@@ -2433,12 +2433,14 @@ function delete_site_setting($site_setting_name) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function get_all_gedcoms() {
-	global $GEDCOMS;
+	global $GEDCOMS, $gGedcom;
 
 	$gedcoms=array();
-	foreach ($GEDCOMS as $key=>$value) {
+/*	foreach ($GEDCOMS as $key=>$value) {
 		$gedcoms[$value['id']]=$key;
 	}
+*/	
+	$gedcoms = $gGedcom->getList();
 	uasort($gedcoms, 'stringsort');
 	return $gedcoms;
 }
@@ -2458,14 +2460,14 @@ function get_gedcom_from_id($ged_id) {
 	return $ged_id;
 }
 
-function get_id_from_gedcom($ged_name) {
-	global $GEDCOMS;
+function get_id_from_gedcom( $ged_name ) {
+	global $GEDCOMS, $gGedcom;
 
-	if (array_key_exists($ged_name, $GEDCOMS)) {
-		return (int)$GEDCOMS[$ged_name]['id']; // Cast to (int) for safe use in SQL
-	} else {
-		return null;
-	}
+//	if (array_key_exists($ged_name, $GEDCOMS)) {
+//		return (int)$GEDCOMS[$ged_name]['id']; // Cast to (int) for safe use in SQL
+//	} else {
+		return $gGedcom->mGEDCOMId;
+//	}
 }
 
 
@@ -2478,9 +2480,9 @@ function get_id_from_gedcom($ged_name) {
 // mapped onto the existing "physical" structure.
 ////////////////////////////////////////////////////////////////////////////////
 
-function get_gedcom_setting($ged_id, $parameter) {
+function get_gedcom_setting( $ged_id, $parameter ) {
 	global $GEDCOMS;
-	$ged_id=get_gedcom_from_id($ged_id);
+	$ged_id = get_gedcom_from_id($ged_id);
 	if (array_key_exists($ged_id, $GEDCOMS) && array_key_exists($parameter, $GEDCOMS[$ged_id])) {
 		return $GEDCOMS[get_gedcom_from_id($ged_id)][$parameter];
 	} else {
@@ -2490,126 +2492,34 @@ function get_gedcom_setting($ged_id, $parameter) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions to access the PGV_USER table
+// Mapped to BW $gBitUser functions
 ////////////////////////////////////////////////////////////////////////////////
-
-$PGV_USERS_cache=array();
-
-function create_user($username, $password) {
-	global $TBLPREFIX, $gBitDb;
-
-	$gBitDb->query( "INSERT INTO {$TBLPREFIX}users (u_username, u_password) VALUES ('{$username}', '{$password}')");
-	return $username;
-}
-
-function rename_user($old_username, $new_username) {
-	global $TBLPREFIX, $gBitDb;
-
-	$gBitDb->query("UPDATE {$TBLPREFIX}users     SET u_username=? WHERE u_username  =?", array($new_username, $old_username));
-	$gBitDb->query("UPDATE {$TBLPREFIX}blocks    SET b_username =? WHERE b_username =?", array($new_username, $old_username));
-	$gBitDb->query("UPDATE {$TBLPREFIX}favorites SET fv_username=? WHERE fv_username=?", array($new_username, $old_username));
-	$gBitDb->query("UPDATE {$TBLPREFIX}messages  SET m_from     =? WHERE m_from     =?", array($new_username, $old_username));
-	$gBitDb->query("UPDATE {$TBLPREFIX}messages  SET m_to       =? WHERE m_to       =?", array($new_username, $old_username));
-	$gBitDb->query("UPDATE {$TBLPREFIX}news      SET n_username =? WHERE n_username =?", array($new_username, $old_username));
-}
-
-function delete_user($user_id) {
-	global $TBLPREFIX, $gBitDb;
-
-	$gBitDb->query("DELETE FROM {$TBLPREFIX}users     WHERE u_username =?", array($user_id));
-	$gBitDb->query("DELETE FROM {$TBLPREFIX}blocks    WHERE b_username =?", array($user_id));
-	$gBitDb->query("DELETE FROM {$TBLPREFIX}favorites WHERE fv_username=?", array($user_id));
-	$gBitDb->query("DELETE FROM {$TBLPREFIX}messages  WHERE m_from=? OR m_to=?", array($user_id, $user_id));
-	$gBitDb->query("DELETE FROM {$TBLPREFIX}news      WHERE n_username =?", array($user_id));
-}
-
-function get_all_users($order='ASC', $key1='lastname', $key2='firstname') {
-	global $TBLPREFIX, $gBitDb;
-
-	return
-		$gBitDb->getAssoc("SELECT u_username, u_username FROM {$TBLPREFIX}users ORDER BY u_{$key1} {$order}, u_{$key2} {$order}");
-}
 
 function get_user_count() {
 	global $TBLPREFIX, $gBitDb;
 
 	return
-		$gBitDb->getOne("SELECT COUNT(*) FROM {$TBLPREFIX}users");
-}
-
-function get_admin_user_count() {
-	global $TBLPREFIX, $gBitDb;
-
-	return
-		$gBitDb->getAssoc(
-			"SELECT COUNT(*) FROM {$TBLPREFIX}users WHERE u_canadmin=?"
-			, array( 'Y' ));
-}
-
-function get_non_admin_user_count() {
-	global $TBLPREFIX, $gBitDb;
-
-	return
-		$gBitDb->getAssoc(
-			"SELECT COUNT(*) FROM {$TBLPREFIX}users WHERE u_canadmin<>?"
-			, array( 'Y' ));
-}
-
-// Get a list of logged-in users
-function get_logged_in_users() {
-	global $TBLPREFIX, $gBitDb;
-
-	return
-		$gBitDb->getAssoc(
-			"SELECT u_username, u_username FROM {$TBLPREFIX}users WHERE u_loggedin=?"
-			, array( 'Y' ));
-}
-
-// Get a list of logged-in users who haven't been active recently
-function get_idle_users($time) {
-	global $TBLPREFIX, $gBitDb;
-
-	return
-		$gBitDb->getAssoc(
-			"SELECT u_username, u_username FROM {$TBLPREFIX}users WHERE u_loggedin=? AND u_sessiontime BETWEEN 1 AND ?"
-			, array( 'Y', (int)$time));
+		$gBitDb->getOne("SELECT COUNT(*) FROM `".BIT_DB_PREFIX."users_users`");
 }
 
 // Get the ID for a username
 // (Currently ID is the same as username, but this will change in the future)
-function get_user_id($username) {
+function get_user_id( $username ) {
 	global $TBLPREFIX, $gBitDb;
 
 	return $gBitDb->getOne(
-			"SELECT u_username FROM {$TBLPREFIX}users WHERE u_username=?"
-			, array($username) );
+			"SELECT `user_id` FROM `".BIT_DB_PREFIX."users_users` WHERE `login`=? OR `email`=?"
+			, array($username, $username) );
 }
 
 // Get the username for a user ID
 // (Currently ID is the same as username, but this will change in the future)
-function get_user_name($user_id) {
-	return $user_id;
-}
-
-function set_user_password($user_id, $password) {
+function get_user_name( $user_id ) {
 	global $TBLPREFIX, $gBitDb;
 
-	$gBitDb->query(
-		"UPDATE {$TBLPREFIX}users SET u_password=? WHERE u_username=?"
-		, array($password, $user_id));
-
-	global $PGV_USERS_cache;
-	if (isset($PGV_USERS_cache[$user_id])) {
-		unset($PGV_USERS_cache[$user_id]);
-	}
-}
-
-function get_user_password($user_id) {
-	global $TBLPREFIX, $gBitDb;
-
-	return
-		$gBitDb->getOne(
-			"SELECT u_password FROM {$TBLPREFIX}users WHERE u_username=?"
-			, array($user_id));
+	return $gBitDb->getOne(
+			"SELECT `real_name` FROM `".BIT_DB_PREFIX."users_users` WHERE `user_id`=? OR `login`=?"
+			, array($user_id, $user_id) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2623,23 +2533,24 @@ function get_user_password($user_id) {
 // $parameter is one of the column names in PGV_USERS, without the u_ prefix.
 ////////////////////////////////////////////////////////////////////////////////
 
-function get_user_setting($user_id, $parameter) {
-	global $TBLPREFIX, $gBitDb;
+function get_user_setting( $user_id, $parameter ) {
+	global $TBLPREFIX, $gBitDb, $gBitUser;
 
-	return $gBitDb->getOne("SELECT u_{$parameter} FROM {$TBLPREFIX}users WHERE u_username=?",array($user_id));
+	return $gBitUser->getPreference( $parameter ); 
+	// $gBitDb->getOne("SELECT u_{$parameter} FROM {$TBLPREFIX}users WHERE u_username=?",array($user_id));
 }
 
-function set_user_setting($user_id, $parameter, $value) {
-	global $TBLPREFIX, $gBitDb;
-
-	$gBitDb->query("UPDATE {$TBLPREFIX}users SET u_{$parameter}=? WHERE u_username=?", array($value, $user_id));
+function set_user_setting( $user_id, $parameter, $value ) {
+	global $TBLPREFIX, $gBitDb, $gBitUser;
+	$gBitUser->setPreference( $parameter, $value );
+//	$gBitDb->query("UPDATE {$TBLPREFIX}users SET u_{$parameter}=? WHERE u_username=?", array($value, $user_id));
 }
 
 function admin_user_exists() {
 	global $TBLPREFIX, $gBitDb;
 
 	return
-		$gBitDb->getOne("SELECT COUNT(*) FROM {$TBLPREFIX}users WHERE u_canadmin=?", array('Y'));
+		true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2708,12 +2619,12 @@ function set_user_gedcom_setting($user_id, $ged_id, $parameter, $value) {
 	}
 }
 
-function get_user_from_gedcom_xref($ged_id, $xref) {
+function get_user_from_gedcom_xref( $ged_id, $xref) {
 	global $TBLPREFIX, $gBitDb;
 
-	$ged_name=get_gedcom_from_id($ged_id);
+	$ged_name=get_gedcom_from_id( $ged_id );
 
-	$rows = $gBitDb->query("SELECT u_username, u_gedcomid FROM {$TBLPREFIX}users");
+	$rows = null; // $gBitDb->query("SELECT u_username, u_gedcomid FROM {$TBLPREFIX}users");
 	$username=false;
 	while ( $row = $rows->fetchRow() ) {
 		if ($row['u_gedcomid']) {

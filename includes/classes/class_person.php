@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_person.php,v 1.3 2009/08/03 20:10:42 lsces Exp $
+* @version $Id: class_person.php,v 1.4 2009/11/01 20:57:03 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -84,14 +84,14 @@ class Person extends GedcomRecord {
 	// from the database (if we anticipate the record hasn't
 	// been fetched previously).
 	static function &getInstance($data, $simple=true) {
-		global $gedcom_record_cache, $GEDCOM, $pgv_changes;
+		global $gedcom_record_cache, $GEDCOM, $pgv_changes, $gGedcom;
 
 		if (is_array($data)) {
-			$ged_id=$data['ged_id'];
-			$pid   =$data['xref'];
+			$ged_id = $data['ged_id'];
+			$pid    = $data['xref'];
 		} else {
-			$ged_id=get_id_from_gedcom($GEDCOM);
-			$pid   =$data;
+			$ged_id = $gGedcom->mGEDCOMId;
+			$pid    = $data;
 		}
 
 		// Check the cache first
@@ -114,19 +114,19 @@ class Person extends GedcomRecord {
 			}
 
 			// If we didn't find the record in the database, it may be new/pending
-			if (!$data && PGV_USER_CAN_EDIT && isset($pgv_changes[$pid.'_'.$GEDCOM])) {
+			if (!$data && $gGedcom->isEditable() && isset($pgv_changes[$pid.'_'.$GEDCOM])) {
 				$data=find_updated_record($pid);
 				$fromfile=true;
 			}
 
 			// If we still didn't find it, it doesn't exist
 			if (!$data) {
-				return null;
+				return;
 			}
 		}
 
 		// Create the object
-		$object=new Person($data, $simple);
+		$object = new Person($data, $simple);
 		if (!empty($fromfile)) {
 			$object->setChanged(true);
 		}

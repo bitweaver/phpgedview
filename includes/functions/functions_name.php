@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions_name.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id: functions_name.php,v 1.2 2009/11/01 20:57:02 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -259,7 +259,7 @@ function DMSoundex($name) {
 
 	// If the code tables are not loaded, reload! Keep them global!
 	if (!defined('PGV_DMSOUNDS_UTF8_PHP')) {
-		require 'includes/dmsounds_UTF8.php';
+		require ( PHPGEDVIEW_PKG_PATH.'includes/dmsounds_UTF8.php' );
 	}
 
 	// Apply special transformation rules to the input string

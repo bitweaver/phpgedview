@@ -21,7 +21,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: functions_privacy.php,v 1.2 2009/09/15 20:06:02 lsces Exp $
+* @version $Id: functions_privacy.php,v 1.3 2009/11/01 20:57:02 lsces Exp $
 * @package PhpGedView
 * @subpackage Privacy
 */
@@ -336,33 +336,22 @@ function displayDetailsById($pid, $type = "INDI") {
 	global $PRIV_PUBLIC, $PRIV_USER, $PRIV_NONE, $PRIV_HIDE, $USE_RELATIONSHIP_PRIVACY, $CHECK_MARRIAGE_RELATIONS, $MAX_RELATION_PATH_LENGTH;
 	global $global_facts, $person_privacy, $user_privacy, $HIDE_LIVE_PEOPLE, $GEDCOM, $SHOW_DEAD_PEOPLE, $MAX_ALIVE_AGE, $PRIVACY_BY_YEAR;
 	global $PRIVACY_CHECKS, $PRIVACY_BY_RESN, $SHOW_SOURCES, $SHOW_LIVING_NAMES;
-	global $GEDCOMS, $INDEX_DIRECTORY;
+	global $GEDCOMS, $INDEX_DIRECTORY, $gBitUser, $gGedcom;
 
-	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
-		// Normal operation
-		$pgv_GEDCOM				= PGV_GEDCOM;
-		$pgv_GED_ID				= PGV_GED_ID;
-		$pgv_USER_ID			= PGV_USER_ID;
-		$pgv_USER_NAME			= PGV_USER_NAME;
-		$pgv_USER_GEDCOM_ADMIN	= PGV_USER_GEDCOM_ADMIN;
-		$pgv_USER_CAN_ACCESS	= PGV_USER_CAN_ACCESS;
-		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
-		$pgv_USER_GEDCOM_ID		= PGV_USER_GEDCOM_ID;
-	} else {
-		// We're in the middle of a Download -- get overriding information from cache
-		$pgv_GEDCOM				= $_SESSION["pgv_GEDCOM"];
-		$pgv_GED_ID				= $_SESSION["pgv_GED_ID"];
-		$pgv_USER_ID			= $_SESSION["pgv_USER_ID"];
-		$pgv_USER_NAME			= $_SESSION["pgv_USER_NAME"];
-		$pgv_USER_GEDCOM_ADMIN	= $_SESSION["pgv_USER_GEDCOM_ADMIN"];
-		$pgv_USER_CAN_ACCESS	= $_SESSION["pgv_USER_CAN_ACCESS"];
-		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
-		$pgv_USER_GEDCOM_ID		= $_SESSION["pgv_USER_GEDCOM_ID"];
-	}
+		// get settings from bitweaver
+		$pgv_GEDCOM				= $gGedcom->mGedcomName;
+		$pgv_GED_ID				= $gGedcom->mGEDCOMId;
+		$pgv_USER_ID			= $gBitUser->getUserId();
+		$pgv_USER_NAME			= $gBitUser->getDisplayName();
+		$pgv_USER_GEDCOM_ADMIN	= $gGedcom->isAdminable();
+		$pgv_USER_CAN_ACCESS	= $gGedcom->isViewable();
+		$pgv_USER_ACCESS_LEVEL	= $gGedcom->isEditable();
+		$pgv_USER_GEDCOM_ID		= 1; // $gGedcom->getUserID();
 
 	static $privacy_cache = array();
 
-	if (!$HIDE_LIVE_PEOPLE) return true;
+//	if (!$HIDE_LIVE_PEOPLE) 
+		return true;
 	if (empty($pid)) return true;
 
 	$pkey = $GEDCOMS[$GEDCOM]['id'].$pid;
@@ -645,19 +634,12 @@ if (!function_exists("showLivingNameById")) {
 * @param string $pid the GEDCOM XRef ID for the entity to check privacy settings for
 * @return boolean return true to show the person's name, return false to keep it private
 */
-function showLivingNameById($pid) {
-	global $GEDCOM;
+function showLivingNameById( $pid ) {
+	global $GEDCOM, $gGedcom, $gBitUser;
 	global $SHOW_LIVING_NAMES, $person_privacy, $user_privacy;
 
-	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
-		// Normal operation
-		$pgv_USER_NAME			= PGV_USER_NAME;
-		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
-	} else {
-		// We're in the middle of a Download -- get overriding information from cache
-		$pgv_USER_NAME			= $_SESSION["pgv_USER_NAME"];
-		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
-	}
+	$pgv_USER_NAME			= $gBitUser->mUserId;
+	$pgv_USER_ACCESS_LEVEL	= $gGedcom->isEditable();
 
 	if (displayDetailsById($pid)) return true;
 	if (!empty($pgv_USER_NAME)) {
@@ -696,16 +678,11 @@ if (!function_exists("showFact")) {
 * @return boolean return true to show the fact, return false to keep it private
 */
 function showFact($fact, $pid, $type='INDI') {
-	global $GEDCOM;
+	global $GEDCOM, $gGedcom;
 	global $global_facts, $person_facts, $SHOW_SOURCES;
 
-	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
 		// Normal operation
-		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
-	} else {
-		// We're in the middle of a Download -- get overriding information from cache
-		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
-	}
+	$pgv_USER_ACCESS_LEVEL	= $gGedcom->isEditable();
 
 	//-- first check the global facts array
 	if (isset($global_facts[$fact]["show"])) {
@@ -747,16 +724,10 @@ if (!function_exists("showFactDetails")) {
 * @return boolean return true to show the fact details, return false to keep it private
 */
 function showFactDetails($fact, $pid) {
-	global $GEDCOM;
+	global $GEDCOM, $gGedcom;
 	global $global_facts, $person_facts;
 
-	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
-		// Normal operation
-		$pgv_USER_ACCESS_LEVEL	= PGV_USER_ACCESS_LEVEL;
-	} else {
-		// We're in the middle of a Download -- get overriding information from cache
-		$pgv_USER_ACCESS_LEVEL	= $_SESSION["pgv_USER_ACCESS_LEVEL"];
-	}
+	$pgv_USER_ACCESS_LEVEL	= $gGedcom->isEditable();
 
 	//-- first check the global facts array
 	if (isset($global_facts[$fact]["details"])) {
@@ -984,17 +955,10 @@ function FactEditRestricted($pid, $factrec) {
 function FactViewRestricted($pid, $factrec) {
 	global $GEDCOM;
 
-	if ($_SESSION["pgv_user"]==PGV_USER_ID) {
-		// Normal operation
-		$pgv_GED_ID				= PGV_GED_ID;
-		$pgv_USER_GEDCOM_ADMIN	= PGV_USER_GEDCOM_ADMIN;
-		$pgv_USER_GEDCOM_ID		= PGV_USER_GEDCOM_ID;
-	} else {
-		// We're in the middle of a Download -- get overriding information from cache
-		$pgv_GED_ID				= $_SESSION["pgv_GED_ID"];
-		$pgv_USER_GEDCOM_ADMIN	= $_SESSION["pgv_USER_GEDCOM_ADMIN"];
-		$pgv_USER_GEDCOM_ID		= $_SESSION["pgv_USER_GEDCOM_ID"];
-	}
+	// Normal operation
+	$pgv_GED_ID				= $gGedcom->mGEDCOMId;
+	$pgv_USER_GEDCOM_ADMIN	= $gGedcom->isAdminable();
+	$pgv_USER_GEDCOM_ID		= 1; //PGV_USER_GEDCOM_ID;
 
 	if (PGV_USER_GEDCOM_ADMIN) {
 		return false;
