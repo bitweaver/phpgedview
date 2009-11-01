@@ -1,12 +1,8 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/pedigree.tpl,v 1.2 2007/06/03 21:32:11 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/pedigree.tpl,v 1.3 2009/11/01 22:31:17 lsces Exp $ *}
 {strip}
 <div class="floaticon">{bithelp}</div>
 
-	<div class="header">
-		<h1>{$pagetitle}</h1>
-		<h1>{$name}</h1>
-	</div>
-
+	{include file="bitpackage:phpgedview/pedigree_header.tpl"}
 	{formfeedback error=$errors}
 
 	<div class="body">

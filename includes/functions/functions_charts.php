@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: functions_charts.php,v 1.4 2009/11/01 21:38:18 lsces Exp $
+ * @version $Id: functions_charts.php,v 1.5 2009/11/01 22:31:18 lsces Exp $
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -583,9 +583,9 @@ function check_rootid( $rootid ) {
 				if ( find_person_record( trim($PEDIGREE_ROOT_ID) ) ) {
 					$rootid = trim($PEDIGREE_ROOT_ID);
 				} else {
-					$rootid = get_first_xref('INDI', PGV_GED_ID);
+					$rootid = get_first_xref( 'INDI', $gGedcom->mGEDCOMId );
 					// If there are no users in the gedcom, do something.
-					if (!$rootid) {
+					if ( !$rootid ) {
 						$rootid='I1';
 					}
 				}

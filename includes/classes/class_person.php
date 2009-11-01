@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_person.php,v 1.4 2009/11/01 20:57:03 lsces Exp $
+* @version $Id: class_person.php,v 1.5 2009/11/01 22:31:17 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -121,7 +121,7 @@ class Person extends GedcomRecord {
 
 			// If we still didn't find it, it doesn't exist
 			if (!$data) {
-				return;
+				return $pid;
 			}
 		}
 
