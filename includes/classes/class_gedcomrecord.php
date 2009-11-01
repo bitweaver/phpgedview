@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_gedcomrecord.php,v 1.4 2009/09/15 20:06:00 lsces Exp $
+* @version $Id: class_gedcomrecord.php,v 1.5 2009/11/01 21:37:46 lsces Exp $
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {
@@ -707,17 +707,18 @@ class GedcomRecord {
 	* @param string $fact
 	* @return Event
 	*/
-	function &getFactByType($factType) {
+	function &getFactByType( $factType ) {
+		$fact = null;
 		$this->parseFacts();
-		if (empty($this->facts)) {
-			return null;
+		if (empty( $this->facts )) {
+			return $fact;
 		}
 		foreach ($this->facts as $f=>$fact) {
 			if ($fact->getTag()==$factType || $fact->getType()==$factType) {
 				return $fact;
 			}
 		}
-		return null;
+		return $fact;
 	}
 
 	/**
