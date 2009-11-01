@@ -37,7 +37,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: indilist.php,v 1.12 2009/04/30 21:48:07 lsces Exp $
+ * $Id: indilist.php,v 1.13 2009/11/01 21:02:52 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -50,13 +50,11 @@ require_once( '../bit_setup_inc.php' );
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
 
+require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
+
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gGedcom = new BitGEDCOM();
-require_once 'config.php';
-require_once 'config_gedcom.php';
-require_once 'includes/functions/functions_db.php';
-require_once 'includes/functions/functions_print_lists.php';
+$gGedcom = new BitGEDCOM( 1 );
 
 // We show three different lists:
 $alpha   =safe_GET('alpha'); // All surnames beginning with this letter where "@"=unknown and ","=none
@@ -124,7 +122,7 @@ $tindilist = array();
 $gBitSmarty->assign( "show_all", $show_all );
 
 // Fetch a list of the initial letters of all surnames in the database
-$initials=get_indilist_salpha($SHOW_MARRIED_NAMES, false, $gGedcom->mGEDCOMId);
+$initials = get_indilist_salpha( $SHOW_MARRIED_NAMES, false, $gGedcom->mGEDCOMId );
 // If there are no individuals in the database, do something sensible
 if (!$initials) {
 	$initials[]='@';
@@ -171,20 +169,9 @@ if ( empty($SEARCH_SPIDER) && (empty($surname)) ) {
 else {
 	$firstname_alpha = false;
 	//-- if the surname is set then only get the names in that surname list
-	if ((!empty($surname))&&($surname_sublist=="yes")&&(empty($SEARCH_SPIDER))) {
-		$surname = trim($surname);
-		$tindilist = get_surname_indis($surname);
-		//-- split up long surname lists by first letter of first name
-		if (count($tindilist)>$sublistTrigger) $firstname_alpha = true;
-	}
-
-	if (($surname_sublist=="no")&&(!empty($alpha))&&($show_all=="no")) {
-		$tindilist = get_alpha_indis($alpha);
-	}
-
+	$tindilist = get_indilist_surns( $surname, $alpha, $SHOW_MARRIED_NAMES, false, $gGedcom->mGEDCOMId );
 	//-- simplify processing for ALL indilist
 	if (($surname_sublist=="no")&&($show_all=="yes")) {
-		$tindilist = get_indi_list();
 		$names = array();
 		foreach($tindilist as $gid => $indi) {
 			//-- make sure that favorites from other gedcoms are not shown
@@ -260,77 +247,23 @@ else {
 		}
 		$names = array();
 		foreach ($tindilist as $gid => $indi) {
-			foreach($indi["names"] as $name) {
-            	// Make sure we only display true "hits"
-				$trueHit = false;
-				if (!empty($surname)) {
-					if (strcasecmp(strip_prefix($surname), strip_prefix($name[2]))==0) $trueHit = true;
-				} else {
-					$firstLetter = get_first_letter(strip_prefix($name[2]));
-					if (strcasecmp($alpha, $firstLetter)==0) $trueHit = true;
-
-					if (!$trueHit && $DICTIONARY_SORT[$LANGUAGE]) {
-						if (strlen($firstLetter)==2) {
-							//-- strip diacritics before checking equality
-							$aPos = strpos($UCDiacritWhole, $firstLetter);
-							if ($aPos!==false) {
-								$aPos = $aPos >> 1;
-								$firstLetter = substr($UCDiacritStrip, $aPos, 1);
-							} else {
-								$aPos = strpos($LCDiacritWhole, $firstLetter);
-								if ($aPos!==false) {
-									$aPos = $aPos >> 1;
-									$firstLetter = substr($LCDiacritStrip, $aPos, 1);
-								}
-							}
-							if (strcasecmp($alpha, $firstLetter)==0) $trueHit = true;
-						}
-					}
-				}
-				if ($trueHit && $firstname_alpha && $show_all_firstnames=="no") {
-					// Make sure we only display true "hits" on the first name
-					$trueHit = false;
-					$firstLetter = get_first_letter($name[0]);
-					if (strcasecmp($falpha, $firstLetter)==0) $trueHit = true;
-
-					if (!$trueHit && $DICTIONARY_SORT[$LANGUAGE]) {
-						if (strlen($firstLetter)==2) {
-							//-- strip diacritics before checking equality
-							$aPos = strpos($UCDiacritWhole, $firstLetter);
-							if ($aPos!==false) {
-								$aPos = $aPos >> 1;
-								$firstLetter = substr($UCDiacritStrip, $aPos, 1);
-							} else {
-								$aPos = strpos($LCDiacritWhole, $firstLetter);
-								if ($aPos!==false) {
-									$aPos = $aPos >> 1;
-									$firstLetter = substr($LCDiacritStrip, $aPos, 1);
-								}
-							}
-							if (strcasecmp($falpha, $firstLetter)==0) $trueHit = true;
-						}
-					}
-				}
-				if ($trueHit) {
-					$thisName = check_NN(sortable_name_from_name($name[0]));
-					$names[] = array("gid"=>$gid, "name"=>$thisName);
-				}
+			foreach( $indi[$surname] as $key => $name) {
+				$names[$key]["gid"] = $key;
 			}
 		}
-		// uasort($names, "itemsort");
-		asort($names);
+//		asort($names);
+
 		foreach($names as $key => $value) {
-			if (!isset($value["name"])) break;
 			$person = Person::getInstance($value["gid"]);
 
-			$names["$key"]['name'] = $person->getName();
+			$names["$key"]['name'] = $person->getFullName();
 			$names["$key"]['sex'] = $person->sex;
 			$names["$key"]['url'] = "individual.php?ged=".$GEDCOM."&amp;pid=".$value["gid"]."#content";
 			$names["$key"]['birthdate'] = $person->getBirthDate()->Display();
 			$names["$key"]['birthplace'] = $person->getBirthPlace();
 			$names["$key"]['deathdate'] = $person->getDeathDate()->Display();
 			$names["$key"]['dateurl'] = $person->getBirthDate()->Display();
-			$names["$key"]['placeurl'] = $person->getPlaceUrl($names["$key"]['birthplace']);
+//			$names["$key"]['placeurl'] = $person->getPlaceUrl($names["$key"]['birthplace']);
 			$names["$key"]['noc'] = $person->getNumberOfChildren();
 		}
 		$gBitSmarty->assign_by_ref( "names", $names );

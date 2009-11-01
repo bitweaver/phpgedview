@@ -37,7 +37,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: famlist.php,v 1.13 2009/09/15 20:06:00 lsces Exp $
+ * $Id: famlist.php,v 1.14 2009/11/01 21:02:52 lsces Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -50,9 +50,11 @@ require_once( '../bit_setup_inc.php' );
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
 
+require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
+
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gGedcom = new BitGEDCOM();
+$gGedcom = new BitGEDCOM( 1 );
 
 // We show three different lists:
 $alpha   =safe_GET('alpha'); // All surnames beginning with this letter where "@"=unknown and ","=none
@@ -96,7 +98,7 @@ $tfamlist = array();
  * @global array $famalpha
  */
 
-$famalpha = get_fam_alpha();
+$famalpha = get_indilist_salpha( $SHOW_MARRIED_NAMES, false, $gGedcom->mGEDCOMId );
 //uasort($famalpha, "stringsort");
 asort($famalpha);
 
@@ -115,13 +117,14 @@ if (empty($surname_sublist))
  */
 if (!(empty($SEARCH_SPIDER))) {
 	$googleSplit = 200 - 26 - 2 - 4;
-	if (isset($alpha))
-       		$show_count = count(get_alpha_fams($alpha));
-	else if (isset($surname))
-        	$show_count = count(get_surname_fams($surname));
-	else
-        	$show_count = count(get_fam_list());
-
+	if (isset($alpha)) {
+       		$show_count = count($famalpha);
+	} else if (isset($surname)) {
+		$surnames = get_famlist_surns( $surname, $alpha, $SHOW_MARRIED_NAMES, false, $gGedcom->mGEDCOMId );
+    	$show_count = count($surnames);
+    } else {
+       	$show_count = count(get_fam_list());
+    }
         if (($show_count > $googleSplit ) && (empty($surname)))  /* Generate extra surname pages if needed */
                 $surname_sublist = "yes";
         else
@@ -134,8 +137,7 @@ if (count($famalpha) > 0) {
 	foreach($famalpha as $letter=>$list) {
 		if (empty($alpha)) {
 			if (!empty($surname)) {
-				if ($USE_RTL_FUNCTIONS && hasRTLText($surname)) $alpha = substr(preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z. ]*/"), array(",",",",""), $surname),0,2);
-				else $alpha = substr(preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z. ]*/"), array(",",",",""), $surname),0,1);
+				$alpha = substr(preg_replace(array("/ [jJsS][rR]\.?,/", "/ I+,/", "/^[a-z. ]*/"), array(",",",",""), $surname),0,1);
 			}
 		}
 		if ($letter != "@") {
@@ -193,19 +195,21 @@ asort($surnames);
 }
 else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	if (!isset($alpha)) $alpha="";
-	$tfamlist = get_alpha_fams($alpha);
+	$tfamlist = get_famlist_surns( $surname, $alpha, $SHOW_MARRIED_NAMES, $gGedcom->mGEDCOMId );
 	$surnames = array();
 	$fam_hide = array();
-	foreach($tfamlist as $gid=>$fam) {
+	foreach( $tfamlist as $gid => $fam ) {
 		if ((displayDetailsByID($gid, "FAM"))||(showLivingNameById($gid, "FAM"))) {
-			foreach($fam["surnames"] as $indexval => $name) {
-				$lname = strip_prefix($name);
-				if (empty($lname)) $lname = $name;
-				$firstLetter=get_first_letter(str2upper($lname));
-				if ($alpha==$firstLetter) surname_count(trim($name));
+			foreach( $fam as $key => $name ) {
+//				$lname = strip_prefix($name);
+//				if (empty($lname)) $lname = $name;
+//				$firstLetter=get_first_letter($lname);
+//				if ($alpha==$firstLetter) surname_count(trim($name));
+				$surnames[$gid]['match'] = count($fam[$key]);
 			}
 		}
 		else $fam_hide[$gid."[".$fam["gedfile"]."]"] = 1;
+		$surnames[$gid]['name']= $gid;
 	}
 	$i = 0;
 //	uasort($surnames, "itemsort");
@@ -215,12 +219,11 @@ else if (($surname_sublist=="yes")&&(empty($surname))&&($show_all=="no")) {
 	$gBitSmarty->assign( 'url', "famlist.php?ged=".$GEDCOM."&amp;surname=" );
 	$surname_list = array();
 	foreach($surnames as $key => $value) {
-		if (!isset($value["name"])) break;
-		$surn = $value["name"];
+		$surn = $value['name'];
 		if (empty($surn) or trim("@".$surn,"_")=="@" or $surn=="@N.N.") $surn = tra('(unknown)');
 		$surname_list[$n]['upper'] = $surn;
-		$surname_list[$n]['count'] = $value["match"];
-		$total += $value["match"];
+		$surname_list[$n]['count'] = $value['match'];
+		$total += $value['match'];
 		$n++;
 	}
 	$listHash = $_REQUEST;
@@ -234,7 +237,7 @@ else {
 	//-- if the surname is set then only get the names in that surname list
 	if ((!empty($surname))&&($surname_sublist=="yes")) {
 		$surname = trim($surname);
-		$tfamlist = get_surname_fams($surname);
+		$tfamlist = get_famlist_surns( $surname, $alpha, $SHOW_MARRIED_NAMES, $gGedcom->mGEDCOMId );
 		//-- split up long surname lists by first letter of first name
 		if ($SUBLIST_TRIGGER_F>0 && count($tfamlist)>$SUBLIST_TRIGGER_F) $firstname_alpha = true;
 	}
@@ -285,17 +288,22 @@ else {
 				$tfamlist = $ffamlist;
 			}
 		}
-		uasort($tfamlist, "itemsort");
+//		uasort($tfamlist, "itemsort");
 	}
 	// Fill family data
-	require_once 'includes/family_class.php';
-	foreach( $tfamlist as $gid=>$fam ) {
-		$family =  new Family($fam['f_gedcom']);
-		$tfamlist[$gid]['url'] = "family.php?ged=".$GEDCOM."&amp;pid=".$gid."#content";
-		$tfamlist[$gid]['marriagedate'] = $family->getMarriageDate();
-		$tfamlist[$gid]['marriageplace'] = $family->getMarriagePlace();
-		$tfamlist[$gid]['placeurl'] = $family->getPlaceUrl($tfamlist[$gid]['marriageplace']);
+	require_once ( PHPGEDVIEW_PKG_PATH.'includes/classes/class_family.php' );
+	foreach( $tfamlist as $fams ) {
+		foreach( $fams as $fam ) {
+			foreach( $fam as $gid => $val ) {
+				$family =  new Family($gid);
+				$ffamlist[$gid]['url'] = "family.php?ged=".$GEDCOM."&amp;pid=".$gid."#content";
+				$ffamlist[$gid]['marriagedate'] = $family->getMarriageDate();
+				$ffamlist[$gid]['marriageplace'] = $family->getMarriagePlace();
+//				$ffamlist[$gid]['placeurl'] = $family->getPlaceUrl($tfamlist[$gid]['marriageplace']);
+			}
+		}
 	}
+	$tfamlist = $ffamlist;
 }
 
 if ($show_all=="yes") unset($alpha);

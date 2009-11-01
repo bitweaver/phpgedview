@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.14 2008/07/07 18:01:10 lsces Exp $
+ * @version $Id: index.php,v 1.15 2009/11/01 21:02:52 lsces Exp $
  */
 
 // Initialization
@@ -30,6 +30,11 @@ require_once( '../bit_setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
+
+require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
+
+//$THEME_DIR = "themes/bitweaver/";
+//require_once('themes/bitweaver/theme.php');
 
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 

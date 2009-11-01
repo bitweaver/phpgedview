@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: individual.php,v 1.11 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: individual.php,v 1.12 2009/11/01 21:02:52 lsces Exp $
  */
 
 /**
@@ -34,14 +34,15 @@ require_once( '../bit_setup_inc.php' );
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
 
+require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
+
 include_once( PHPGEDVIEW_PKG_PATH.'BitGEDCOM.php' );
 
-$gGedcom = new BitGEDCOM();
+$gGedcom = new BitGEDCOM( 1 );
 
 // leave manual config until we can move it to bitweaver table 
-require_once("themes/bitweaver/theme.php");
 require_once 'includes/controllers/individual_ctrl.php';
-require_once("languages/facts.en.php");
+require_once 'includes/bit_print.php';
 
 $controller=new IndividualController();
 $controller->init();
@@ -55,11 +56,11 @@ global $SEARCH_SPIDER;
 	global $INDI_FACTS_UNIQUE;
 	global $INDI_FACTS_QUICK;
 
-$addfacts   =preg_split("/[, ;:]+/", $INDI_FACTS_ADD,    -1, PREG_SPLIT_NO_EMPTY);
-$uniquefacts=preg_split("/[, ;:]+/", $INDI_FACTS_UNIQUE, -1, PREG_SPLIT_NO_EMPTY);
-$quickfacts =preg_split("/[, ;:]+/", $INDI_FACTS_QUICK,  -1, PREG_SPLIT_NO_EMPTY);
+$addfacts    = preg_split("/[, ;:]+/", $INDI_FACTS_ADD,    -1, PREG_SPLIT_NO_EMPTY);
+$uniquefacts = preg_split("/[, ;:]+/", $INDI_FACTS_UNIQUE, -1, PREG_SPLIT_NO_EMPTY);
+$quickfacts  = preg_split("/[, ;:]+/", $INDI_FACTS_QUICK,  -1, PREG_SPLIT_NO_EMPTY);
 
-$addfacts=array_merge(CheckFactUnique($uniquefacts, $usedfacts, $type), $addfacts);
+$addfacts=array_merge( CheckFactUnique( $uniquefacts, $quickfacts, "INDI" ), $addfacts );
 $quickfacts=array_intersect($quickfacts, $addfacts);
 
 usort($addfacts, "factsort");
@@ -73,16 +74,16 @@ $family = $controller->indi->getSpouseFamilies();
 $families = $controller->indi->getChildFamilies();
 $stepfams = $controller->indi->getStepFamilies();
 
-$gBitSmarty->assign_by_ref( "globalfacts", $globalfacts);
-$gBitSmarty->assign_by_ref( "indifacts", $indifacts);
-$gBitSmarty->assign_by_ref( "otherfacts", $otherfacts);
+$gBitSmarty->assign_by_ref( "globalfacts", $globalfacts->globalfacts);
+$gBitSmarty->assign_by_ref( "indifacts", $indifacts->indifacts);
+$gBitSmarty->assign_by_ref( "otherfacts", $otherfacts->otherfacts);
 $gBitSmarty->assign_by_ref( "family", $family);
 $gBitSmarty->assign_by_ref( "families", $families);
 $gBitSmarty->assign_by_ref( "stepfams", $stepfams);
 $linkToID = $controller->pid;	// -- Tell addmedia.php what to link to
 $gBitSmarty->assign_by_ref( "controller", $controller);
 
-$doctitle = "Individual Summary : ".$controller->indi->GetName();
+$doctitle = "Individual Summary : ".$controller->indi->GetFullName();
 $gBitSmarty->assign( "pagetitle", $doctitle );
 $gBitSystem->display( 'bitpackage:phpgedview/individual.tpl', tra( 'Individual Summary' ) );
 ?>
