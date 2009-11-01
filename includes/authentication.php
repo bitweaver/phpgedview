@@ -9,7 +9,7 @@
  * You can extend PhpGedView to work with other systems by implementing the functions in this file.
  * Other possible options are to use LDAP for authentication.
  *
- * $Id: authentication.php,v 1.22 2009/09/15 20:06:00 lsces Exp $
+ * $Id: authentication.php,v 1.23 2009/11/01 20:55:42 lsces Exp $
  *
  * phpGedView: Genealogy Viewer
  * Copyright (C) 2002 to 2008  PGV Development Team.  All rights reserved.
@@ -197,11 +197,10 @@ function getUserId() {
  * user has administrative privileges
  * to change the configuration files
  */
-function userIsAdmin($user_id=PGV_USER_ID) {
-	if (isset($_SESSION['cookie_login']) && $_SESSION['cookie_login']==true)
-		return false;
+function userIsAdmin( $user_id = PGV_USER_ID ) {
+	global $gGedcom;
 
-	return get_user_setting($user_id, 'canadmin')=='Y';
+	return $gGedcom->canAdmin();
 	}
 
 /**
@@ -211,11 +210,10 @@ function userIsAdmin($user_id=PGV_USER_ID) {
  * user has administrative privileges
  * to change the configuration files for the currently active gedcom
  */
-function userGedcomAdmin($user_id=PGV_USER_ID, $ged_id=PGV_GED_ID) {
-	if (isset($_SESSION['cookie_login']) && ($_SESSION['cookie_login']==true))
-		return false;
+function userGedcomAdmin( $user_id=PGV_USER_ID, $ged_id=PGV_GED_ID ) {
+	global $gBitUser, $gGedcom;
 
-	return userIsAdmin($user_id, $ged_id) || get_user_gedcom_setting($user_id, $ged_id, 'canedit')=='admin';
+	return $gBitUser->isAdmin() || $gGedcom->canEdit();
 }
 
 /**
