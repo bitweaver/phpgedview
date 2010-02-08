@@ -25,13 +25,13 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see index/gedcoms.php
- * @version $Id: editgedcoms.php,v 1.8 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: editgedcoms.php,v 1.9 2010/02/08 21:27:24 wjames5 Exp $
  */
 
 /**
  * required setup
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 $gBitSystem->verifyPackage( 'phpgedview' );
 

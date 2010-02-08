@@ -1,6 +1,6 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.7 2009/11/01 20:53:55 lsces Exp $
-require_once( '../../bit_setup_inc.php' );
+// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_gedcoms.php,v 1.8 2010/02/08 21:27:24 wjames5 Exp $
+require_once( '../../kernel/setup_inc.php' );
 
 require_once( PHPGEDVIEW_PKG_PATH.'includes/bitsession.php' );
 

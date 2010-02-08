@@ -24,7 +24,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 22 August 2005
  *
- * $Id: pedigree.php,v 1.10 2009/11/01 22:31:18 lsces Exp $
+ * $Id: pedigree.php,v 1.11 2010/02/08 21:27:24 wjames5 Exp $
  * @package PhpGedView
  * @subpackage Charts
  */
@@ -32,7 +32,7 @@
 /**
  * Initialization
  */ 
-require_once( "../bit_setup_inc.php" );
+require_once( "../kernel/setup_inc.php" );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

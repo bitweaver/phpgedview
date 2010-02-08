@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: advancedsearch_ctrl.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: advancedsearch_ctrl.php,v 1.3 2010/02/08 21:27:24 wjames5 Exp $
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
@@ -34,7 +34,7 @@ if (stristr($_SERVER["SCRIPT_NAME"], basename(__FILE__))!==false) {
 /**
  * Initialization
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

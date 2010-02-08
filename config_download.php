@@ -19,7 +19,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-* @version $Id: config_download.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
+* @version $Id: config_download.php,v 1.7 2010/02/08 21:27:24 wjames5 Exp $
 * @package PhpGedView
 * @subpackage Admin
 */
@@ -27,7 +27,7 @@
 /**
  * load the main configuration and context
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: individual.php,v 1.12 2009/11/01 21:02:52 lsces Exp $
+ * @version $Id: individual.php,v 1.13 2010/02/08 21:27:24 wjames5 Exp $
  */
 
 /**
  * Initialization
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.10 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: media.php,v 1.11 2010/02/08 21:27:24 wjames5 Exp $
  */
 
  /* TODO:
@@ -45,7 +45,7 @@
 /**
  * load the main configuration and context
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

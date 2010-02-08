@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.11 2009/09/15 20:06:00 lsces Exp $
+ * $Id: calendar.php,v 1.12 2010/02/08 21:27:24 wjames5 Exp $
  * @package PhpGedView
  * @subpackage Calendar
  */
@@ -32,7 +32,7 @@
  * load the configuration and create the context
  */
 // Initialization
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 require_once("includes/functions/functions_print_lists.php");
 

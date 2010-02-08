@@ -22,11 +22,11 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index.php,v 1.15 2009/11/01 21:02:52 lsces Exp $
+ * @version $Id: index.php,v 1.16 2010/02/08 21:27:24 wjames5 Exp $
  */
 
 // Initialization
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

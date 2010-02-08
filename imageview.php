@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: imageview.php,v 1.7 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id: imageview.php,v 1.8 2010/02/08 21:27:24 wjames5 Exp $
  * @package PhpGedView
  * @subpackage Media
  */
@@ -27,7 +27,7 @@
 /**
  * Initialization
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

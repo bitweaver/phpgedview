@@ -23,13 +23,13 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportengine.php,v 1.10 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id: reportengine.php,v 1.11 2010/02/08 21:27:24 wjames5 Exp $
  */
 
 /**
  * Initialization
  */ 
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );

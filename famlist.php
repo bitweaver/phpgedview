@@ -37,7 +37,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: famlist.php,v 1.14 2009/11/01 21:02:52 lsces Exp $
+ * $Id: famlist.php,v 1.15 2010/02/08 21:27:24 wjames5 Exp $
  * @package PhpGedView
  * @subpackage Lists
  */
@@ -45,7 +45,7 @@
 /**
  * Initialization
  */
-require_once( '../bit_setup_inc.php' );
+require_once( '../kernel/setup_inc.php' );
 
 // Is package installed and enabled
 $gBitSystem->verifyPackage( 'phpgedview' );
