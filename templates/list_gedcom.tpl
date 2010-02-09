@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.6 2007/06/04 09:35:50 lsces Exp $ *}
+{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_gedcom.tpl,v 1.7 2010/02/09 17:21:21 wjames5 Exp $ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin wiki">
@@ -119,7 +119,7 @@
 					<script type="text/javascript">//<![CDATA[
 						// check / uncheck all.
 						document.write("<label for=\"switcher\">{tr}Select All{/tr}</label> ");
-						document.write("<input name=\"switcher\" id=\"switcher\" type=\"checkbox\" onclick=\"switchCheckboxes(this.form.id,'checked[]','switcher')\" />");
+						document.write("<input name=\"switcher\" id=\"switcher\" type=\"checkbox\" onclick=\"BitBase.switchCheckboxes(this.form.id,'checked[]','switcher')\" />");
 					//]]></script>
 
 					<br />
