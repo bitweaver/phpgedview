@@ -44,7 +44,7 @@
  *
  * @package PhpGedView
  * @subpackage Webservice
- * @version $Id: genealogyService.php,v 1.2 2009/04/30 17:41:29 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

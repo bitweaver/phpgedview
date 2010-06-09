@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Module
- * @version $Id: functions_media_reorder.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id$
  * @author Brian Holland
  */
 

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Lists
- * @version $Id: aliveinyear.php,v 1.7 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

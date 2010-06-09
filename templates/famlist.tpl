@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/famlist.tpl,v 1.4 2008/08/10 11:46:27 lsces Exp $ *}
+{* $Header$ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="gedcom_list">

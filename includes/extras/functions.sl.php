@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * @package PhpGedView
- * @version $Id: functions.sl.php,v 1.1 2009/08/03 20:10:42 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

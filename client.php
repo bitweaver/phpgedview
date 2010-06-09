@@ -26,7 +26,7 @@
 *
 * @package PhpGedView
 * @subpackage Edit
-* @version $Id: client.php,v 1.9 2009/09/15 20:06:00 lsces Exp $
+* @version $Id$
 */
 
 require "config.php";

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Module
- * @version $Id: media_tab_head.php,v 1.1 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id$
  * @author Brian Holland
  */
 

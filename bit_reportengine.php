@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: bit_reportengine.php,v 1.8 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

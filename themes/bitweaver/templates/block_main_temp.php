@@ -26,7 +26,7 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: block_main_temp.php,v 1.1 2009/11/01 21:36:24 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

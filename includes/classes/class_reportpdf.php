@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: class_reportpdf.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  * @link http://www.adobe.com/devnet/pdf/
  * @link http://www.tcpdf.org
  */

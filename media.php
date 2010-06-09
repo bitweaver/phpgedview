@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: media.php,v 1.11 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
  /* TODO:

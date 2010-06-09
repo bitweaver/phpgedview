@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: gdbi.php,v 1.3 2008/07/07 18:01:10 lsces Exp $
+ * @version $Id$
  * @package PhpGedView
  * @subpackage WebService
  */

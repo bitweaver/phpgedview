@@ -22,7 +22,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editconfig_gedcom.php,v 1.12 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

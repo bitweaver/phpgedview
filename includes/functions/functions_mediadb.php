@@ -22,7 +22,7 @@
 *
 * @package PhpGedView
 * @subpackage MediaDB
-* @version $Id: functions_mediadb.php,v 1.2 2009/09/15 20:06:02 lsces Exp $
+* @version $Id$
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {

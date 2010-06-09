@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: genservice.php,v 1.3 2008/07/07 18:01:13 lsces Exp $
+ * @version $Id$
  */
  
  //needed for $INDEX_DIRECTORY

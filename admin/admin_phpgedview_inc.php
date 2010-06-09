@@ -1,5 +1,5 @@
 <?php
-// $Header: /cvsroot/bitweaver/_bit_phpgedview/admin/admin_phpgedview_inc.php,v 1.5 2009/10/01 14:17:03 wjames5 Exp $
+// $Header$
 // All Rights Reserved. See below for details and a complete list of authors.
 // Licensed under the GNU LESSER GENERAL PUBLIC LICENSE. See http://www.gnu.org/copyleft/lesser.html for details.
 

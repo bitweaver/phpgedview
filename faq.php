@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: faq.php,v 1.5 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 
 require 'config.php';

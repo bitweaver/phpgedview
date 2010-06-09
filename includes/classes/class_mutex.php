@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: class_mutex.php,v 1.1 2009/04/30 18:30:36 lsces Exp $
+ * @version $Id$
  * @author John Finlay
  * @package PhpGedView
  */

@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Edit
-* @version $Id: edit_interface.php,v 1.10 2010/02/08 21:27:24 wjames5 Exp $
+* @version $Id$
 */
 
 /**

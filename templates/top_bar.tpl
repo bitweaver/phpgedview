@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/top_bar.tpl,v 1.3 2008/08/11 15:21:49 lsces Exp $ *}
+{* $Header$ *}
 	<div class="data">
 		<table class="data">
 			<caption><h1>{tr}Gedcom documents navigation menu{/tr}</h1></caption>

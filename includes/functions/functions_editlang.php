@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: functions_editlang.php,v 1.1 2009/04/30 17:51:51 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

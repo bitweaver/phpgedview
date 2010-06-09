@@ -26,7 +26,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig.php
- * @version $Id: config.php,v 1.10 2009/04/30 21:43:37 lsces Exp $
+ * @version $Id$
  */
 
 if (preg_match("/\Wconfig.php/", $_SERVER["SCRIPT_NAME"])>0) {

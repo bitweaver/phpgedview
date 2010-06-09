@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_person.php,v 1.5 2009/11/01 22:31:17 lsces Exp $
+* @version $Id$
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {

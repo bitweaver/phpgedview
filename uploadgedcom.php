@@ -28,7 +28,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: uploadgedcom.php,v 1.17 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 // TODO: Progress bars don't show until </table> or </div>

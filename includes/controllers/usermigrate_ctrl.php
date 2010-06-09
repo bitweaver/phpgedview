@@ -24,7 +24,7 @@
  * @author Boudewijn Sjouke	sjouke@users.sourceforge.net
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: usermigrate_ctrl.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

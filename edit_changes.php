@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Edit
- * @version $Id: edit_changes.php,v 1.8 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

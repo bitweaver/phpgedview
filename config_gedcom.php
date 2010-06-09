@@ -27,7 +27,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see editconfig_gedcom.php
- * @version $Id: config_gedcom.php,v 1.8 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 
 if (stristr($_SERVER["SCRIPT_NAME"], "/".basename(__FILE__))!==false) {

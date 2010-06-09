@@ -22,7 +22,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id: lifespan_ctrl.php,v 1.3 2009/04/30 19:09:48 lsces Exp $
+* @version $Id$
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {

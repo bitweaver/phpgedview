@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Edit
-* @version $Id: autocomplete.php,v 1.1 2009/09/15 20:06:00 lsces Exp $
+* @version $Id$
 */
 
 require './config.php';

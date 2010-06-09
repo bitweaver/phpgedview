@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/main_menu.tpl,v 1.5 2007/06/02 13:24:07 lsces Exp $ *}
+{* $Header$ *}
 <div class="floaticon">{bithelp}</div>
 
 <div class="admin gedcom">

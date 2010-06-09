@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_families.tpl,v 1.1 2008/08/10 11:46:26 lsces Exp $ *}
+{* $Header$ *}
 	<table id="{$table_id}" class="sortable list_table center">
 	<tr>
 	<th class="list_label">{tr}Surname{/tr}</th>

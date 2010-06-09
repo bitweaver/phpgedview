@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: mediaviewer.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  * @TODO use more theme specific CSS, allow a more fluid layout to take advantage of the page width
  */
 

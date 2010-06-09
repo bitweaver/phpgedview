@@ -23,7 +23,7 @@
 *
 * @package PhpGedView
 * @subpackage Display
-* @version $Id: functions_print.php,v 1.3 2009/11/01 21:39:44 lsces Exp $
+* @version $Id$
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {

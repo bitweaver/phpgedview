@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Themes
-* @version $Id: sample_custom_welcome_menu.php,v 1.1 2009/04/30 17:52:57 lsces Exp $
+* @version $Id$
 */
 /*
 * This is a sample customizable sub-menu for the Welcome menu in the top links of each page.

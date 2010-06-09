@@ -22,7 +22,7 @@
  * @package PhpGedView
  * @subpackage Help
  * @author John Finlay & Jans Luder
- * @version $Id: help_text_vars.php,v 1.2 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id$
  */
 
 // The variables in this file are used to glue together other var's in the help_text.xx.php

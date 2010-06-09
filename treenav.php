@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: treenav.php,v 1.1 2009/04/30 19:12:13 lsces Exp $
+ * @version $Id$
  */
 
 require './config.php';

@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @author Greg Roach
- * @version $Id: class_date.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  *
  * NOTE: Since different calendars start their days at different times, (civil
  * midnight, solar midnight, sunset, sunrise, etc.), we convert on the basis of

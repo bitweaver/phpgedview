@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/list_letters.tpl,v 1.1 2007/06/02 12:32:56 lsces Exp $ *}
+{* $Header$ *}
 
 	{foreach from=$indialpha key=letId item=letter }
 		{if $letter ne '@' }

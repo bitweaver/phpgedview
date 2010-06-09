@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: changelanguage.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
  
 require "config.php";

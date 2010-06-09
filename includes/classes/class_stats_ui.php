@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * @version $Id: class_stats_ui.php,v 1.3 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  * @author Patrick Kellum
  * @package PhpGedView
  * @subpackage Lists

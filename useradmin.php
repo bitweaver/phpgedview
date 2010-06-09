@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: useradmin.php,v 1.5 2009/04/30 19:12:13 lsces Exp $
+ * @version $Id$
  */
 
 require './config.php';

@@ -25,7 +25,7 @@
  * @package PhpGedView
  * @subpackage Admin
  * @see index/gedcoms.php
- * @version $Id: editgedcoms.php,v 1.9 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

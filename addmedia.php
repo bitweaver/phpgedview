@@ -25,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage MediaDB
- * @version $Id: addmedia.php,v 1.12 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

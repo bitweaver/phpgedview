@@ -24,7 +24,7 @@
  * @author PGV Development Team
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: help_text.php,v 1.8 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

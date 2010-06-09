@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * @package PhpGedView
  * @subpackage search
- * @version $Id: opensearch.php,v 1.1 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 require './config.php';
 header('Content-Type: application/opensearchdescription+xml; charset=utf-8');

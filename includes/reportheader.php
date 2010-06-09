@@ -7,7 +7,7 @@
  *
  * @package PhpGedView
  * @subpackage Reports
- * @version $Id: reportheader.php,v 1.5 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

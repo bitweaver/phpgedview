@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Charts
- * @version $Id: source.php,v 1.8 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

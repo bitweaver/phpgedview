@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: search.php,v 1.4 2008/07/07 18:01:12 lsces Exp $
+ * @version $Id$
  */
 // Include the search controller from now on refered to as $controller
 require_once ("includes/controllers/search_ctrl.php");

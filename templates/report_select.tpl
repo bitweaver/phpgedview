@@ -1,4 +1,4 @@
-{* $Header: /cvsroot/bitweaver/_bit_phpgedview/templates/report_select.tpl,v 1.1 2008/08/11 15:22:21 lsces Exp $ *}
+{* $Header$ *}
 <div class="floaticon">{bithelp}</div>
 {strip}
 <div class="repoert_gen"><!-- start .report_gen -->

@@ -23,7 +23,7 @@
  * @author Greg Roach
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: gedcheck.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 
 require 'config.php';

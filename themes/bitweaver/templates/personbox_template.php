@@ -25,7 +25,7 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: personbox_template.php,v 1.1 2009/11/01 21:36:23 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {

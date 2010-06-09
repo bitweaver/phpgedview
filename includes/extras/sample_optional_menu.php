@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Themes
- * @version $Id: sample_optional_menu.php,v 1.1 2009/04/30 17:52:57 lsces Exp $
+ * @version $Id$
  */
  /*
  * This is a sample customizable menu, with sub-menus, that will appear in the top links of each

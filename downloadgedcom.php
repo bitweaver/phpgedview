@@ -22,7 +22,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: downloadgedcom.php,v 1.13 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

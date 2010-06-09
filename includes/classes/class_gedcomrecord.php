@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage DataModel
-* @version $Id: class_gedcomrecord.php,v 1.5 2009/11/01 21:37:46 lsces Exp $
+* @version $Id$
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {

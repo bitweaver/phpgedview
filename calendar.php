@@ -23,7 +23,7 @@
  *
  * This Page Is Valid XHTML 1.0 Transitional! > 3 September 2005
  *
- * $Id: calendar.php,v 1.12 2010/02/08 21:27:24 wjames5 Exp $
+ * $Id$
  * @package PhpGedView
  * @subpackage Calendar
  */

@@ -24,7 +24,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: index_edit.php,v 1.10 2010/02/08 21:27:24 wjames5 Exp $
+ * @version $Id$
  */
 
 /**

@@ -21,7 +21,7 @@
 *
 * @package PhpGedView
 * @subpackage Charts
-* @version $Id: note_ctrl.php,v 1.2 2009/08/03 20:10:43 lsces Exp $
+* @version $Id$
 */
 
 if (!defined('PGV_PHPGEDVIEW')) {

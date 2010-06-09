@@ -23,7 +23,7 @@
  *
  * @package PhpGedView
  * @subpackage Display
- * @version $Id: login.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */ 
 
 require 'config.php';

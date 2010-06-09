@@ -24,7 +24,7 @@
 *
 * @package PhpGedView
 * @subpackage Includes
-* @version $Id: family_nav.php,v 1.2 2009/09/15 20:06:00 lsces Exp $
+* @version $Id$
 * @author Brian Holland
 */
 

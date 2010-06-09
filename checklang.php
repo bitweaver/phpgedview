@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: checklang.php,v 1.6 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 // -- include config file
 require("config.php");

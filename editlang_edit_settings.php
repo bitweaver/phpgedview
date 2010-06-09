@@ -21,7 +21,7 @@
  *
  * @package PhpGedView
  * @subpackage Admin
- * @version $Id: editlang_edit_settings.php,v 1.7 2009/09/15 20:06:00 lsces Exp $
+ * @version $Id$
  */
 
 require 'config.php';

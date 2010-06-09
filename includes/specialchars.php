@@ -39,7 +39,7 @@
  *
  * @package PhpGedView
  * @subpackage Languages
- * @version $Id: specialchars.php,v 1.4 2009/04/30 18:32:43 lsces Exp $
+ * @version $Id$
  */
 
 if (!defined('PGV_PHPGEDVIEW')) {
