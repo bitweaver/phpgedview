@@ -30,7 +30,7 @@ class BitGEDCOM extends LibertyContent {
 				'handler_class' => 'bitGEDCOM',
 				'handler_package' => 'phpgedview',
 				'handler_file' => 'BitGEDCOM.php',
-				'maintainer_url' => 'http://lsces.co.uk/'
+				'maintainer_url' => 'http://lsces.org.uk/'
 			) );
 
 		$this->mGEDCOMId = $pGEDCOMId;
