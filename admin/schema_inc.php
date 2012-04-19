@@ -40,7 +40,7 @@ PHPGEDVIEW_DB_PREFIX.'sources' => "
 	s_id C(20) PRIMARY,
 	s_file I2 PRIMARY,
 	s_name C(250),
-	s_dbid V(1),
+	s_dbid C(1),
 	s_GEDCOM X
 ",
 
@@ -127,8 +127,8 @@ PHPGEDVIEW_DB_PREFIX.'media' => "
 
 PHPGEDVIEW_DB_PREFIX.'media_mapping' => "
 	mm_id I4 PRIMARY,
-	mm_media C(32) NOTNULL DEFAULT '',
-	mm_gid C(32) NOTNULL DEFAULT '',
+	mm_media C(32) NOTNULL,
+	mm_gid C(32) NOTNULL,
 	mm_order I4 NOTNULL DEFAULT '0',
 	mm_gedfile I4,
 	mm_gedrec X
