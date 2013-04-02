@@ -13,7 +13,7 @@
 		{form legend="Select Report"}
 		<input type="hidden" name="action" value="setup" />
 		<input type="hidden" name="output" value="$output" />
-		<div class="row">
+		<div class="control-group">
 			{formlabel label="Select Report" for="report"}
 			{forminput}
 				<select name="report">
@@ -25,7 +25,7 @@
 			{/forminput}
 		</div>
 		
-		<div class="row submit">
+		<div class="control-group submit">
 			<input type="submit" name="report_select" value="{tr}Process report parameters{/tr}" />
 		</div>
 		{/form}

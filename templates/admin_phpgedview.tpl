@@ -8,7 +8,7 @@
 		{jstab title="GEDCOM Settings"}
 			{legend legend="GEDCOM Settings"}
 				<input type="hidden" name="page" value="{$page}" />
-				<div class="row">
+				<div class="control-group">
 					{formlabel label=pgv_calendar_format for=$item}
 					{forminput}
 						{html_options name=pgv_calendar_format output=$calendar values=$calendar selected=`$gBitSystem->getConfig('pgv_calendar_format')` id=pgv_calendar_format}
@@ -17,7 +17,7 @@
 				</div>
 
 				{foreach from=$formGedcomFeatures key=item item=output}
-					<div class="row">
+					<div class="control-group">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
 							{html_options name=$output.label output=$generation values=$generation selected=$gBitSystem->getConfig($item) id=$output.label}
@@ -26,14 +26,14 @@
 					</div>
 				{/foreach}
 
-				<div class="row">
+				<div class="control-group">
 					{formlabel label="Use RIN References" for="pgv_use_RIN"}
 					{forminput}
 						{html_checkboxes name="pgv_use_RIN" values="y" checked=`$gBitSystem->getConfig('pgv_use_RIN')` labels=false id=Use_RIN}
 						{formhelp note="Allow users to select to use RIN reference identifiers."}
 					{/forminput}
 				</div>
-				<div class="row submit">
+				<div class="control-group submit">
 					<input type="submit" name="gedcomTabSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
@@ -44,7 +44,7 @@
 				<input type="hidden" name="page" value="{$page}" />
 
 				{foreach from=$gedcomPrefixValues key=item item=output}
-					<div class="row">
+					<div class="control-group">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
 							<input type="text" id="{$item}" name="{$item}" value="{$gBitSystem->getConfig($item)}" size="10">
@@ -53,7 +53,7 @@
 					</div>
 				{/foreach}
 
-				<div class="row submit">
+				<div class="control-group submit">
 					<input type="submit" name="gedcomPrefixSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
@@ -64,7 +64,7 @@
 				<input type="hidden" name="page" value="{$page}" />
 
 				{if $gBitSystem->isPackageActive( 'categories' )}
-				<div class="row">
+				<div class="control-group">
 					{formlabel label="Use a category for posts" for="gedcom_categ"}
 					{forminput}
 						<input type="checkbox" name="gedcom_categ" id="gedcom_categ"
@@ -73,7 +73,7 @@
 				</div>
 				{/if}
 
-				<div class="row submit">
+				<div class="control-group submit">
 					<input type="submit" name="featuresTabSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
@@ -83,7 +83,7 @@
 			{legend legend="List Settings"}
 				<input type="hidden" name="page" value="{$page}" />
 
-				<div class="row">
+				<div class="control-group">
 					{formlabel label="Default ordering for gedcom listing" for="blog_list_order"}
 					{forminput}
 						<select name="gedcom_list_order" id="gedcom_list_order">
@@ -98,7 +98,7 @@
 				</div>
 
 				{foreach from=$formGedcomLists key=item item=output}
-					<div class="row">
+					<div class="control-group">
 						{formlabel label=`$output.label` for=$item}
 						{forminput}
 							{html_checkboxes name="$item" values="y" checked=$gBitSystem->getConfig($item) labels=false id=$item}
@@ -107,7 +107,7 @@
 					</div>
 				{/foreach}
 
-				<div class="row submit">
+				<div class="control-group submit">
 					<input type="submit" name="listTabSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}

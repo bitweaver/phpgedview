@@ -14,7 +14,7 @@
 		{form legend="Create a new Gedcom" enctype="multipart/form-data"}
 			<input type="hidden" name="MAX_FILE_SIZE" value="16000000" />
 
-			<div class="row">
+			<div class="control-group">
 				{formlabel label="Gedcom Title" for="gedcom_name"}
 				{forminput}
 					<input type="text" id="gedcom_name" name="gedcom_name" />
@@ -22,7 +22,7 @@
 				{/forminput}
 			</div> 
 
-			<div class="row">
+			<div class="control-group">
 				{formlabel label="Upload Gedcom File" for="gedcom_source"}
 				{forminput}
 					<input type="text" id="gedcom_source" name="source" />
@@ -30,7 +30,7 @@
 				{/forminput}
 			</div>
 
-			<div class="row submit">
+			<div class="control-group submit">
 				<input type="submit" name="fSubmitAddGedcom" value="{tr}Add Gedcom{/tr}" />
 			</div>
 		{/form}

@@ -9,7 +9,7 @@
 	{formfeedback error=$errors}
 
 	<div class="body">
-		<div class="row">
+		<div class="control-group">
 			{$report_array.description}
 		</div>
 
@@ -20,7 +20,7 @@
 		<input type="hidden" name="output" value="PDF" />
 
 		{foreach from=$report_array.inputs key=inputId item=input}
-			<div class="row">
+			<div class="control-group">
 				<input type="hidden" name="varnames[]" value="{$input.name}" />
 				{formlabel label="`$input.value`" for="`$input.name`"}
 				{forminput}
@@ -62,7 +62,7 @@
 			</div>
 		{/foreach}
 
-		<div class="row">
+		<div class="control-group">
 			{formlabel label="Select output format" for="output"}
 			{forminput}
 				<select name="output">
@@ -73,7 +73,7 @@
 			{/forminput}
 		</div>
 
-		<div class="row submit">
+		<div class="control-group submit">
 			<input type="submit" name="report_submit" value="Download Report" onclick="document.setupreport.elements['download'].value='1';" />
 		</div>
 		{/form}
