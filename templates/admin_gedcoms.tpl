@@ -31,7 +31,7 @@
 			</div>
 
 			<div class="control-group submit">
-				<input type="submit" name="fSubmitAddGedcom" value="{tr}Add Gedcom{/tr}" />
+				<input type="submit" class="btn" name="fSubmitAddGedcom" value="{tr}Add Gedcom{/tr}" />
 			</div>
 		{/form}
 

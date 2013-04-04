@@ -26,7 +26,7 @@
 		</div>
 		
 		<div class="control-group submit">
-			<input type="submit" name="report_select" value="{tr}Process report parameters{/tr}" />
+			<input type="submit" class="btn" name="report_select" value="{tr}Process report parameters{/tr}" />
 		</div>
 		{/form}
 	</div><!-- end .body -->

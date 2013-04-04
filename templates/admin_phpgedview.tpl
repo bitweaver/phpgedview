@@ -34,7 +34,7 @@
 					{/forminput}
 				</div>
 				<div class="control-group submit">
-					<input type="submit" name="gedcomTabSubmit" value="{tr}Change preferences{/tr}" />
+					<input type="submit" class="btn" name="gedcomTabSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
 		{/jstab}
@@ -54,7 +54,7 @@
 				{/foreach}
 
 				<div class="control-group submit">
-					<input type="submit" name="gedcomPrefixSubmit" value="{tr}Change preferences{/tr}" />
+					<input type="submit" class="btn" name="gedcomPrefixSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
 		{/jstab}
@@ -74,7 +74,7 @@
 				{/if}
 
 				<div class="control-group submit">
-					<input type="submit" name="featuresTabSubmit" value="{tr}Change preferences{/tr}" />
+					<input type="submit" class="btn" name="featuresTabSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
 		{/jstab}
@@ -108,7 +108,7 @@
 				{/foreach}
 
 				<div class="control-group submit">
-					<input type="submit" name="listTabSubmit" value="{tr}Change preferences{/tr}" />
+					<input type="submit" class="btn" name="listTabSubmit" value="{tr}Change preferences{/tr}" />
 				</div>
 			{/legend}
 		{/jstab}

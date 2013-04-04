@@ -74,7 +74,7 @@
 		</div>
 
 		<div class="control-group submit">
-			<input type="submit" name="report_submit" value="Download Report" onclick="document.setupreport.elements['download'].value='1';" />
+			<input type="submit" class="btn" name="report_submit" value="Download Report" onclick="document.setupreport.elements['download'].value='1';" />
 		</div>
 		{/form}
 	</div><!-- end .body -->

@@ -52,7 +52,7 @@
 		{/forminput}
 
 		<div class="control-group submit">
-			<input type="submit" name="continue" value="{tr}Upload GEDCOM{/tr}" />
+			<input type="submit" class="btn" name="continue" value="{tr}Upload GEDCOM{/tr}" />
 		</div>
 	{/form}
 	{/strip}

@@ -21,7 +21,7 @@
 						<option value="{$file}">{$report.title}</option>
 					{/foreach}
 					</select></td></tr>
-				<tr><td class="topbottombar" colspan="2"><input type="submit" value="Go" /></td></tr>
+				<tr><td class="topbottombar" colspan="2"><input type="submit" class="btn" value="Go" /></td></tr>
 			</table>
 		</form>
 	</div><!-- end .body -->

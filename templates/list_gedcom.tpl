@@ -136,7 +136,7 @@
 					//]]></script>
 
 					<noscript>
-						<div><input type="submit" value="{tr}Submit{/tr}" /></div>
+						<div><input type="submit" class="btn" value="{tr}Submit{/tr}" /></div>
 					</noscript>
 				</div>
 			{/if}

@@ -48,7 +48,7 @@
 			</tr>
 			<tr>
 				<td class="topbottombar" colspan="4">
-					<input type="submit" value="{$tree.tall}" />
+					<input type="submit" class="btn" value="{$tree.tall}" />
 				</td>
 			</tr>
 		</table>

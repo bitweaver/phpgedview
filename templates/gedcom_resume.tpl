@@ -23,7 +23,7 @@
 			<input type="hidden" name="startimport" value="{$startimport}" />
 			<input type="hidden" name="import" value="{$import}" />
 			<input type="hidden" name="FILE" value="{$FILE}" />
-			<input type="submit" name="continue" value="del_proceed" />
+			<input type="submit" class="btn" name="continue" value="del_proceed" />
 			<table>
 				<tr><td class="descriptionbox">{tr}The execution time limit was reached.  Click the Continue button below to resume importing the GEDCOM file.{/tr}</td></tr>
 				<tr><td class="topbottombar">
@@ -32,7 +32,7 @@
 		{/forminput}
 
 		<div class="control-group submit">
-			<input type="submit" name="continue" value="{tr}Upload GEDCOM{/tr}" />
+			<input type="submit" class="btn" name="continue" value="{tr}Upload GEDCOM{/tr}" />
 		</div>
 	{/form}
 	{/strip}

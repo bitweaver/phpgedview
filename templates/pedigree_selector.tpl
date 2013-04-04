@@ -68,7 +68,7 @@
 			</tr>
 			<tr>
 				<td class="topbottombar" colspan="2">
-					<input type="submit" value="<?php print $pgv_lang["view"]; ?>" />
+					<input type="submit" class="btn" value="<?php print $pgv_lang["view"]; ?>" />
 				</td>
 			</tr>
 		</table>
