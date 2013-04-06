@@ -11,17 +11,17 @@
 				<div class="control-group">
 					{formlabel label=pgv_calendar_format for=$item}
 					{forminput}
-						{html_options name=pgv_calendar_format output=$calendar values=$calendar selected=`$gBitSystem->getConfig('pgv_calendar_format')` id=pgv_calendar_format}
+						{html_options name=pgv_calendar_format output=$calendar values=$calendar selected=$gBitSystem->getConfig('pgv_calendar_format') id=pgv_calendar_format}
 						{formhelp note="Selection of gedcom display calendar format."}
 					{/forminput}
 				</div>
 
 				{foreach from=$formGedcomFeatures key=item item=output}
 					<div class="control-group">
-						{formlabel label=`$output.label` for=$item}
+						{formlabel label=$output.label for=$item}
 						{forminput}
 							{html_options name=$output.label output=$generation values=$generation selected=$gBitSystem->getConfig($item) id=$output.label}
-							{formhelp note=`$output.note`}
+							{formhelp note=$output.note}
 						{/forminput}
 					</div>
 				{/foreach}
@@ -29,7 +29,7 @@
 				<div class="control-group">
 					{formlabel label="Use RIN References" for="pgv_use_RIN"}
 					{forminput}
-						{html_checkboxes name="pgv_use_RIN" values="y" checked=`$gBitSystem->getConfig('pgv_use_RIN')` labels=false id=Use_RIN}
+						{html_checkboxes name="pgv_use_RIN" values="y" checked=$gBitSystem->getConfig('pgv_use_RIN') labels=false id=Use_RIN}
 						{formhelp note="Allow users to select to use RIN reference identifiers."}
 					{/forminput}
 				</div>
@@ -45,10 +45,10 @@
 
 				{foreach from=$gedcomPrefixValues key=item item=output}
 					<div class="control-group">
-						{formlabel label=`$output.label` for=$item}
+						{formlabel label=$output.label for=$item}
 						{forminput}
 							<input type="text" id="{$item}" name="{$item}" value="{$gBitSystem->getConfig($item)}" size="10">
-							{formhelp note=`$output.note`}
+							{formhelp note=$output.note}
 						{/forminput}
 					</div>
 				{/foreach}
@@ -99,10 +99,10 @@
 
 				{foreach from=$formGedcomLists key=item item=output}
 					<div class="control-group">
-						{formlabel label=`$output.label` for=$item}
+						{formlabel label=$output.label for=$item}
 						{forminput}
 							{html_checkboxes name="$item" values="y" checked=$gBitSystem->getConfig($item) labels=false id=$item}
-							{formhelp note=`$output.note` page=`$output.page`}
+							{formhelp note=$output.note page=$output.page}
 						{/forminput}
 					</div>
 				{/foreach}

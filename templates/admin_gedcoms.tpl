@@ -48,9 +48,9 @@
 				<tr class="{cycle values="even,odd"}">
 					<td style="text-align:center;">
 						{if $listgedcoms[gedcom].enable eq 'n'}
-							{smartlink ititle='activate' ibiticon="icons/face-sad" fActivateTopic=1 topic_id=`$topics[user].topic_id`}
+							{smartlink ititle='activate' ibiticon="icons/face-sad" fActivateTopic=1 topic_id=$topics[user].topic_id}
 						{else}
-							{smartlink ititle='deactivate' ibiticon="icons/face-smile" fDeactivateTopic=1 topic_id=`$topics[user].topic_id`}
+							{smartlink ititle='deactivate' ibiticon="icons/face-smile" fDeactivateTopic=1 topic_id=$topics[user].topic_id}
 						{/if}
 					</td>
 
@@ -67,17 +67,17 @@
 						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}index.php?command=gedcom&ged={$listgedcoms[gedcom].name}">{$listgedcoms[gedcom].path}</a>
 						<br />
 						{$listgedcoms[gedcom].config}
-						{smartlink ititle='edit' booticon="icon-edit" ifile='editconfig_gedcom.php' ged=`$listgedcoms[gedcom].name`}
+						{smartlink ititle='edit' booticon="icon-edit" ifile='editconfig_gedcom.php' ged=$listgedcoms[gedcom].name}
 						<br />
 						{$listgedcoms[gedcom].privacy}
-						{smartlink ititle='edit' booticon="icon-edit" ifile='edit_privacy.php' ged=`$listgedcoms[gedcom].name`}
+						{smartlink ititle='edit' booticon="icon-edit" ifile='edit_privacy.php' ged=$listgedcoms[gedcom].name}
 					</td>
 
 					<td align="right">
 						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}admin/admin_gedcoms.php?fUpload=1&amp;g_id={$listgedcoms[gedcom].g_id}">{biticon ipackage="icons" iname="network-receive" iforce=icon_text iexplain="Upload Gedcom"}</a>
 						<br />
-						{smartlink ititle='delete' ibiticon="icons/user-trash" ifile='admin/admin_gedcoms.php' fRemoveGedcom='1' g_id=`$listgedcoms[gedcom].g_id`}
-						{smartlink ititle='permissions' booticon="icon-key" ipackage='liberty' ifile='content_permissions.php' content_id=`$listgedcoms[gedcom].content_id`}
+						{smartlink ititle='delete' ibiticon="icons/user-trash" ifile='admin/admin_gedcoms.php' fRemoveGedcom='1' g_id=$listgedcoms[gedcom].g_id}
+						{smartlink ititle='permissions' booticon="icon-key" ipackage='liberty' ifile='content_permissions.php' content_id=$listgedcoms[gedcom].content_id}
 						<br />
 						<a href="{$smarty.const.PHPGEDVIEW_PKG_URL}downloadgedcom.php?ged={$listgedcoms[gedcom].name}">{biticon ipackage="icons" iname="network-transmit" iforce=icon_text iexplain="Download Gedcom"}</a>
 					</td>
