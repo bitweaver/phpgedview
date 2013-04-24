@@ -35,7 +35,7 @@
 			</div>
 		{/form}
 
-		<table class="data">
+		<table class="table data">
 			<caption>{tr}List of Gedcoms{/tr}</caption>
 			<tr>
 				<th>{tr}Active{/tr}</th>

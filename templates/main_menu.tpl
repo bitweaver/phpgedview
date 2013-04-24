@@ -13,7 +13,7 @@
 	{formfeedback error=$errors}
 
 	<div class="body">
-		<table class="data">
+		<table class="table data">
 			<tr>
 				<th>{tr}Currently available GEDCOM Archives{/tr}</th>
 			</tr>

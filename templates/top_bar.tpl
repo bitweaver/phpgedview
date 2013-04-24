@@ -1,6 +1,6 @@
 {* $Header$ *}
 	<div class="data">
-		<table class="data">
+		<table class="table data">
 			<caption><h1>{tr}Gedcom documents navigation menu{/tr}</h1></caption>
 			<tr>
 				<th>{tr}Charts{/tr}</th>
