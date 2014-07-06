@@ -1,0 +1,13 @@
+/* 
+ * The following style definitions should be removed when Opera supports the 
+ * "opacity" specification.
+ */
+.activeflag {
+	border: solid black 1px;
+}
+.brightflag {
+	padding: 1px;
+}
+.dimflag {
+	padding: 1px;
+}

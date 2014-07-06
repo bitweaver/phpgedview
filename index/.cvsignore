@@ -1,0 +1,8 @@
+gedcoms.php
+*.dat
+*.log
+pgv_changes.php
+*.GED
+*.GED_*.php
+sql_log.txt
+*.zip

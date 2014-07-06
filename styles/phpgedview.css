@@ -1,0 +1,1001 @@
+/**
+ * Style for Standard theme
+ *
+ * Use this stylesheet to customize the display of your site.
+ * To learn more about CSS visit http://www.w3.org/TR/REC-CSS2/
+ *
+ * phpGedView: Genealogy Viewer
+ * Copyright (C) 2002 to 2003 John Finlay and Others
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * @package PhpGedView
+ * @subpackage Themes
+ * @version $Id: phpgedview.css,v 1.2 2008/08/11 14:15:06 lsces Exp $
+ */
+
+.something {
+	/*empty style to make sure that the BODY style is not ignored */
+}
+
+body {
+	color: #000000;
+	background-color: white;
+	font-family: tahoma, verdana, arial, helvetica, sans-serif;
+	font-size: 12px;
+	margin: 1px;
+}
+a {
+	color: #555555;
+	text-decoration: none;
+	font-family: tahoma, verdana, arial, helvetica, sans-serif;
+}
+a:hover	{
+	color: #000000;
+	text-decoration: underline;
+}
+th {
+	font-weight: 100;
+}
+ul {
+	padding-left: 15px;
+	padding-right: 15px;
+	margin: 8px;
+}
+.button {
+	width: 60px
+}
+.gedcom_table {
+	border: 1px solid #9CA3D4;
+	margin:0;
+	width:99%;
+ }
+.person_box {
+	background-color: #D6E0EA;
+	border: solid #9CA3D4 1px;
+}
+.person_boxF {
+	background-color: #E9DAF1;
+/*	border: solid #9CA3D4 1px;  */
+	border: 1px solid #ff2080;
+}
+.person_boxNN {
+	background-color: #FFFFFF;
+	border: solid #9CA3D4 1px;
+}
+.person_box:target, .news_box:target, #gedcom_stats:target {
+	background-color: #FFFFCC;
+}
+.list_table {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.center {
+	text-align: center;
+}
+table.center {
+	margin-left: auto;
+	margin-right: auto;
+}
+.list_label {
+	color: #333333;
+	background-color: #B5C0DF;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	text-align: center;
+	white-space: nowrap;
+}
+.list_label_wrap {
+	color: #333333;
+	background-color: #B5C0DF;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	text-align: center;
+	white-space: normal;
+}
+.list_value {
+	background-color: #D1D9EF;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	vertical-align: top;
+	white-space: nowrap;
+}
+.list_value_wrap {
+	background-color: #D1D9EF;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	vertical-align: top;
+	white-space: normal;
+}
+.list_value_wrap_red {
+	background-color: #D6E0EA;
+	color: red;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	vertical-align: top;
+	white-space: normal;
+}
+
+.list_item {
+	font-size:10px;
+	/* white-space: nowrap; */
+}
+.facts_table {
+	width: 99%;
+}
+.facts_label {
+	color: #333333;
+	background-color: #9CA3D4;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+	width: 20%;
+	text-align: center;
+}
+.facts_labelrela {
+	background-color: #8C93C4;
+}
+.facts_label02 {
+	color: #333333;
+	background-color: #C4C9E6;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+	/* width: 20%; */
+	text-align: center;
+	font-weight: bold;
+}
+.facts_label03 {
+	color: #333333;
+	background-color: #9CA3D4;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+	text-align: center;
+	font-weight: bold;
+}
+.facts_value {
+	background-color: #D6E0EA;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+}
+.facts_valuerela {
+	background-color: #C6D0DA;
+}
+.facts_value02 {
+	background-color: #F2F5F9;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+}
+.facts_labelred {
+	color: #333333;
+	background-color: #9CA3D4;
+	border: solid red 2px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+	width: 20%;
+	text-align: center;
+}
+.facts_valuered {
+	background-color: #D6E0EA;
+	color: #000000;
+	border: solid red 2px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+}
+.facts_labelblue {
+	color: #333333;
+	background-color: #9CA3D4;
+	border: solid blue 2px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+	width: 20%;
+	text-align: center;
+}
+.facts_valueblue {
+	background-color: #D6E0EA;
+	color: #000000;
+	border: solid blue 2px;
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	padding: 4px 4px 4px 4px;
+}
+.tabs_table {
+	width: 99%;
+}
+.tab_cell_active {
+	background-color: white;
+	border-left: outset #9CA3D4 2px;
+	border-top: outset #9CA3D4 2px;
+	border-right: outset #9CA3D4 2px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 10pt;
+}
+.tab_cell_inactive {
+	background-color: #D6E0EA;
+	border-left: solid #9CA3D4 2px;
+	border-top: solid #9CA3D4 2px;
+	border-right: outset #9CA3D4 2px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 10pt;
+}
+.tab_cell_inactive_empty {
+	background-color: #c6d0dA;
+	border-left: solid #9CA3D4 2px;
+	border-top: solid #9CA3D4 2px;
+	border-right: outset #9CA3D4 2px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 10pt;
+}
+.tab_cell_inactive_empty A {
+	color: #999999;
+}
+.tab_active_bottom {
+	border-top: none;
+	border-bottom: none;
+	border-left: none;
+	border-right: none;
+	height: 5px;
+}
+.tab_inactive_bottom {
+	border-left: none;
+	border-right: none;
+	border-top: outset #9CA3D4 2px;
+	height: 5px;
+}
+.tab_inactive_bottom_right {
+	border-left: none;
+	border-right: none;
+	border-top: outset #9CA3D4 2px;
+	width: 33%;
+	height: 5px;
+}
+
+.name1 {
+	color: #333333;
+	font: bold 10px verdana, helvetica, arial, sans-serif;
+}
+.namered {
+	border: solid red 1px;
+}
+.nameblue {
+	border: solid blue 1px;
+}
+.details1 {
+	font: normal 10px tahoma, verdana, arial, helvetica, sans-serif;
+}
+.name2 {
+	color: #333333;
+	font: bold 12px tahoma, verdana, arial, helvetica, sans-serif;
+}
+.details2 {
+	font: normal 12px tahoma, verdana, arial, helvetica, sans-serif;
+}
+.nameZoom {
+	color: #333333;
+	font: bold 14px tahoma, verdana, arial, helvetica, sans-serif;
+}
+.detailsZoom {
+	font: 14px tahoma, verdana, arial, helvetica, sans-serif;
+	text-decoration: none;
+}
+.details_label {
+	font-weight: bold;
+}
+.name_head {
+	color: #333333;
+	font: bold 16px tahoma, verdana, arial, helvetica, sans-serif;
+	letter-spacing: .2px;
+}
+.date {
+	color: #333377;
+}
+.label {
+	font: bold 11px tahoma, verdana, arial, helvetica, sans-serif;
+}
+
+.field {
+}
+.error {
+	color: #DD0000;
+	font-family: tahoma, verdana, arial, helvetica, sans-serif;
+	font-weight: bold;
+}
+.largeError {
+	color: #DD0000;
+	font: large tahoma, verdana, arial, helvetica, sans-serif;
+	font-weight: bold;
+}
+.warning {
+	color: red;
+	font-family: tahoma, verdana, arial, helvetica, sans-serif;
+	font-weight: bold;
+}
+.indent {
+	padding-left: 7px;
+}
+.indent_rtl {
+	padding-right: 7px;
+}
+.image {
+	height: 150px;
+	padding: 5px;
+	border: solid black 1px;
+	margin: 2px;
+}
+.sex_image {
+	height: 9px;
+	width: 9px;
+	margin: 0px 3px;
+	border: none;
+	vertical-align: middle;
+}
+.pedigree_image_portrait {
+	float: left;
+	height: 60px;
+	border: solid black 1px;
+	margin-right: 3px;
+}
+.pedigree_image_portrait_rtl {
+	float: right;
+	height: 60px;
+	border: solid black 1px;
+	margin-left: 3px;
+}
+.pedigree_image_landscape {
+	float: left;
+	width: 60px;
+	border: solid black 1px;
+	margin-right: 3px;
+}
+.pedigree_image_landscape_rtl {
+	float: right;
+	width: 60px;
+	border: solid black 1px;
+	margin-left: 3px;
+}
+.pedigree_form {
+	width: 45px;
+}
+.thumbnail {
+	height: auto;
+	padding: 3px;
+}
+.icon {
+	border: none;
+}
+.link {
+	font-size: 11px;
+	text-align: center;
+}
+.sublinks_table {
+	border: solid #9CA3D4 1px;
+	background-color: #D6E0EA;
+}
+.sublinks_cell {
+	font-size: 12px;
+	background-color: #D6E0EA;
+}
+.sublinks_table .icon {
+	width: 25px;
+	height: 25px;
+}
+.menuitem .icon {
+	width: 50px;
+	height: 50px;
+}
+.submenu .icon {
+	width: 25px;
+	height: 25px;
+}
+.subheaders {
+	font-size: 16px;
+	font-weight: bold;
+	margin-top: 15px;
+	vertical-align: bottom;
+	font-family: Arial, sans-serif;
+}
+.age {
+	font-size: 9px;
+}
+.source_citations {
+	display: none;
+}
+.lang_form {
+	margin-top: 0px;
+}
+.selected-option {
+	background-color: #D6E0EA;
+}
+.user_links {
+	white-space: nowrap;
+}
+.contact_links {
+	text-align: center;
+}
+/* This is the original.
+ * It's not used, but it's left in in case you want to go back to it. */
+.flag {
+	width: 15px;
+	border: solid black 1px;
+}
+/* This one is for the currently active language.  It's different in Opera!! */
+.activeflag {
+	height: 15px;
+	border: none;
+	opacity: 1;		/* Opera,IE does not yet support this (booo!) */
+}
+/* This one is for an inactive language when the mouse is hovering over it */
+.brightflag {
+	height: 15px;
+	border: none;
+	opacity: 1;		/* Opera,IE does not yet support this (booo!) */
+}
+/* This one is for an inactive language when the mouse is not hovering over it */
+.dimflag {
+	height: 15px;
+	border: none;
+	opacity: 0.4;	/* Opera,IE does not yet support this (booo!) */
+}
+.header_select {
+	font-size: 9pt;
+}
+.favorites_form {
+	margin-top: 0px;
+}
+.help {
+	font-weight: bold;
+	cursor: help;
+}
+.menuitem {
+	color: #555555;
+	text-decoration: none;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	text-align: center;
+	padding: 1px;
+}
+.menuitem_hover	{
+	color: #000000;
+	text-decoration: underline;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	text-align: center;
+	padding: 1px;
+}
+.submenu {
+	color: #000000;
+	text-decoration: none;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	text-align: center;
+	background-color: #D6E0EA;
+	border: solid #9CA3D4 1px;
+	white-space: nowrap;
+}
+.submenu_rtl {
+	color: #000000;
+	text-decoration: none;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	text-align: center;
+	background-color: #D6E0EA;
+	border: solid #9CA3D4 1px;
+	white-space: nowrap;
+}
+.submenuitem {
+	color: #555555;
+	text-decoration: none;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	background-color: #D6E0EA;
+	white-space: nowrap;
+	text-align: left;
+	padding: 1px;
+}
+.submenuitem_rtl {
+	color: #555555;
+	text-decoration: none;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	background-color: #D6E0EA;
+	white-space: nowrap;
+	text-align: right;
+	padding: 1px;
+}
+.submenuitem_hover {
+	color: #000000;
+	text-decoration: underline;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	background-color: #E6F0FA;
+	white-space: nowrap;
+	text-align: left;
+	padding: 1px;
+}
+.submenuitem_hover_rtl {
+	color: #000000;
+	text-decoration: underline;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	background-color: #E6F0FA;
+	white-space: nowrap;
+	text-align: right;
+	padding: 1px;
+}
+.news_box {
+	background-color: #D6E0EA;
+	border: solid #9CA3D4 1px;
+}
+.news_title {
+	font-family: Arial, sans-serif;
+	color: black;
+	font-size: 14px;
+	font-weight: bold;
+}
+.news_date {
+	font-family: Arial, sans-serif;
+	color: black;
+	font-size: 12px;
+}
+.current_day {
+	font-weight: bold;
+	font-size: 16px;
+}
+.cal_day {
+	float: left;
+	font-weight: bold;
+}
+.rtl_cal_day {
+	direction: rtl;
+	float: right;
+	color: blue;
+	font-weight: bold;
+}
+.helpheader {
+	font-family: Arial, sans-serif;
+	color: black;
+	font-size: 16px;
+	font-weight: bold;
+}
+.helpstart {
+	font-family: Arial, sans-serif;
+	color: Blue;
+	font-size: 14px;
+	font-weight : bold;
+	text-decoration : none;
+}
+.helptext {
+	font-family: Arial, sans-serif;
+	color: black;
+	font-size: 12px;
+}
+
+#content {
+	margin-left: 1px;
+}
+
+#footer {
+	clear: both;
+	color: #000000;
+	font-family: tahoma, verdana, arial, helvetica, sans-serif;
+	font-size: 12px;
+	width: 99%;
+}
+
+/*-- index.php specific style sheets -- */
+.small_inner_block {
+/*	height: auto;   */
+	max-height: 200px;
+	overflow: auto;
+	font: normal 10px tahoma, verdana, arial, Helvetica, sans-serif;
+}
+
+.block {
+	background-color: #D6E0EA;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	vertical-align: top;
+	margin: 1px;
+	padding: 1px;
+}
+
+#index_main_blocks {
+	clear: none;
+	width: 73%;
+	float: left;
+}
+
+#index_small_blocks {
+	clear: none;
+	width: 25%;
+	float: right;
+}
+
+#index_full_blocks {
+	clear: none;
+	width: 100%;
+	/*float: center;*/
+}
+
+#random_picture {
+	text-align: center;
+}
+
+
+/*-- pedigree chart specific stylesheets --*/
+#pedigree_chart {
+	position: relative;
+	top: -250px;
+	left: 0px;
+}
+/*-- pedigree chart rtl specific stylesheets --*/
+#pedigree_chart_rtl {
+	position: relative;
+	top: -250px;
+	right: 10px;
+}
+
+/*-- descendancy chart specific stylesheets --*/
+#descendancy_chart ul {
+	background-image: url(../../image/vline.gif);
+	background-repeat: repeat-y;
+	background-position: left top;
+	list-style: none;
+	margin: 0px 0px 5px 15px; /* top right bottom left */
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+}
+#descendancy_chart li {
+	list-style: none;
+	margin: 0px 0px 0px -13px; /* top right bottom left */
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+}
+/*-- descendancy chart rtl specific stylesheets --*/
+#descendancy_chart_rtl ul {
+	background-image: url(../../image/vline.gif);
+	background-repeat: repeat-y;
+	background-position: right top;
+	list-style: none;
+	margin: 0px 15px 5px 0px; /* top right bottom left */
+	padding-top: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+}
+#descendancy_chart_rtl li {
+	list-style: none;
+	margin: 0px -17px 0px 0px; /* top right bottom left */
+	padding: 0px 2px 0px 0px; /* top right bottom left */
+}
+
+/*-- relationship chart specific stylesheets --*/
+#relationship_chart {
+	position: relative;
+	top: -40px;
+	left: 0px;
+}
+#relationship_chart_rtl {
+	position: relative;
+	top: -40px;
+	right: 10px;
+}
+
+/*-- ancestry chart specific stylesheets --*/
+#ancestry_chart ul {
+	background-image: url(../../image/vline.gif);
+	background-repeat: repeat-y;
+	background-position: left top;
+	list-style: none;
+	margin: 0px 0px 0px 15px; /* top right bottom left */
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+}
+#ancestry_chart li {
+	list-style: none;
+	margin: 0px 0px 2px -13px; /* top right bottom left */
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+}
+/*-- ancestry chart rtl specific stylesheets --*/
+#ancestry_chart_rtl ul {
+	background-image: url(../../image/vline.gif);
+	background-repeat: repeat-y;
+	background-position: right top;
+	list-style: none;
+	margin: 0px 15px 0px 0px; /* top right bottom left */
+	padding-top: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+}
+#ancestry_chart_rtl li {
+	list-style: none;
+	margin: 0px -15px 2px 0px; /* top right bottom left */
+	padding: 0px 2px 0px 0px; /* top right bottom left */
+}
+
+/*-- relationship chart specific stylesheets --*/
+#relationship_chart {
+	position: relative;
+	top: -40px;
+	left: 0px;
+}
+
+#relationship_chart_rtl {
+	position: relative;
+	top: -40px;
+	right: 0px;
+}
+
+/*-- timeline chart specific styles --*/
+#timeline_chart {
+	position: relative;
+	top: 0px;
+	left: 0px;
+}
+.timeline_table {
+}
+.person0 {
+	background-color: #AAAAFF;
+	border: outset #AAAAFF 1px;
+	vertical-align: top;
+}
+.person1 {
+	background-color: #AAFFAA;
+	border: outset #AAFFAA 1px;
+	vertical-align: top;
+}
+.person2 {
+	background-color: #FFAAAA;
+	border: outset #FFAAAA 1px;
+	vertical-align: top;
+}
+.person3 {
+	background-color: #5555FF;
+	border: outset #5555FF 1px;
+	vertical-align: top;
+}
+.person4 {
+	background-color: #FF5555;
+	border: outset #FF5555 1px;
+	vertical-align: top;
+}
+.person5 {
+	background-color: #55FF55;
+	border: outset #55FF55 1px;
+	vertical-align: top;
+}
+.listlog {
+	line-height: 20pt;
+	color: #555555;
+	font-family: Arial, sans-serif;
+}
+.formField {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+}
+
+/*-- pseudo-class for fanchart : used on server-side to draw image --*/
+.fan_chart {
+	/*-- font-family must contain a server TTF file --*/
+	font-family: Arial, sans-serif;
+	font-size: 7px;
+	color: #000000;
+	background-color : #EEEEEE;
+}
+.fan_chart_box {
+	background-color: #B1CFF0;
+}
+.fan_chart_boxF {
+	background-color: #E9DAF1;
+}
+
+.starredname {
+	text-decoration: underline;
+}
+.search_hit {
+	background-color: #FFFF00;
+}
+.nowrap {
+	white-space: nowrap;
+}
+.title {
+	font-size: 20px;
+	font-family: tahoma, verdana, arial, helvetica, sans-serif;
+}
+.accesskeys{
+	width : 1px;
+	height: 1px;
+	overflow: hidden;
+}
+/* Styles for the option boxes */
+
+/* Style for the top and bottom bar */
+.topbottombar {
+	color: #333333;
+	background-color: #9CA3D4;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	padding: 4px;
+	text-align: center;
+	font-weight: bold;
+}
+/* Style for the subbar in  */
+/* facts_value */
+.subbar {
+	background-color: #D1D9EF;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	vertical-align: top;
+	white-space: nowrap;
+	padding: 3px;
+}
+/* Style for the descriptionbox */
+.descriptionbox {
+	color: #333333;
+	background-color: #B5C0DF;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	vertical-align: top;
+	white-space: nowrap;
+	padding: 3px;
+}
+
+/* Style for the optionbox */
+.optionbox {
+	background-color: #D1D9EF;
+	color: #000000;
+	border: solid #9CA3D4 1px;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	vertical-align: top;
+	white-space: nowrap;
+	padding: 3px;
+}
+.wrap {
+	white-space: normal;
+}
+.vmiddle {
+	vertical-align: middle
+}
+
+/* Colors */
+.red {
+	color: #FF0000;
+}
+.rela {
+	-moz-opacity: 0.67;
+	opacity: 0.67;
+}
+/* Text direction */
+.ltr {
+	text-align: left;
+}
+.rtl {
+	text-align: right;
+}
+
+/* Width settings */
+.width10 {
+	width: 10%;
+}
+.width20 {
+	width: 20%;
+}
+.width25 {
+	width: 25%;
+}
+.width30 {
+	width: 30%;
+}
+.width33 {
+	width: 33%;
+}
+.width40 {
+	width: 40%;
+}
+.width50 {
+	width: 50%;
+}
+.width60 {
+	width: 60%;
+}
+.width66 {
+	width: 66%;
+}
+.width70 {
+	width: 70%;
+}
+.width75 {
+	width: 75%;
+}
+.width80 {
+	width: 80%;
+}
+.width90 {
+	width: 90%;
+}
+.width100 {
+	width: 100%;
+}
+
+/* Font sizes */
+.font11 {
+	font-size: 11px;
+}
+.font9 {
+	font-size: 9px;
+}
+
+/* Chart styles */
+.pedigree_table {
+	margin: 0;
+}
+
+/* Message box */
+.messagebox {
+	background-color: #C2CEEF;
+	border: solid #9CA3D4 1px;
+}
+
+/* Change indicators */
+.change_new {
+	border: solid #0000FF 2px;
+}
+
+.change_old {
+	border: solid #FF0000 2px;
+}
+
+.door {
+	margin:0px 0px 0px 0px;
+	padding:0px 0px 0px 0px;
+}
+
+.door dd {
+	margin:2px 2px 2px 2px;
+	padding:2px 6px 2px 6px;
+	height:100%; float:left;
+	font-weight:bold;
+	display:none;
+	-moz-border-radius-topleft: 0.6em;
+	-moz-border-radius-topright: 0.6em;
+}

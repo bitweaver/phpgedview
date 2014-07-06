@@ -1,0 +1,25 @@
+/**
+ * Styles for rtl
+ *
+ * needed to fix some of the RTL theme problems
+ *
+ * @package PhpGedView
+ * @subpackage Themes
+ * @version $Id: style_rtl.css 4197 2008-10-30 12:24:13Z fisharebest $
+ */
+body {
+	direction: rtl;
+	text-align: right;
+}
+.door {
+	direction: rtl;
+}
+.door dd {
+	float: right;
+}
+
+.icon, .adminicon {
+	border: none;
+	padding-left: 5pt;
+	padding-right: 0pt;
+}
