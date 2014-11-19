@@ -65,10 +65,10 @@
 
 				{if $gBitSystem->isPackageActive( 'categories' )}
 				<div class="control-group">
-					<label class="checkbox">
+					{forminput label="checkbox"}
 						<input type="checkbox" name="gedcom_categ" id="gedcom_categ"Use a category for posts
 							{if $gedcom_categ eq 'y'}checked="checked"{/if} />
-					</label>
+					{/forminput}
 				</div>
 				{/if}
 
